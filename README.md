@@ -2,6 +2,8 @@
 
 A desktop Bible study app built for focus, depth, and collaboration.
 
+![tulia.study screenshot](docs/screenshot.png)
+
 ---
 
 ## Why
@@ -66,6 +68,26 @@ pnpm tauri:build
 > On Windows, always run Tauri commands in PowerShell — the Rust/cargo PATH is not available in Git Bash.
 
 The backend (`verbum`) runs separately on port 8000. Set `VITE_API_URL` in `.env.local` to point to your local instance.
+
+---
+
+## Acknowledgements
+
+tulia.study is built on the shoulders of people who did the hard work of digitizing and publishing scripture openly.
+
+**Bible texts**
+
+- [scrollmapper/bible_databases](https://github.com/scrollmapper/bible_databases) — KJV, ASV, BSB, Darby, Geneva 1599, Wycliffe, and many more in CSV format. Public domain.
+- [seven1m/open-bibles](https://github.com/seven1m/open-bibles) — Spanish translations including Reina-Valera 1909, Biblia en Español Sencillo, Palabra de Dios para Ti, and Versión Biblia Libre. Public domain.
+- [TriGataro/Biblia_Reina_Valera_1960](https://github.com/TriGataro/Biblia_Reina_Valera_1960) — Reina-Valera 1960.
+
+**Commentary**
+
+- [Enduring Word](https://enduringword.com/bible-commentary/) by David Guzik — verse-by-verse commentary covering all 66 books. Used with attribution.
+
+**Cross-references**
+
+- [OpenBible.info](https://www.openbible.info) — crowd-verified cross-reference dataset, CC-BY.
 
 ---
 
