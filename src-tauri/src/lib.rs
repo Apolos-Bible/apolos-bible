@@ -10,6 +10,7 @@ pub fn run() {
             .build(),
         )?;
       }
+
       Ok(())
     })
     .run(tauri::generate_context!())
