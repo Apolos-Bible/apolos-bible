@@ -2,6 +2,7 @@
 import { useEffect, useRef } from 'react'
 import { useVerseStore } from '@/lib/store/useVerseStore'
 import { useHighlightStore } from '@/lib/store/useHighlightStore'
+import { useAuthStore } from '@/lib/store/useAuthStore'
 import { useUIStore } from '@/lib/store/useUIStore'
 import { useContextMenuStore } from '@/lib/store/useContextMenuStore'
 import type { MenuItem } from '@/lib/store/useContextMenuStore'
@@ -12,6 +13,7 @@ import { HighlightToolbar } from '@/components/study/HighlightToolbar'
 import NoteThread from '@/components/notes/NoteThread'
 import NoteInput from '@/components/notes/NoteInput'
 import { EmptyState } from '@/components/ui/EmptyState'
+import { isAuthError } from '@/lib/auth'
 import type { HighlightColor } from '@/types'
 
 function ColorDot({ color }: { color: string }) {
@@ -43,7 +45,9 @@ export function StudyPanel() {
   const addHighlight   = useHighlightStore((s) => s.addHighlight)
 
   const addToast = useUIStore((s) => s.addToast)
+  const openAuthModal = useUIStore((s) => s.openAuthModal)
   const openMenu = useContextMenuStore((s) => s.openMenu)
+  const user = useAuthStore((s) => s.user)
 
   const verse           = verses.find((v) => v.id === selectedVerseId) ?? null
   const verseHighlights = verse ? (highlights[verse.apiId] ?? []) : []
@@ -93,7 +97,16 @@ export function StudyPanel() {
           onClick: () =>
             addHighlight(verse.apiId, selection.start, selection.end, value)
               .then(() => { addToast('Highlight added', 'success'); window.getSelection()?.removeAllRanges() })
-              .catch(() => addToast('Could not save highlight', 'error')),
+              .catch((error) => {
+                if (!user || isAuthError(error)) {
+                  addToast('You need to log in to save highlights', 'error', {
+                    action: { label: 'Log in', onClick: openAuthModal },
+                  })
+                  return
+                }
+
+                addToast('Could not save highlight', 'error')
+              }),
         })
       }
       items.push({ type: 'separator' })
@@ -120,7 +133,16 @@ export function StudyPanel() {
           onClick: () =>
             addHighlight(verse.apiId, 0, verse.text.length, value)
               .then(() => addToast('Highlight added', 'success'))
-              .catch(() => addToast('Could not save highlight', 'error')),
+              .catch((error) => {
+                if (!user || isAuthError(error)) {
+                  addToast('You need to log in to save highlights', 'error', {
+                    action: { label: 'Log in', onClick: openAuthModal },
+                  })
+                  return
+                }
+
+                addToast('Could not save highlight', 'error')
+              }),
         })
       }
     }

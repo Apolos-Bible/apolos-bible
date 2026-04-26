@@ -20,6 +20,7 @@ import { Tooltip } from '@/components/ui/Tooltip'
 import { VerseText } from '@/components/verse/VerseText'
 import { EmptyState } from '@/components/ui/EmptyState'
 import { cn } from '@/lib/cn'
+import { isAuthError } from '@/lib/auth'
 
 // ── Icons ──────────────────────────────────────────────────────────────────
 
@@ -128,6 +129,7 @@ export function VerseList() {
   const readingMode    = useUIStore((s) => s.readingMode)
   const setReadingMode = useUIStore((s) => s.setReadingMode)
   const addToast       = useUIStore((s) => s.addToast)
+  const openAuthModal  = useUIStore((s) => s.openAuthModal)
 
   const notes      = useNoteStore((s) => s.notes)
   const highlights = useHighlightStore((s) => s.highlights)
@@ -205,15 +207,39 @@ export function VerseList() {
       { type: 'label', text: 'Highlight verse' },
       {
         type: 'action', label: 'Yellow', icon: <ColorDot color="#e5c07b" />,
-        onClick: () => addHighlight(verse.apiId, 0, verse.text.length, 'yellow').catch(() => addToast('Could not save highlight', 'error')),
+        onClick: () => addHighlight(verse.apiId, 0, verse.text.length, 'yellow').catch((error) => {
+          if (!user || isAuthError(error)) {
+            addToast('You need to log in to save highlights', 'error', {
+              action: { label: 'Log in', onClick: openAuthModal },
+            })
+            return
+          }
+          addToast('Could not save highlight', 'error')
+        }),
       },
       {
         type: 'action', label: 'Blue', icon: <ColorDot color="#61afef" />,
-        onClick: () => addHighlight(verse.apiId, 0, verse.text.length, 'blue').catch(() => addToast('Could not save highlight', 'error')),
+        onClick: () => addHighlight(verse.apiId, 0, verse.text.length, 'blue').catch((error) => {
+          if (!user || isAuthError(error)) {
+            addToast('You need to log in to save highlights', 'error', {
+              action: { label: 'Log in', onClick: openAuthModal },
+            })
+            return
+          }
+          addToast('Could not save highlight', 'error')
+        }),
       },
       {
         type: 'action', label: 'Green', icon: <ColorDot color="#98c379" />,
-        onClick: () => addHighlight(verse.apiId, 0, verse.text.length, 'green').catch(() => addToast('Could not save highlight', 'error')),
+        onClick: () => addHighlight(verse.apiId, 0, verse.text.length, 'green').catch((error) => {
+          if (!user || isAuthError(error)) {
+            addToast('You need to log in to save highlights', 'error', {
+              action: { label: 'Log in', onClick: openAuthModal },
+            })
+            return
+          }
+          addToast('Could not save highlight', 'error')
+        }),
       },
       { type: 'separator' },
       {

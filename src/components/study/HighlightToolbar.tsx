@@ -1,8 +1,10 @@
 
 import { useEffect, useRef, useState } from 'react'
 import { useHighlightStore } from '@/lib/store/useHighlightStore'
+import { useAuthStore } from '@/lib/store/useAuthStore'
 import { useUIStore } from '@/lib/store/useUIStore'
 import { cn } from '@/lib/cn'
+import { isAuthError } from '@/lib/auth'
 import type { HighlightColor } from '@/types'
 
 interface HighlightToolbarProps {
@@ -21,6 +23,8 @@ const COLORS: { value: HighlightColor; bg: string; border: string }[] = [
 export function HighlightToolbar({ verseId, verseApiId }: HighlightToolbarProps) {
   const addHighlight = useHighlightStore((s) => s.addHighlight)
   const addToast = useUIStore((s) => s.addToast)
+  const openAuthModal = useUIStore((s) => s.openAuthModal)
+  const user = useAuthStore((s) => s.user)
 
   const [selectedColor, setSelectedColor] = useState<HighlightColor>('yellow')
   const [selectionRange, setSelectionRange] = useState<SelectionRange | null>(null)
@@ -103,7 +107,14 @@ export function HighlightToolbar({ verseId, verseApiId }: HighlightToolbarProps)
       addToast('Highlight added', 'success')
       window.getSelection()?.removeAllRanges()
       setSelectionRange(null)
-    } catch {
+    } catch (error) {
+      if (!user || isAuthError(error)) {
+        addToast('You need to log in to save highlights', 'error', {
+          action: { label: 'Log in', onClick: openAuthModal },
+        })
+        return
+      }
+
       addToast('Could not save highlight', 'error')
     } finally {
       setSaving(false)

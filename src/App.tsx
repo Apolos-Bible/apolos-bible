@@ -14,6 +14,7 @@ import { ContextMenu } from '@/components/ui/ContextMenu'
 import { CompareVersionsModal } from '@/components/reading/CompareVersionsModal'
 import { CrossReferencesPanel } from '@/components/reading/CrossReferencesPanel'
 import { CommentaryPanel } from '@/components/reading/CommentaryPanel'
+import { AuthModal } from '@/components/auth/AuthModal'
 import { useUIStore } from '@/lib/store/useUIStore'
 import { useVerseStore } from '@/lib/store/useVerseStore'
 import { useAuthStore } from '@/lib/store/useAuthStore'
@@ -24,6 +25,8 @@ export default function App() {
   const openCommandPalette = useUIStore(s => s.openCommandPalette)
   const activePanel        = useUIStore(s => s.activePanel)
   const commentaryOpen     = useUIStore(s => s.commentaryOpen)
+  const authModalOpen      = useUIStore(s => s.authModalOpen)
+  const closeAuthModal     = useUIStore(s => s.closeAuthModal)
   const navigateVerse = useVerseStore(s => s.navigateVerse)
   const selectedVerseId = useVerseStore(s => s.selectedVerseId)
   const loadBooks = useVerseStore(s => s.loadBooks)
@@ -82,6 +85,7 @@ export default function App() {
       <Toast />
       <KeyboardShortcutsPanel />
       <SettingsModal />
+      <AuthModal open={authModalOpen} onClose={closeAuthModal} />
       <ContextMenu />
       <CompareVersionsModal />
       <CrossReferencesPanel />

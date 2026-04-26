@@ -20,6 +20,7 @@ type UIStore = {
   commandPaletteOpen: boolean
   shortcutsPanelOpen: boolean
   settingsOpen: boolean
+  authModalOpen: boolean
   commentaryOpen: boolean
   mobileSidebarOpen: boolean
   toggleCommentary: () => void
@@ -33,6 +34,8 @@ type UIStore = {
   toggleShortcutsPanel: () => void
   openSettings: () => void
   closeSettings: () => void
+  openAuthModal: () => void
+  closeAuthModal: () => void
   openMobileSidebar: () => void
   closeMobileSidebar: () => void
   toggleMobileSidebar: () => void
@@ -54,6 +57,7 @@ export const useUIStore = create<UIStore>((set) => ({
   commandPaletteOpen: false,
   shortcutsPanelOpen: false,
   settingsOpen: false,
+  authModalOpen: false,
   commentaryOpen: false,
   mobileSidebarOpen: false,
   toggleCommentary: () => set((s) => ({ commentaryOpen: !s.commentaryOpen })),
@@ -68,6 +72,8 @@ export const useUIStore = create<UIStore>((set) => ({
   toggleShortcutsPanel: () => set((s) => ({ shortcutsPanelOpen: !s.shortcutsPanelOpen })),
   openSettings: () => set({ settingsOpen: true }),
   closeSettings: () => set({ settingsOpen: false }),
+  openAuthModal: () => set({ authModalOpen: true }),
+  closeAuthModal: () => set({ authModalOpen: false }),
   openMobileSidebar: () => set({ mobileSidebarOpen: true }),
   closeMobileSidebar: () => set({ mobileSidebarOpen: false }),
   toggleMobileSidebar: () => set((s) => ({ mobileSidebarOpen: !s.mobileSidebarOpen })),

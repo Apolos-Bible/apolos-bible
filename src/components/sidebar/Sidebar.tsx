@@ -5,7 +5,6 @@ import { useNotificationStore } from '@/lib/store/useNotificationStore'
 import { destroyEcho } from '@/lib/echo'
 import { BookSelector } from './BookSelector'
 import { ChapterGrid } from './ChapterGrid'
-import { AuthModal } from '@/components/auth/AuthModal'
 import { UserAvatar } from '@/components/auth/UserAvatar'
 import { cn } from '@/lib/cn'
 import { modKey } from '@/lib/platform'
@@ -66,6 +65,7 @@ export function Sidebar() {
   const openCommandPalette = useUIStore(s => s.openCommandPalette)
   const openPanel          = useUIStore(s => s.openPanel)
   const openSettings       = useUIStore(s => s.openSettings)
+  const openAuthModal      = useUIStore(s => s.openAuthModal)
   const closeMobileSidebar = useUIStore(s => s.closeMobileSidebar)
   const user               = useAuthStore(s => s.user)
   const startPolling  = useNotificationStore(s => s.startPolling)
@@ -73,7 +73,6 @@ export function Sidebar() {
   const unreadCount   = useNotificationStore(s => s.unreadCount)
   const listenForPush = useNotificationStore(s => s.listenForPush)
   const stopPush      = useNotificationStore(s => s.stopPush)
-  const [authOpen, setAuthOpen] = useState(false)
 
   const openSidebarPanel = (panel: Parameters<typeof openPanel>[0]) => {
     openPanel(panel)
@@ -119,10 +118,10 @@ export function Sidebar() {
 
       {/* Personal nav */}
       <div className="shrink-0 border-t border-border-subtle pt-1 pb-1 px-2 flex flex-col gap-0.5">
-        <NavItem icon={<StarIcon />}    label="Favorites" onClick={() => user ? openSidebarPanel('favorites') : setAuthOpen(true)} />
-        <NavItem icon={<NoteIcon />}    label="My Notes"  onClick={() => user ? openSidebarPanel('my-notes')  : setAuthOpen(true)} />
+        <NavItem icon={<StarIcon />}    label="Favorites" onClick={() => user ? openSidebarPanel('favorites') : openAuthModal()} />
+        <NavItem icon={<NoteIcon />}    label="My Notes"  onClick={() => user ? openSidebarPanel('my-notes')  : openAuthModal()} />
         <div className="relative">
-          <NavItem icon={<PeopleIcon />} label="Friends" onClick={() => user ? openSidebarPanel('friends') : setAuthOpen(true)} />
+          <NavItem icon={<PeopleIcon />} label="Friends" onClick={() => user ? openSidebarPanel('friends') : openAuthModal()} />
           {unreadCount > 0 && (
             <span className="absolute right-2 top-1/2 -translate-y-1/2 min-w-[16px] h-4 px-1 rounded-full bg-accent text-bg-primary text-2xs font-medium flex items-center justify-center pointer-events-none">
               {unreadCount > 9 ? '9+' : unreadCount}
@@ -154,7 +153,7 @@ export function Sidebar() {
           </button>
         ) : (
           <button
-            onClick={() => setAuthOpen(true)}
+            onClick={openAuthModal}
             className="w-full flex items-center gap-2.5 px-4 py-3 hover:bg-bg-tertiary transition-colors group"
           >
             <div className="w-5 h-5 rounded-full bg-bg-tertiary border border-border-subtle flex items-center justify-center shrink-0">
@@ -183,8 +182,6 @@ export function Sidebar() {
           </button>
         </div>
       </div>
-
-      <AuthModal open={authOpen} onClose={() => setAuthOpen(false)} />
     </div>
   )
 }
