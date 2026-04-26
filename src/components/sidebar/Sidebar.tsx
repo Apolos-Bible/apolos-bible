@@ -2,6 +2,7 @@ import { useState, useEffect, type ReactNode } from 'react'
 import { useUIStore } from '@/lib/store/useUIStore'
 import { useAuthStore } from '@/lib/store/useAuthStore'
 import { useNotificationStore } from '@/lib/store/useNotificationStore'
+import { useChatStore } from '@/lib/store/useChatStore'
 import { destroyEcho } from '@/lib/echo'
 import { BookSelector } from './BookSelector'
 import { ChapterGrid } from './ChapterGrid'
@@ -61,6 +62,14 @@ function PeopleIcon() {
   )
 }
 
+function ChatIcon() {
+  return (
+    <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" className="w-3.5 h-3.5">
+      <path d="M2.5 4.5a1.5 1.5 0 0 1 1.5-1.5h8a1.5 1.5 0 0 1 1.5 1.5v5a1.5 1.5 0 0 1-1.5 1.5H6.5l-3 2.5v-2.5H4a1.5 1.5 0 0 1-1.5-1.5z" strokeLinejoin="round"/>
+    </svg>
+  )
+}
+
 export function Sidebar() {
   const openCommandPalette = useUIStore(s => s.openCommandPalette)
   const openPanel          = useUIStore(s => s.openPanel)
@@ -73,6 +82,7 @@ export function Sidebar() {
   const unreadCount   = useNotificationStore(s => s.unreadCount)
   const listenForPush = useNotificationStore(s => s.listenForPush)
   const stopPush      = useNotificationStore(s => s.stopPush)
+  const chatUnread    = useChatStore(s => s.conversations.reduce((acc, c) => acc + (c.unread_count || 0), 0))
 
   const openSidebarPanel = (panel: Parameters<typeof openPanel>[0]) => {
     openPanel(panel)
@@ -125,6 +135,14 @@ export function Sidebar() {
           {unreadCount > 0 && (
             <span className="absolute right-2 top-1/2 -translate-y-1/2 min-w-[16px] h-4 px-1 rounded-full bg-accent text-bg-primary text-2xs font-medium flex items-center justify-center pointer-events-none">
               {unreadCount > 9 ? '9+' : unreadCount}
+            </span>
+          )}
+        </div>
+        <div className="relative">
+          <NavItem icon={<ChatIcon />} label="Chat" onClick={() => user ? openSidebarPanel('chat') : openAuthModal()} />
+          {chatUnread > 0 && (
+            <span className="absolute right-2 top-1/2 -translate-y-1/2 min-w-[16px] h-4 px-1 rounded-full bg-accent text-bg-primary text-2xs font-medium flex items-center justify-center pointer-events-none">
+              {chatUnread > 9 ? '9+' : chatUnread}
             </span>
           )}
         </div>

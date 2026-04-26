@@ -6,6 +6,7 @@ import { StudyPanel } from '@/components/study/StudyPanel'
 import { FavoritesPanel } from '@/components/sidebar/FavoritesPanel'
 import { MyNotesPanel } from '@/components/sidebar/MyNotesPanel'
 import { FriendsPanel } from '@/components/friends/FriendsPanel'
+import { ChatPanel } from '@/components/chat/ChatPanel'
 import { CommandPalette } from '@/components/ui/CommandPalette'
 import { Toast } from '@/components/ui/Toast'
 import { KeyboardShortcutsPanel } from '@/components/ui/KeyboardShortcutsPanel'
@@ -20,6 +21,7 @@ import { useVerseStore } from '@/lib/store/useVerseStore'
 import { useAuthStore } from '@/lib/store/useAuthStore'
 import { useBookmarkStore } from '@/lib/store/useBookmarkStore'
 import { useFriendStore } from '@/lib/store/useFriendStore'
+import { useChatStore } from '@/lib/store/useChatStore'
 
 export default function App() {
   const openCommandPalette = useUIStore(s => s.openCommandPalette)
@@ -34,6 +36,8 @@ export default function App() {
   const user = useAuthStore(s => s.user)
   const loadBookmarks = useBookmarkStore(s => s.load)
   const loadFriends = useFriendStore(s => s.load)
+  const loadChat = useChatStore(s => s.load)
+  const resetChat = useChatStore(s => s.reset)
 
   useEffect(() => {
     authInit()
@@ -41,10 +45,14 @@ export default function App() {
   }, [])
 
   useEffect(() => {
-    if (!user) return
+    if (!user) {
+      resetChat()
+      return
+    }
     loadBookmarks()
     loadFriends()
-  }, [user, loadBookmarks, loadFriends])
+    loadChat()
+  }, [user, loadBookmarks, loadFriends, loadChat, resetChat])
 
   useEffect(() => {
     const handleKey = (e: KeyboardEvent) => {
@@ -71,6 +79,7 @@ export default function App() {
   const leftPanelContent = activePanel === 'favorites' ? <FavoritesPanel />
     : activePanel === 'my-notes' ? <MyNotesPanel />
     : activePanel === 'friends' ? <FriendsPanel />
+    : activePanel === 'chat' ? <ChatPanel />
     : null
 
   return (

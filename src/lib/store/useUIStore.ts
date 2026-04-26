@@ -9,7 +9,7 @@ type Toast = {
 
 export type FontSize    = 'sm' | 'base' | 'lg'
 export type Theme       = 'dark' | 'light'
-export type Panel       = 'favorites' | 'my-notes' | 'friends'
+export type Panel       = 'favorites' | 'my-notes' | 'friends' | 'chat'
 export type ReadingMode = 'flow' | 'verse'
 
 function applyTheme(t: Theme) {
