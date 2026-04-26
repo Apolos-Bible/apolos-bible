@@ -18,6 +18,7 @@ import { useUIStore } from '@/lib/store/useUIStore'
 import { useVerseStore } from '@/lib/store/useVerseStore'
 import { useAuthStore } from '@/lib/store/useAuthStore'
 import { useBookmarkStore } from '@/lib/store/useBookmarkStore'
+import { useFriendStore } from '@/lib/store/useFriendStore'
 
 export default function App() {
   const openCommandPalette = useUIStore(s => s.openCommandPalette)
@@ -29,6 +30,7 @@ export default function App() {
   const authInit = useAuthStore(s => s.init)
   const user = useAuthStore(s => s.user)
   const loadBookmarks = useBookmarkStore(s => s.load)
+  const loadFriends = useFriendStore(s => s.load)
 
   useEffect(() => {
     authInit()
@@ -36,8 +38,10 @@ export default function App() {
   }, [])
 
   useEffect(() => {
-    if (user) loadBookmarks()
-  }, [user])
+    if (!user) return
+    loadBookmarks()
+    loadFriends()
+  }, [user, loadBookmarks, loadFriends])
 
   useEffect(() => {
     const handleKey = (e: KeyboardEvent) => {

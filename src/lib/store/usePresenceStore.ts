@@ -7,7 +7,7 @@ import { useFriendStore } from './useFriendStore'
 
 type PresenceStore = {
   others: PresenceUser[]
-  joinChapter: (chapterId: number, selfId: string) => void
+  joinChapter: (bookNumber: number, chapterNumber: number, selfId: string) => void
   leaveChapter: () => void
 }
 
@@ -16,17 +16,22 @@ let _channelName: string | null = null
 export const usePresenceStore = create<PresenceStore>((set) => ({
   others: [],
 
-  joinChapter: (chapterId, selfId) => {
+  joinChapter: (bookNumber, chapterNumber, selfId) => {
     const echo = initEcho()
+    if (!echo) return
 
     if (_channelName) {
       echo.leave(_channelName)
     }
 
-    _channelName = `chapter.${chapterId}`
+    _channelName = `chapter.${bookNumber}.${chapterNumber}`
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     ;(echo.join(_channelName) as any)
+      .error((error: unknown) => {
+        void error
+        useUIStore.getState().addToast('Realtime presence subscription failed', 'error')
+      })
       .here((users: PresenceUser[]) => {
         const friendIds = new Set(useFriendStore.getState().friends.map((f) => f.id))
         set({ others: users.filter((u) => String(u.id) !== selfId && friendIds.has(u.id)) })
@@ -44,14 +49,14 @@ export const usePresenceStore = create<PresenceStore>((set) => ({
         set((s) => ({ others: s.others.filter((u) => u.id !== user.id) }))
       })
       .listen('.verse.activity', (e: {
-        verse_id: number
+        verse_number: number
         user_id: number
         user_name: string
         action: 'noted' | 'highlighted'
       }) => {
         if (String(e.user_id) === selfId) return
 
-        useActivityStore.getState().recordActivity(e.verse_id, {
+        useActivityStore.getState().recordActivity(e.verse_number, {
           userId:   e.user_id,
           userName: e.user_name,
           action:   e.action,

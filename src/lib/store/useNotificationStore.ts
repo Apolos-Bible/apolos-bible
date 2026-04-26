@@ -71,10 +71,13 @@ export const useNotificationStore = create<NotificationStore>((set, get) => ({
   listenForPush: (userId) => {
     if (_privateChannelName) return
 
+    const echo = initEcho()
+    if (!echo) return
+
     _privateChannelName = `App.Models.User.${userId}`
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    initEcho().private(_privateChannelName).notification((notif: any) => {
+    echo.private(_privateChannelName).notification((notif: any) => {
       const classType: string = notif.type ?? ''
 
       if (classType === 'App\\Notifications\\FriendRequestReceived') {

@@ -3,8 +3,18 @@ import Pusher from 'pusher-js'
 
 let _echo: Echo<'reverb'> | null = null
 
-export function initEcho(): Echo<'reverb'> {
+function hasEchoConfig(): boolean {
+  return Boolean(
+    import.meta.env.VITE_API_URL &&
+    import.meta.env.VITE_REVERB_APP_KEY &&
+    import.meta.env.VITE_REVERB_HOST &&
+    import.meta.env.VITE_REVERB_PORT,
+  )
+}
+
+export function initEcho(): Echo<'reverb'> | null {
   if (_echo) return _echo
+  if (!hasEchoConfig()) return null
 
   const token = localStorage.getItem('verbum_token') ?? ''
 
@@ -16,7 +26,7 @@ export function initEcho(): Echo<'reverb'> {
     wssPort: Number(import.meta.env.VITE_REVERB_PORT ?? 8080),
     forceTLS: (import.meta.env.VITE_REVERB_SCHEME ?? 'http') === 'https',
     enabledTransports: ['ws', 'wss'],
-    authEndpoint: `${import.meta.env.VITE_API_URL ?? 'http://localhost:8000'}/broadcasting/auth`,
+    authEndpoint: `${import.meta.env.VITE_API_URL ?? 'http://localhost:8000'}/api/broadcasting/auth`,
     auth: {
       headers: {
         Authorization: `Bearer ${token}`,

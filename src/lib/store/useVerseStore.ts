@@ -3,6 +3,7 @@ import { bibleApi, ApiBook, ApiVersion } from '@/lib/bibleApi'
 
 export interface Book {
   id: string  // slug used as id for compatibility
+  number: number
   name: string
   slug: string
   testament: 'old' | 'new'
@@ -75,6 +76,7 @@ export const useVerseStore = create<VerseState>((set, get) => ({
       const apiBooks: ApiBook[] = await bibleApi.books(versionId)
       const books: Book[] = apiBooks.map(b => ({
         id: b.slug,
+        number: b.number,
         name: b.name,
         slug: b.slug,
         testament: testament(b.number),

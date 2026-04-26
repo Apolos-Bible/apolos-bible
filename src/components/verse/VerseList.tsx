@@ -9,6 +9,7 @@ import { useAuthStore } from '@/lib/store/useAuthStore'
 import { useUIStore } from '@/lib/store/useUIStore'
 import { usePresenceStore } from '@/lib/store/usePresenceStore'
 import { useActivityStore } from '@/lib/store/useActivityStore'
+import { useFriendStore } from '@/lib/store/useFriendStore'
 import { useContextMenuStore } from '@/lib/store/useContextMenuStore'
 import { useCrossRefStore } from '@/lib/store/useCrossRefStore'
 import { modKey } from '@/lib/platform'
@@ -131,6 +132,7 @@ export function VerseList() {
   const joinChapter     = usePresenceStore((s) => s.joinChapter)
   const leaveChapter    = usePresenceStore((s) => s.leaveChapter)
   const activityByVerse = useActivityStore((s) => s.activityByVerse)
+  const friendIds       = useFriendStore((s) => s.friends.map((f) => f.id).join(','))
 
   const openMenu            = useContextMenuStore((s) => s.openMenu)
   const verseIdsWithRefs    = useCrossRefStore((s) => s.verseIdsWithRefs)
@@ -149,10 +151,11 @@ export function VerseList() {
   }, [chapterId])
 
   useEffect(() => {
-    if (!user || !chapterId) return
-    joinChapter(chapterId, String(user.id))
+    const bookNumber = books.find((b) => b.slug === selectedBook)?.number
+    if (!user || !bookNumber) return
+    joinChapter(bookNumber, selectedChapter, String(user.id))
     return () => leaveChapter()
-  }, [user?.id, chapterId])
+  }, [user?.id, books, selectedBook, selectedChapter, friendIds, joinChapter, leaveChapter])
 
   const bookName    = books.find((b) => b.slug === selectedBook)?.name ?? selectedBook
   const currentBook = books.find((b) => b.slug === selectedBook)
@@ -372,7 +375,7 @@ export function VerseList() {
                   const isSelected      = verse.id === selectedVerseId
                   const verseHighlights = highlights[verse.apiId] ?? []
                   const hasActivity     = (notes[verse.apiId]?.length ?? 0) > 0 || verseHighlights.length > 0
-                  const hasFriendActivity = (activityByVerse[verse.apiId]?.length ?? 0) > 0
+                  const hasFriendActivity = (activityByVerse[verse.verse]?.length ?? 0) > 0
                   const isBursting      = burstId === verse.apiId
                   const isBookmarked    = bookmarkedIds.has(verse.apiId)
                   const hasCrossRefs    = verseIdsWithRefs.has(verse.apiId)
@@ -414,7 +417,7 @@ export function VerseList() {
                   const isSelected      = verse.id === selectedVerseId
                   const verseHighlights = highlights[verse.apiId] ?? []
                   const hasActivity     = (notes[verse.apiId]?.length ?? 0) > 0 || verseHighlights.length > 0
-                  const hasFriendActivity = (activityByVerse[verse.apiId]?.length ?? 0) > 0
+                  const hasFriendActivity = (activityByVerse[verse.verse]?.length ?? 0) > 0
                   const isBursting      = burstId === verse.apiId
                   const isBookmarked    = bookmarkedIds.has(verse.apiId)
                   const hasCrossRefs    = verseIdsWithRefs.has(verse.apiId)
