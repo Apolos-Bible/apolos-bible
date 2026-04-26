@@ -35,6 +35,7 @@ interface VerseState {
   selectBook: (slug: string) => void
   selectChapter: (chapter: number) => void
   selectVerse: (id: string | null) => void
+  openVerse: (slug: string, chapter: number, verse: number) => Promise<void>
   navigateVerse: (dir: 'next' | 'prev') => void
   navigateChapter: (dir: 'next' | 'prev') => void
   loadChapter: (slug: string, chapter: number) => Promise<void>
@@ -125,6 +126,13 @@ export const useVerseStore = create<VerseState>((set, get) => ({
   },
 
   selectVerse: (id) => set({ selectedVerseId: id }),
+
+  openVerse: async (slug, chapter, verse) => {
+    set({ selectedBook: slug, selectedChapter: chapter, selectedVerseId: null })
+    await get().loadChapter(slug, chapter)
+    const verseId = `${slug}-${chapter}-${verse}`
+    set({ selectedVerseId: verseId })
+  },
 
   navigateVerse: (dir) => {
     const { verses, selectedVerseId } = get()

@@ -7,8 +7,7 @@ import { useUIStore } from '@/lib/store/useUIStore'
 export function FavoritesPanel() {
   const user = useAuthStore(s => s.user)
   const { bookmarks, loading, load } = useBookmarkStore()
-  const selectBook = useVerseStore(s => s.selectBook)
-  const selectChapter = useVerseStore(s => s.selectChapter)
+  const openVerse = useVerseStore(s => s.openVerse)
   const closePanel = useUIStore(s => s.closePanel)
 
   useEffect(() => {
@@ -37,8 +36,7 @@ export function FavoritesPanel() {
             <button
               key={b.id}
               onClick={() => {
-                selectBook(b.verse.slug)
-                selectChapter(b.verse.chapter)
+                void openVerse(b.verse.slug, b.verse.chapter, b.verse.number)
                 closePanel()
               }}
               className="w-full text-left px-4 py-3 border-b border-border-subtle hover:bg-bg-secondary transition-colors"

@@ -20,9 +20,7 @@ interface UserNote {
 
 export function MyNotesPanel() {
   const user = useAuthStore(s => s.user)
-  const selectBook = useVerseStore(s => s.selectBook)
-  const selectChapter = useVerseStore(s => s.selectChapter)
-  const selectVerse = useVerseStore(s => s.selectVerse)
+  const openVerse = useVerseStore(s => s.openVerse)
   const closePanel = useUIStore(s => s.closePanel)
   const [notes, setNotes] = useState<UserNote[]>([])
   const [loading, setLoading] = useState(false)
@@ -43,11 +41,7 @@ export function MyNotesPanel() {
   )
 
   const handleNoteClick = (note: UserNote) => {
-    selectBook(note.verse.slug)
-    selectChapter(note.verse.chapter)
-    // After navigation, find the verse string id and select it
-    const verseId = `${note.verse.slug}-${note.verse.chapter}-${note.verse.number}`
-    selectVerse(verseId)
+    void openVerse(note.verse.slug, note.verse.chapter, note.verse.number)
     closePanel()
   }
 

@@ -7,7 +7,7 @@ import { cn } from '@/lib/cn'
 
 export function CommandPalette() {
   const { commandPaletteOpen, closeCommandPalette } = useUIStore()
-  const { selectBook, selectVerse } = useVerseStore()
+  const { openVerse } = useVerseStore()
   const books = useVerseStore((s) => s.books)
   const versionId = useVerseStore((s) => s.versionId)
   const [query, setQuery] = useState('')
@@ -125,7 +125,7 @@ export function CommandPalette() {
                     key={verse.id}
                     value={`verse-${verse.id}`}
                     onSelect={() => {
-                      selectVerse(`${verse.slug}-${verse.chapter}-${verse.verse}`)
+                      void openVerse(verse.slug, verse.chapter, verse.verse)
                       closeCommandPalette()
                     }}
                     className={cn(

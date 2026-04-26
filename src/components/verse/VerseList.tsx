@@ -163,6 +163,15 @@ export function VerseList() {
   }, [chapterId])
 
   useEffect(() => {
+    if (!selectedVerseId) return
+    const el = document.querySelector<HTMLElement>(`[data-verse-id="${selectedVerseId}"]`)
+    if (!el) return
+    requestAnimationFrame(() => {
+      el.scrollIntoView({ block: 'center', behavior: 'smooth' })
+    })
+  }, [selectedVerseId, verses.length, readingMode])
+
+  useEffect(() => {
     const bookNumber = books.find((b) => b.slug === selectedBook)?.number
     if (!user || !bookNumber) return
     joinChapter(bookNumber, selectedChapter, String(user.id))
@@ -454,6 +463,7 @@ export function VerseList() {
                   return (
                     <span
                       key={verse.id}
+                      data-verse-id={verse.id}
                       onClick={() => selectVerse(isSelected ? null : verse.id)}
                       onContextMenu={(e) => handleContextMenu(e, verse)}
                       className={cn(
@@ -496,6 +506,7 @@ export function VerseList() {
                   return (
                     <div
                       key={verse.id}
+                      data-verse-id={verse.id}
                       onClick={() => selectVerse(isSelected ? null : verse.id)}
                       onContextMenu={(e) => handleContextMenu(e, verse)}
                       className={cn(
