@@ -148,17 +148,7 @@ export function PanelLayout({ sidebar, main, panel, leftPanel }: PanelLayoutProp
         >
           <div className="absolute inset-0 bg-black/60" onClick={() => {}} />
           <div className="absolute inset-x-0 bottom-0 top-20 rounded-t-2xl bg-bg-secondary shadow-2xl">
-            <button
-              type="button"
-              onClick={closeMobileStudyPanel}
-              className="absolute right-3 top-3 z-10 inline-flex h-8 w-8 items-center justify-center rounded-md border border-border-subtle bg-bg-primary text-text-muted shadow-sm"
-              aria-label="Close study panel"
-            >
-              <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" className="h-4 w-4">
-                <path d="M3 3l10 10M13 3L3 13" strokeLinecap="round" />
-              </svg>
-            </button>
-            <div className="h-full overflow-hidden pt-12">
+            <div className="h-full overflow-hidden">
               {panel}
             </div>
           </div>

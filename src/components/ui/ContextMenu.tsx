@@ -2,9 +2,11 @@ import { useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { useContextMenuStore } from '@/lib/store/useContextMenuStore'
 import { cn } from '@/lib/cn'
+import { useIsMobile } from '@/lib/useIsMobile'
 
 export function ContextMenu() {
   const { open, x, y, items, closeMenu } = useContextMenuStore()
+  const isMobile = useIsMobile()
 
   const menuRef = useRef<HTMLDivElement>(null)
   const [pos, setPos]       = useState({ x: 0, y: 0 })
@@ -103,7 +105,7 @@ export function ContextMenu() {
                 </span>
               )}
               <span className="flex-1 leading-none">{item.label}</span>
-              {item.shortcut && (
+              {!isMobile && item.shortcut && (
                 <span className="text-[10px] text-text-muted ml-4 shrink-0">{item.shortcut}</span>
               )}
             </button>

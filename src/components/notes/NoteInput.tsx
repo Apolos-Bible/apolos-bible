@@ -8,6 +8,7 @@ import { useNoteStore } from '@/lib/store/useNoteStore'
 import { useUIStore } from '@/lib/store/useUIStore'
 import { cn } from '@/lib/cn'
 import { modKey } from '@/lib/platform'
+import { useIsMobile } from '@/lib/useIsMobile'
 
 interface NoteInputProps {
   verseApiId: number
@@ -24,6 +25,7 @@ const NoteInput = forwardRef<NoteInputHandle, NoteInputProps>(
     const textareaRef = useRef<HTMLTextAreaElement>(null)
     const addNote = useNoteStore((s) => s.addNote)
     const addToast = useUIStore((s) => s.addToast)
+    const isMobile = useIsMobile()
 
     useImperativeHandle(ref, () => ({
       focus() {
@@ -76,7 +78,7 @@ const NoteInput = forwardRef<NoteInputHandle, NoteInputProps>(
           onChange={handleChange}
           onKeyDown={handleKeyDown}
           rows={1}
-          placeholder={`Add a note… (${modKey}↵ to save)`}
+          placeholder={isMobile ? 'Add a note…' : `Add a note… (${modKey}↵ to save)`}
           className={cn(
             'w-full resize-none bg-bg-primary rounded-md border border-border-subtle',
             'text-sm text-text-primary placeholder:text-text-muted',

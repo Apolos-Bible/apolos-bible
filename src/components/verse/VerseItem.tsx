@@ -8,6 +8,7 @@ import { useUIStore } from '@/lib/store/useUIStore'
 import { useHighlightStore } from '@/lib/store/useHighlightStore'
 import { VerseText } from '@/components/verse/VerseText'
 import { cn } from '@/lib/cn'
+import { useIsMobile } from '@/lib/useIsMobile'
 
 interface VerseItemProps {
   verse: Verse
@@ -23,6 +24,7 @@ export function VerseItem({ verse, isSelected, noteCount, highlightCount }: Vers
   const toggleBookmark = useBookmarkStore((s) => s.toggle)
   const isBookmarked = useBookmarkStore((s) => s.isBookmarked(verse.apiId))
   const verseHighlights = useHighlightStore((s) => s.highlights[verse.apiId]) ?? []
+  const isMobile = useIsMobile()
 
   return (
     <div
@@ -93,38 +95,40 @@ export function VerseItem({ verse, isSelected, noteCount, highlightCount }: Vers
           )}
 
           {/* Quick-action highlight button — visible on hover */}
-          <button
-            onClick={(e) => {
-              e.stopPropagation()
-              selectVerse(verse.id)
-            }}
-            title="Highlight verse (H)"
-            aria-label="Highlight verse"
-            className={cn(
-              'opacity-0 group-hover:opacity-100 transition-opacity duration-100',
-              'text-2xs text-text-muted hover:text-accent px-1 py-0.5 rounded',
-              'border border-transparent hover:border-border-subtle',
-              'flex items-center gap-0.5',
-            )}
-          >
-            <svg
-              width="10"
-              height="10"
-              viewBox="0 0 12 12"
-              fill="none"
-              aria-hidden="true"
+          {!isMobile && (
+            <button
+              onClick={(e) => {
+                e.stopPropagation()
+                selectVerse(verse.id)
+              }}
+            title={isMobile ? 'Highlight verse' : 'Highlight verse (H)'}
+              aria-label="Highlight verse"
+              className={cn(
+                'opacity-0 group-hover:opacity-100 transition-opacity duration-100',
+                'text-2xs text-text-muted hover:text-accent px-1 py-0.5 rounded',
+                'border border-transparent hover:border-border-subtle',
+                'flex items-center gap-0.5',
+              )}
             >
-              <path
-                d="M3 9l1.5-1.5L8 4 9.5 5.5 6 9H3zM8 4L9.5 2.5l1 1L9 5"
-                stroke="currentColor"
-                strokeWidth="1.2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
+              <svg
+                width="10"
+                height="10"
+                viewBox="0 0 12 12"
                 fill="none"
-              />
-            </svg>
-            <span>H</span>
-          </button>
+                aria-hidden="true"
+              >
+                <path
+                  d="M3 9l1.5-1.5L8 4 9.5 5.5 6 9H3zM8 4L9.5 2.5l1 1L9 5"
+                  stroke="currentColor"
+                  strokeWidth="1.2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  fill="none"
+                />
+              </svg>
+              <span>H</span>
+            </button>
+          )}
 
           {/* Bookmark button — visible on hover, only when logged in */}
           {user && (

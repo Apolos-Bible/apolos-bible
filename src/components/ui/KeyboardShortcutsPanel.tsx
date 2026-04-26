@@ -4,6 +4,7 @@ import { useEffect } from 'react'
 import { useUIStore } from '@/lib/store/useUIStore'
 import { cn } from '@/lib/cn'
 import { modKey } from '@/lib/platform'
+import { useIsMobile } from '@/lib/useIsMobile'
 
 const SHORTCUTS = [
   { key: 'J', description: 'Navigate to next verse' },
@@ -17,6 +18,7 @@ const SHORTCUTS = [
 
 export function KeyboardShortcutsPanel() {
   const { shortcutsPanelOpen, toggleShortcutsPanel } = useUIStore()
+  const isMobile = useIsMobile()
 
   useEffect(() => {
     if (!shortcutsPanelOpen) return
@@ -27,7 +29,7 @@ export function KeyboardShortcutsPanel() {
     return () => window.removeEventListener('keydown', handler)
   }, [shortcutsPanelOpen, toggleShortcutsPanel])
 
-  if (!shortcutsPanelOpen) return null
+  if (!shortcutsPanelOpen || isMobile) return null
 
   return (
     <div
