@@ -30,6 +30,7 @@ function dayLabel(iso: string): string {
 
 export function ChatThread({ conversation, onBack }: ChatThreadProps) {
   const messages       = useChatStore(s => s.messages[conversation.id] ?? [])
+  const messagesLoaded = useChatStore(s => s.messages[conversation.id] !== undefined)
   const loading        = useChatStore(s => s.loadingThread[conversation.id])
   const loadMessages   = useChatStore(s => s.loadMessages)
   const loadOlder      = useChatStore(s => s.loadOlder)
@@ -40,8 +41,8 @@ export function ChatThread({ conversation, onBack }: ChatThreadProps) {
   const lastCountRef = useRef(0)
 
   useEffect(() => {
-    if (!messages.length && !loading) loadMessages(conversation.id)
-  }, [conversation.id, loadMessages, messages.length, loading])
+    if (!messagesLoaded) loadMessages(conversation.id)
+  }, [conversation.id, messagesLoaded, loadMessages])
 
   useEffect(() => {
     const el = scrollRef.current

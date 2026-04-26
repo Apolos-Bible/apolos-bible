@@ -158,11 +158,14 @@ export const useChatStore = create<ChatState>((set, get) => ({
   select: async (id) => {
     set({ selectedId: id })
     if (id === null) return
-    if (!get().messages[id]) await get().loadMessages(id)
+    if (get().messages[id] === undefined) await get().loadMessages(id)
     await get().markRead(id)
   },
 
   loadMessages: async (id) => {
+    const state = get()
+    if (state.loadingThread[id]) return
+    if (state.messages[id] !== undefined) return
     set((s) => ({ loadingThread: { ...s.loadingThread, [id]: true } }))
     try {
       const msgs = await chatApi.messages(id)
