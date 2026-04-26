@@ -14,7 +14,11 @@ export function PanelLayout({ sidebar, main, panel, leftPanel }: PanelLayoutProp
   const books = useVerseStore((s) => s.books)
   const selectedBook = useVerseStore((s) => s.selectedBook)
   const selectedChapter = useVerseStore((s) => s.selectedChapter)
+  const selectedVerseId = useVerseStore((s) => s.selectedVerseId)
+  const selectVerse = useVerseStore((s) => s.selectVerse)
   const activePanel = useUIStore((s) => s.activePanel)
+  const commentaryOpen = useUIStore((s) => s.commentaryOpen)
+  const toggleCommentary = useUIStore((s) => s.toggleCommentary)
   const closePanel = useUIStore((s) => s.closePanel)
   const openCommandPalette = useUIStore((s) => s.openCommandPalette)
   const mobileSidebarOpen = useUIStore((s) => s.mobileSidebarOpen)
@@ -29,6 +33,15 @@ export function PanelLayout({ sidebar, main, panel, leftPanel }: PanelLayoutProp
       : activePanel === 'friends'
         ? 'Friends'
         : null
+
+  const closeMobileStudyPanel = () => {
+    if (commentaryOpen) {
+      toggleCommentary()
+    }
+    if (selectedVerseId) {
+      selectVerse(null)
+    }
+  }
 
   return (
     <div className="h-[100dvh] md:h-screen w-full overflow-hidden bg-bg-primary">
@@ -135,7 +148,17 @@ export function PanelLayout({ sidebar, main, panel, leftPanel }: PanelLayoutProp
         >
           <div className="absolute inset-0 bg-black/60" onClick={() => {}} />
           <div className="absolute inset-x-0 bottom-0 top-20 rounded-t-2xl bg-bg-secondary shadow-2xl">
-            <div className="h-full overflow-hidden">
+            <button
+              type="button"
+              onClick={closeMobileStudyPanel}
+              className="absolute right-3 top-3 z-10 inline-flex h-8 w-8 items-center justify-center rounded-md border border-border-subtle bg-bg-primary text-text-muted shadow-sm"
+              aria-label="Close study panel"
+            >
+              <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" className="h-4 w-4">
+                <path d="M3 3l10 10M13 3L3 13" strokeLinecap="round" />
+              </svg>
+            </button>
+            <div className="h-full overflow-hidden pt-12">
               {panel}
             </div>
           </div>
