@@ -24,12 +24,12 @@ export function CrossReferencesPanel() {
 
   return (
     <div
-      className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-start justify-end"
+      className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-end md:items-start md:justify-end"
       onClick={closePanel}
     >
       <div
-        className="mt-16 mr-4 mb-4 w-96 bg-bg-secondary rounded-xl border border-border-subtle shadow-2xl flex flex-col overflow-hidden"
-        style={{ maxHeight: 'calc(100vh - 5rem)' }}
+        className="w-full md:w-96 bg-bg-secondary rounded-t-2xl md:rounded-xl border border-border-subtle shadow-2xl flex flex-col overflow-hidden mx-0 md:mr-4 md:mb-4 md:mt-16"
+        style={{ maxHeight: 'calc(100vh - 4rem)' }}
         onClick={e => e.stopPropagation()}
       >
         {/* Header */}

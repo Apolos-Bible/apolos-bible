@@ -66,6 +66,7 @@ export function Sidebar() {
   const openCommandPalette = useUIStore(s => s.openCommandPalette)
   const openPanel          = useUIStore(s => s.openPanel)
   const openSettings       = useUIStore(s => s.openSettings)
+  const closeMobileSidebar = useUIStore(s => s.closeMobileSidebar)
   const user               = useAuthStore(s => s.user)
   const startPolling  = useNotificationStore(s => s.startPolling)
   const stopPolling   = useNotificationStore(s => s.stopPolling)
@@ -73,6 +74,11 @@ export function Sidebar() {
   const listenForPush = useNotificationStore(s => s.listenForPush)
   const stopPush      = useNotificationStore(s => s.stopPush)
   const [authOpen, setAuthOpen] = useState(false)
+
+  const openSidebarPanel = (panel: Parameters<typeof openPanel>[0]) => {
+    openPanel(panel)
+    closeMobileSidebar()
+  }
 
   useEffect(() => {
     if (!user) {
@@ -91,7 +97,7 @@ export function Sidebar() {
   }, [user, startPolling, stopPolling, listenForPush, stopPush])
 
   return (
-    <div className="w-sidebar h-screen bg-bg-secondary border-r border-border-subtle flex flex-col overflow-hidden">
+    <div className="w-full h-full bg-bg-secondary border-r border-border-subtle flex flex-col overflow-hidden">
       {/* App name */}
       <div className="px-4 py-3 shrink-0">
         <span className="font-medium text-md">
@@ -113,10 +119,10 @@ export function Sidebar() {
 
       {/* Personal nav */}
       <div className="shrink-0 border-t border-border-subtle pt-1 pb-1 px-2 flex flex-col gap-0.5">
-        <NavItem icon={<StarIcon />}    label="Favorites" onClick={() => user ? openPanel('favorites') : setAuthOpen(true)} />
-        <NavItem icon={<NoteIcon />}    label="My Notes"  onClick={() => user ? openPanel('my-notes')  : setAuthOpen(true)} />
+        <NavItem icon={<StarIcon />}    label="Favorites" onClick={() => user ? openSidebarPanel('favorites') : setAuthOpen(true)} />
+        <NavItem icon={<NoteIcon />}    label="My Notes"  onClick={() => user ? openSidebarPanel('my-notes')  : setAuthOpen(true)} />
         <div className="relative">
-          <NavItem icon={<PeopleIcon />} label="Friends" onClick={() => user ? openPanel('friends') : setAuthOpen(true)} />
+          <NavItem icon={<PeopleIcon />} label="Friends" onClick={() => user ? openSidebarPanel('friends') : setAuthOpen(true)} />
           {unreadCount > 0 && (
             <span className="absolute right-2 top-1/2 -translate-y-1/2 min-w-[16px] h-4 px-1 rounded-full bg-accent text-bg-primary text-2xs font-medium flex items-center justify-center pointer-events-none">
               {unreadCount > 9 ? '9+' : unreadCount}
@@ -164,7 +170,7 @@ export function Sidebar() {
         )}
 
         {/* Search hint */}
-        <div className="px-4 pb-3">
+        <div className="hidden px-4 pb-3 md:block">
           <button
             onClick={openCommandPalette}
             className="text-2xs text-text-muted hover:text-text-secondary transition-colors cursor-pointer"

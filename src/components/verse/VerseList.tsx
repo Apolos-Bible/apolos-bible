@@ -61,6 +61,16 @@ function IconXRef() {
   )
 }
 
+function IconMore() {
+  return (
+    <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true">
+      <circle cx="3.5" cy="8" r="1.2" />
+      <circle cx="8" cy="8" r="1.2" />
+      <circle cx="12.5" cy="8" r="1.2" />
+    </svg>
+  )
+}
+
 function ColorDot({ color }: { color: string }) {
   return <span className="w-3 h-3 rounded-full shrink-0 inline-block" style={{ backgroundColor: color }} />
 }
@@ -244,6 +254,11 @@ export function VerseList() {
     openMenu(e.clientX, e.clientY, buildVerseMenu(verse))
   }
 
+  function openVerseMenuFromButton(target: HTMLElement, verse: Verse) {
+    const rect = target.getBoundingClientRect()
+    openMenu(rect.right - 12, rect.bottom + 8, buildVerseMenu(verse))
+  }
+
   // ── Verse number pill ────────────────────────────────────────────────────
 
   function VerseNum({ n, isSelected, hasActivity, hasFriendActivity, hasCrossRefs }: {
@@ -275,11 +290,11 @@ export function VerseList() {
   }
 
   return (
-    <div className="bg-bg-secondary flex flex-col h-screen relative">
+    <div className="bg-bg-secondary flex flex-col h-full md:h-screen relative">
       <BreadcrumbBar />
 
       {/* Floating chapter navigation */}
-      <div className="pointer-events-none absolute inset-0 z-20 flex items-center">
+      <div className="pointer-events-none absolute inset-x-0 top-16 bottom-0 z-20 hidden md:flex items-center">
         <div className="w-full max-w-[684px] mx-auto flex justify-between px-0">
         <Tooltip label={bookIdx === 0 && selectedChapter === 1 ? '' : 'Previous chapter'} side="top">
           <button
@@ -327,8 +342,37 @@ export function VerseList() {
         <div className="flex-1 overflow-y-auto relative">
 
           {/* Reading mode toggle + toolbar */}
-          <div className="sticky top-0 z-10 flex justify-end px-4 py-2 pointer-events-none">
-            <div className="flex gap-2 items-center">
+          <div className="sticky top-0 z-10 border-b border-border-subtle/60 bg-bg-secondary/95 backdrop-blur-sm px-3 py-2 md:border-b-0 md:bg-transparent md:px-4 md:py-2 pointer-events-none">
+            <div className="flex flex-wrap items-center justify-between gap-2 md:justify-end">
+              <div className="flex items-center gap-2 pointer-events-auto md:hidden">
+                <button
+                  onClick={() => navigateChapter('prev')}
+                  disabled={prevDisabled}
+                  aria-label="Previous chapter"
+                  className={cn(
+                    'h-9 min-w-9 rounded-md border px-2 text-xs transition-colors',
+                    prevDisabled
+                      ? 'opacity-40 border-border-subtle text-text-muted'
+                      : 'border-border-subtle bg-bg-tertiary text-text-secondary',
+                  )}
+                >
+                  Prev
+                </button>
+                <button
+                  onClick={() => navigateChapter('next')}
+                  disabled={nextDisabled}
+                  aria-label="Next chapter"
+                  className={cn(
+                    'h-9 min-w-9 rounded-md border px-2 text-xs transition-colors',
+                    nextDisabled
+                      ? 'opacity-40 border-border-subtle text-text-muted'
+                      : 'border-border-subtle bg-bg-tertiary text-text-secondary',
+                  )}
+                >
+                  Next
+                </button>
+              </div>
+              <div className="flex gap-2 items-center">
             <ReadingToolbar />
             <div className="flex gap-0.5 bg-bg-tertiary border border-border-subtle rounded-md p-0.5 pointer-events-auto shadow-sm">
               <Tooltip label="Verse mode" side="bottom">
@@ -354,14 +398,15 @@ export function VerseList() {
                 </button>
               </Tooltip>
             </div>
+              </div>
             </div>
           </div>
 
-          <div className="max-w-[660px] mx-auto px-10 pt-4 pb-16">
+          <div className="max-w-[660px] mx-auto px-4 md:px-10 pt-4 pb-16">
 
             {/* Chapter heading */}
-            <div className="mb-8 text-center">
-              <h1 className="font-reading text-2xl font-medium tracking-tight text-text-primary">{bookName}</h1>
+            <div className="mb-6 md:mb-8 text-center">
+              <h1 className="font-reading text-xl md:text-2xl font-medium tracking-tight text-text-primary">{bookName}</h1>
               <p className="mt-1 text-[10px] font-sans font-semibold uppercase tracking-[0.18em] text-accent/70">
                 Chapter {selectedChapter}
               </p>
@@ -370,7 +415,7 @@ export function VerseList() {
 
             {/* ── Flow mode ── */}
             {readingMode === 'flow' && (
-              <p className={cn('font-reading leading-[2.6] tracking-wide text-text-primary select-text', textSizeClass)}>
+              <p className={cn('font-reading leading-[2.2] md:leading-[2.6] tracking-wide text-text-primary select-text', textSizeClass)}>
                 {verses.map((verse, i) => {
                   const isSelected      = verse.id === selectedVerseId
                   const verseHighlights = highlights[verse.apiId] ?? []
@@ -428,7 +473,7 @@ export function VerseList() {
                       onClick={() => selectVerse(isSelected ? null : verse.id)}
                       onContextMenu={(e) => handleContextMenu(e, verse)}
                       className={cn(
-                        'group flex gap-3 cursor-pointer rounded-md px-2 py-1 -mx-2 transition-[background-color] duration-150',
+                        'group flex gap-3 cursor-pointer rounded-md px-2 py-2 md:py-1 -mx-2 transition-[background-color] duration-150',
                         isBursting ? 'verse-burst-block' : '',
                         isSelected ? 'bg-accent/[0.08]' : 'hover:bg-black/[0.03]',
                       )}
@@ -456,12 +501,23 @@ export function VerseList() {
                           text={verse.text}
                           highlights={verseHighlights}
                           className={cn(
-                            'font-reading leading-[1.95] text-text-primary',
+                            'font-reading leading-[1.85] md:leading-[1.95] text-text-primary',
                             isBookmarked && 'bg-[#e06c7520] rounded-sm',
                             textSizeClass,
                           )}
                         />
                       </div>
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          openVerseMenuFromButton(e.currentTarget, verse)
+                        }}
+                        className="md:hidden shrink-0 self-start mt-0.5 inline-flex h-8 w-8 items-center justify-center rounded-md text-text-muted hover:text-text-primary hover:bg-bg-tertiary"
+                        aria-label={`Open actions for verse ${verse.verse}`}
+                      >
+                        <IconMore />
+                      </button>
                     </div>
                   )
                 })}

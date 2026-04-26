@@ -129,7 +129,7 @@ export function StudyPanel() {
   }
 
   return (
-    <div className="w-panel bg-bg-secondary border-l border-border-subtle h-screen flex flex-col">
+    <div className="w-full md:w-panel bg-bg-secondary border-l border-border-subtle h-full md:h-screen flex flex-col">
       {/* Header */}
       <PanelHeader
         title={

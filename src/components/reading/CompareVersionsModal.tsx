@@ -51,7 +51,7 @@ export function CompareVersionsModal() {
       onClick={closeCompare}
     >
       <div
-        className="flex flex-col flex-1 mt-16 mb-4 mx-4 bg-bg-secondary rounded-xl border border-border-subtle shadow-2xl overflow-hidden"
+        className="flex flex-col flex-1 mt-4 md:mt-16 mb-0 md:mb-4 mx-0 md:mx-4 bg-bg-secondary rounded-none md:rounded-xl border border-border-subtle shadow-2xl overflow-hidden"
         onClick={e => e.stopPropagation()}
       >
         {/* Header */}
@@ -69,9 +69,9 @@ export function CompareVersionsModal() {
         </div>
 
         {/* Columns */}
-        <div className="flex-1 overflow-hidden flex overflow-x-auto divide-x divide-border-subtle">
+        <div className="flex-1 overflow-hidden flex overflow-x-auto divide-x divide-border-subtle snap-x snap-mandatory">
           {results.map(({ version, data, loading, error, notAvailable }, idx) => (
-            <div key={version.id} className="flex flex-col overflow-hidden shrink-0 w-72">
+            <div key={version.id} className="flex flex-col overflow-hidden shrink-0 w-[86vw] md:w-72 snap-start">
               <div className="px-4 py-2 border-b border-border-subtle shrink-0 bg-bg-tertiary">
                 <span className="text-xs font-semibold text-accent">{version.abbreviation}</span>
                 <span className="text-2xs text-text-muted ml-1.5">{version.name}</span>

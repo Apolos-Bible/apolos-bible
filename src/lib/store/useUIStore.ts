@@ -21,6 +21,7 @@ type UIStore = {
   shortcutsPanelOpen: boolean
   settingsOpen: boolean
   commentaryOpen: boolean
+  mobileSidebarOpen: boolean
   toggleCommentary: () => void
   toasts: Toast[]
   activePanel: Panel | null
@@ -32,6 +33,9 @@ type UIStore = {
   toggleShortcutsPanel: () => void
   openSettings: () => void
   closeSettings: () => void
+  openMobileSidebar: () => void
+  closeMobileSidebar: () => void
+  toggleMobileSidebar: () => void
   addToast: (message: string, type?: Toast['type'], options?: { action?: Toast['action']; duration?: number }) => string
   removeToast: (id: string) => void
   openPanel: (panel: Panel) => void
@@ -51,6 +55,7 @@ export const useUIStore = create<UIStore>((set) => ({
   shortcutsPanelOpen: false,
   settingsOpen: false,
   commentaryOpen: false,
+  mobileSidebarOpen: false,
   toggleCommentary: () => set((s) => ({ commentaryOpen: !s.commentaryOpen })),
   toasts: [],
   activePanel: null,
@@ -63,6 +68,9 @@ export const useUIStore = create<UIStore>((set) => ({
   toggleShortcutsPanel: () => set((s) => ({ shortcutsPanelOpen: !s.shortcutsPanelOpen })),
   openSettings: () => set({ settingsOpen: true }),
   closeSettings: () => set({ settingsOpen: false }),
+  openMobileSidebar: () => set({ mobileSidebarOpen: true }),
+  closeMobileSidebar: () => set({ mobileSidebarOpen: false }),
+  toggleMobileSidebar: () => set((s) => ({ mobileSidebarOpen: !s.mobileSidebarOpen })),
 
   addToast: (message, type = 'info', options) => {
     const id = `toast-${Date.now()}`

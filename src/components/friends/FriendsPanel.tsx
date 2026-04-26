@@ -76,7 +76,7 @@ export function FriendsPanel() {
   }
 
   return (
-    <div className="w-panel h-full bg-bg-primary border-r border-border-subtle flex flex-col overflow-hidden">
+    <div className="w-full md:w-panel h-full bg-bg-primary border-r border-border-subtle flex flex-col overflow-hidden">
       {/* Header */}
       <div className="flex items-center justify-between px-4 py-3 border-b border-border-subtle shrink-0">
         <span className="text-sm font-medium text-text-primary">Friends</span>
