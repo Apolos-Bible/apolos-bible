@@ -31,7 +31,7 @@ export function PanelLayout({ sidebar, main, panel, leftPanel }: PanelLayoutProp
         : null
 
   return (
-    <div className="h-screen w-full overflow-hidden bg-bg-primary">
+    <div className="h-[100dvh] md:h-screen w-full overflow-hidden bg-bg-primary">
       <div className="md:hidden flex h-full flex-col">
         <header className="flex items-center gap-3 border-b border-border-subtle bg-bg-secondary px-4 py-3 shrink-0">
           <button
@@ -72,7 +72,7 @@ export function PanelLayout({ sidebar, main, panel, leftPanel }: PanelLayoutProp
           )}
         </header>
 
-        <main className="min-h-0 flex-1 overflow-y-auto">
+        <main className="min-h-0 flex-1 overflow-hidden">
           {main}
         </main>
 
