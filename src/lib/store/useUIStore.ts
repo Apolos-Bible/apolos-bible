@@ -49,7 +49,7 @@ type UIStore = {
 }
 
 const savedFontSize    = (localStorage.getItem('fontSize')    as FontSize)    ?? 'base'
-const savedTheme       = (localStorage.getItem('theme')       as Theme)       ?? 'dark'
+const savedTheme       = (localStorage.getItem('theme')       as Theme)       ?? 'light'
 const savedReadingMode = (localStorage.getItem('readingMode') as ReadingMode) ?? 'verse'
 applyTheme(savedTheme)
 
