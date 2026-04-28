@@ -7,7 +7,7 @@ import { cn } from '@/lib/cn'
 
 export function CommandPalette() {
   const { commandPaletteOpen, closeCommandPalette } = useUIStore()
-  const { openVerse } = useVerseStore()
+  const { selectBook, openVerse } = useVerseStore()
   const books = useVerseStore((s) => s.books)
   const versionId = useVerseStore((s) => s.versionId)
   const [query, setQuery] = useState('')
@@ -43,6 +43,11 @@ export function CommandPalette() {
   const filteredBooks = books.filter((b) =>
     b.name.toLowerCase().includes(query.toLowerCase())
   )
+
+  const handleBookSelect = (bookId: string) => {
+    selectBook(bookId)
+    closeCommandPalette()
+  }
 
   return (
     <div
@@ -90,11 +95,9 @@ export function CommandPalette() {
                 {filteredBooks.map((book) => (
                   <Command.Item
                     key={book.id}
-                    value={`book-${book.id}`}
-                    onSelect={() => {
-                      selectBook(book.id)
-                      closeCommandPalette()
-                    }}
+                    value={book.name}
+                    onSelect={() => handleBookSelect(book.id)}
+                    onClick={() => handleBookSelect(book.id)}
                     className={cn(
                       'px-4 py-2 cursor-pointer text-sm text-text-secondary',
                       'hover:bg-bg-tertiary hover:text-text-primary',
@@ -123,8 +126,12 @@ export function CommandPalette() {
                 {verseResults.map((verse) => (
                   <Command.Item
                     key={verse.id}
-                    value={`verse-${verse.id}`}
+                    value={`${verse.book} ${verse.chapter}:${verse.verse} ${verse.text}`}
                     onSelect={() => {
+                      void openVerse(verse.slug, verse.chapter, verse.verse)
+                      closeCommandPalette()
+                    }}
+                    onClick={() => {
                       void openVerse(verse.slug, verse.chapter, verse.verse)
                       closeCommandPalette()
                     }}
