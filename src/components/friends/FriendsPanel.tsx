@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useFriendStore } from '@/lib/store/useFriendStore'
+import { useNotificationStore } from '@/lib/store/useNotificationStore'
 import { useUIStore } from '@/lib/store/useUIStore'
 import { FriendCard } from './FriendCard'
 import { FriendRequestCard } from './FriendRequestCard'
@@ -22,11 +23,13 @@ export function FriendsPanel() {
   const closePanel     = useUIStore(s => s.closePanel)
   const addToast       = useUIStore(s => s.addToast)
   const removeToast    = useUIStore(s => s.removeToast)
+  const markAllRead    = useNotificationStore(s => s.markAllRead)
 
   const pendingRef = useRef<Map<number, { friend: Friend; timerId: ReturnType<typeof setTimeout> }>>(new Map())
   const [pendingIds, setPendingIds] = useState<Set<number>>(new Set())
 
   useEffect(() => { load() }, [load])
+  useEffect(() => { markAllRead() }, [markAllRead])
 
   const handleAccept = async (id: number) => {
     try {
