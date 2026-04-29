@@ -4,6 +4,7 @@ import { useUIStore } from '@/lib/store/useUIStore'
 import { useVerseStore } from '@/lib/store/useVerseStore'
 import { bibleApi, type ApiSearchResult } from '@/lib/bibleApi'
 import { CHAT_COMMANDS, filterCommands, type ChatCommand } from './chatCommands'
+import { normalizeText } from '@/lib/normalizeText'
 import { CommandPicker } from './CommandPicker'
 import { VerseAutocomplete } from './VerseAutocomplete'
 import { cn } from '@/lib/cn'
@@ -61,7 +62,7 @@ export function MessageInput({ conversationId }: MessageInputProps) {
     setAcLoading(true)
     const timer = setTimeout(async () => {
       try {
-        const res = await bibleApi.search(versionId, acQuery.trim())
+        const res = await bibleApi.search(versionId, normalizeText(acQuery.trim()))
         setAcResults(res.slice(0, 6))
         setAcActive(0)
       } catch {

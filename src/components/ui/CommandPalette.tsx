@@ -4,6 +4,7 @@ import { Command } from 'cmdk'
 import { useUIStore } from '@/lib/store/useUIStore'
 import { useVerseStore } from '@/lib/store/useVerseStore'
 import { bibleApi, ApiSearchResult } from '@/lib/bibleApi'
+import { normalizeText } from '@/lib/normalizeText'
 import { cn } from '@/lib/cn'
 
 export function CommandPalette() {
@@ -29,7 +30,7 @@ export function CommandPalette() {
     }
     const timer = setTimeout(async () => {
       try {
-        const results = await bibleApi.search(versionId, query)
+        const results = await bibleApi.search(versionId, normalizeText(query))
         setVerseResults(results.slice(0, 8))
       } catch {
         setVerseResults([])
@@ -41,7 +42,7 @@ export function CommandPalette() {
   if (!commandPaletteOpen) return null
 
   const filteredBooks = books.filter((b) =>
-    b.name.toLowerCase().includes(query.toLowerCase())
+    normalizeText(b.name).includes(normalizeText(query))
   )
 
   const handleBookSelect = (bookId: string) => {
