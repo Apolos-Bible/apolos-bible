@@ -1,10 +1,14 @@
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useChatStore } from '@/lib/store/useChatStore'
 import { useAuthStore } from '@/lib/store/useAuthStore'
 import { MessageItem } from './MessageItem'
 import { MessageInput } from './MessageInput'
 import { TypingDots } from './TypingDots'
+import { ManageConversationDialog } from './ManageConversationDialog'
 import type { Conversation, ChatMessage } from '@/lib/chatApi'
+
+const EMPTY_MESSAGES: ChatMessage[] = []
+const EMPTY_TYPING: { userId: number; userName: string; expiresAt: number }[] = []
 
 interface ChatThreadProps {
   conversation: Conversation
@@ -29,16 +33,17 @@ function dayLabel(iso: string): string {
 }
 
 export function ChatThread({ conversation, onBack }: ChatThreadProps) {
-  const messages       = useChatStore(s => s.messages[conversation.id] ?? [])
+  const messages       = useChatStore(s => s.messages[conversation.id] ?? EMPTY_MESSAGES)
   const messagesLoaded = useChatStore(s => s.messages[conversation.id] !== undefined)
   const loading        = useChatStore(s => s.loadingThread[conversation.id])
   const loadMessages   = useChatStore(s => s.loadMessages)
   const loadOlder      = useChatStore(s => s.loadOlder)
-  const typingEntries  = useChatStore(s => s.typing[conversation.id] ?? [])
+  const typingEntries  = useChatStore(s => s.typing[conversation.id] ?? EMPTY_TYPING)
   const selfId         = useAuthStore(s => s.user?.id)
 
   const scrollRef = useRef<HTMLDivElement>(null)
   const lastCountRef = useRef(0)
+  const [manageOpen, setManageOpen] = useState(false)
 
   useEffect(() => {
     if (!messagesLoaded) loadMessages(conversation.id)
@@ -114,7 +119,7 @@ export function ChatThread({ conversation, onBack }: ChatThreadProps) {
       <div className="flex items-center gap-2 px-4 py-3 border-b border-border-subtle shrink-0">
         <button
           onClick={onBack}
-          className="md:hidden p-1 rounded text-text-muted hover:text-text-primary hover:bg-bg-tertiary"
+          className="p-1 rounded text-text-muted hover:text-text-primary hover:bg-bg-tertiary"
           aria-label="Back to conversations"
         >
           <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" className="w-4 h-4">
@@ -129,6 +134,18 @@ export function ChatThread({ conversation, onBack }: ChatThreadProps) {
             </p>
           )}
         </div>
+        {conversation.type === 'group' && (
+          <button
+            onClick={() => setManageOpen(true)}
+            className="p-1 rounded text-text-muted hover:text-text-primary hover:bg-bg-tertiary"
+            aria-label="Manage group"
+            title="Manage group"
+          >
+            <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" className="w-4 h-4">
+              <path d="M8 3.5v9M3.5 8h9" strokeLinecap="round" />
+            </svg>
+          </button>
+        )}
       </div>
 
       {/* Messages */}
@@ -154,6 +171,11 @@ export function ChatThread({ conversation, onBack }: ChatThreadProps) {
 
       {/* Input */}
       <MessageInput conversationId={conversation.id} />
+      <ManageConversationDialog
+        conversation={conversation}
+        open={manageOpen}
+        onClose={() => setManageOpen(false)}
+      />
     </>
   )
 }

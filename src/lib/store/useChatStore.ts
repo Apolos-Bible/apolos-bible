@@ -2,6 +2,7 @@ import { create } from 'zustand'
 import { chatApi, type ChatMessage, type Conversation } from '@/lib/chatApi'
 import { initEcho, getEcho } from '@/lib/echo'
 import { useAuthStore } from './useAuthStore'
+import { useUIStore } from './useUIStore'
 
 interface TypingEntry {
   userId:   number
@@ -24,6 +25,8 @@ type ChatState = {
   send: (id: number, body: string) => Promise<void>
   markRead: (id: number) => Promise<void>
   notifyTyping: (id: number) => void
+  listenForUpdates: (userId: number) => void
+  stopListeningForUpdates: () => void
   startDm: (userId: number) => Promise<Conversation>
   createGroup: (name: string, userIds: number[]) => Promise<Conversation>
   addParticipants: (id: number, userIds: number[]) => Promise<void>
@@ -34,6 +37,11 @@ type ChatState = {
 const subscribed = new Set<number>()
 const typingTimers: Record<number, ReturnType<typeof setTimeout>> = {}
 const typingThrottle: Record<number, number> = {}
+let privateChannelName: string | null = null
+
+function sortConversations(list: Conversation[]): Conversation[] {
+  return [...list].sort((a, b) => (b.last_message_at ?? '').localeCompare(a.last_message_at ?? ''))
+}
 
 function pruneTyping(id: number, set: (fn: (s: ChatState) => Partial<ChatState>) => void) {
   const now = Date.now()
@@ -242,11 +250,48 @@ export const useChatStore = create<ChatState>((set, get) => ({
     chatApi.typing(id).catch(() => {})
   },
 
+  listenForUpdates: (userId) => {
+    if (privateChannelName) return
+
+    const echo = initEcho()
+    if (!echo) return
+
+    privateChannelName = `App.Models.User.${userId}`
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    echo.private(privateChannelName).listen('.conversation.available', (payload: any) => {
+      const conversation = payload as Conversation
+      const existing = get().conversations.find((c) => c.id === conversation.id)
+
+      set((s) => ({
+        conversations: sortConversations([
+          conversation,
+          ...s.conversations.filter((c) => c.id !== conversation.id),
+        ]),
+      }))
+
+      subscribeToConversation(conversation.id, set, get)
+
+      if (!existing) {
+        const title = conversation.type === 'group'
+          ? (conversation.name ?? 'New group chat')
+          : (conversation.participants.find((p) => p.id !== userId)?.name ?? 'New chat')
+        useUIStore.getState().addToast(`${title} is now available in chat`, 'info')
+      }
+    })
+  },
+
+  stopListeningForUpdates: () => {
+    if (!privateChannelName) return
+    getEcho()?.leave(privateChannelName)
+    privateChannelName = null
+  },
+
   startDm: async (userId) => {
     const c = await chatApi.createDm(userId)
     set((s) => {
       const without = s.conversations.filter((x) => x.id !== c.id)
-      return { conversations: [c, ...without] }
+      return { conversations: sortConversations([c, ...without]) }
     })
     subscribeToConversation(c.id, set, get)
     return c
@@ -254,7 +299,7 @@ export const useChatStore = create<ChatState>((set, get) => ({
 
   createGroup: async (name, userIds) => {
     const c = await chatApi.createGroup(name, userIds)
-    set((s) => ({ conversations: [c, ...s.conversations] }))
+    set((s) => ({ conversations: sortConversations([c, ...s.conversations]) }))
     subscribeToConversation(c.id, set, get)
     return c
   },
@@ -279,8 +324,10 @@ export const useChatStore = create<ChatState>((set, get) => ({
     const echo = getEcho()
     if (echo) {
       subscribed.forEach((id) => echo.leave(`conversation.${id}`))
+      if (privateChannelName) echo.leave(privateChannelName)
     }
     subscribed.clear()
+    privateChannelName = null
     set({ conversations: [], selectedId: null, messages: {}, typing: {} })
   },
 }))

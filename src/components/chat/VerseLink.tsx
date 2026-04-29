@@ -3,9 +3,10 @@ import type { Segment } from '@/lib/bibleRefs'
 
 type Props = {
   seg: Extract<Segment, { kind: 'ref' }>
+  isMine?: boolean
 }
 
-export function VerseLink({ seg }: Props) {
+export function VerseLink({ seg, isMine }: Props) {
   const versions   = useVerseStore(s => s.versions)
   const setVersion = useVerseStore(s => s.setVersion)
   const openVerse  = useVerseStore(s => s.openVerse)
@@ -26,7 +27,7 @@ export function VerseLink({ seg }: Props) {
       tabIndex={0}
       onClick={handleClick}
       onKeyDown={e => e.key === 'Enter' && handleClick()}
-      className="text-accent underline cursor-pointer hover:opacity-80"
+      className={isMine ? 'text-bg-primary underline cursor-pointer hover:opacity-70' : 'text-accent underline cursor-pointer hover:opacity-80'}
       title={seg.raw}
     >
       {seg.raw}

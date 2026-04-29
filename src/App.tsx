@@ -38,6 +38,8 @@ export default function App() {
   const loadFriends = useFriendStore(s => s.load)
   const loadChat = useChatStore(s => s.load)
   const resetChat = useChatStore(s => s.reset)
+  const listenForChatUpdates = useChatStore(s => s.listenForUpdates)
+  const stopChatUpdates = useChatStore(s => s.stopListeningForUpdates)
 
   useEffect(() => {
     authInit()
@@ -46,13 +48,19 @@ export default function App() {
 
   useEffect(() => {
     if (!user) {
+      stopChatUpdates()
       resetChat()
       return
     }
     loadBookmarks()
     loadFriends()
     loadChat()
-  }, [user, loadBookmarks, loadFriends, loadChat, resetChat])
+    listenForChatUpdates(user.id)
+
+    return () => {
+      stopChatUpdates()
+    }
+  }, [user, loadBookmarks, loadFriends, loadChat, resetChat, listenForChatUpdates, stopChatUpdates])
 
   useEffect(() => {
     const handleKey = (e: KeyboardEvent) => {

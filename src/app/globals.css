@@ -171,3 +171,14 @@ html[data-theme="light"] .verse-aura-pulse-block { animation-name: verse-aura-bl
 ::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb { background: var(--scrollbar); border-radius: 3px; }
 ::-webkit-scrollbar-thumb:hover { background: var(--scrollbar-hover); }
+
+@keyframes tooltip-in {
+  from { opacity: 0; transform: translateY(-4px) scale(0.97); }
+  to   { opacity: 1; transform: translateY(0)    scale(1);    }
+}
+@keyframes tooltip-out {
+  from { opacity: 1; transform: translateY(0)    scale(1);    }
+  to   { opacity: 0; transform: translateY(-4px) scale(0.97); }
+}
+.tooltip-enter { animation: tooltip-in  120ms ease-out forwards; }
+.tooltip-exit  { animation: tooltip-out 100ms ease-in  forwards; }

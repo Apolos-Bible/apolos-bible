@@ -64,7 +64,7 @@ export function MessageItem({ message, isMine, compact, showReceipt, conversatio
           )}
           title={new Date(message.created_at).toLocaleString()}
         >
-          <MessageBody text={message.body} />
+          <MessageBody text={message.body} isMine={isMine} />
         </div>
 
         <div className={cn('flex items-center gap-1.5 px-1 mt-0.5', isMine ? 'justify-end' : 'justify-start')}>
