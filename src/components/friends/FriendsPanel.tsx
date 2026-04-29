@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { useFriendStore } from '@/lib/store/useFriendStore'
 import { useUIStore } from '@/lib/store/useUIStore'
 import { FriendCard } from './FriendCard'
@@ -9,6 +10,8 @@ import type { Friend } from '@/types'
 const UNDO_DURATION = 4000
 
 export function FriendsPanel() {
+  const { t } = useTranslation()
+
   const friends        = useFriendStore(s => s.friends)
   const received       = useFriendStore(s => s.received)
   const sent           = useFriendStore(s => s.sent)
@@ -20,7 +23,6 @@ export function FriendsPanel() {
   const addToast       = useUIStore(s => s.addToast)
   const removeToast    = useUIStore(s => s.removeToast)
 
-  // pending removals: hidden from UI, timer running before API call
   const pendingRef = useRef<Map<number, { friend: Friend; timerId: ReturnType<typeof setTimeout> }>>(new Map())
   const [pendingIds, setPendingIds] = useState<Set<number>>(new Set())
 
@@ -29,9 +31,9 @@ export function FriendsPanel() {
   const handleAccept = async (id: number) => {
     try {
       await acceptRequest(id)
-      addToast('Friend request accepted', 'success')
+      addToast(t('friends.requestAccepted'), 'success')
     } catch {
-      addToast('Failed to accept request', 'error')
+      addToast(t('friends.acceptFailed'), 'error')
     }
   }
 
@@ -39,12 +41,11 @@ export function FriendsPanel() {
     try {
       await declineRequest(id)
     } catch {
-      addToast('Failed to decline request', 'error')
+      addToast(t('friends.declineFailed'), 'error')
     }
   }
 
   const handleRemove = (friend: Friend) => {
-    // optimistically hide
     pendingRef.current.set(friend.id, {
       friend,
       timerId: setTimeout(async () => {
@@ -53,16 +54,16 @@ export function FriendsPanel() {
         try {
           await removeFriend(friend.id)
         } catch {
-          addToast('Failed to remove friend', 'error')
+          addToast(t('friends.removeFailed'), 'error')
         }
       }, UNDO_DURATION),
     })
     setPendingIds(new Set(pendingRef.current.keys()))
 
-    const toastId = addToast(`${friend.name} removed`, 'info', {
+    const toastId = addToast(t('friends.removed', { name: friend.name }), 'info', {
       duration: UNDO_DURATION,
       action: {
-        label: 'Undo',
+        label: t('common.undo'),
         onClick: () => {
           const pending = pendingRef.current.get(friend.id)
           if (!pending) return
@@ -79,7 +80,7 @@ export function FriendsPanel() {
     <div className="w-full md:w-panel h-full bg-bg-primary border-r border-border-subtle flex flex-col overflow-hidden">
       {/* Header */}
       <div className="flex items-center justify-between px-4 py-3 border-b border-border-subtle shrink-0">
-        <span className="text-sm font-medium text-text-primary">Friends</span>
+        <span className="text-sm font-medium text-text-primary">{t('friends.title')}</span>
         <button
           onClick={closePanel}
           aria-label="Close friends panel"
@@ -94,7 +95,7 @@ export function FriendsPanel() {
       <div className="flex-1 overflow-y-auto">
         {/* Search */}
         <div className="pt-3 pb-2">
-          <p className="text-2xs uppercase tracking-wider text-text-muted px-4 pb-2 select-none">Add people</p>
+          <p className="text-2xs uppercase tracking-wider text-text-muted px-4 pb-2 select-none">{t('friends.addPeople')}</p>
           <FriendSearch />
         </div>
 
@@ -102,7 +103,7 @@ export function FriendsPanel() {
         {received.length > 0 && (
           <div className="border-t border-border-subtle pt-3 pb-2">
             <p className="text-2xs uppercase tracking-wider text-text-muted px-4 pb-2 select-none">
-              Requests ({received.length})
+              {t('friends.requests', { count: received.length })}
             </p>
             <div className="flex flex-col gap-1 px-2">
               {received.map((req) => (
@@ -121,7 +122,7 @@ export function FriendsPanel() {
         {/* Sent requests */}
         {sent.length > 0 && (
           <div className="border-t border-border-subtle pt-3 pb-2">
-            <p className="text-2xs uppercase tracking-wider text-text-muted px-4 pb-2 select-none">Sent</p>
+            <p className="text-2xs uppercase tracking-wider text-text-muted px-4 pb-2 select-none">{t('friends.sent')}</p>
             <div className="flex flex-col gap-1 px-2">
               {sent.map((req) => (
                 <FriendRequestCard
@@ -138,10 +139,10 @@ export function FriendsPanel() {
         {/* Friends list */}
         <div className="border-t border-border-subtle pt-3 pb-4">
           <p className="text-2xs uppercase tracking-wider text-text-muted px-4 pb-2 select-none">
-            Friends {friends.length > 0 && `(${friends.length})`}
+            {friends.length > 0 ? t('friends.friendsCount', { count: friends.length }) : t('friends.title')}
           </p>
           {friends.length === 0 ? (
-            <p className="text-xs text-text-muted px-4">No friends yet. Search above to add people.</p>
+            <p className="text-xs text-text-muted px-4">{t('friends.empty')}</p>
           ) : (
             <div className="flex flex-col gap-0.5 px-2">
               {friends.filter(f => !pendingIds.has(f.id)).map((friend) => (

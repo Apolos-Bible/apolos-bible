@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next'
 import type { FriendRequest } from '@/types'
 
 interface FriendRequestCardProps {
@@ -8,6 +9,7 @@ interface FriendRequestCardProps {
 }
 
 export function FriendRequestCard({ request, variant, onAccept = () => {}, onDecline }: FriendRequestCardProps) {
+  const { t } = useTranslation()
   const person = variant === 'received' ? request.user : request.friend
   if (!person) return null
 
@@ -26,18 +28,18 @@ export function FriendRequestCard({ request, variant, onAccept = () => {}, onDec
             onClick={() => onAccept(request.id)}
             className="text-2xs px-2 py-0.5 rounded bg-accent text-bg-primary hover:opacity-80 transition-opacity font-medium"
           >
-            Accept
+            {t('friends.accept')}
           </button>
           <button
             onClick={() => onDecline(request.id)}
             className="text-2xs px-2 py-0.5 rounded border border-border-subtle text-text-muted hover:text-text-primary transition-colors"
           >
-            Decline
+            {t('friends.decline')}
           </button>
         </div>
       )}
       {variant === 'sent' && (
-        <span className="text-2xs text-text-muted italic shrink-0">pending</span>
+        <span className="text-2xs text-text-muted italic shrink-0">{t('friends.pending')}</span>
       )}
     </div>
   )

@@ -1,8 +1,10 @@
 import { useState, useEffect, useRef, useMemo } from 'react'
+import { useTranslation } from 'react-i18next'
 import { useFriendStore } from '@/lib/store/useFriendStore'
 import { useUIStore } from '@/lib/store/useUIStore'
 
 export function FriendSearch() {
+  const { t } = useTranslation()
   const [query, setQuery]  = useState('')
   const searchUsers        = useFriendStore(s => s.searchUsers)
   const clearSearch        = useFriendStore(s => s.clearSearch)
@@ -32,9 +34,9 @@ export function FriendSearch() {
   const handleSend = async (userId: number, userName: string) => {
     try {
       await sendRequest(userId)
-      addToast(`Friend request sent to ${userName}`, 'success')
+      addToast(t('friends.requestSentTo', { name: userName }), 'success')
     } catch {
-      addToast('Failed to send request', 'error')
+      addToast(t('friends.requestFailed'), 'error')
     }
   }
 
@@ -52,14 +54,14 @@ export function FriendSearch() {
         <input
           value={query}
           onChange={(e) => setQuery(e.target.value)}
-          placeholder="Search by name or email…"
+          placeholder={t('friends.searchPlaceholder')}
           aria-label="Search for people to add as friends"
           className="w-full bg-bg-tertiary border border-border-subtle rounded px-3 py-1.5 pl-7 text-xs text-text-primary placeholder:text-text-muted focus:outline-none focus:border-accent transition-colors"
         />
       </div>
 
       {isSearching && (
-        <p className="text-2xs text-text-muted mt-2 px-1">Searching…</p>
+        <p className="text-2xs text-text-muted mt-2 px-1">{t('friends.searching')}</p>
       )}
 
       {results.length > 0 && (
@@ -77,16 +79,16 @@ export function FriendSearch() {
                   <p className="text-2xs text-text-muted truncate">{user.email}</p>
                 </div>
                 {isFriend ? (
-                  <span className="text-2xs text-text-muted shrink-0">friends</span>
+                  <span className="text-2xs text-text-muted shrink-0">{t('friends.alreadyFriends')}</span>
                 ) : isPending ? (
-                  <span className="text-2xs text-text-muted italic shrink-0">sent</span>
+                  <span className="text-2xs text-text-muted italic shrink-0">{t('friends.requestSent')}</span>
                 ) : (
                   <button
                     onClick={() => handleSend(user.id, user.name)}
                     aria-label={`Send friend request to ${user.name}`}
                     className="text-2xs px-2 py-0.5 rounded border border-border-subtle text-text-secondary hover:text-accent hover:border-accent transition-colors shrink-0"
                   >
-                    Add
+                    {t('friends.add')}
                   </button>
                 )}
               </div>
@@ -96,7 +98,7 @@ export function FriendSearch() {
       )}
 
       {query.trim().length >= 2 && !isSearching && results.length === 0 && (
-        <p className="text-2xs text-text-muted mt-2 px-1">No users found</p>
+        <p className="text-2xs text-text-muted mt-2 px-1">{t('friends.noUsersFound')}</p>
       )}
     </div>
   )
