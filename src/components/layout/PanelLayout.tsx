@@ -1,4 +1,5 @@
 import { type ReactNode } from 'react'
+import { useTranslation } from 'react-i18next'
 import { cn } from '@/lib/cn'
 import { useVerseStore } from '@/lib/store/useVerseStore'
 import { useUIStore } from '@/lib/store/useUIStore'
@@ -11,6 +12,7 @@ interface PanelLayoutProps {
 }
 
 export function PanelLayout({ sidebar, main, panel, leftPanel }: PanelLayoutProps) {
+  const { t } = useTranslation()
   const books = useVerseStore((s) => s.books)
   const selectedBook = useVerseStore((s) => s.selectedBook)
   const selectedChapter = useVerseStore((s) => s.selectedChapter)
@@ -27,11 +29,11 @@ export function PanelLayout({ sidebar, main, panel, leftPanel }: PanelLayoutProp
 
   const bookName = books.find((b) => b.slug === selectedBook)?.name ?? selectedBook
   const activePanelLabel = activePanel === 'favorites'
-    ? 'Favorites'
+    ? t('nav.favorites')
     : activePanel === 'my-notes'
-      ? 'My Notes'
+      ? t('nav.myNotes')
       : activePanel === 'friends'
-        ? 'Friends'
+        ? t('nav.friends')
         : null
 
   const closeMobileStudyPanel = () => {
@@ -51,7 +53,7 @@ export function PanelLayout({ sidebar, main, panel, leftPanel }: PanelLayoutProp
             type="button"
             onClick={openMobileSidebar}
             className="inline-flex h-9 w-9 items-center justify-center rounded-md border border-border-subtle bg-bg-primary text-text-secondary"
-            aria-label="Open library"
+            aria-label={t('layout.openLibrary')}
           >
             <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" className="h-4 w-4">
               <path d="M2.5 4h11M2.5 8h11M2.5 12h11" strokeLinecap="round" />
@@ -60,14 +62,14 @@ export function PanelLayout({ sidebar, main, panel, leftPanel }: PanelLayoutProp
           <div className="min-w-0 flex-1">
             <p className="truncate text-sm font-medium text-text-primary">{bookName || 'tulia.study'}</p>
             <p className="text-2xs uppercase tracking-[0.18em] text-accent/70">
-              Chapter {selectedChapter}
+              {t('layout.chapter', { n: selectedChapter })}
             </p>
           </div>
           <button
             type="button"
             onClick={openCommandPalette}
             className="inline-flex h-9 w-9 items-center justify-center rounded-md border border-border-subtle bg-bg-primary text-text-secondary"
-            aria-label="Search"
+            aria-label={t('layout.search')}
           >
             <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" className="h-4 w-4">
               <circle cx="7" cy="7" r="4.25" />
@@ -107,12 +109,12 @@ export function PanelLayout({ sidebar, main, panel, leftPanel }: PanelLayoutProp
           >
             <div className="flex h-full flex-col">
               <div className="flex items-center justify-between border-b border-border-subtle px-4 py-3">
-                <span className="text-sm font-medium text-text-primary">Library</span>
+                <span className="text-sm font-medium text-text-primary">{t('layout.library')}</span>
                 <button
                   type="button"
                   onClick={closeMobileSidebar}
                   className="inline-flex h-8 w-8 items-center justify-center rounded-md text-text-muted"
-                  aria-label="Close library"
+                  aria-label={t('layout.closeLibrary')}
                 >
                   <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" className="h-4 w-4">
                     <path d="M3 3l10 10M13 3L3 13" strokeLinecap="round" />

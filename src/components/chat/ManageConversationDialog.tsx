@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { useChatStore } from '@/lib/store/useChatStore'
 import { useFriendStore } from '@/lib/store/useFriendStore'
 import { useUIStore } from '@/lib/store/useUIStore'
@@ -13,6 +14,7 @@ interface ManageConversationDialogProps {
 }
 
 export function ManageConversationDialog({ conversation, open, onClose }: ManageConversationDialogProps) {
+  const { t }           = useTranslation()
   const friends         = useFriendStore(s => s.friends)
   const loadFriends     = useFriendStore(s => s.load)
   const addParticipants = useChatStore(s => s.addParticipants)
@@ -53,10 +55,10 @@ export function ManageConversationDialog({ conversation, open, onClose }: Manage
     setBusy(true)
     try {
       await addParticipants(conversation.id, picked)
-      addToast('Participants added', 'success')
+      addToast(t('chat.participantsAdded'), 'success')
       onClose()
     } catch {
-      addToast('Could not add participants', 'error')
+      addToast(t('chat.addParticipantsFailed'), 'error')
     } finally {
       setBusy(false)
     }
@@ -67,10 +69,10 @@ export function ManageConversationDialog({ conversation, open, onClose }: Manage
     setBusy(true)
     try {
       await leave(conversation.id)
-      addToast('You left the group', 'info')
+      addToast(t('chat.leftGroup'), 'info')
       onClose()
     } catch {
-      addToast('Could not leave group', 'error')
+      addToast(t('chat.leaveGroupFailed'), 'error')
     } finally {
       setBusy(false)
     }
@@ -87,12 +89,12 @@ export function ManageConversationDialog({ conversation, open, onClose }: Manage
       >
         <div className="flex items-center justify-between px-4 py-3 border-b border-border-subtle">
           <div>
-            <p className="text-sm font-medium text-text-primary">Manage group</p>
-            <p className="text-2xs text-text-muted mt-0.5">{conversation.name ?? 'Group chat'}</p>
+            <p className="text-sm font-medium text-text-primary">{t('chat.manageGroup')}</p>
+            <p className="text-2xs text-text-muted mt-0.5">{conversation.name ?? t('chat.groupChat')}</p>
           </div>
           <button
             onClick={onClose}
-            aria-label="Close"
+            aria-label={t('common.close')}
             className="text-text-muted hover:text-text-primary transition-colors"
           >
             <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" className="w-4 h-4">
@@ -102,7 +104,7 @@ export function ManageConversationDialog({ conversation, open, onClose }: Manage
         </div>
 
         <div className="px-4 py-3 border-b border-border-subtle">
-          <p className="text-2xs uppercase tracking-wider text-text-muted mb-2">Members</p>
+          <p className="text-2xs uppercase tracking-wider text-text-muted mb-2">{t('chat.members')}</p>
           <div className="flex flex-wrap gap-2">
             {conversation.participants.map((p) => (
               <div key={p.id} className="flex items-center gap-2 rounded-full bg-bg-primary border border-border-subtle px-2.5 py-1">
@@ -114,19 +116,19 @@ export function ManageConversationDialog({ conversation, open, onClose }: Manage
         </div>
 
         <div className="px-4 py-3 border-b border-border-subtle">
-          <p className="text-2xs uppercase tracking-wider text-text-muted mb-2">Add friends</p>
+          <p className="text-2xs uppercase tracking-wider text-text-muted mb-2">{t('chat.addFriends')}</p>
           <input
             type="text"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder="Search friends…"
+            placeholder={t('chat.searchFriendsPlaceholder')}
             className="w-full bg-bg-primary border border-border-subtle rounded-md px-3 py-1.5 text-sm text-text-primary placeholder:text-text-muted outline-none focus:border-border-hover"
           />
         </div>
 
         <div className="max-h-64 overflow-y-auto py-1">
           {availableFriends.length === 0 ? (
-            <p className="text-xs text-text-muted px-4 py-6 text-center">No more friends available to add.</p>
+            <p className="text-xs text-text-muted px-4 py-6 text-center">{t('chat.noFriendsToAdd')}</p>
           ) : (
             availableFriends.map((friend) => {
               const isPicked = picked.includes(friend.id)
@@ -166,14 +168,14 @@ export function ManageConversationDialog({ conversation, open, onClose }: Manage
             disabled={busy}
             className="text-xs text-red-400 hover:text-red-300 px-3 py-1.5"
           >
-            Leave group
+            {t('chat.leaveGroup')}
           </button>
           <div className="flex items-center gap-2">
             <button
               onClick={onClose}
               className="text-xs text-text-secondary hover:text-text-primary px-3 py-1.5"
             >
-              Cancel
+              {t('notes.cancel')}
             </button>
             <button
               onClick={() => { void handleAdd() }}
@@ -185,7 +187,7 @@ export function ManageConversationDialog({ conversation, open, onClose }: Manage
                   : 'bg-bg-tertiary text-text-muted cursor-not-allowed',
               )}
             >
-              Add people{picked.length > 0 ? ` (${picked.length})` : ''}
+              {t('chat.addPeople')}{picked.length > 0 ? ` (${picked.length})` : ''}
             </button>
           </div>
         </div>

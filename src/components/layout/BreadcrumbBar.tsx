@@ -1,10 +1,12 @@
 
+import { useTranslation } from 'react-i18next'
 import { useVerseStore } from '@/lib/store/useVerseStore'
 import { useUIStore } from '@/lib/store/useUIStore'
 import { usePresenceStore } from '@/lib/store/usePresenceStore'
 import { PresenceAvatars } from '@/components/realtime/PresenceAvatars'
 
 export function BreadcrumbBar() {
+  const { t }           = useTranslation()
   const books           = useVerseStore((s) => s.books)
   const selectedBook    = useVerseStore((s) => s.selectedBook)
   const selectedChapter = useVerseStore((s) => s.selectedChapter)
@@ -19,7 +21,7 @@ export function BreadcrumbBar() {
       <button
         onClick={openCommandPalette}
         className="text-xs text-text-muted hover:text-text-secondary transition-colors duration-150 cursor-pointer"
-        title="Open command palette"
+        title={t('layout.openCommandPalette')}
       >
         {bookName}
       </button>

@@ -122,7 +122,7 @@ export function AuthModal({ open, onClose }: AuthModalProps) {
               type="email"
               value={email}
               onChange={e => { setEmail(e.target.value); setError('') }}
-              placeholder="you@example.com"
+              placeholder={t('auth.emailPlaceholder')}
               autoComplete="email"
               autoFocus={mode === 'login'}
               className={inputCls}

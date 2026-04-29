@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { useChatStore } from '@/lib/store/useChatStore'
 import { useFriendStore } from '@/lib/store/useFriendStore'
 import { useUIStore } from '@/lib/store/useUIStore'
@@ -11,6 +12,7 @@ interface NewChatDialogProps {
 }
 
 export function NewChatDialog({ open, onClose }: NewChatDialogProps) {
+  const { t }       = useTranslation()
   const friends     = useFriendStore(s => s.friends)
   const loadFriends = useFriendStore(s => s.load)
   const startDm     = useChatStore(s => s.startDm)
@@ -62,7 +64,7 @@ export function NewChatDialog({ open, onClose }: NewChatDialogProps) {
       select(c.id)
       onClose()
     } catch {
-      addToast('Could not create conversation', 'error')
+      addToast(t('chat.createFailed'), 'error')
     } finally {
       setBusy(false)
     }
@@ -80,10 +82,10 @@ export function NewChatDialog({ open, onClose }: NewChatDialogProps) {
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-center justify-between px-4 py-3 border-b border-border-subtle">
-          <span className="text-sm font-medium text-text-primary">New conversation</span>
+          <span className="text-sm font-medium text-text-primary">{t('chat.newConversation')}</span>
           <button
             onClick={onClose}
-            aria-label="Close"
+            aria-label={t('common.close')}
             className="text-text-muted hover:text-text-primary transition-colors"
           >
             <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" className="w-4 h-4">
@@ -101,7 +103,7 @@ export function NewChatDialog({ open, onClose }: NewChatDialogProps) {
               mode === 'dm' ? 'text-text-primary border-b border-accent -mb-px' : 'text-text-muted hover:text-text-primary',
             )}
           >
-            Direct message
+            {t('chat.directMessage')}
           </button>
           <button
             onClick={() => { setMode('group'); setPicked([]) }}
@@ -110,7 +112,7 @@ export function NewChatDialog({ open, onClose }: NewChatDialogProps) {
               mode === 'group' ? 'text-text-primary border-b border-accent -mb-px' : 'text-text-muted hover:text-text-primary',
             )}
           >
-            Group
+            {t('chat.group')}
           </button>
         </div>
 
@@ -120,7 +122,7 @@ export function NewChatDialog({ open, onClose }: NewChatDialogProps) {
               type="text"
               value={name}
               onChange={(e) => setName(e.target.value)}
-              placeholder="Group name (optional)"
+              placeholder={t('chat.groupNamePlaceholder')}
               className="w-full bg-bg-primary border border-border-subtle rounded-md px-3 py-1.5 text-sm text-text-primary placeholder:text-text-muted outline-none focus:border-border-hover"
             />
           </div>
@@ -131,7 +133,7 @@ export function NewChatDialog({ open, onClose }: NewChatDialogProps) {
             type="text"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder="Search friends…"
+            placeholder={t('chat.searchFriendsPlaceholder')}
             className="w-full bg-bg-primary border border-border-subtle rounded-md px-3 py-1.5 text-sm text-text-primary placeholder:text-text-muted outline-none focus:border-border-hover"
           />
         </div>
@@ -139,7 +141,7 @@ export function NewChatDialog({ open, onClose }: NewChatDialogProps) {
         <div className="max-h-72 overflow-y-auto py-1">
           {filtered.length === 0 ? (
             <p className="text-xs text-text-muted px-4 py-6 text-center">
-              {friends.length === 0 ? 'Add friends first to start a chat.' : 'No matches.'}
+              {friends.length === 0 ? t('chat.addFriendsFirst') : t('chat.noMatches')}
             </p>
           ) : (
             filtered.map((f) => {
@@ -179,7 +181,7 @@ export function NewChatDialog({ open, onClose }: NewChatDialogProps) {
             onClick={onClose}
             className="text-xs text-text-secondary hover:text-text-primary px-3 py-1.5"
           >
-            Cancel
+            {t('notes.cancel')}
           </button>
           <button
             onClick={submit}
@@ -191,7 +193,7 @@ export function NewChatDialog({ open, onClose }: NewChatDialogProps) {
                 : 'bg-bg-tertiary text-text-muted cursor-not-allowed',
             )}
           >
-            {mode === 'dm' ? 'Start chat' : `Create group${picked.length >= 2 ? ` (${picked.length})` : ''}`}
+            {mode === 'dm' ? t('chat.startChat') : `${t('chat.createGroup')}${picked.length >= 2 ? ` (${picked.length})` : ''}`}
           </button>
         </div>
       </div>

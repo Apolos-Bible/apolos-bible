@@ -55,7 +55,7 @@ export function FriendSearch() {
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           placeholder={t('friends.searchPlaceholder')}
-          aria-label="Search for people to add as friends"
+          aria-label={t('friends.searchAria')}
           className="w-full bg-bg-tertiary border border-border-subtle rounded px-3 py-1.5 pl-7 text-xs text-text-primary placeholder:text-text-muted focus:outline-none focus:border-accent transition-colors"
         />
       </div>

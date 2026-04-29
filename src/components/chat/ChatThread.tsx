@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { useChatStore } from '@/lib/store/useChatStore'
 import { useAuthStore } from '@/lib/store/useAuthStore'
 import { MessageItem } from './MessageItem'
@@ -15,24 +16,14 @@ interface ChatThreadProps {
   onBack: () => void
 }
 
-function conversationTitle(c: Conversation, selfId: number | undefined): string {
+function conversationTitle(c: Conversation, selfId: number | undefined, fallback: string): string {
   if (c.type === 'group') return c.name ?? c.participants.map(p => p.name).join(', ')
   const other = c.participants.find(p => p.id !== selfId)
-  return other?.name ?? 'Direct message'
-}
-
-function dayLabel(iso: string): string {
-  const d = new Date(iso)
-  const today = new Date()
-  const yesterday = new Date()
-  yesterday.setDate(today.getDate() - 1)
-  const sameDay = (a: Date, b: Date) => a.toDateString() === b.toDateString()
-  if (sameDay(d, today))     return 'Today'
-  if (sameDay(d, yesterday)) return 'Yesterday'
-  return d.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: d.getFullYear() === today.getFullYear() ? undefined : 'numeric' })
+  return other?.name ?? fallback
 }
 
 export function ChatThread({ conversation, onBack }: ChatThreadProps) {
+  const { t }          = useTranslation()
   const messages       = useChatStore(s => s.messages[conversation.id] ?? EMPTY_MESSAGES)
   const messagesLoaded = useChatStore(s => s.messages[conversation.id] !== undefined)
   const loading        = useChatStore(s => s.loadingThread[conversation.id])
@@ -44,6 +35,17 @@ export function ChatThread({ conversation, onBack }: ChatThreadProps) {
   const scrollRef = useRef<HTMLDivElement>(null)
   const lastCountRef = useRef(0)
   const [manageOpen, setManageOpen] = useState(false)
+
+  const dayLabel = (iso: string): string => {
+    const d = new Date(iso)
+    const today = new Date()
+    const yesterday = new Date()
+    yesterday.setDate(today.getDate() - 1)
+    const sameDay = (a: Date, b: Date) => a.toDateString() === b.toDateString()
+    if (sameDay(d, today))     return t('chat.today')
+    if (sameDay(d, yesterday)) return t('time.yesterday')
+    return d.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: d.getFullYear() === today.getFullYear() ? undefined : 'numeric' })
+  }
 
   useEffect(() => {
     if (!messagesLoaded) loadMessages(conversation.id)
@@ -120,17 +122,19 @@ export function ChatThread({ conversation, onBack }: ChatThreadProps) {
         <button
           onClick={onBack}
           className="p-1 rounded text-text-muted hover:text-text-primary hover:bg-bg-tertiary"
-          aria-label="Back to conversations"
+          aria-label={t('chat.backToConversations')}
         >
           <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" className="w-4 h-4">
             <path d="M10 3l-5 5 5 5" strokeLinecap="round" strokeLinejoin="round" />
           </svg>
         </button>
         <div className="flex-1 min-w-0">
-          <p className="text-sm font-medium text-text-primary truncate">{conversationTitle(conversation, selfId)}</p>
+          <p className="text-sm font-medium text-text-primary truncate">
+            {conversationTitle(conversation, selfId, t('chat.directMessage'))}
+          </p>
           {conversation.type === 'group' && (
             <p className="text-2xs text-text-muted truncate">
-              {conversation.participants.length} {conversation.participants.length === 1 ? 'member' : 'members'}
+              {t('chat.member', { count: conversation.participants.length })}
             </p>
           )}
         </div>
@@ -138,8 +142,8 @@ export function ChatThread({ conversation, onBack }: ChatThreadProps) {
           <button
             onClick={() => setManageOpen(true)}
             className="p-1 rounded text-text-muted hover:text-text-primary hover:bg-bg-tertiary"
-            aria-label="Manage group"
-            title="Manage group"
+            aria-label={t('chat.manageGroup')}
+            title={t('chat.manageGroup')}
           >
             <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" className="w-4 h-4">
               <path d="M8 3.5v9M3.5 8h9" strokeLinecap="round" />
@@ -155,16 +159,16 @@ export function ChatThread({ conversation, onBack }: ChatThreadProps) {
         className="flex-1 overflow-y-auto px-3 py-3 flex flex-col"
       >
         {loading && messages.length === 0 && (
-          <p className="text-xs text-text-muted text-center py-6">Loading messages…</p>
+          <p className="text-xs text-text-muted text-center py-6">{t('chat.loadingMessages')}</p>
         )}
         {!loading && messages.length === 0 && (
-          <p className="text-xs text-text-muted text-center py-6">No messages yet — say hi.</p>
+          <p className="text-xs text-text-muted text-center py-6">{t('chat.noMessagesYet')}</p>
         )}
         {rendered.map(r => r.node)}
 
         {typingEntries.length > 0 && (
           <div className="px-2 mt-1">
-            <TypingDots names={typingEntries.map(t => t.userName)} />
+            <TypingDots names={typingEntries.map(e => e.userName)} />
           </div>
         )}
       </div>

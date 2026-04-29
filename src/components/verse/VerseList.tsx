@@ -1,5 +1,6 @@
 
 import { useEffect, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { useVerseStore } from '@/lib/store/useVerseStore'
 import type { Verse } from '@/lib/store/useVerseStore'
 import { useNoteStore } from '@/lib/store/useNoteStore'
@@ -116,6 +117,7 @@ function VerseIcon({ className }: { className?: string }) {
 // ── Component ──────────────────────────────────────────────────────────────
 
 export function VerseList() {
+  const { t }            = useTranslation()
   const verses           = useVerseStore((s) => s.verses)
   const selectedVerseId  = useVerseStore((s) => s.selectedVerseId)
   const selectVerse      = useVerseStore((s) => s.selectVerse)
@@ -198,68 +200,69 @@ export function VerseList() {
     const items: MenuItem[] = [
       {
         type: 'action',
-        label: 'Copy verse text',
+        label: t('study.copyVerseText'),
         icon: <IconCopy />,
         shortcut: `${modKey}C`,
-        onClick: () => { navigator.clipboard.writeText(verse.text); addToast('Copied', 'success') },
+        onClick: () => { navigator.clipboard.writeText(verse.text); addToast(t('toast.copied'), 'success') },
       },
       {
         type: 'action',
-        label: `Copy reference`,
+        label: t('verse.copyReference'),
         icon: <IconCopy />,
         onClick: () => {
-          navigator.clipboard.writeText(`${bookName} ${verse.chapter}:${verse.verse} — ${verse.text}`)
-          addToast(`Copied ${bookName} ${verse.chapter}:${verse.verse}`, 'success')
+          const ref = `${bookName} ${verse.chapter}:${verse.verse}`
+          navigator.clipboard.writeText(`${ref} — ${verse.text}`)
+          addToast(t('verse.copiedRef', { ref }), 'success')
         },
       },
       { type: 'separator' },
-      { type: 'label', text: 'Highlight verse' },
+      { type: 'label', text: t('verse.highlightVerse') },
       {
-        type: 'action', label: 'Yellow', icon: <ColorDot color="#e5c07b" />,
+        type: 'action', label: t('study.colorYellow'), icon: <ColorDot color="#e5c07b" />,
         onClick: () => addHighlight(verse.apiId, 0, verse.text.length, 'yellow').catch((error) => {
           if (!user || isAuthError(error)) {
-            addToast('You need to log in to save highlights', 'error', {
-              action: { label: 'Log in', onClick: openAuthModal },
+            addToast(t('study.loginRequired'), 'error', {
+              action: { label: t('auth.logIn'), onClick: openAuthModal },
             })
             return
           }
-          addToast('Could not save highlight', 'error')
+          addToast(t('toast.highlightFailed'), 'error')
         }),
       },
       {
-        type: 'action', label: 'Blue', icon: <ColorDot color="#61afef" />,
+        type: 'action', label: t('study.colorBlue'), icon: <ColorDot color="#61afef" />,
         onClick: () => addHighlight(verse.apiId, 0, verse.text.length, 'blue').catch((error) => {
           if (!user || isAuthError(error)) {
-            addToast('You need to log in to save highlights', 'error', {
-              action: { label: 'Log in', onClick: openAuthModal },
+            addToast(t('study.loginRequired'), 'error', {
+              action: { label: t('auth.logIn'), onClick: openAuthModal },
             })
             return
           }
-          addToast('Could not save highlight', 'error')
+          addToast(t('toast.highlightFailed'), 'error')
         }),
       },
       {
-        type: 'action', label: 'Green', icon: <ColorDot color="#98c379" />,
+        type: 'action', label: t('study.colorGreen'), icon: <ColorDot color="#98c379" />,
         onClick: () => addHighlight(verse.apiId, 0, verse.text.length, 'green').catch((error) => {
           if (!user || isAuthError(error)) {
-            addToast('You need to log in to save highlights', 'error', {
-              action: { label: 'Log in', onClick: openAuthModal },
+            addToast(t('study.loginRequired'), 'error', {
+              action: { label: t('auth.logIn'), onClick: openAuthModal },
             })
             return
           }
-          addToast('Could not save highlight', 'error')
+          addToast(t('toast.highlightFailed'), 'error')
         }),
       },
       { type: 'separator' },
       {
         type: 'action',
-        label: 'Add note',
+        label: t('verse.addNote'),
         icon: <IconNote />,
         onClick: () => selectVerse(verse.id),
       },
       ...(hasCrossRefs ? [{ type: 'separator' as const }, {
         type: 'action' as const,
-        label: 'Cross-references',
+        label: t('toolbar.crossReferences'),
         icon: <IconXRef />,
         onClick: () => openCrossRefs(verse.apiId),
       }] : []),
@@ -268,7 +271,7 @@ export function VerseList() {
     if (user) {
       items.push({
         type: 'action',
-        label: bookmarked ? 'Remove from favorites' : 'Add to favorites',
+        label: bookmarked ? t('verse.removeFromFavorites') : t('verse.addToFavorites'),
         icon: <IconStar filled={bookmarked} />,
         onClick: () => {
           toggleBookmark(verse.apiId)
@@ -331,11 +334,11 @@ export function VerseList() {
       {/* Floating chapter navigation */}
       <div className="pointer-events-none absolute inset-x-0 top-16 bottom-0 z-20 hidden md:flex items-center">
         <div className="w-full max-w-[684px] mx-auto flex justify-between px-0">
-        <Tooltip label={bookIdx === 0 && selectedChapter === 1 ? '' : 'Previous chapter'} side="top">
+        <Tooltip label={bookIdx === 0 && selectedChapter === 1 ? '' : t('verse.previousChapter')} side="top">
           <button
             onClick={() => navigateChapter('prev')}
             disabled={prevDisabled}
-            aria-label="Previous chapter"
+            aria-label={t('verse.previousChapter')}
             className={cn(
               'pointer-events-auto w-8 h-8 flex items-center justify-center rounded-full border transition-all duration-150',
               'bg-bg-tertiary/80 backdrop-blur-sm shadow-sm',
@@ -350,11 +353,11 @@ export function VerseList() {
           </button>
         </Tooltip>
 
-        <Tooltip label={nextDisabled ? '' : 'Next chapter'} side="top">
+        <Tooltip label={nextDisabled ? '' : t('verse.nextChapter')} side="top">
           <button
             onClick={() => navigateChapter('next')}
             disabled={nextDisabled}
-            aria-label="Next chapter"
+            aria-label={t('verse.nextChapter')}
             className={cn(
               'pointer-events-auto w-8 h-8 flex items-center justify-center rounded-full border transition-all duration-150',
               'bg-bg-tertiary/80 backdrop-blur-sm shadow-sm',
@@ -372,7 +375,7 @@ export function VerseList() {
       </div>
 
       {verses.length === 0 ? (
-        <EmptyState message="No verses available for this chapter" />
+        <EmptyState message={t('verse.empty')} />
       ) : (
         <div className="flex-1 overflow-y-auto relative">
 
@@ -383,7 +386,7 @@ export function VerseList() {
                 <button
                   onClick={() => navigateChapter('prev')}
                   disabled={prevDisabled}
-                  aria-label="Previous chapter"
+                  aria-label={t('verse.previousChapter')}
                   className={cn(
                     'h-9 min-w-9 rounded-md border px-2 text-xs transition-colors',
                     prevDisabled
@@ -391,12 +394,12 @@ export function VerseList() {
                       : 'border-border-subtle bg-bg-tertiary text-text-secondary',
                   )}
                 >
-                  Prev
+                  {t('verse.prev')}
                 </button>
                 <button
                   onClick={() => navigateChapter('next')}
                   disabled={nextDisabled}
-                  aria-label="Next chapter"
+                  aria-label={t('verse.nextChapter')}
                   className={cn(
                     'h-9 min-w-9 rounded-md border px-2 text-xs transition-colors',
                     nextDisabled
@@ -404,13 +407,13 @@ export function VerseList() {
                       : 'border-border-subtle bg-bg-tertiary text-text-secondary',
                   )}
                 >
-                  Next
+                  {t('verse.next')}
                 </button>
               </div>
               <div className="flex gap-2 items-center">
             <ReadingToolbar />
             <div className="flex gap-0.5 bg-bg-tertiary border border-border-subtle rounded-md p-0.5 pointer-events-auto shadow-sm">
-              <Tooltip label="Verse mode" side="bottom">
+              <Tooltip label={t('verse.verseMode')} side="bottom">
                 <button
                   onClick={() => setReadingMode('verse')}
                   className={cn(
@@ -421,7 +424,7 @@ export function VerseList() {
                   <VerseIcon />
                 </button>
               </Tooltip>
-              <Tooltip label="Flow mode" side="bottom">
+              <Tooltip label={t('verse.flowMode')} side="bottom">
                 <button
                   onClick={() => setReadingMode('flow')}
                   className={cn(

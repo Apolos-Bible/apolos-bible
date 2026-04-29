@@ -1,5 +1,6 @@
 
 
+import { useTranslation } from 'react-i18next'
 import { useVerseStore } from '@/lib/store/useVerseStore'
 import type { Verse } from '@/lib/store/useVerseStore'
 import { useBookmarkStore } from '@/lib/store/useBookmarkStore'
@@ -18,6 +19,7 @@ interface VerseItemProps {
 }
 
 export function VerseItem({ verse, isSelected, noteCount, highlightCount }: VerseItemProps) {
+  const { t }       = useTranslation()
   const selectVerse = useVerseStore((s) => s.selectVerse)
   const user        = useAuthStore((s) => s.user)
   const fontSize    = useUIStore((s) => s.fontSize)
@@ -101,8 +103,8 @@ export function VerseItem({ verse, isSelected, noteCount, highlightCount }: Vers
                 e.stopPropagation()
                 selectVerse(verse.id)
               }}
-            title={isMobile ? 'Highlight verse' : 'Highlight verse (H)'}
-              aria-label="Highlight verse"
+            title={isMobile ? t('verse.highlightVerse') : t('verse.highlightVerseTip')}
+              aria-label={t('verse.highlightVerse')}
               className={cn(
                 'opacity-0 group-hover:opacity-100 transition-opacity duration-100',
                 'text-2xs text-text-muted hover:text-accent px-1 py-0.5 rounded',
@@ -137,8 +139,8 @@ export function VerseItem({ verse, isSelected, noteCount, highlightCount }: Vers
                 e.stopPropagation()
                 toggleBookmark(verse.apiId)
               }}
-              title={isBookmarked ? 'Remove bookmark' : 'Bookmark verse'}
-              aria-label={isBookmarked ? 'Remove bookmark' : 'Bookmark verse'}
+              title={isBookmarked ? t('verse.removeBookmark') : t('verse.bookmark')}
+              aria-label={isBookmarked ? t('verse.removeBookmark') : t('verse.bookmark')}
               className={cn(
                 'transition-all duration-150',
                 isBookmarked

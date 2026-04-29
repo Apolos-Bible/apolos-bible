@@ -1,6 +1,7 @@
 import { create } from 'zustand'
 import { chatApi, type ChatMessage, type Conversation } from '@/lib/chatApi'
 import { initEcho, getEcho } from '@/lib/echo'
+import i18n from '@/lib/i18n'
 import { useAuthStore } from './useAuthStore'
 import { useUIStore } from './useUIStore'
 
@@ -276,7 +277,7 @@ export const useChatStore = create<ChatState>((set, get) => ({
         const title = conversation.type === 'group'
           ? (conversation.name ?? 'New group chat')
           : (conversation.participants.find((p) => p.id !== userId)?.name ?? 'New chat')
-        useUIStore.getState().addToast(`${title} is now available in chat`, 'info')
+        useUIStore.getState().addToast(i18n.t('chat.conversationAvailable', { title }), 'info')
       }
     })
   },

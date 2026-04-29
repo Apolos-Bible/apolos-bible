@@ -1,5 +1,6 @@
 
 
+import { useTranslation } from 'react-i18next'
 import { useUIStore } from '@/lib/store/useUIStore'
 import { cn } from '@/lib/cn'
 
@@ -16,6 +17,7 @@ const typeIcons = {
 } as const
 
 export function Toast() {
+  const { t } = useTranslation()
   const { toasts, removeToast } = useUIStore()
 
   if (toasts.length === 0) return null
@@ -46,7 +48,7 @@ export function Toast() {
           <button
             onClick={() => removeToast(toast.id)}
             className="ml-auto shrink-0 text-text-muted hover:text-text-secondary transition-colors leading-none"
-            aria-label="Dismiss notification"
+            aria-label={t('toast.dismiss')}
           >
             ×
           </button>

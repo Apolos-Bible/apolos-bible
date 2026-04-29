@@ -41,7 +41,7 @@ export function ChatPanel() {
               </button>
               <button
                 onClick={closePanel}
-                aria-label="Close chat"
+                aria-label={t('chat.closeChat')}
                 className="text-text-muted hover:text-text-primary transition-colors p-1 rounded hover:bg-bg-tertiary"
               >
                 <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" className="w-4 h-4">

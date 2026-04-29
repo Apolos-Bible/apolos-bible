@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState, type KeyboardEvent } from 'react'
+import { useTranslation } from 'react-i18next'
 import { useChatStore } from '@/lib/store/useChatStore'
 import { useUIStore } from '@/lib/store/useUIStore'
 import { useVerseStore } from '@/lib/store/useVerseStore'
@@ -19,6 +20,7 @@ const IS_CMD_MODE   = /^\/\S*$/
 const IS_VERSE_MODE = /^\/v\s/
 
 export function MessageInput({ conversationId }: MessageInputProps) {
+  const { t }        = useTranslation()
   const send         = useChatStore(s => s.send)
   const notifyTyping = useChatStore(s => s.notifyTyping)
   const addToast     = useUIStore(s => s.addToast)
@@ -125,7 +127,7 @@ export function MessageInput({ conversationId }: MessageInputProps) {
       setBody('')
       autoresize()
     } catch {
-      addToast('Could not send message', 'error')
+      addToast(t('chat.sendFailed'), 'error')
     } finally {
       setSending(false)
     }
@@ -165,7 +167,7 @@ export function MessageInput({ conversationId }: MessageInputProps) {
           onChange={(e) => { handleChange(e.target.value); autoresize() }}
           onKeyDown={handleKeyDown}
           rows={1}
-          placeholder="Write a message…"
+          placeholder={t('chat.messagePlaceholder')}
           className={cn(
             'flex-1 resize-none bg-bg-secondary rounded-md border border-border-subtle',
             'text-sm text-text-primary placeholder:text-text-muted',
@@ -187,7 +189,7 @@ export function MessageInput({ conversationId }: MessageInputProps) {
           <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.6" className="w-3.5 h-3.5">
             <path d="M2 8l11-5-3 11-3-4-5-2z" strokeLinecap="round" strokeLinejoin="round" />
           </svg>
-          Send
+          {t('chat.send')}
         </button>
       </div>
     </div>
