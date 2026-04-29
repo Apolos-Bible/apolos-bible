@@ -1,25 +1,71 @@
 import { useEffect, useRef, useState, type KeyboardEvent } from 'react'
 import { useChatStore } from '@/lib/store/useChatStore'
 import { useUIStore } from '@/lib/store/useUIStore'
+import { useVerseStore } from '@/lib/store/useVerseStore'
+import { bibleApi, type ApiSearchResult } from '@/lib/bibleApi'
+import { VerseAutocomplete } from './VerseAutocomplete'
 import { cn } from '@/lib/cn'
 
 interface MessageInputProps {
   conversationId: number
 }
 
+const TRIGGER = /^\/v(\s|$)/
+
 export function MessageInput({ conversationId }: MessageInputProps) {
   const send         = useChatStore(s => s.send)
   const notifyTyping = useChatStore(s => s.notifyTyping)
   const addToast     = useUIStore(s => s.addToast)
+  const versionId    = useVerseStore(s => s.versionId)
 
-  const [body, setBody] = useState('')
-  const [sending, setSending] = useState(false)
+  const [body, setBody]         = useState('')
+  const [sending, setSending]   = useState(false)
+
+  // Verse autocomplete state
+  const [acResults, setAcResults]   = useState<ApiSearchResult[]>([])
+  const [acLoading, setAcLoading]   = useState(false)
+  const [acActive, setAcActive]     = useState(0)
+
   const textareaRef = useRef<HTMLTextAreaElement>(null)
+
+  const isAc   = TRIGGER.test(body)
+  const acQuery = isAc ? body.replace(/^\/v\s*/, '') : ''
 
   useEffect(() => {
     setBody('')
     textareaRef.current?.focus()
   }, [conversationId])
+
+  // Fetch search results, debounced 300 ms
+  useEffect(() => {
+    if (!isAc || !acQuery.trim()) {
+      setAcResults([])
+      setAcLoading(false)
+      return
+    }
+    setAcLoading(true)
+    const timer = setTimeout(async () => {
+      try {
+        const res = await bibleApi.search(versionId, acQuery.trim())
+        setAcResults(res.slice(0, 6))
+        setAcActive(0)
+      } catch {
+        setAcResults([])
+      } finally {
+        setAcLoading(false)
+      }
+    }, 300)
+    return () => clearTimeout(timer)
+  }, [acQuery, isAc, versionId])
+
+  const insertVerse = (r: ApiSearchResult) => {
+    const ref = `${r.book} ${r.chapter}:${r.verse}`
+    setBody(ref)
+    setAcResults([])
+    textareaRef.current?.focus()
+    // Resize after inserting
+    requestAnimationFrame(() => autoresize())
+  }
 
   const autoresize = () => {
     const el = textareaRef.current
@@ -29,6 +75,31 @@ export function MessageInput({ conversationId }: MessageInputProps) {
   }
 
   const handleKeyDown = (e: KeyboardEvent<HTMLTextAreaElement>) => {
+    if (isAc) {
+      if (e.key === 'ArrowDown') {
+        e.preventDefault()
+        setAcActive(i => Math.min(acResults.length - 1, i + 1))
+        return
+      }
+      if (e.key === 'ArrowUp') {
+        e.preventDefault()
+        setAcActive(i => Math.max(0, i - 1))
+        return
+      }
+      if (e.key === 'Enter') {
+        e.preventDefault()
+        const r = acResults[acActive]
+        if (r) insertVerse(r)
+        return
+      }
+      if (e.key === 'Escape') {
+        e.preventDefault()
+        setBody('')
+        setAcResults([])
+        return
+      }
+    }
+
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault()
       submit()
@@ -56,7 +127,18 @@ export function MessageInput({ conversationId }: MessageInputProps) {
   }
 
   return (
-    <div className="border-t border-border-subtle px-3 py-2.5 shrink-0">
+    <div className="relative border-t border-border-subtle px-3 py-2.5 shrink-0">
+      {isAc && (
+        <VerseAutocomplete
+          query={acQuery}
+          results={acResults}
+          loading={acLoading}
+          activeIdx={acActive}
+          onSelect={insertVerse}
+          onHover={setAcActive}
+        />
+      )}
+
       <div className="flex items-end gap-2">
         <textarea
           ref={textareaRef}
