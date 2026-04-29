@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { useAuthStore } from '@/lib/store/useAuthStore'
 import { cn } from '@/lib/cn'
 
@@ -10,6 +11,7 @@ interface AuthModalProps {
 type Mode = 'login' | 'register'
 
 export function AuthModal({ open, onClose }: AuthModalProps) {
+  const { t } = useTranslation()
   const [mode, setMode] = useState<Mode>('login')
   const [name, setName] = useState('')
   const [email, setEmail] = useState('')
@@ -43,7 +45,7 @@ export function AuthModal({ open, onClose }: AuthModalProps) {
       }
       handleClose()
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Something went wrong')
+      setError(err instanceof Error ? err.message : t('auth.somethingWentWrong'))
     } finally {
       setLoading(false)
     }
@@ -64,10 +66,10 @@ export function AuthModal({ open, onClose }: AuthModalProps) {
         <div className="flex items-start justify-between mb-5">
           <div>
             <h2 className="text-md font-medium text-text-primary">
-              {mode === 'login' ? 'Sign in to Tulia' : 'Create account'}
+              {mode === 'login' ? t('auth.signInTitle') : t('auth.createAccount')}
             </h2>
             <p className="text-sm text-text-muted mt-0.5">
-              {mode === 'login' ? 'Welcome back.' : 'Start your study journey.'}
+              {mode === 'login' ? t('auth.welcomeBack') : t('auth.startJourney')}
             </p>
           </div>
           <button
@@ -91,7 +93,7 @@ export function AuthModal({ open, onClose }: AuthModalProps) {
                   : 'text-text-muted hover:text-text-secondary'
               )}
             >
-              {m === 'login' ? 'Sign in' : 'Register'}
+              {m === 'login' ? t('auth.signIn') : t('auth.register')}
             </button>
           ))}
         </div>
@@ -99,13 +101,13 @@ export function AuthModal({ open, onClose }: AuthModalProps) {
         <form onSubmit={handleSubmit} className="flex flex-col gap-3" noValidate>
           {mode === 'register' && (
             <div className="flex flex-col gap-1.5">
-              <label htmlFor="auth-name" className="text-sm text-text-secondary">Name</label>
+              <label htmlFor="auth-name" className="text-sm text-text-secondary">{t('auth.name')}</label>
               <input
                 id="auth-name"
                 type="text"
                 value={name}
                 onChange={e => setName(e.target.value)}
-                placeholder="Your name"
+                placeholder={t('auth.namePlaceholder')}
                 autoComplete="name"
                 autoFocus
                 className={inputCls}
@@ -114,7 +116,7 @@ export function AuthModal({ open, onClose }: AuthModalProps) {
           )}
 
           <div className="flex flex-col gap-1.5">
-            <label htmlFor="auth-email" className="text-sm text-text-secondary">Email</label>
+            <label htmlFor="auth-email" className="text-sm text-text-secondary">{t('auth.email')}</label>
             <input
               id="auth-email"
               type="email"
@@ -128,7 +130,7 @@ export function AuthModal({ open, onClose }: AuthModalProps) {
           </div>
 
           <div className="flex flex-col gap-1.5">
-            <label htmlFor="auth-password" className="text-sm text-text-secondary">Password</label>
+            <label htmlFor="auth-password" className="text-sm text-text-secondary">{t('auth.password')}</label>
             <input
               id="auth-password"
               type="password"
@@ -152,8 +154,8 @@ export function AuthModal({ open, onClose }: AuthModalProps) {
             )}
           >
             {loading
-              ? (mode === 'login' ? 'Signing in…' : 'Creating account…')
-              : (mode === 'login' ? 'Sign in' : 'Create account')}
+              ? (mode === 'login' ? t('auth.signingIn') : t('auth.creatingAccount'))
+              : (mode === 'login' ? t('auth.signIn') : t('auth.createAccount'))}
           </button>
         </form>
       </div>

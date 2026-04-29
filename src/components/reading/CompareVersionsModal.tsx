@@ -1,8 +1,10 @@
 import { useEffect, useRef, useCallback } from 'react'
+import { useTranslation } from 'react-i18next'
 import { useCompareStore } from '@/lib/store/useCompareStore'
 import { cn } from '@/lib/cn'
 
 export function CompareVersionsModal() {
+  const { t } = useTranslation()
   const { open, results, targetVerseNumber, closeCompare } = useCompareStore()
   const scrollRefs = useRef<(HTMLDivElement | null)[]>([])
   const syncingRef = useRef(false)
@@ -56,7 +58,7 @@ export function CompareVersionsModal() {
       >
         {/* Header */}
         <div className="flex items-center justify-between px-5 py-3 border-b border-border-subtle shrink-0">
-          <h2 className="text-sm font-medium text-text-primary">Compare Versions</h2>
+          <h2 className="text-sm font-medium text-text-primary">{t('compareVersions.title')}</h2>
           <button
             onClick={closeCompare}
             className="text-text-muted hover:text-text-primary transition-colors"
@@ -82,13 +84,13 @@ export function CompareVersionsModal() {
                 className="flex-1 overflow-y-auto px-4 py-3 space-y-2"
               >
                 {loading && (
-                  <p className="text-xs text-text-muted animate-pulse">Loading…</p>
+                  <p className="text-xs text-text-muted animate-pulse">{t('common.loading')}</p>
                 )}
                 {error && (
-                  <p className="text-xs text-red-400">Failed to load</p>
+                  <p className="text-xs text-red-400">{t('compareVersions.loadFailed')}</p>
                 )}
                 {notAvailable && (
-                  <p className="text-xs text-text-muted italic">Not available in this version</p>
+                  <p className="text-xs text-text-muted italic">{t('compareVersions.notAvailable')}</p>
                 )}
                 {!loading && !error && !notAvailable && data && data.verses.map(verse => (
                   <div

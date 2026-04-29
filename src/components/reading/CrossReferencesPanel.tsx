@@ -1,8 +1,10 @@
 import { useEffect } from 'react'
+import { useTranslation } from 'react-i18next'
 import { useCrossRefStore } from '@/lib/store/useCrossRefStore'
 import { useVerseStore } from '@/lib/store/useVerseStore'
 
 export function CrossReferencesPanel() {
+  const { t } = useTranslation()
   const { open, results, loading, closePanel } = useCrossRefStore()
   const selectBook    = useVerseStore(s => s.selectBook)
   const selectChapter = useVerseStore(s => s.selectChapter)
@@ -34,7 +36,7 @@ export function CrossReferencesPanel() {
       >
         {/* Header */}
         <div className="flex items-center justify-between px-4 py-3 border-b border-border-subtle shrink-0">
-          <h2 className="text-sm font-medium text-text-primary">Cross-References</h2>
+          <h2 className="text-sm font-medium text-text-primary">{t('crossRef.title')}</h2>
           <button
             onClick={closePanel}
             className="text-text-muted hover:text-text-primary transition-colors"
@@ -49,10 +51,10 @@ export function CrossReferencesPanel() {
         {/* Results */}
         <div className="flex-1 overflow-y-auto">
           {loading && (
-            <p className="text-xs text-text-muted text-center py-8 animate-pulse">Loading…</p>
+            <p className="text-xs text-text-muted text-center py-8 animate-pulse">{t('common.loading')}</p>
           )}
           {!loading && results.length === 0 && (
-            <p className="text-xs text-text-muted text-center py-8">No cross-references found</p>
+            <p className="text-xs text-text-muted text-center py-8">{t('crossRef.empty')}</p>
           )}
           {!loading && results.map(ref => (
             <button

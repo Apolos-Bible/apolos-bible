@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { openUrl } from '@tauri-apps/plugin-opener'
 import { useVerseStore } from '@/lib/store/useVerseStore'
 import { useUIStore } from '@/lib/store/useUIStore'
@@ -15,6 +16,7 @@ export function CommentaryPanel() {
   const [error, setError]           = useState(false)
   const contentRef = useRef<HTMLDivElement>(null)
 
+  const { t } = useTranslation()
   const bookName = books.find((b) => b.slug === selectedBook)?.name ?? selectedBook
 
   useEffect(() => {
@@ -57,7 +59,7 @@ export function CommentaryPanel() {
       <div className="flex items-center justify-between px-4 py-3 border-b border-border-subtle flex-shrink-0">
         <div>
           <p className="text-[11px] font-sans font-semibold uppercase tracking-[0.15em] text-accent/70">
-            Commentary
+            {t('commentary.title')}
           </p>
           <p className="text-[13px] font-medium text-text-primary mt-0.5">
             {bookName} {selectedChapter}
@@ -78,13 +80,13 @@ export function CommentaryPanel() {
       <div className="flex-1 overflow-y-auto px-5 py-4">
         {loading && (
           <div className="flex items-center justify-center h-32 text-text-muted text-sm">
-            Loading…
+            {t('commentary.loading')}
           </div>
         )}
 
         {error && (
           <div className="flex items-center justify-center h-32 text-text-muted text-sm text-center px-4">
-            No commentary available for this chapter.
+            {t('commentary.empty')}
           </div>
         )}
 

@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next'
 import { useVerseStore } from '@/lib/store/useVerseStore'
 import { useCompareStore } from '@/lib/store/useCompareStore'
 import { useCrossRefStore } from '@/lib/store/useCrossRefStore'
@@ -53,6 +54,7 @@ export function ReadingToolbar() {
   const commentaryOpen   = useUIStore(s => s.commentaryOpen)
   const toggleCommentary = useUIStore(s => s.toggleCommentary)
 
+  const { t } = useTranslation()
   const selectedVerse = verses.find(v => v.id === selectedVerseId) ?? null
 
   const handleCompare = async () => {
@@ -78,17 +80,17 @@ export function ReadingToolbar() {
 
   return (
     <div className="flex gap-0.5 bg-bg-tertiary border border-border-subtle rounded-md p-0.5 pointer-events-auto shadow-sm">
-      <Tooltip label="Chapter commentary" side="bottom">
+      <Tooltip label={t('toolbar.commentary')} side="bottom">
         <button onClick={toggleCommentary} className={btnClass(commentaryOpen)}>
           <IconCommentary />
         </button>
       </Tooltip>
-      <Tooltip label="Compare versions" side="bottom">
+      <Tooltip label={t('toolbar.compareVersions')} side="bottom">
         <button onClick={handleCompare} className={btnClass(compareOpen)}>
           <IconCompare />
         </button>
       </Tooltip>
-      <Tooltip label={selectedVerse ? 'Cross-references' : 'Select a verse first'} side="bottom">
+      <Tooltip label={selectedVerse ? t('toolbar.crossReferences') : t('toolbar.selectVerseFirst')} side="bottom">
         <button
           onClick={handleXRef}
           disabled={!selectedVerse}
