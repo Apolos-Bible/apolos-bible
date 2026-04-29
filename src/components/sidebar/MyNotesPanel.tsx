@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { useAuthStore } from '@/lib/store/useAuthStore'
 import { useVerseStore } from '@/lib/store/useVerseStore'
 import { useUIStore } from '@/lib/store/useUIStore'
@@ -19,6 +20,7 @@ interface UserNote {
 }
 
 export function MyNotesPanel() {
+  const { t } = useTranslation()
   const user = useAuthStore(s => s.user)
   const openVerse = useVerseStore(s => s.openVerse)
   const closePanel = useUIStore(s => s.closePanel)
@@ -36,7 +38,7 @@ export function MyNotesPanel() {
 
   if (!user) return (
     <div className="flex-1 flex items-center justify-center px-6">
-      <p className="text-sm text-text-muted text-center">Sign in to see your notes</p>
+      <p className="text-sm text-text-muted text-center">{t('notes.signInPrompt')}</p>
     </div>
   )
 
@@ -48,14 +50,14 @@ export function MyNotesPanel() {
   return (
     <div className="flex flex-col h-full">
       <div className="px-4 py-3 border-b border-border-subtle flex items-center justify-between shrink-0">
-        <span className="text-sm font-medium text-text-primary">My Notes</span>
+        <span className="text-sm font-medium text-text-primary">{t('nav.myNotes')}</span>
         <button onClick={closePanel} className="text-text-muted hover:text-text-primary text-lg leading-none">×</button>
       </div>
       <div className="flex-1 overflow-y-auto">
         {loading ? (
-          <p className="text-xs text-text-muted text-center py-8">Loading…</p>
+          <p className="text-xs text-text-muted text-center py-8">{t('common.loading')}</p>
         ) : notes.length === 0 ? (
-          <p className="text-xs text-text-muted text-center py-8">No notes yet</p>
+          <p className="text-xs text-text-muted text-center py-8">{t('notes.empty')}</p>
         ) : (
           notes.map(n => (
             <button
