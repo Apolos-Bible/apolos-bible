@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { useTranslation } from 'react-i18next'
 import { Command } from 'cmdk'
 import { useUIStore } from '@/lib/store/useUIStore'
 import { useVerseStore } from '@/lib/store/useVerseStore'
@@ -6,6 +7,7 @@ import { bibleApi, ApiSearchResult } from '@/lib/bibleApi'
 import { cn } from '@/lib/cn'
 
 export function CommandPalette() {
+  const { t } = useTranslation()
   const { commandPaletteOpen, closeCommandPalette } = useUIStore()
   const { selectBook, openVerse } = useVerseStore()
   const books = useVerseStore((s) => s.books)
@@ -13,7 +15,6 @@ export function CommandPalette() {
   const [query, setQuery] = useState('')
   const [verseResults, setVerseResults] = useState<ApiSearchResult[]>([])
 
-  // Reset query when palette closes
   useEffect(() => {
     if (!commandPaletteOpen) {
       setQuery('')
@@ -21,7 +22,6 @@ export function CommandPalette() {
     }
   }, [commandPaletteOpen])
 
-  // Debounced verse search
   useEffect(() => {
     if (query.length < 2) {
       setVerseResults([])
@@ -64,13 +64,13 @@ export function CommandPalette() {
             <Command.Input
               value={query}
               onValueChange={setQuery}
-              placeholder="Search books or verses..."
+              placeholder={t('commandPalette.placeholder')}
               autoFocus
               className="text-md text-text-primary bg-transparent flex-1 px-4 py-3 outline-none placeholder:text-text-muted"
             />
             <button
               onClick={closeCommandPalette}
-              aria-label="Close"
+              aria-label={t('common.close')}
               className="px-3 text-text-muted hover:text-text-primary transition-colors"
             >
               <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" aria-hidden="true">
@@ -81,14 +81,14 @@ export function CommandPalette() {
 
           <Command.List className="max-h-80 overflow-y-auto py-1">
             <Command.Empty className="text-sm text-text-muted text-center py-6">
-              No results
+              {t('commandPalette.noResults')}
             </Command.Empty>
 
             {filteredBooks.length > 0 && (
               <Command.Group
                 heading={
                   <span className="px-4 py-1.5 text-2xs font-medium text-text-muted uppercase tracking-wider block">
-                    Books
+                    {t('commandPalette.books')}
                   </span>
                 }
               >
@@ -108,7 +108,7 @@ export function CommandPalette() {
                     <span className="text-accent text-xs">§</span>
                     <span>{book.name}</span>
                     <span className="ml-auto text-2xs text-text-muted">
-                      {book.testament === 'old' ? 'OT' : 'NT'} · {book.chapters} ch
+                      {book.testament === 'old' ? t('commandPalette.oldTestament') : t('commandPalette.newTestament')} · {book.chapters} {t('commandPalette.chapters')}
                     </span>
                   </Command.Item>
                 ))}
@@ -119,7 +119,7 @@ export function CommandPalette() {
               <Command.Group
                 heading={
                   <span className="px-4 py-1.5 text-2xs font-medium text-text-muted uppercase tracking-wider block">
-                    Verses
+                    {t('commandPalette.verses')}
                   </span>
                 }
               >

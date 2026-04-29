@@ -1,24 +1,24 @@
-
-
 import { useEffect } from 'react'
+import { useTranslation } from 'react-i18next'
 import { useUIStore } from '@/lib/store/useUIStore'
 import { cn } from '@/lib/cn'
 import { modKey } from '@/lib/platform'
 import { useIsMobile } from '@/lib/useIsMobile'
 
-const SHORTCUTS = [
-  { key: 'J', description: 'Navigate to next verse' },
-  { key: 'K', description: 'Navigate to previous verse' },
-  { key: 'N', description: 'Focus note input' },
-  { key: 'H', description: 'Toggle highlight mode' },
-  { key: `${modKey}K`, description: 'Open command palette' },
-  { key: '?', description: 'Toggle this panel' },
-  { key: 'Esc', description: 'Close panel' },
-]
-
 export function KeyboardShortcutsPanel() {
+  const { t } = useTranslation()
   const { shortcutsPanelOpen, toggleShortcutsPanel } = useUIStore()
   const isMobile = useIsMobile()
+
+  const SHORTCUTS = [
+    { key: 'J',          description: t('shortcuts.nextVerse') },
+    { key: 'K',          description: t('shortcuts.prevVerse') },
+    { key: 'N',          description: t('shortcuts.focusNote') },
+    { key: 'H',          description: t('shortcuts.toggleHighlight') },
+    { key: `${modKey}K`, description: t('shortcuts.openCommandPalette') },
+    { key: '?',          description: t('shortcuts.togglePanel') },
+    { key: 'Esc',        description: t('shortcuts.closePanel') },
+  ]
 
   useEffect(() => {
     if (!shortcutsPanelOpen) return
@@ -42,7 +42,7 @@ export function KeyboardShortcutsPanel() {
       >
         {/* Header */}
         <div className="flex items-center justify-between px-5 py-4 border-b border-border-subtle">
-          <h2 className="text-md font-medium text-text-primary">Keyboard Shortcuts</h2>
+          <h2 className="text-md font-medium text-text-primary">{t('shortcuts.title')}</h2>
           <button
             onClick={toggleShortcutsPanel}
             className="text-text-muted hover:text-text-secondary transition-colors text-lg leading-none"
