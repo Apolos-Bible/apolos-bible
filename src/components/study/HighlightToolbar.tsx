@@ -1,5 +1,5 @@
-
 import { useEffect, useRef, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { useHighlightStore } from '@/lib/store/useHighlightStore'
 import { useAuthStore } from '@/lib/store/useAuthStore'
 import { useUIStore } from '@/lib/store/useUIStore'
@@ -8,8 +8,8 @@ import { isAuthError } from '@/lib/auth'
 import type { HighlightColor } from '@/types'
 
 interface HighlightToolbarProps {
-  verseId: string     // string slug — used to scope DOM text selection
-  verseApiId: number  // numeric DB id — used for API calls
+  verseId: string
+  verseApiId: number
 }
 
 type SelectionRange = { start: number; end: number }
@@ -21,6 +21,7 @@ const COLORS: { value: HighlightColor; bg: string; border: string }[] = [
 ]
 
 export function HighlightToolbar({ verseId, verseApiId }: HighlightToolbarProps) {
+  const { t } = useTranslation()
   const addHighlight = useHighlightStore((s) => s.addHighlight)
   const addToast = useUIStore((s) => s.addToast)
   const openAuthModal = useUIStore((s) => s.openAuthModal)
@@ -32,6 +33,12 @@ export function HighlightToolbar({ verseId, verseApiId }: HighlightToolbarProps)
 
   const containerRef = useRef<HTMLDivElement | null>(null)
 
+  const colorLabel: Record<HighlightColor, string> = {
+    yellow: t('study.colorYellow'),
+    blue:   t('study.colorBlue'),
+    green:  t('study.colorGreen'),
+  }
+
   useEffect(() => {
     function handleSelectionChange() {
       const sel = window.getSelection()
@@ -41,7 +48,6 @@ export function HighlightToolbar({ verseId, verseApiId }: HighlightToolbarProps)
       }
 
       const range = sel.getRangeAt(0)
-
       const verseTextEl = document.querySelector(`[data-verse-text="${verseId}"]`)
       if (!verseTextEl) {
         setSelectionRange(null)
@@ -58,7 +64,6 @@ export function HighlightToolbar({ verseId, verseApiId }: HighlightToolbarProps)
       }
 
       const fullText = verseTextEl.textContent ?? ''
-
       const walker = document.createTreeWalker(verseTextEl, NodeFilter.SHOW_TEXT)
       let charOffset = 0
       let startOffset: number | null = null
@@ -67,16 +72,9 @@ export function HighlightToolbar({ verseId, verseApiId }: HighlightToolbarProps)
       let node: Text | null
       while ((node = walker.nextNode() as Text | null)) {
         const len = node.length
-
-        if (node === range.startContainer) {
-          startOffset = charOffset + range.startOffset
-        }
-        if (node === range.endContainer) {
-          endOffset = charOffset + range.endOffset
-        }
-
+        if (node === range.startContainer) startOffset = charOffset + range.startOffset
+        if (node === range.endContainer)   endOffset   = charOffset + range.endOffset
         charOffset += len
-
         if (startOffset !== null && endOffset !== null) break
       }
 
@@ -92,7 +90,6 @@ export function HighlightToolbar({ verseId, verseApiId }: HighlightToolbarProps)
 
     document.addEventListener('mouseup', handleSelectionChange)
     document.addEventListener('selectionchange', handleSelectionChange)
-
     return () => {
       document.removeEventListener('mouseup', handleSelectionChange)
       document.removeEventListener('selectionchange', handleSelectionChange)
@@ -104,18 +101,17 @@ export function HighlightToolbar({ verseId, verseApiId }: HighlightToolbarProps)
     setSaving(true)
     try {
       await addHighlight(verseApiId, selectionRange.start, selectionRange.end, selectedColor)
-      addToast('Highlight added', 'success')
+      addToast(t('toast.highlightAdded'), 'success')
       window.getSelection()?.removeAllRanges()
       setSelectionRange(null)
     } catch (error) {
       if (!user || isAuthError(error)) {
-        addToast('You need to log in to save highlights', 'error', {
-          action: { label: 'Log in', onClick: openAuthModal },
+        addToast(t('study.loginRequired'), 'error', {
+          action: { label: t('auth.logIn'), onClick: openAuthModal },
         })
         return
       }
-
-      addToast('Could not save highlight', 'error')
+      addToast(t('toast.highlightFailed'), 'error')
     } finally {
       setSaving(false)
     }
@@ -127,12 +123,12 @@ export function HighlightToolbar({ verseId, verseApiId }: HighlightToolbarProps)
       className="flex items-center gap-2 px-4 py-2 border-t border-border-subtle text-xs text-text-muted"
     >
       {/* Color swatches */}
-      <div className="flex items-center gap-1.5" role="group" aria-label="Highlight color">
+      <div className="flex items-center gap-1.5" role="group" aria-label={t('study.highlightColor')}>
         {COLORS.map(({ value, bg, border }) => (
           <button
             key={value}
             type="button"
-            title={`${value.charAt(0).toUpperCase() + value.slice(1)} highlight`}
+            title={colorLabel[value]}
             onClick={() => setSelectedColor(value)}
             className={cn(
               'w-4 h-4 rounded-full transition-all duration-100',
@@ -160,12 +156,12 @@ export function HighlightToolbar({ verseId, verseApiId }: HighlightToolbarProps)
             : 'text-text-muted cursor-not-allowed opacity-50',
         )}
       >
-        {saving ? 'Saving…' : 'Highlight selection'}
+        {saving ? t('study.highlightSaving') : t('study.highlightSelection')}
       </button>
 
       {selectionRange && (
         <span className="text-2xs text-text-muted ml-auto opacity-60">
-          {selectionRange.end - selectionRange.start}ch selected
+          {t('study.charsSelected', { count: selectionRange.end - selectionRange.start })}
         </span>
       )}
     </div>

@@ -1,5 +1,5 @@
-
 import { useEffect, useRef } from 'react'
+import { useTranslation } from 'react-i18next'
 import { useVerseStore } from '@/lib/store/useVerseStore'
 import { useHighlightStore } from '@/lib/store/useHighlightStore'
 import { useAuthStore } from '@/lib/store/useAuthStore'
@@ -29,13 +29,9 @@ function IconCopy() {
   )
 }
 
-const HIGHLIGHT_COLORS: { label: string; value: HighlightColor; hex: string }[] = [
-  { label: 'Yellow', value: 'yellow', hex: '#e5c07b' },
-  { label: 'Blue',   value: 'blue',   hex: '#61afef' },
-  { label: 'Green',  value: 'green',  hex: '#98c379' },
-]
-
 export function StudyPanel() {
+  const { t } = useTranslation()
+
   const selectedVerseId = useVerseStore((s) => s.selectedVerseId)
   const verses          = useVerseStore((s) => s.verses)
   const selectVerse     = useVerseStore((s) => s.selectVerse)
@@ -56,7 +52,11 @@ export function StudyPanel() {
     if (verse) loadHighlights(verse.apiId)
   }, [verse?.apiId])
 
-  // ── Context menu on verse text ───────────────────────────────────────────
+  const HIGHLIGHT_COLORS: { label: string; value: HighlightColor; hex: string }[] = [
+    { label: t('study.colorYellow'), value: 'yellow', hex: '#e5c07b' },
+    { label: t('study.colorBlue'),   value: 'blue',   hex: '#61afef' },
+    { label: t('study.colorGreen'),  value: 'green',  hex: '#98c379' },
+  ]
 
   function getTextSelection(verseId: string): { start: number; end: number; text: string } | null {
     const sel = window.getSelection()
@@ -88,7 +88,7 @@ export function StudyPanel() {
     const items: MenuItem[] = []
 
     if (selection) {
-      items.push({ type: 'label', text: 'Highlight selection' })
+      items.push({ type: 'label', text: t('study.highlightSelection') })
       for (const { label, value, hex } of HIGHLIGHT_COLORS) {
         items.push({
           type: 'action',
@@ -96,35 +96,34 @@ export function StudyPanel() {
           icon: <ColorDot color={hex} />,
           onClick: () =>
             addHighlight(verse.apiId, selection.start, selection.end, value)
-              .then(() => { addToast('Highlight added', 'success'); window.getSelection()?.removeAllRanges() })
+              .then(() => { addToast(t('toast.highlightAdded'), 'success'); window.getSelection()?.removeAllRanges() })
               .catch((error) => {
                 if (!user || isAuthError(error)) {
-                  addToast('You need to log in to save highlights', 'error', {
-                    action: { label: 'Log in', onClick: openAuthModal },
+                  addToast(t('study.loginRequired'), 'error', {
+                    action: { label: t('auth.logIn'), onClick: openAuthModal },
                   })
                   return
                 }
-
-                addToast('Could not save highlight', 'error')
+                addToast(t('toast.highlightFailed'), 'error')
               }),
         })
       }
       items.push({ type: 'separator' })
       items.push({
         type: 'action',
-        label: 'Copy selection',
+        label: t('study.copySelection'),
         icon: <IconCopy />,
-        onClick: () => { navigator.clipboard.writeText(selection.text); addToast('Copied', 'success') },
+        onClick: () => { navigator.clipboard.writeText(selection.text); addToast(t('toast.copied'), 'success') },
       })
     } else {
       items.push({
         type: 'action',
-        label: 'Copy verse text',
+        label: t('study.copyVerseText'),
         icon: <IconCopy />,
-        onClick: () => { navigator.clipboard.writeText(verse.text); addToast('Copied', 'success') },
+        onClick: () => { navigator.clipboard.writeText(verse.text); addToast(t('toast.copied'), 'success') },
       })
       items.push({ type: 'separator' })
-      items.push({ type: 'label', text: 'Highlight entire verse' })
+      items.push({ type: 'label', text: t('study.highlightEntireVerse') })
       for (const { label, value, hex } of HIGHLIGHT_COLORS) {
         items.push({
           type: 'action',
@@ -132,16 +131,15 @@ export function StudyPanel() {
           icon: <ColorDot color={hex} />,
           onClick: () =>
             addHighlight(verse.apiId, 0, verse.text.length, value)
-              .then(() => addToast('Highlight added', 'success'))
+              .then(() => addToast(t('toast.highlightAdded'), 'success'))
               .catch((error) => {
                 if (!user || isAuthError(error)) {
-                  addToast('You need to log in to save highlights', 'error', {
-                    action: { label: 'Log in', onClick: openAuthModal },
+                  addToast(t('study.loginRequired'), 'error', {
+                    action: { label: t('auth.logIn'), onClick: openAuthModal },
                   })
                   return
                 }
-
-                addToast('Could not save highlight', 'error')
+                addToast(t('toast.highlightFailed'), 'error')
               }),
         })
       }
@@ -157,7 +155,7 @@ export function StudyPanel() {
         title={
           verse
             ? `${verse.book.charAt(0).toUpperCase()}${verse.book.slice(1)} ${verse.chapter}:${verse.verse}`
-            : 'Study'
+            : t('study.title')
         }
         actions={
           verse ? (
@@ -177,12 +175,12 @@ export function StudyPanel() {
 
       {/* Body */}
       {!verse ? (
-        <EmptyState message="Select a verse to begin studying" />
+        <EmptyState message={t('study.empty')} />
       ) : (
         <div className="flex-1 flex flex-col overflow-hidden">
           <div className="flex-1 overflow-y-auto flex flex-col">
 
-            {/* Verse text card — right-click for highlight/copy menu */}
+            {/* Verse text card */}
             <div
               className="bg-bg-tertiary rounded-lg mx-4 my-3 p-4"
               onContextMenu={handleVerseTextContextMenu}
