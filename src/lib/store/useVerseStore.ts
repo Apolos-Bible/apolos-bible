@@ -47,7 +47,7 @@ function testament(bookNumber: number): 'old' | 'new' {
 }
 
 export const useVerseStore = create<VerseState>((set, get) => ({
-  versionId: 1,
+  versionId: Number(localStorage.getItem('tulia_version_id')) || 1,
   versions: [],
   books: [],
   selectedBook: '',
@@ -67,6 +67,7 @@ export const useVerseStore = create<VerseState>((set, get) => ({
   },
 
   setVersion: async (id) => {
+    localStorage.setItem('tulia_version_id', String(id))
     set({ versionId: id, books: [], verses: [], selectedVerseId: null })
     await get().loadBooks()
   },
