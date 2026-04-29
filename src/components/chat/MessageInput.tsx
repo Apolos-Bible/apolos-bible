@@ -3,6 +3,8 @@ import { useChatStore } from '@/lib/store/useChatStore'
 import { useUIStore } from '@/lib/store/useUIStore'
 import { useVerseStore } from '@/lib/store/useVerseStore'
 import { bibleApi, type ApiSearchResult } from '@/lib/bibleApi'
+import { CHAT_COMMANDS, filterCommands, type ChatCommand } from './chatCommands'
+import { CommandPicker } from './CommandPicker'
 import { VerseAutocomplete } from './VerseAutocomplete'
 import { cn } from '@/lib/cn'
 
@@ -10,7 +12,10 @@ interface MessageInputProps {
   conversationId: number
 }
 
-const TRIGGER = /^\/v(\s|$)/
+// /v  (no space yet) → command picker mode
+const IS_CMD_MODE   = /^\/\S*$/
+// /v  (with space)  → verse autocomplete mode
+const IS_VERSE_MODE = /^\/v\s/
 
 export function MessageInput({ conversationId }: MessageInputProps) {
   const send         = useChatStore(s => s.send)
@@ -18,27 +23,37 @@ export function MessageInput({ conversationId }: MessageInputProps) {
   const addToast     = useUIStore(s => s.addToast)
   const versionId    = useVerseStore(s => s.versionId)
 
-  const [body, setBody]         = useState('')
-  const [sending, setSending]   = useState(false)
+  const [body, setBody]       = useState('')
+  const [sending, setSending] = useState(false)
+
+  // Command picker state
+  const [cmdActive, setCmdActive] = useState(0)
 
   // Verse autocomplete state
-  const [acResults, setAcResults]   = useState<ApiSearchResult[]>([])
-  const [acLoading, setAcLoading]   = useState(false)
-  const [acActive, setAcActive]     = useState(0)
+  const [acResults, setAcResults] = useState<ApiSearchResult[]>([])
+  const [acLoading, setAcLoading] = useState(false)
+  const [acActive, setAcActive]   = useState(0)
 
   const textareaRef = useRef<HTMLTextAreaElement>(null)
 
-  const isAc   = TRIGGER.test(body)
-  const acQuery = isAc ? body.replace(/^\/v\s*/, '') : ''
+  const isCmdMode   = IS_CMD_MODE.test(body)
+  const isVerseMode = IS_VERSE_MODE.test(body)
+  const filteredCmds = isCmdMode ? filterCommands(body) : CHAT_COMMANDS
+  const acQuery     = isVerseMode ? body.replace(/^\/v\s*/, '') : ''
 
   useEffect(() => {
     setBody('')
     textareaRef.current?.focus()
   }, [conversationId])
 
-  // Fetch search results, debounced 300 ms
+  // Reset command picker index when filtered list changes
   useEffect(() => {
-    if (!isAc || !acQuery.trim()) {
+    setCmdActive(0)
+  }, [body])
+
+  // Fetch verse search results, debounced 300 ms
+  useEffect(() => {
+    if (!isVerseMode || !acQuery.trim()) {
       setAcResults([])
       setAcLoading(false)
       return
@@ -56,14 +71,18 @@ export function MessageInput({ conversationId }: MessageInputProps) {
       }
     }, 300)
     return () => clearTimeout(timer)
-  }, [acQuery, isAc, versionId])
+  }, [acQuery, isVerseMode, versionId])
+
+  const activateCommand = (cmd: ChatCommand) => {
+    setBody(`/${cmd.trigger} `)
+    textareaRef.current?.focus()
+  }
 
   const insertVerse = (r: ApiSearchResult) => {
     const ref = `${r.book} ${r.chapter}:${r.verse}`
     setBody(ref)
     setAcResults([])
     textareaRef.current?.focus()
-    // Resize after inserting
     requestAnimationFrame(() => autoresize())
   }
 
@@ -75,29 +94,19 @@ export function MessageInput({ conversationId }: MessageInputProps) {
   }
 
   const handleKeyDown = (e: KeyboardEvent<HTMLTextAreaElement>) => {
-    if (isAc) {
-      if (e.key === 'ArrowDown') {
-        e.preventDefault()
-        setAcActive(i => Math.min(acResults.length - 1, i + 1))
-        return
-      }
-      if (e.key === 'ArrowUp') {
-        e.preventDefault()
-        setAcActive(i => Math.max(0, i - 1))
-        return
-      }
-      if (e.key === 'Enter') {
-        e.preventDefault()
-        const r = acResults[acActive]
-        if (r) insertVerse(r)
-        return
-      }
-      if (e.key === 'Escape') {
-        e.preventDefault()
-        setBody('')
-        setAcResults([])
-        return
-      }
+    if (isCmdMode) {
+      if (e.key === 'ArrowDown') { e.preventDefault(); setCmdActive(i => Math.min(filteredCmds.length - 1, i + 1)); return }
+      if (e.key === 'ArrowUp')   { e.preventDefault(); setCmdActive(i => Math.max(0, i - 1)); return }
+      if (e.key === 'Enter')     { e.preventDefault(); const c = filteredCmds[cmdActive]; if (c) activateCommand(c); return }
+      if (e.key === 'Escape')    { e.preventDefault(); setBody(''); return }
+      if (e.key === 'Tab')       { e.preventDefault(); const c = filteredCmds[cmdActive]; if (c) activateCommand(c); return }
+    }
+
+    if (isVerseMode) {
+      if (e.key === 'ArrowDown') { e.preventDefault(); setAcActive(i => Math.min(acResults.length - 1, i + 1)); return }
+      if (e.key === 'ArrowUp')   { e.preventDefault(); setAcActive(i => Math.max(0, i - 1)); return }
+      if (e.key === 'Enter')     { e.preventDefault(); const r = acResults[acActive]; if (r) insertVerse(r); return }
+      if (e.key === 'Escape')    { e.preventDefault(); setBody(''); setAcResults([]); return }
     }
 
     if (e.key === 'Enter' && !e.shiftKey) {
@@ -128,7 +137,16 @@ export function MessageInput({ conversationId }: MessageInputProps) {
 
   return (
     <div className="relative border-t border-border-subtle px-3 py-2.5 shrink-0">
-      {isAc && (
+      {isCmdMode && (
+        <CommandPicker
+          commands={filteredCmds}
+          activeIdx={cmdActive}
+          onSelect={activateCommand}
+          onHover={setCmdActive}
+        />
+      )}
+
+      {isVerseMode && (
         <VerseAutocomplete
           query={acQuery}
           results={acResults}
