@@ -4,6 +4,7 @@ import {
   useRef,
   useState,
 } from 'react'
+import { useTranslation } from 'react-i18next'
 import { useNoteStore } from '@/lib/store/useNoteStore'
 import { useUIStore } from '@/lib/store/useUIStore'
 import { cn } from '@/lib/cn'
@@ -20,6 +21,7 @@ export interface NoteInputHandle {
 
 const NoteInput = forwardRef<NoteInputHandle, NoteInputProps>(
   function NoteInput({ verseApiId }, ref) {
+    const { t } = useTranslation()
     const [content, setContent] = useState('')
     const [submitting, setSubmitting] = useState(false)
     const textareaRef = useRef<HTMLTextAreaElement>(null)
@@ -56,13 +58,13 @@ const NoteInput = forwardRef<NoteInputHandle, NoteInputProps>(
       setSubmitting(true)
       try {
         await addNote(verseApiId, trimmed)
-        addToast('Note saved', 'success')
+        addToast(t('notes.saved'), 'success')
         setContent('')
         if (textareaRef.current) {
           textareaRef.current.style.height = 'auto'
         }
       } catch {
-        addToast('Failed to save note', 'error')
+        addToast(t('notes.saveFailed'), 'error')
       } finally {
         setSubmitting(false)
       }
@@ -78,7 +80,7 @@ const NoteInput = forwardRef<NoteInputHandle, NoteInputProps>(
           onChange={handleChange}
           onKeyDown={handleKeyDown}
           rows={1}
-          placeholder={isMobile ? 'Add a note…' : `Add a note… (${modKey}↵ to save)`}
+          placeholder={isMobile ? t('notes.placeholder') : t('notes.placeholderDesktop', { modKey })}
           className={cn(
             'w-full resize-none bg-bg-primary rounded-md border border-border-subtle',
             'text-sm text-text-primary placeholder:text-text-muted',
@@ -98,7 +100,7 @@ const NoteInput = forwardRef<NoteInputHandle, NoteInputProps>(
                 : 'bg-bg-tertiary text-text-muted cursor-not-allowed',
             )}
           >
-            {submitting ? 'Saving…' : 'Add Note'}
+            {submitting ? t('notes.saving') : t('notes.addNote')}
           </button>
         </div>
       </div>

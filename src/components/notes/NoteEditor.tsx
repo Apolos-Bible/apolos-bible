@@ -1,6 +1,5 @@
-
-
 import { useEffect, useRef, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { cn } from '@/lib/cn'
 
 interface NoteEditorProps {
@@ -10,6 +9,7 @@ interface NoteEditorProps {
 }
 
 export default function NoteEditor({ initialValue, onSave, onCancel }: NoteEditorProps) {
+  const { t } = useTranslation()
   const [content, setContent] = useState(initialValue)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
 
@@ -17,7 +17,6 @@ export default function NoteEditor({ initialValue, onSave, onCancel }: NoteEdito
     const el = textareaRef.current
     if (!el) return
     el.focus()
-    // Place cursor at end
     el.setSelectionRange(el.value.length, el.value.length)
     adjustHeight(el)
   }, [])
@@ -63,7 +62,7 @@ export default function NoteEditor({ initialValue, onSave, onCancel }: NoteEdito
           'placeholder:text-text-muted outline-none min-h-[60px]',
           'leading-relaxed',
         )}
-        placeholder="Write your note…"
+        placeholder={t('notes.editorPlaceholder')}
       />
       <div className="flex items-center justify-end gap-2 mt-1.5">
         <button
@@ -74,7 +73,7 @@ export default function NoteEditor({ initialValue, onSave, onCancel }: NoteEdito
             'hover:text-text-primary hover:bg-bg-tertiary transition-colors',
           )}
         >
-          Cancel
+          {t('notes.cancel')}
         </button>
         <button
           type="button"
@@ -87,7 +86,7 @@ export default function NoteEditor({ initialValue, onSave, onCancel }: NoteEdito
               : 'bg-bg-tertiary text-text-muted cursor-not-allowed',
           )}
         >
-          Save
+          {t('notes.save')}
         </button>
       </div>
     </div>
