@@ -1,5 +1,6 @@
 import { useEffect } from 'react'
-import { useUIStore, type FontSize, type Theme } from '@/lib/store/useUIStore'
+import { useTranslation } from 'react-i18next'
+import { useUIStore, type FontSize, type Theme, type Locale } from '@/lib/store/useUIStore'
 import { useVerseStore } from '@/lib/store/useVerseStore'
 import { useAuthStore } from '@/lib/store/useAuthStore'
 import { UserAvatar } from '@/components/auth/UserAvatar'
@@ -9,6 +10,11 @@ const FONT_OPTIONS: { value: FontSize; label: string }[] = [
   { value: 'sm',   label: 'S' },
   { value: 'base', label: 'M' },
   { value: 'lg',   label: 'L' },
+]
+
+const LOCALE_OPTIONS: { value: Locale; label: string }[] = [
+  { value: 'es', label: 'ES' },
+  { value: 'en', label: 'EN' },
 ]
 
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
@@ -47,12 +53,16 @@ function MoonIcon() {
 }
 
 export function SettingsModal() {
+  const { t } = useTranslation()
+
   const settingsOpen  = useUIStore(s => s.settingsOpen)
   const closeSettings = useUIStore(s => s.closeSettings)
   const fontSize      = useUIStore(s => s.fontSize)
   const setFontSize   = useUIStore(s => s.setFontSize)
   const theme         = useUIStore(s => s.theme)
   const setTheme      = useUIStore(s => s.setTheme)
+  const locale        = useUIStore(s => s.locale)
+  const setLocale     = useUIStore(s => s.setLocale)
 
   const versions     = useVerseStore(s => s.versions)
   const versionId    = useVerseStore(s => s.versionId)
@@ -95,7 +105,7 @@ export function SettingsModal() {
             </div>
           ) : (
             <div className="flex items-center justify-between">
-              <p className="text-sm text-text-muted">Not signed in</p>
+              <p className="text-sm text-text-muted">{t('settings.notSignedIn')}</p>
               <button
                 onClick={closeSettings}
                 className="text-text-muted hover:text-text-primary transition-colors text-xl leading-none"
@@ -110,28 +120,47 @@ export function SettingsModal() {
         <div className="py-4 flex flex-col gap-5">
 
           {/* Appearance */}
-          <Section title="Appearance">
-            <Row label="Theme">
+          <Section title={t('settings.appearance')}>
+            <Row label={t('settings.theme')}>
               <div className="flex gap-1 bg-bg-tertiary rounded-lg p-1">
-                {(['dark', 'light'] as Theme[]).map(t => (
+                {(['dark', 'light'] as Theme[]).map(th => (
                   <button
-                    key={t}
-                    onClick={() => setTheme(t)}
+                    key={th}
+                    onClick={() => setTheme(th)}
                     className={cn(
                       'flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-colors',
-                      theme === t
+                      theme === th
                         ? 'bg-bg-secondary text-text-primary shadow-sm'
                         : 'text-text-muted hover:text-text-secondary'
                     )}
                   >
-                    {t === 'dark' ? <MoonIcon /> : <SunIcon />}
-                    {t === 'dark' ? 'Dark' : 'Light'}
+                    {th === 'dark' ? <MoonIcon /> : <SunIcon />}
+                    {th === 'dark' ? t('settings.theme.dark') : t('settings.theme.light')}
                   </button>
                 ))}
               </div>
             </Row>
 
-            <Row label="Font size">
+            <Row label={t('settings.language')}>
+              <div className="flex gap-1 bg-bg-tertiary rounded-lg p-1">
+                {LOCALE_OPTIONS.map(opt => (
+                  <button
+                    key={opt.value}
+                    onClick={() => setLocale(opt.value)}
+                    className={cn(
+                      'px-3 py-1.5 rounded-md text-xs font-medium transition-colors',
+                      locale === opt.value
+                        ? 'bg-bg-secondary text-text-primary shadow-sm'
+                        : 'text-text-muted hover:text-text-secondary'
+                    )}
+                  >
+                    {opt.label}
+                  </button>
+                ))}
+              </div>
+            </Row>
+
+            <Row label={t('settings.fontSize')}>
               <div className="flex gap-1">
                 {FONT_OPTIONS.map(opt => (
                   <button
@@ -152,8 +181,8 @@ export function SettingsModal() {
           </Section>
 
           {/* Bible */}
-          <Section title="Bible">
-            <Row label="Version">
+          <Section title={t('settings.bible')}>
+            <Row label={t('settings.bible.version')}>
               <select
                 value={versionId}
                 onChange={e => setVersion(Number(e.target.value))}
@@ -162,7 +191,7 @@ export function SettingsModal() {
                   'text-sm text-text-primary outline-none focus:border-accent/50 transition-colors cursor-pointer',
                 )}
               >
-                {versions.length === 0 && <option value={versionId}>Loading…</option>}
+                {versions.length === 0 && <option value={versionId}>{t('common.loading')}</option>}
                 {versions.map(v => (
                   <option key={v.id} value={v.id}>
                     {v.abbreviation} — {v.name}
@@ -179,7 +208,7 @@ export function SettingsModal() {
                 onClick={() => { logout(); closeSettings() }}
                 className="mt-3 text-sm text-red-400 hover:text-red-300 transition-colors"
               >
-                Sign out
+                {t('settings.signOut')}
               </button>
             </div>
           )}
