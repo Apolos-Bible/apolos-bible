@@ -15,13 +15,14 @@ import { useContextMenuStore } from '@/lib/store/useContextMenuStore'
 import { useCrossRefStore } from '@/lib/store/useCrossRefStore'
 import { modKey } from '@/lib/platform'
 import type { MenuItem } from '@/lib/store/useContextMenuStore'
-import { BreadcrumbBar } from '@/components/layout/BreadcrumbBar'
 import { ReadingToolbar } from '@/components/reading/ReadingToolbar'
+import { PresenceAvatars } from '@/components/realtime/PresenceAvatars'
 import { Tooltip } from '@/components/ui/Tooltip'
 import { VerseText } from '@/components/verse/VerseText'
 import { EmptyState } from '@/components/ui/EmptyState'
 import { cn } from '@/lib/cn'
 import { isAuthError } from '@/lib/auth'
+import type { HighlightColor } from '@/types'
 
 // ── Icons ──────────────────────────────────────────────────────────────────
 
@@ -134,6 +135,8 @@ export function VerseList() {
   const openAuthModal  = useUIStore((s) => s.openAuthModal)
 
   const notes      = useNoteStore((s) => s.notes)
+  const notesLoading = useNoteStore((s) => s.loading)
+  const loadNotes  = useNoteStore((s) => s.loadNotes)
   const highlights = useHighlightStore((s) => s.highlights)
   const addHighlight = useHighlightStore((s) => s.addHighlight)
   const loadHighlightsForChapter = useHighlightStore((s) => s.loadHighlightsForChapter)
@@ -145,6 +148,7 @@ export function VerseList() {
   const chapterId       = useVerseStore((s) => s.chapterId)
   const joinChapter     = usePresenceStore((s) => s.joinChapter)
   const leaveChapter    = usePresenceStore((s) => s.leaveChapter)
+  const others          = usePresenceStore((s) => s.others)
   const activityByVerse = useActivityStore((s) => s.activityByVerse)
   const friendIds       = useFriendStore((s) => s.friends.map((f) => f.id).join(','))
 
@@ -159,6 +163,15 @@ export function VerseList() {
   useEffect(() => {
     if (verses.length) loadHighlightsForChapter(verses.map((v) => v.apiId))
   }, [verses])
+
+  useEffect(() => {
+    if (!user || !verses.length) return
+    const missingVerseIds = verses
+      .map((verse) => verse.apiId)
+      .filter((verseApiId) => notes[verseApiId] == null && !notesLoading[verseApiId])
+
+    void Promise.all(missingVerseIds.map((verseApiId) => loadNotes(verseApiId)))
+  }, [user?.id, verses, notes, notesLoading, loadNotes])
 
   useEffect(() => {
     if (chapterId) loadChapterRefs(chapterId)
@@ -193,6 +206,28 @@ export function VerseList() {
 
   // ── Context menu builder ─────────────────────────────────────────────────
 
+  function requireLogin(): boolean {
+    if (user) return false
+    addToast(t('study.loginRequired'), 'error', {
+      action: { label: t('auth.logIn'), onClick: openAuthModal },
+    })
+    openAuthModal()
+    return true
+  }
+
+  function addVerseHighlight(verse: Verse, color: HighlightColor) {
+    if (requireLogin()) return
+    addHighlight(verse.apiId, 0, verse.text.length, color).catch((error) => {
+      if (isAuthError(error)) {
+        addToast(t('study.loginRequired'), 'error', {
+          action: { label: t('auth.logIn'), onClick: openAuthModal },
+        })
+        return
+      }
+      addToast(t('toast.highlightFailed'), 'error')
+    })
+  }
+
   function buildVerseMenu(verse: Verse): MenuItem[] {
     const bookmarked   = bookmarkedIds.has(verse.apiId)
     const hasCrossRefs = verseIdsWithRefs.has(verse.apiId)
@@ -219,46 +254,25 @@ export function VerseList() {
       { type: 'label', text: t('verse.highlightVerse') },
       {
         type: 'action', label: t('study.colorYellow'), icon: <ColorDot color="#e5c07b" />,
-        onClick: () => addHighlight(verse.apiId, 0, verse.text.length, 'yellow').catch((error) => {
-          if (!user || isAuthError(error)) {
-            addToast(t('study.loginRequired'), 'error', {
-              action: { label: t('auth.logIn'), onClick: openAuthModal },
-            })
-            return
-          }
-          addToast(t('toast.highlightFailed'), 'error')
-        }),
+        onClick: () => addVerseHighlight(verse, 'yellow'),
       },
       {
         type: 'action', label: t('study.colorBlue'), icon: <ColorDot color="#61afef" />,
-        onClick: () => addHighlight(verse.apiId, 0, verse.text.length, 'blue').catch((error) => {
-          if (!user || isAuthError(error)) {
-            addToast(t('study.loginRequired'), 'error', {
-              action: { label: t('auth.logIn'), onClick: openAuthModal },
-            })
-            return
-          }
-          addToast(t('toast.highlightFailed'), 'error')
-        }),
+        onClick: () => addVerseHighlight(verse, 'blue'),
       },
       {
         type: 'action', label: t('study.colorGreen'), icon: <ColorDot color="#98c379" />,
-        onClick: () => addHighlight(verse.apiId, 0, verse.text.length, 'green').catch((error) => {
-          if (!user || isAuthError(error)) {
-            addToast(t('study.loginRequired'), 'error', {
-              action: { label: t('auth.logIn'), onClick: openAuthModal },
-            })
-            return
-          }
-          addToast(t('toast.highlightFailed'), 'error')
-        }),
+        onClick: () => addVerseHighlight(verse, 'green'),
       },
       { type: 'separator' },
       {
         type: 'action',
         label: t('verse.addNote'),
         icon: <IconNote />,
-        onClick: () => selectVerse(verse.id),
+        onClick: () => {
+          if (requireLogin()) return
+          selectVerse(verse.id)
+        },
       },
       ...(hasCrossRefs ? [{ type: 'separator' as const }, {
         type: 'action' as const,
@@ -268,20 +282,30 @@ export function VerseList() {
       }] : []),
     ]
 
-    if (user) {
-      items.push({
-        type: 'action',
-        label: bookmarked ? t('verse.removeFromFavorites') : t('verse.addToFavorites'),
-        icon: <IconStar filled={bookmarked} />,
-        onClick: () => {
-          toggleBookmark(verse.apiId)
-          if (!bookmarked) {
-            setBurstId(verse.apiId)
-            setTimeout(() => setBurstId(null), 900)
-          }
-        },
-      })
-    }
+    items.push({
+      type: 'action',
+      label: bookmarked ? t('verse.removeFromFavorites') : t('verse.addToFavorites'),
+      icon: <IconStar filled={bookmarked} />,
+      onClick: () => {
+        if (requireLogin()) return
+        toggleBookmark(verse.apiId)
+          .then(() => {
+            if (!bookmarked) {
+              setBurstId(verse.apiId)
+              setTimeout(() => setBurstId(null), 900)
+            }
+          })
+          .catch((error) => {
+            if (isAuthError(error)) {
+              addToast(t('study.loginRequired'), 'error', {
+                action: { label: t('auth.logIn'), onClick: openAuthModal },
+              })
+              return
+            }
+            addToast(t('toast.bookmarkFailed'), 'error')
+          })
+      },
+    })
 
     return items
   }
@@ -327,10 +351,32 @@ export function VerseList() {
     )
   }
 
+  function MyNotePreview({ bodies }: { bodies: string[] }) {
+    if (!bodies.length) return null
+
+    return (
+      <aside className="min-w-0 rounded-md border border-accent/20 bg-accent/[0.06] px-2.5 py-1.5 text-xs leading-relaxed text-text-secondary md:w-40 md:shrink-0">
+        <p className="mb-1 text-[9px] font-semibold uppercase tracking-[0.16em] text-accent/70">
+          My note{bodies.length > 1 ? 's' : ''}
+        </p>
+        <p className="line-clamp-3">{bodies[0]}</p>
+        {bodies.length > 1 && (
+          <p className="mt-1 text-2xs text-text-muted">+{bodies.length - 1} more</p>
+        )}
+      </aside>
+    )
+  }
+
+  function getMyNoteBodies(verseApiId: number): string[] {
+    if (!user) return []
+
+    return (notes[verseApiId] ?? [])
+      .filter((note) => note.user?.id === user.id)
+      .map((note) => note.body)
+  }
+
   return (
     <div className="bg-bg-secondary flex flex-col h-full md:h-screen relative">
-      <BreadcrumbBar />
-
       {/* Floating chapter navigation */}
       <div className="pointer-events-none absolute inset-x-0 top-16 bottom-0 z-20 hidden md:flex items-center">
         <div className="w-full max-w-[684px] mx-auto flex justify-between px-0">
@@ -341,7 +387,7 @@ export function VerseList() {
             aria-label={t('verse.previousChapter')}
             className={cn(
               'pointer-events-auto w-8 h-8 flex items-center justify-center rounded-full border transition-all duration-150',
-              'bg-bg-tertiary/80 backdrop-blur-sm shadow-sm',
+              'bg-bg-tertiary shadow-sm',
               prevDisabled
                 ? 'opacity-0 pointer-events-none'
                 : 'border-border-subtle text-accent/70 hover:text-accent hover:border-accent/40 hover:bg-bg-tertiary active:scale-95',
@@ -360,7 +406,7 @@ export function VerseList() {
             aria-label={t('verse.nextChapter')}
             className={cn(
               'pointer-events-auto w-8 h-8 flex items-center justify-center rounded-full border transition-all duration-150',
-              'bg-bg-tertiary/80 backdrop-blur-sm shadow-sm',
+              'bg-bg-tertiary shadow-sm',
               nextDisabled
                 ? 'opacity-0 pointer-events-none'
                 : 'border-border-subtle text-accent/70 hover:text-accent hover:border-accent/40 hover:bg-bg-tertiary active:scale-95',
@@ -377,11 +423,14 @@ export function VerseList() {
       {verses.length === 0 ? (
         <EmptyState message={t('verse.empty')} />
       ) : (
-        <div className="flex-1 overflow-y-auto relative">
+        <div className="flex-1 overflow-y-auto no-scrollbar relative">
 
-          {/* Reading mode toggle + toolbar */}
-          <div className="sticky top-0 z-10 border-b border-border-subtle/60 bg-bg-secondary/95 backdrop-blur-sm px-3 py-2 md:border-b-0 md:bg-transparent md:px-4 md:py-2 pointer-events-none">
-            <div className="flex flex-wrap items-center justify-between gap-2 md:justify-end">
+          {/* Mobile keeps navigation/display primary; study tools appear after selecting a verse. */}
+          <div className="sticky top-0 z-10 border-b border-border-subtle bg-bg-secondary px-3 py-2 md:border-b-0 md:bg-transparent md:px-4 md:py-2 pointer-events-none">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <div className="hidden md:block pointer-events-auto">
+                <PresenceAvatars users={others} />
+              </div>
               <div className="flex items-center gap-2 pointer-events-auto md:hidden">
                 <button
                   onClick={() => navigateChapter('prev')}
@@ -411,33 +460,40 @@ export function VerseList() {
                 </button>
               </div>
               <div className="flex gap-2 items-center">
-            <ReadingToolbar />
-            <div className="flex gap-0.5 bg-bg-tertiary border border-border-subtle rounded-md p-0.5 pointer-events-auto shadow-sm">
-              <Tooltip label={t('verse.verseMode')} side="bottom">
-                <button
-                  onClick={() => setReadingMode('verse')}
-                  className={cn(
-                    'p-1.5 rounded transition-colors duration-100',
-                    readingMode === 'verse' ? 'bg-bg-secondary text-accent shadow-sm' : 'text-text-muted hover:text-text-secondary',
-                  )}
-                >
-                  <VerseIcon />
-                </button>
-              </Tooltip>
-              <Tooltip label={t('verse.flowMode')} side="bottom">
-                <button
-                  onClick={() => setReadingMode('flow')}
-                  className={cn(
-                    'p-1.5 rounded transition-colors duration-100',
-                    readingMode === 'flow' ? 'bg-bg-secondary text-accent shadow-sm' : 'text-text-muted hover:text-text-secondary',
-                  )}
-                >
-                  <FlowIcon />
-                </button>
-              </Tooltip>
-            </div>
+                <div className="hidden md:block">
+                  <ReadingToolbar />
+                </div>
+                <div className="flex gap-0.5 bg-bg-tertiary border border-border-subtle rounded-md p-0.5 pointer-events-auto shadow-sm">
+                  <Tooltip label={t('verse.verseMode')} side="bottom">
+                    <button
+                      onClick={() => setReadingMode('verse')}
+                      className={cn(
+                        'p-1.5 rounded transition-colors duration-100',
+                        readingMode === 'verse' ? 'bg-bg-secondary text-accent shadow-sm' : 'text-text-muted hover:text-text-secondary',
+                      )}
+                    >
+                      <VerseIcon />
+                    </button>
+                  </Tooltip>
+                  <Tooltip label={t('verse.flowMode')} side="bottom">
+                    <button
+                      onClick={() => setReadingMode('flow')}
+                      className={cn(
+                        'p-1.5 rounded transition-colors duration-100',
+                        readingMode === 'flow' ? 'bg-bg-secondary text-accent shadow-sm' : 'text-text-muted hover:text-text-secondary',
+                      )}
+                    >
+                      <FlowIcon />
+                    </button>
+                  </Tooltip>
+                </div>
               </div>
             </div>
+            {selectedVerseId && (
+              <div className="mt-2 flex justify-center md:hidden">
+                <ReadingToolbar />
+              </div>
+            )}
           </div>
 
           <div className="max-w-[660px] mx-auto px-4 md:px-10 pt-4 pb-16">
@@ -462,6 +518,7 @@ export function VerseList() {
                   const isBursting      = burstId === verse.apiId
                   const isBookmarked    = bookmarkedIds.has(verse.apiId)
                   const hasCrossRefs    = verseIdsWithRefs.has(verse.apiId)
+                  const myNoteBodies    = getMyNoteBodies(verse.apiId)
 
                   return (
                     <span
@@ -488,6 +545,11 @@ export function VerseList() {
                         </span>
                       )}
                       <VerseText inline text={verse.text} highlights={verseHighlights} />
+                      {myNoteBodies.length > 0 && (
+                        <span className="inline-flex align-baseline ml-1 rounded border border-accent/20 bg-accent/[0.06] px-1 py-px text-[10px] leading-none text-accent/80">
+                          note
+                        </span>
+                      )}
                     </span>
                   )
                 })}
@@ -505,6 +567,7 @@ export function VerseList() {
                   const isBursting      = burstId === verse.apiId
                   const isBookmarked    = bookmarkedIds.has(verse.apiId)
                   const hasCrossRefs    = verseIdsWithRefs.has(verse.apiId)
+                  const myNoteBodies    = getMyNoteBodies(verse.apiId)
 
                   return (
                     <div
@@ -547,6 +610,7 @@ export function VerseList() {
                           )}
                         />
                       </div>
+                      <MyNotePreview bodies={myNoteBodies} />
                       <button
                         type="button"
                         onClick={(e) => {

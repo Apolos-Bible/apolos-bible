@@ -87,6 +87,15 @@ export function StudyPanel() {
     const selection = getTextSelection(verse.id)
     const items: MenuItem[] = []
 
+    const requireLogin = () => {
+      if (user) return false
+      addToast(t('study.loginRequired'), 'error', {
+        action: { label: t('auth.logIn'), onClick: openAuthModal },
+      })
+      openAuthModal()
+      return true
+    }
+
     if (selection) {
       items.push({ type: 'label', text: t('study.highlightSelection') })
       for (const { label, value, hex } of HIGHLIGHT_COLORS) {
@@ -94,18 +103,20 @@ export function StudyPanel() {
           type: 'action',
           label,
           icon: <ColorDot color={hex} />,
-          onClick: () =>
+          onClick: () => {
+            if (requireLogin()) return
             addHighlight(verse.apiId, selection.start, selection.end, value)
               .then(() => { addToast(t('toast.highlightAdded'), 'success'); window.getSelection()?.removeAllRanges() })
               .catch((error) => {
-                if (!user || isAuthError(error)) {
+                if (isAuthError(error)) {
                   addToast(t('study.loginRequired'), 'error', {
                     action: { label: t('auth.logIn'), onClick: openAuthModal },
                   })
                   return
                 }
                 addToast(t('toast.highlightFailed'), 'error')
-              }),
+              })
+          },
         })
       }
       items.push({ type: 'separator' })
@@ -129,18 +140,20 @@ export function StudyPanel() {
           type: 'action',
           label,
           icon: <ColorDot color={hex} />,
-          onClick: () =>
+          onClick: () => {
+            if (requireLogin()) return
             addHighlight(verse.apiId, 0, verse.text.length, value)
               .then(() => addToast(t('toast.highlightAdded'), 'success'))
               .catch((error) => {
-                if (!user || isAuthError(error)) {
+                if (isAuthError(error)) {
                   addToast(t('study.loginRequired'), 'error', {
                     action: { label: t('auth.logIn'), onClick: openAuthModal },
                   })
                   return
                 }
                 addToast(t('toast.highlightFailed'), 'error')
-              }),
+              })
+          },
         })
       }
     }

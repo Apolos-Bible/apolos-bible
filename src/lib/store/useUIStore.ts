@@ -45,6 +45,7 @@ type UIStore = {
   addToast: (message: string, type?: Toast['type'], options?: { action?: Toast['action']; duration?: number }) => string
   removeToast: (id: string) => void
   openPanel: (panel: Panel) => void
+  togglePanel: (panel: Panel) => void
   closePanel: () => void
   setFontSize: (size: FontSize) => void
   setTheme: (t: Theme) => void
@@ -94,6 +95,7 @@ export const useUIStore = create<UIStore>((set) => ({
   removeToast: (id) => set((s) => ({ toasts: s.toasts.filter(t => t.id !== id) })),
 
   openPanel: (panel) => set({ activePanel: panel }),
+  togglePanel: (panel) => set((s) => ({ activePanel: s.activePanel === panel ? null : panel })),
   closePanel: () => set({ activePanel: null }),
 
   setFontSize: (size) => {

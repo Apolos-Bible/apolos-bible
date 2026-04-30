@@ -127,6 +127,7 @@
   "toast.noteDeleted": "Note deleted",
   "toast.bookmarkAdded": "Bookmark added",
   "toast.bookmarkRemoved": "Bookmark removed",
+  "toast.bookmarkFailed": "Could not update bookmark",
   "toast.highlightAdded": "Highlight added",
   "toast.copied": "Copied",
   "toast.highlightFailed": "Could not save highlight",

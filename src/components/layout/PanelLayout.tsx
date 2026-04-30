@@ -13,12 +13,8 @@ interface PanelLayoutProps {
 
 export function PanelLayout({ sidebar, main, panel, leftPanel }: PanelLayoutProps) {
   const { t } = useTranslation()
-  const books = useVerseStore((s) => s.books)
-  const selectedBook = useVerseStore((s) => s.selectedBook)
-  const selectedChapter = useVerseStore((s) => s.selectedChapter)
   const selectedVerseId = useVerseStore((s) => s.selectedVerseId)
   const selectVerse = useVerseStore((s) => s.selectVerse)
-  const activePanel = useUIStore((s) => s.activePanel)
   const commentaryOpen = useUIStore((s) => s.commentaryOpen)
   const toggleCommentary = useUIStore((s) => s.toggleCommentary)
   const closePanel = useUIStore((s) => s.closePanel)
@@ -26,15 +22,6 @@ export function PanelLayout({ sidebar, main, panel, leftPanel }: PanelLayoutProp
   const mobileSidebarOpen = useUIStore((s) => s.mobileSidebarOpen)
   const openMobileSidebar = useUIStore((s) => s.openMobileSidebar)
   const closeMobileSidebar = useUIStore((s) => s.closeMobileSidebar)
-
-  const bookName = books.find((b) => b.slug === selectedBook)?.name ?? selectedBook
-  const activePanelLabel = activePanel === 'favorites'
-    ? t('nav.favorites')
-    : activePanel === 'my-notes'
-      ? t('nav.myNotes')
-      : activePanel === 'friends'
-        ? t('nav.friends')
-        : null
 
   const closeMobileStudyPanel = () => {
     if (commentaryOpen) {
@@ -48,27 +35,21 @@ export function PanelLayout({ sidebar, main, panel, leftPanel }: PanelLayoutProp
   return (
     <div className="h-[100dvh] md:h-screen w-full overflow-hidden bg-bg-primary">
       <div className="md:hidden flex h-full flex-col">
-        <header className="flex items-center gap-3 border-b border-border-subtle bg-bg-secondary px-4 py-3 shrink-0">
+        <div className="pointer-events-none absolute inset-x-0 bottom-4 z-20 flex items-center justify-between px-4 md:hidden">
           <button
             type="button"
             onClick={openMobileSidebar}
-            className="inline-flex h-9 w-9 items-center justify-center rounded-md border border-border-subtle bg-bg-primary text-text-secondary"
+            className="pointer-events-auto inline-flex h-10 w-10 items-center justify-center rounded-full border border-border-subtle bg-bg-secondary text-text-secondary shadow-sm"
             aria-label={t('layout.openLibrary')}
           >
             <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" className="h-4 w-4">
               <path d="M2.5 4h11M2.5 8h11M2.5 12h11" strokeLinecap="round" />
             </svg>
           </button>
-          <div className="min-w-0 flex-1">
-            <p className="truncate text-sm font-medium text-text-primary">{bookName || 'tulia.study'}</p>
-            <p className="text-2xs uppercase tracking-[0.18em] text-accent/70">
-              {t('layout.chapter', { n: selectedChapter })}
-            </p>
-          </div>
           <button
             type="button"
             onClick={openCommandPalette}
-            className="inline-flex h-9 w-9 items-center justify-center rounded-md border border-border-subtle bg-bg-primary text-text-secondary"
+            className="pointer-events-auto inline-flex h-10 w-10 items-center justify-center rounded-full border border-border-subtle bg-bg-secondary text-text-secondary shadow-sm"
             aria-label={t('layout.search')}
           >
             <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" className="h-4 w-4">
@@ -76,16 +57,7 @@ export function PanelLayout({ sidebar, main, panel, leftPanel }: PanelLayoutProp
               <path d="M10.5 10.5L13.5 13.5" strokeLinecap="round" />
             </svg>
           </button>
-          {activePanelLabel && (
-            <button
-              type="button"
-              onClick={closePanel}
-              className="rounded-md border border-border-subtle bg-bg-primary px-3 py-2 text-xs text-text-secondary"
-            >
-              {activePanelLabel}
-            </button>
-          )}
-        </header>
+        </div>
 
         <main className="min-h-0 flex-1 overflow-hidden">
           {main}
@@ -135,7 +107,7 @@ export function PanelLayout({ sidebar, main, panel, leftPanel }: PanelLayoutProp
           )}
         >
           <div className="absolute inset-0 bg-black/60" onClick={closePanel} />
-          <div className="absolute inset-x-0 bottom-0 top-16 rounded-t-2xl bg-bg-primary shadow-2xl">
+          <div className="absolute inset-x-0 bottom-0 top-4 rounded-t-2xl bg-bg-primary shadow-2xl">
             <div className="h-full overflow-hidden">
               {leftPanel}
             </div>
@@ -149,7 +121,7 @@ export function PanelLayout({ sidebar, main, panel, leftPanel }: PanelLayoutProp
           )}
         >
           <div className="absolute inset-0 bg-black/60" onClick={() => {}} />
-          <div className="absolute inset-x-0 bottom-0 top-20 rounded-t-2xl bg-bg-secondary shadow-2xl">
+          <div className="absolute inset-x-0 bottom-0 top-4 rounded-t-2xl bg-bg-secondary shadow-2xl">
             <div className="h-full overflow-hidden">
               {panel}
             </div>
@@ -173,7 +145,7 @@ export function PanelLayout({ sidebar, main, panel, leftPanel }: PanelLayoutProp
           </div>
         </aside>
 
-        <main className="flex-1 min-w-0 h-full overflow-y-auto">
+        <main className="flex-1 min-w-0 h-full overflow-hidden">
           {main}
         </main>
 
