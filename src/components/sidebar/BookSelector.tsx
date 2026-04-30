@@ -1,4 +1,5 @@
 
+import { useEffect, useState } from 'react'
 import { useVerseStore } from '@/lib/store/useVerseStore'
 import type { Book } from '@/lib/store/useVerseStore'
 import { cn } from '@/lib/cn'
@@ -7,29 +8,31 @@ interface BookGroupProps {
   label: string
   books: Book[]
   selectedBook: string
+  openBook: string
   selectedChapter: number
-  onSelect: (id: string) => void
-  onSelectChapter: (chapter: number) => void
+  onOpenBook: (id: string) => void
+  onSelectChapter: (bookId: string, chapter: number) => void
 }
 
-function BookGroup({ label, books, selectedBook, selectedChapter, onSelect, onSelectChapter }: BookGroupProps) {
+function BookGroup({ label, books, selectedBook, openBook, selectedChapter, onOpenBook, onSelectChapter }: BookGroupProps) {
   return (
     <div>
       <p className="text-2xs uppercase tracking-wider text-text-muted px-4 py-1 select-none">
         {label}
       </p>
       {books.map((book) => {
-        const isSelected = selectedBook === book.id
+        const isActiveBook = selectedBook === book.id
+        const isOpen = openBook === book.id
         const chapters = Array.from({ length: book.chapters }, (_, i) => i + 1)
 
         return (
           <div key={book.id}>
             <button
-              onClick={() => onSelect(book.id)}
-              aria-expanded={isSelected}
+              onClick={() => onOpenBook(book.id)}
+              aria-expanded={isOpen}
               className={cn(
                 'flex w-full items-center gap-2 px-4 py-1.5 text-left text-sm transition-colors duration-100',
-                isSelected
+                isActiveBook
                   ? 'text-accent bg-bg-tertiary font-medium'
                   : 'text-text-secondary hover:text-text-primary hover:bg-bg-tertiary',
               )}
@@ -37,30 +40,30 @@ function BookGroup({ label, books, selectedBook, selectedChapter, onSelect, onSe
               <span
                 className={cn(
                   'text-2xs transition-transform duration-150',
-                  isSelected && 'rotate-90',
+                  isOpen && 'rotate-90',
                 )}
                 aria-hidden="true"
               >
                 ▸
               </span>
               <span className="min-w-0 flex-1 truncate">{book.name}</span>
-              {isSelected && (
+              {isActiveBook && (
                 <span className="text-2xs font-normal text-text-muted">
                   {selectedChapter}/{book.chapters}
                 </span>
               )}
             </button>
 
-            {isSelected && (
+            {isOpen && (
               <div className="px-4 py-2 bg-bg-primary/50">
                 <div className="grid grid-cols-6 gap-1">
                   {chapters.map((chapter) => {
-                    const isCurrent = selectedChapter === chapter
+                    const isCurrent = isActiveBook && selectedChapter === chapter
 
                     return (
                       <button
                         key={chapter}
-                        onClick={() => onSelectChapter(chapter)}
+                        onClick={() => onSelectChapter(book.id, chapter)}
                         className={cn(
                           'h-7 rounded text-xs transition-colors duration-100',
                           isCurrent
@@ -86,8 +89,12 @@ export function BookSelector() {
   const books = useVerseStore((s) => s.books)
   const selectedBook = useVerseStore((s) => s.selectedBook)
   const selectedChapter = useVerseStore((s) => s.selectedChapter)
-  const selectBook = useVerseStore((s) => s.selectBook)
-  const selectChapter = useVerseStore((s) => s.selectChapter)
+  const loadChapter = useVerseStore((s) => s.loadChapter)
+  const [openBook, setOpenBook] = useState(selectedBook)
+
+  useEffect(() => {
+    if (selectedBook) setOpenBook(selectedBook)
+  }, [selectedBook])
 
   const oldTestament = books.filter((b) => b.testament === 'old')
   const newTestament = books.filter((b) => b.testament === 'new')
@@ -98,18 +105,20 @@ export function BookSelector() {
         label="Old Testament"
         books={oldTestament}
         selectedBook={selectedBook}
+        openBook={openBook}
         selectedChapter={selectedChapter}
-        onSelect={selectBook}
-        onSelectChapter={selectChapter}
+        onOpenBook={setOpenBook}
+        onSelectChapter={loadChapter}
       />
       <div className="mt-2">
         <BookGroup
           label="New Testament"
           books={newTestament}
           selectedBook={selectedBook}
+          openBook={openBook}
           selectedChapter={selectedChapter}
-          onSelect={selectBook}
-          onSelectChapter={selectChapter}
+          onOpenBook={setOpenBook}
+          onSelectChapter={loadChapter}
         />
       </div>
     </div>
