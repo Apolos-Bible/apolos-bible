@@ -22,6 +22,7 @@ import { VerseText } from '@/components/verse/VerseText'
 import { EmptyState } from '@/components/ui/EmptyState'
 import { cn } from '@/lib/cn'
 import { isAuthError } from '@/lib/auth'
+import type { HighlightColor } from '@/types'
 
 // ── Icons ──────────────────────────────────────────────────────────────────
 
@@ -205,6 +206,28 @@ export function VerseList() {
 
   // ── Context menu builder ─────────────────────────────────────────────────
 
+  function requireLogin(): boolean {
+    if (user) return false
+    addToast(t('study.loginRequired'), 'error', {
+      action: { label: t('auth.logIn'), onClick: openAuthModal },
+    })
+    openAuthModal()
+    return true
+  }
+
+  function addVerseHighlight(verse: Verse, color: HighlightColor) {
+    if (requireLogin()) return
+    addHighlight(verse.apiId, 0, verse.text.length, color).catch((error) => {
+      if (isAuthError(error)) {
+        addToast(t('study.loginRequired'), 'error', {
+          action: { label: t('auth.logIn'), onClick: openAuthModal },
+        })
+        return
+      }
+      addToast(t('toast.highlightFailed'), 'error')
+    })
+  }
+
   function buildVerseMenu(verse: Verse): MenuItem[] {
     const bookmarked   = bookmarkedIds.has(verse.apiId)
     const hasCrossRefs = verseIdsWithRefs.has(verse.apiId)
@@ -231,46 +254,25 @@ export function VerseList() {
       { type: 'label', text: t('verse.highlightVerse') },
       {
         type: 'action', label: t('study.colorYellow'), icon: <ColorDot color="#e5c07b" />,
-        onClick: () => addHighlight(verse.apiId, 0, verse.text.length, 'yellow').catch((error) => {
-          if (!user || isAuthError(error)) {
-            addToast(t('study.loginRequired'), 'error', {
-              action: { label: t('auth.logIn'), onClick: openAuthModal },
-            })
-            return
-          }
-          addToast(t('toast.highlightFailed'), 'error')
-        }),
+        onClick: () => addVerseHighlight(verse, 'yellow'),
       },
       {
         type: 'action', label: t('study.colorBlue'), icon: <ColorDot color="#61afef" />,
-        onClick: () => addHighlight(verse.apiId, 0, verse.text.length, 'blue').catch((error) => {
-          if (!user || isAuthError(error)) {
-            addToast(t('study.loginRequired'), 'error', {
-              action: { label: t('auth.logIn'), onClick: openAuthModal },
-            })
-            return
-          }
-          addToast(t('toast.highlightFailed'), 'error')
-        }),
+        onClick: () => addVerseHighlight(verse, 'blue'),
       },
       {
         type: 'action', label: t('study.colorGreen'), icon: <ColorDot color="#98c379" />,
-        onClick: () => addHighlight(verse.apiId, 0, verse.text.length, 'green').catch((error) => {
-          if (!user || isAuthError(error)) {
-            addToast(t('study.loginRequired'), 'error', {
-              action: { label: t('auth.logIn'), onClick: openAuthModal },
-            })
-            return
-          }
-          addToast(t('toast.highlightFailed'), 'error')
-        }),
+        onClick: () => addVerseHighlight(verse, 'green'),
       },
       { type: 'separator' },
       {
         type: 'action',
         label: t('verse.addNote'),
         icon: <IconNote />,
-        onClick: () => selectVerse(verse.id),
+        onClick: () => {
+          if (requireLogin()) return
+          selectVerse(verse.id)
+        },
       },
       ...(hasCrossRefs ? [{ type: 'separator' as const }, {
         type: 'action' as const,
@@ -280,20 +282,30 @@ export function VerseList() {
       }] : []),
     ]
 
-    if (user) {
-      items.push({
-        type: 'action',
-        label: bookmarked ? t('verse.removeFromFavorites') : t('verse.addToFavorites'),
-        icon: <IconStar filled={bookmarked} />,
-        onClick: () => {
-          toggleBookmark(verse.apiId)
-          if (!bookmarked) {
-            setBurstId(verse.apiId)
-            setTimeout(() => setBurstId(null), 900)
-          }
-        },
-      })
-    }
+    items.push({
+      type: 'action',
+      label: bookmarked ? t('verse.removeFromFavorites') : t('verse.addToFavorites'),
+      icon: <IconStar filled={bookmarked} />,
+      onClick: () => {
+        if (requireLogin()) return
+        toggleBookmark(verse.apiId)
+          .then(() => {
+            if (!bookmarked) {
+              setBurstId(verse.apiId)
+              setTimeout(() => setBurstId(null), 900)
+            }
+          })
+          .catch((error) => {
+            if (isAuthError(error)) {
+              addToast(t('study.loginRequired'), 'error', {
+                action: { label: t('auth.logIn'), onClick: openAuthModal },
+              })
+              return
+            }
+            addToast(t('toast.bookmarkFailed'), 'error')
+          })
+      },
+    })
 
     return items
   }

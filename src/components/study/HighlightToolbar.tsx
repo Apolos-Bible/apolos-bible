@@ -98,6 +98,13 @@ export function HighlightToolbar({ verseId, verseApiId }: HighlightToolbarProps)
 
   async function handleAddHighlight() {
     if (!selectionRange || saving) return
+    if (!user) {
+      addToast(t('study.loginRequired'), 'error', {
+        action: { label: t('auth.logIn'), onClick: openAuthModal },
+      })
+      openAuthModal()
+      return
+    }
     setSaving(true)
     try {
       await addHighlight(verseApiId, selectionRange.start, selectionRange.end, selectedColor)

@@ -7,6 +7,7 @@ import {
 import { useTranslation } from 'react-i18next'
 import { useNoteStore } from '@/lib/store/useNoteStore'
 import { useUIStore } from '@/lib/store/useUIStore'
+import { useAuthStore } from '@/lib/store/useAuthStore'
 import { cn } from '@/lib/cn'
 import { modKey } from '@/lib/platform'
 import { useIsMobile } from '@/lib/useIsMobile'
@@ -27,6 +28,8 @@ const NoteInput = forwardRef<NoteInputHandle, NoteInputProps>(
     const textareaRef = useRef<HTMLTextAreaElement>(null)
     const addNote = useNoteStore((s) => s.addNote)
     const addToast = useUIStore((s) => s.addToast)
+    const openAuthModal = useUIStore((s) => s.openAuthModal)
+    const user = useAuthStore((s) => s.user)
     const isMobile = useIsMobile()
 
     useImperativeHandle(ref, () => ({
@@ -55,6 +58,13 @@ const NoteInput = forwardRef<NoteInputHandle, NoteInputProps>(
     async function handleSubmit() {
       const trimmed = content.trim()
       if (!trimmed || submitting) return
+      if (!user) {
+        addToast(t('study.loginRequired'), 'error', {
+          action: { label: t('auth.logIn'), onClick: openAuthModal },
+        })
+        openAuthModal()
+        return
+      }
       setSubmitting(true)
       try {
         await addNote(verseApiId, trimmed)
@@ -77,25 +87,30 @@ const NoteInput = forwardRef<NoteInputHandle, NoteInputProps>(
         <textarea
           ref={textareaRef}
           value={content}
+          readOnly={!user}
+          onFocus={() => {
+            if (!user) openAuthModal()
+          }}
           onChange={handleChange}
           onKeyDown={handleKeyDown}
           rows={1}
-          placeholder={isMobile ? t('notes.placeholder') : t('notes.placeholderDesktop', { modKey })}
+          placeholder={!user ? t('study.loginRequired') : isMobile ? t('notes.placeholder') : t('notes.placeholderDesktop', { modKey })}
           className={cn(
             'w-full resize-none bg-bg-primary rounded-md border border-border-subtle',
             'text-sm text-text-primary placeholder:text-text-muted',
             'px-3 py-2 outline-none min-h-[40px] max-h-[120px] leading-relaxed',
             'focus:border-accent transition-colors',
+            !user && 'cursor-not-allowed opacity-60',
           )}
         />
         <div className="flex justify-end mt-2">
           <button
             type="button"
             onClick={handleSubmit}
-            disabled={!canSubmit}
+            disabled={!user || !canSubmit}
             className={cn(
               'text-xs px-3 py-1.5 rounded font-medium transition-colors',
-              canSubmit
+              user && canSubmit
                 ? 'bg-accent text-bg-primary hover:brightness-110'
                 : 'bg-bg-tertiary text-text-muted cursor-not-allowed',
             )}

@@ -127,6 +127,7 @@
   "toast.noteDeleted": "Nota eliminada",
   "toast.bookmarkAdded": "Marcador añadido",
   "toast.bookmarkRemoved": "Marcador eliminado",
+  "toast.bookmarkFailed": "No se pudo actualizar el marcador",
   "toast.highlightAdded": "Resaltado añadido",
   "toast.copied": "Copiado",
   "toast.highlightFailed": "No se pudo guardar el resaltado",
