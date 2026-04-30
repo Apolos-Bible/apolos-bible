@@ -134,6 +134,8 @@ export function VerseList() {
   const openAuthModal  = useUIStore((s) => s.openAuthModal)
 
   const notes      = useNoteStore((s) => s.notes)
+  const notesLoading = useNoteStore((s) => s.loading)
+  const loadNotes  = useNoteStore((s) => s.loadNotes)
   const highlights = useHighlightStore((s) => s.highlights)
   const addHighlight = useHighlightStore((s) => s.addHighlight)
   const loadHighlightsForChapter = useHighlightStore((s) => s.loadHighlightsForChapter)
@@ -160,6 +162,15 @@ export function VerseList() {
   useEffect(() => {
     if (verses.length) loadHighlightsForChapter(verses.map((v) => v.apiId))
   }, [verses])
+
+  useEffect(() => {
+    if (!user || !verses.length) return
+    const missingVerseIds = verses
+      .map((verse) => verse.apiId)
+      .filter((verseApiId) => notes[verseApiId] == null && !notesLoading[verseApiId])
+
+    void Promise.all(missingVerseIds.map((verseApiId) => loadNotes(verseApiId)))
+  }, [user?.id, verses, notes, notesLoading, loadNotes])
 
   useEffect(() => {
     if (chapterId) loadChapterRefs(chapterId)
@@ -328,6 +339,22 @@ export function VerseList() {
     )
   }
 
+  function MyNotePreview({ bodies }: { bodies: string[] }) {
+    if (!bodies.length) return null
+
+    return (
+      <aside className="min-w-0 rounded-md border border-accent/20 bg-accent/[0.06] px-2.5 py-1.5 text-xs leading-relaxed text-text-secondary md:w-40 md:shrink-0">
+        <p className="mb-1 text-[9px] font-semibold uppercase tracking-[0.16em] text-accent/70">
+          My note{bodies.length > 1 ? 's' : ''}
+        </p>
+        <p className="line-clamp-3">{bodies[0]}</p>
+        {bodies.length > 1 && (
+          <p className="mt-1 text-2xs text-text-muted">+{bodies.length - 1} more</p>
+        )}
+      </aside>
+    )
+  }
+
   return (
     <div className="bg-bg-secondary flex flex-col h-full md:h-screen relative">
       {/* Floating chapter navigation */}
@@ -471,6 +498,9 @@ export function VerseList() {
                   const isBursting      = burstId === verse.apiId
                   const isBookmarked    = bookmarkedIds.has(verse.apiId)
                   const hasCrossRefs    = verseIdsWithRefs.has(verse.apiId)
+                  const myNoteBodies    = (notes[verse.apiId] ?? [])
+                    .filter((note) => user && note.user.id === user.id)
+                    .map((note) => note.body)
 
                   return (
                     <span
@@ -497,6 +527,11 @@ export function VerseList() {
                         </span>
                       )}
                       <VerseText inline text={verse.text} highlights={verseHighlights} />
+                      {myNoteBodies.length > 0 && (
+                        <span className="inline-flex align-baseline ml-1 rounded border border-accent/20 bg-accent/[0.06] px-1 py-px text-[10px] leading-none text-accent/80">
+                          note
+                        </span>
+                      )}
                     </span>
                   )
                 })}
@@ -514,6 +549,9 @@ export function VerseList() {
                   const isBursting      = burstId === verse.apiId
                   const isBookmarked    = bookmarkedIds.has(verse.apiId)
                   const hasCrossRefs    = verseIdsWithRefs.has(verse.apiId)
+                  const myNoteBodies    = (notes[verse.apiId] ?? [])
+                    .filter((note) => user && note.user.id === user.id)
+                    .map((note) => note.body)
 
                   return (
                     <div
@@ -556,6 +594,7 @@ export function VerseList() {
                           )}
                         />
                       </div>
+                      <MyNotePreview bodies={myNoteBodies} />
                       <button
                         type="button"
                         onClick={(e) => {
