@@ -5,7 +5,6 @@ import { useNotificationStore } from '@/lib/store/useNotificationStore'
 import { useChatStore } from '@/lib/store/useChatStore'
 import { destroyEcho } from '@/lib/echo'
 import { BookSelector } from './BookSelector'
-import { ChapterGrid } from './ChapterGrid'
 import { UserAvatar } from '@/components/auth/UserAvatar'
 import { cn } from '@/lib/cn'
 import { modKey } from '@/lib/platform'
@@ -160,10 +159,6 @@ export function Sidebar() {
       <SectionLabel>Library</SectionLabel>
 
       <BookSelector />
-
-      <div className="shrink-0 border-t border-border-subtle">
-        <ChapterGrid />
-      </div>
 
       <div className="shrink-0 border-t border-border-subtle px-2 pb-2">
         <SectionLabel>Personal</SectionLabel>
