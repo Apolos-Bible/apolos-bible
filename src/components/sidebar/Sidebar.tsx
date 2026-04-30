@@ -13,23 +13,40 @@ import { modKey } from '@/lib/platform'
 interface NavItemProps {
   icon: ReactNode
   label: string
+  active?: boolean
+  badge?: number
   onClick?: () => void
 }
 
-function NavItem({ icon, label, onClick }: NavItemProps) {
+function NavItem({ icon, label, active = false, badge, onClick }: NavItemProps) {
   return (
     <button
       onClick={onClick}
+      aria-pressed={active}
       className={cn(
-        'flex items-center gap-2 w-full text-sm text-text-secondary',
+        'relative flex items-center gap-2 w-full text-sm',
         'hover:text-text-primary hover:bg-bg-tertiary rounded px-3 py-1.5 transition-colors duration-100',
+        active ? 'bg-bg-tertiary text-text-primary' : 'text-text-secondary',
       )}
     >
       <span className="w-4 h-4 flex items-center justify-center shrink-0 opacity-70">
         {icon}
       </span>
-      <span>{label}</span>
+      <span className="min-w-0 flex-1 truncate text-left">{label}</span>
+      {badge != null && badge > 0 && (
+        <span className="min-w-[16px] h-4 px-1 rounded-full bg-accent text-bg-primary text-2xs font-medium flex items-center justify-center">
+          {badge > 9 ? '9+' : badge}
+        </span>
+      )}
     </button>
+  )
+}
+
+function SectionLabel({ children }: { children: ReactNode }) {
+  return (
+    <p className="px-3 pt-3 pb-1 text-2xs font-semibold uppercase tracking-wider text-text-muted select-none">
+      {children}
+    </p>
   )
 }
 
@@ -70,12 +87,22 @@ function ChatIcon() {
   )
 }
 
+function SearchIcon() {
+  return (
+    <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" className="w-3.5 h-3.5">
+      <circle cx="7" cy="7" r="4.25" />
+      <path d="M10.5 10.5L13.5 13.5" strokeLinecap="round" />
+    </svg>
+  )
+}
+
 export function Sidebar() {
   const openCommandPalette = useUIStore(s => s.openCommandPalette)
-  const openPanel          = useUIStore(s => s.openPanel)
+  const togglePanel        = useUIStore(s => s.togglePanel)
   const openSettings       = useUIStore(s => s.openSettings)
   const openAuthModal      = useUIStore(s => s.openAuthModal)
   const closeMobileSidebar = useUIStore(s => s.closeMobileSidebar)
+  const activePanel        = useUIStore(s => s.activePanel)
   const user               = useAuthStore(s => s.user)
   const startPolling  = useNotificationStore(s => s.startPolling)
   const stopPolling   = useNotificationStore(s => s.stopPolling)
@@ -84,8 +111,8 @@ export function Sidebar() {
   const stopPush      = useNotificationStore(s => s.stopPush)
   const chatUnread    = useChatStore(s => s.conversations.reduce((acc, c) => acc + (c.unread_count || 0), 0))
 
-  const openSidebarPanel = (panel: Parameters<typeof openPanel>[0]) => {
-    openPanel(panel)
+  const toggleSidebarPanel = (panel: Parameters<typeof togglePanel>[0]) => {
+    togglePanel(panel)
     closeMobileSidebar()
   }
 
@@ -108,17 +135,29 @@ export function Sidebar() {
   return (
     <div className="w-full h-full bg-bg-secondary border-r border-border-subtle flex flex-col overflow-hidden">
       {/* App name */}
-      <div className="px-4 py-3 shrink-0">
+      <div className="px-4 pt-3 pb-2 shrink-0">
         <span className="font-medium text-md">
           <span className="text-accent">tulia</span>
           <span className="text-text-muted">.study</span>
         </span>
       </div>
 
-      {/* Library label */}
-      <p className="text-2xs uppercase tracking-wider text-text-muted px-4 py-1 mt-2 shrink-0 select-none">
-        Library
-      </p>
+      <div className="px-2 pb-2">
+        <button
+          onClick={openCommandPalette}
+          className="flex w-full items-center gap-2 rounded-md border border-border-subtle bg-bg-primary px-3 py-2 text-left text-sm text-text-muted transition-colors hover:text-text-secondary hover:bg-bg-tertiary"
+        >
+          <span className="w-4 h-4 flex items-center justify-center opacity-70">
+            <SearchIcon />
+          </span>
+          <span className="flex-1">Search Bible</span>
+          <kbd className="hidden font-mono text-2xs text-text-muted md:inline">
+            {modKey}K
+          </kbd>
+        </button>
+      </div>
+
+      <SectionLabel>Library</SectionLabel>
 
       <BookSelector />
 
@@ -126,26 +165,13 @@ export function Sidebar() {
         <ChapterGrid />
       </div>
 
-      {/* Personal nav */}
-      <div className="shrink-0 border-t border-border-subtle pt-1 pb-1 px-2 flex flex-col gap-0.5">
-        <NavItem icon={<StarIcon />}    label="Favorites" onClick={() => user ? openSidebarPanel('favorites') : openAuthModal()} />
-        <NavItem icon={<NoteIcon />}    label="My Notes"  onClick={() => user ? openSidebarPanel('my-notes')  : openAuthModal()} />
-        <div className="relative">
-          <NavItem icon={<PeopleIcon />} label="Friends" onClick={() => user ? openSidebarPanel('friends') : openAuthModal()} />
-          {unreadCount > 0 && (
-            <span className="absolute right-2 top-1/2 -translate-y-1/2 min-w-[16px] h-4 px-1 rounded-full bg-accent text-bg-primary text-2xs font-medium flex items-center justify-center pointer-events-none">
-              {unreadCount > 9 ? '9+' : unreadCount}
-            </span>
-          )}
-        </div>
-        <div className="relative">
-          <NavItem icon={<ChatIcon />} label="Chat" onClick={() => user ? openSidebarPanel('chat') : openAuthModal()} />
-          {chatUnread > 0 && (
-            <span className="absolute right-2 top-1/2 -translate-y-1/2 min-w-[16px] h-4 px-1 rounded-full bg-accent text-bg-primary text-2xs font-medium flex items-center justify-center pointer-events-none">
-              {chatUnread > 9 ? '9+' : chatUnread}
-            </span>
-          )}
-        </div>
+      <div className="shrink-0 border-t border-border-subtle px-2 pb-2">
+        <SectionLabel>Personal</SectionLabel>
+        <NavItem icon={<StarIcon />}    label="Favorites" active={activePanel === 'favorites'} onClick={() => user ? toggleSidebarPanel('favorites') : openAuthModal()} />
+        <NavItem icon={<NoteIcon />}    label="My Notes"  active={activePanel === 'my-notes'} onClick={() => user ? toggleSidebarPanel('my-notes')  : openAuthModal()} />
+        <SectionLabel>Social</SectionLabel>
+        <NavItem icon={<PeopleIcon />} label="Friends" active={activePanel === 'friends'} badge={unreadCount} onClick={() => user ? toggleSidebarPanel('friends') : openAuthModal()} />
+        <NavItem icon={<ChatIcon />} label="Chat" active={activePanel === 'chat'} badge={chatUnread} onClick={() => user ? toggleSidebarPanel('chat') : openAuthModal()} />
       </div>
 
       {/* Footer */}
@@ -185,20 +211,6 @@ export function Sidebar() {
             </span>
           </button>
         )}
-
-        {/* Search hint */}
-        <div className="hidden px-4 pb-3 md:block">
-          <button
-            onClick={openCommandPalette}
-            className="text-2xs text-text-muted hover:text-text-secondary transition-colors cursor-pointer"
-          >
-            Press{' '}
-            <kbd className="font-mono bg-bg-tertiary border border-border-subtle rounded px-1 py-px text-2xs">
-              {modKey}K
-            </kbd>{' '}
-            to search
-          </button>
-        </div>
       </div>
     </div>
   )

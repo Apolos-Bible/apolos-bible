@@ -15,8 +15,8 @@ import { useContextMenuStore } from '@/lib/store/useContextMenuStore'
 import { useCrossRefStore } from '@/lib/store/useCrossRefStore'
 import { modKey } from '@/lib/platform'
 import type { MenuItem } from '@/lib/store/useContextMenuStore'
-import { BreadcrumbBar } from '@/components/layout/BreadcrumbBar'
 import { ReadingToolbar } from '@/components/reading/ReadingToolbar'
+import { PresenceAvatars } from '@/components/realtime/PresenceAvatars'
 import { Tooltip } from '@/components/ui/Tooltip'
 import { VerseText } from '@/components/verse/VerseText'
 import { EmptyState } from '@/components/ui/EmptyState'
@@ -145,6 +145,7 @@ export function VerseList() {
   const chapterId       = useVerseStore((s) => s.chapterId)
   const joinChapter     = usePresenceStore((s) => s.joinChapter)
   const leaveChapter    = usePresenceStore((s) => s.leaveChapter)
+  const others          = usePresenceStore((s) => s.others)
   const activityByVerse = useActivityStore((s) => s.activityByVerse)
   const friendIds       = useFriendStore((s) => s.friends.map((f) => f.id).join(','))
 
@@ -329,8 +330,6 @@ export function VerseList() {
 
   return (
     <div className="bg-bg-secondary flex flex-col h-full md:h-screen relative">
-      <BreadcrumbBar />
-
       {/* Floating chapter navigation */}
       <div className="pointer-events-none absolute inset-x-0 top-16 bottom-0 z-20 hidden md:flex items-center">
         <div className="w-full max-w-[684px] mx-auto flex justify-between px-0">
@@ -341,7 +340,7 @@ export function VerseList() {
             aria-label={t('verse.previousChapter')}
             className={cn(
               'pointer-events-auto w-8 h-8 flex items-center justify-center rounded-full border transition-all duration-150',
-              'bg-bg-tertiary/80 backdrop-blur-sm shadow-sm',
+              'bg-bg-tertiary shadow-sm',
               prevDisabled
                 ? 'opacity-0 pointer-events-none'
                 : 'border-border-subtle text-accent/70 hover:text-accent hover:border-accent/40 hover:bg-bg-tertiary active:scale-95',
@@ -360,7 +359,7 @@ export function VerseList() {
             aria-label={t('verse.nextChapter')}
             className={cn(
               'pointer-events-auto w-8 h-8 flex items-center justify-center rounded-full border transition-all duration-150',
-              'bg-bg-tertiary/80 backdrop-blur-sm shadow-sm',
+              'bg-bg-tertiary shadow-sm',
               nextDisabled
                 ? 'opacity-0 pointer-events-none'
                 : 'border-border-subtle text-accent/70 hover:text-accent hover:border-accent/40 hover:bg-bg-tertiary active:scale-95',
@@ -377,11 +376,14 @@ export function VerseList() {
       {verses.length === 0 ? (
         <EmptyState message={t('verse.empty')} />
       ) : (
-        <div className="flex-1 overflow-y-auto relative">
+        <div className="flex-1 overflow-y-auto no-scrollbar relative">
 
-          {/* Reading mode toggle + toolbar */}
-          <div className="sticky top-0 z-10 border-b border-border-subtle/60 bg-bg-secondary/95 backdrop-blur-sm px-3 py-2 md:border-b-0 md:bg-transparent md:px-4 md:py-2 pointer-events-none">
-            <div className="flex flex-wrap items-center justify-between gap-2 md:justify-end">
+          {/* Mobile keeps navigation/display primary; study tools appear after selecting a verse. */}
+          <div className="sticky top-0 z-10 border-b border-border-subtle bg-bg-secondary px-3 py-2 md:border-b-0 md:bg-transparent md:px-4 md:py-2 pointer-events-none">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <div className="hidden md:block pointer-events-auto">
+                <PresenceAvatars users={others} />
+              </div>
               <div className="flex items-center gap-2 pointer-events-auto md:hidden">
                 <button
                   onClick={() => navigateChapter('prev')}
@@ -411,33 +413,40 @@ export function VerseList() {
                 </button>
               </div>
               <div className="flex gap-2 items-center">
-            <ReadingToolbar />
-            <div className="flex gap-0.5 bg-bg-tertiary border border-border-subtle rounded-md p-0.5 pointer-events-auto shadow-sm">
-              <Tooltip label={t('verse.verseMode')} side="bottom">
-                <button
-                  onClick={() => setReadingMode('verse')}
-                  className={cn(
-                    'p-1.5 rounded transition-colors duration-100',
-                    readingMode === 'verse' ? 'bg-bg-secondary text-accent shadow-sm' : 'text-text-muted hover:text-text-secondary',
-                  )}
-                >
-                  <VerseIcon />
-                </button>
-              </Tooltip>
-              <Tooltip label={t('verse.flowMode')} side="bottom">
-                <button
-                  onClick={() => setReadingMode('flow')}
-                  className={cn(
-                    'p-1.5 rounded transition-colors duration-100',
-                    readingMode === 'flow' ? 'bg-bg-secondary text-accent shadow-sm' : 'text-text-muted hover:text-text-secondary',
-                  )}
-                >
-                  <FlowIcon />
-                </button>
-              </Tooltip>
-            </div>
+                <div className="hidden md:block">
+                  <ReadingToolbar />
+                </div>
+                <div className="flex gap-0.5 bg-bg-tertiary border border-border-subtle rounded-md p-0.5 pointer-events-auto shadow-sm">
+                  <Tooltip label={t('verse.verseMode')} side="bottom">
+                    <button
+                      onClick={() => setReadingMode('verse')}
+                      className={cn(
+                        'p-1.5 rounded transition-colors duration-100',
+                        readingMode === 'verse' ? 'bg-bg-secondary text-accent shadow-sm' : 'text-text-muted hover:text-text-secondary',
+                      )}
+                    >
+                      <VerseIcon />
+                    </button>
+                  </Tooltip>
+                  <Tooltip label={t('verse.flowMode')} side="bottom">
+                    <button
+                      onClick={() => setReadingMode('flow')}
+                      className={cn(
+                        'p-1.5 rounded transition-colors duration-100',
+                        readingMode === 'flow' ? 'bg-bg-secondary text-accent shadow-sm' : 'text-text-muted hover:text-text-secondary',
+                      )}
+                    >
+                      <FlowIcon />
+                    </button>
+                  </Tooltip>
+                </div>
               </div>
             </div>
+            {selectedVerseId && (
+              <div className="mt-2 flex justify-center md:hidden">
+                <ReadingToolbar />
+              </div>
+            )}
           </div>
 
           <div className="max-w-[660px] mx-auto px-4 md:px-10 pt-4 pb-16">

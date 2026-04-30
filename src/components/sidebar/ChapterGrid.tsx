@@ -17,6 +17,14 @@ export function ChapterGrid() {
 
   return (
     <div className="px-3 py-2">
+      <div className="mb-2 flex items-center justify-between">
+        <span className="text-2xs font-semibold uppercase tracking-wider text-text-muted">
+          Chapter
+        </span>
+        <span className="text-2xs text-accent">
+          {selectedChapter} / {book.chapters}
+        </span>
+      </div>
       <div className="max-h-[min(42vh,18rem)] overflow-y-auto overscroll-contain pr-1">
         <div className="grid grid-cols-6 sm:grid-cols-7 gap-0.5">
           {chapters.map((n) => {
