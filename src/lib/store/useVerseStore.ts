@@ -97,7 +97,7 @@ export const useVerseStore = create<VerseState>((set, get) => ({
 
   loadChapter: async (slug, chapter) => {
     const { versionId } = get()
-    set({ loadingVerses: true, selectedVerseId: null })
+    set({ selectedBook: slug, selectedChapter: chapter, loadingVerses: true, selectedVerseId: null })
     try {
       const data = await bibleApi.chapter(versionId, slug, chapter)
       const verses: Verse[] = data.verses.map(v => ({
