@@ -367,6 +367,14 @@ export function VerseList() {
     )
   }
 
+  function getMyNoteBodies(verseApiId: number): string[] {
+    if (!user) return []
+
+    return (notes[verseApiId] ?? [])
+      .filter((note) => note.user?.id === user.id)
+      .map((note) => note.body)
+  }
+
   return (
     <div className="bg-bg-secondary flex flex-col h-full md:h-screen relative">
       {/* Floating chapter navigation */}
@@ -510,9 +518,7 @@ export function VerseList() {
                   const isBursting      = burstId === verse.apiId
                   const isBookmarked    = bookmarkedIds.has(verse.apiId)
                   const hasCrossRefs    = verseIdsWithRefs.has(verse.apiId)
-                  const myNoteBodies    = (notes[verse.apiId] ?? [])
-                    .filter((note) => user && note.user.id === user.id)
-                    .map((note) => note.body)
+                  const myNoteBodies    = getMyNoteBodies(verse.apiId)
 
                   return (
                     <span
@@ -561,9 +567,7 @@ export function VerseList() {
                   const isBursting      = burstId === verse.apiId
                   const isBookmarked    = bookmarkedIds.has(verse.apiId)
                   const hasCrossRefs    = verseIdsWithRefs.has(verse.apiId)
-                  const myNoteBodies    = (notes[verse.apiId] ?? [])
-                    .filter((note) => user && note.user.id === user.id)
-                    .map((note) => note.body)
+                  const myNoteBodies    = getMyNoteBodies(verse.apiId)
 
                   return (
                     <div
