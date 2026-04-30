@@ -5,7 +5,7 @@ export interface Note {
   id: number
   body: string
   created_at: string
-  user: { id: number; name: string; email: string }
+  user?: { id: number; name: string; email: string }
 }
 
 interface NoteState {
@@ -46,7 +46,7 @@ export const useNoteStore = create<NoteState>((set, get) => ({
     set(s => ({
       notes: {
         ...s.notes,
-        [verseApiId]: s.notes[verseApiId]?.map(n => n.id === noteId ? updated : n) ?? [],
+        [verseApiId]: s.notes[verseApiId]?.map(n => n.id === noteId ? { ...n, ...updated, user: updated.user ?? n.user } : n) ?? [],
       },
     }))
   },
