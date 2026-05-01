@@ -1,5 +1,11 @@
 import { create } from 'zustand'
 import { bibleApi, ApiBook, ApiVersion } from '@/lib/bibleApi'
+import {
+  BIBLE_VERSION_STORAGE_KEY,
+  getBrowserLanguage,
+  getStoredBibleVersionId,
+  selectDefaultBibleVersionId,
+} from '@/lib/defaultBibleVersion'
 
 export interface Book {
   id: string  // slug used as id for compatibility
@@ -52,7 +58,7 @@ function testament(bookNumber: number): 'old' | 'new' {
 }
 
 export const useVerseStore = create<VerseState>((set, get) => ({
-  versionId: Number(localStorage.getItem('tulia_version_id')) || 1,
+  versionId: getStoredBibleVersionId() ?? 1,
   versions: [],
   books: [],
   selectedBook: '',
@@ -67,21 +73,31 @@ export const useVerseStore = create<VerseState>((set, get) => ({
   loadVersions: async () => {
     try {
       const versions = await bibleApi.versions()
-      set({ versions })
+      const storedVersionId = getStoredBibleVersionId()
+      set({
+        versions,
+        versionId: storedVersionId ?? selectDefaultBibleVersionId(versions, getBrowserLanguage(), get().versionId),
+      })
     } catch (e) {
       console.error('Failed to load versions', e)
     }
   },
 
   setVersion: async (id) => {
-    localStorage.setItem('tulia_version_id', String(id))
+    localStorage.setItem(BIBLE_VERSION_STORAGE_KEY, String(id))
     set({ versionId: id, books: [], verses: [], selectedVerseId: null, selectedVerseIds: [], studyVerseId: null })
     await get().loadBooks()
   },
 
   loadBooks: async () => {
-    const { versionId } = get()
+    let { versionId, versions } = get()
     try {
+      if (!getStoredBibleVersionId() && versions.length === 0) {
+        versions = await bibleApi.versions()
+        versionId = selectDefaultBibleVersionId(versions, getBrowserLanguage(), versionId)
+        set({ versions, versionId })
+      }
+
       const apiBooks: ApiBook[] = await bibleApi.books(versionId)
       const books: Book[] = apiBooks.map(b => ({
         id: b.slug,
