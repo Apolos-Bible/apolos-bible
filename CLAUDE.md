@@ -56,6 +56,7 @@ Books/Chapters  │ Favorites or My Notes          │ Verses│ Study (highligh
 - **Colors:** Dark theme with gold accent `#c8a96a`. All colors are CSS custom properties defined in `tailwind.config.ts` and referenced as `var(--color-*)`.
 - **Font:** Inter, sizes from `2xs` (10px) to `lg` (15px) via Tailwind config.
 - **Theme toggle:** sets `data-theme` attribute on `<html>`.
+- **Design patterns manifesto:** `docs/design-patterns.md` — patrones de Linear (layout, espaciado, interacción, animaciones). Consultar antes de crear o modificar componentes UI.
 
 ### Routing / Navigation
 
