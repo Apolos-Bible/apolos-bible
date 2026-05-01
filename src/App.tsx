@@ -1,4 +1,5 @@
 import { useEffect } from 'react'
+import { useTranslation } from 'react-i18next'
 import { PanelLayout } from '@/components/layout/PanelLayout'
 import { Sidebar } from '@/components/sidebar/Sidebar'
 import { VerseList } from '@/components/verse/VerseList'
@@ -22,15 +23,17 @@ import { useAuthStore } from '@/lib/store/useAuthStore'
 import { useBookmarkStore } from '@/lib/store/useBookmarkStore'
 import { useFriendStore } from '@/lib/store/useFriendStore'
 import { useChatStore } from '@/lib/store/useChatStore'
+import { checkForAppUpdates } from '@/lib/updater'
 
 export default function App() {
+  const { t } = useTranslation()
   const openCommandPalette = useUIStore(s => s.openCommandPalette)
   const activePanel        = useUIStore(s => s.activePanel)
   const commentaryOpen     = useUIStore(s => s.commentaryOpen)
   const authModalOpen      = useUIStore(s => s.authModalOpen)
   const closeAuthModal     = useUIStore(s => s.closeAuthModal)
   const navigateVerse = useVerseStore(s => s.navigateVerse)
-  const selectedVerseId = useVerseStore(s => s.selectedVerseId)
+  const studyVerseId = useVerseStore(s => s.studyVerseId)
   const loadBooks = useVerseStore(s => s.loadBooks)
   const authInit = useAuthStore(s => s.init)
   const user = useAuthStore(s => s.user)
@@ -40,11 +43,20 @@ export default function App() {
   const resetChat = useChatStore(s => s.reset)
   const listenForChatUpdates = useChatStore(s => s.listenForUpdates)
   const stopChatUpdates = useChatStore(s => s.stopListeningForUpdates)
+  const addToast = useUIStore(s => s.addToast)
 
   useEffect(() => {
     authInit()
     loadBooks()
   }, [])
+
+  useEffect(() => {
+    void checkForAppUpdates(addToast, {
+      installing: (version) => t('updater.installing', { version }),
+      installed: t('updater.installed'),
+      failed: t('updater.failed'),
+    })
+  }, [addToast, t])
 
   useEffect(() => {
     if (!user) {
@@ -95,7 +107,7 @@ export default function App() {
       <PanelLayout
         sidebar={<Sidebar />}
         main={<VerseList />}
-        panel={commentaryOpen ? <CommentaryPanel /> : selectedVerseId ? <StudyPanel /> : null}
+        panel={commentaryOpen ? <CommentaryPanel /> : studyVerseId ? <StudyPanel /> : null}
         leftPanel={leftPanelContent}
       />
       <CommandPalette />

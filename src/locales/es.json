@@ -57,13 +57,8 @@
 
   "study.title": "Estudio",
   "study.empty": "Selecciona un versículo para estudiar",
-  "study.highlightSelection": "Resaltar selección",
   "study.highlightEntireVerse": "Resaltar versículo completo",
-  "study.copySelection": "Copiar selección",
   "study.copyVerseText": "Copiar versículo",
-  "study.highlightColor": "Color de resaltado",
-  "study.highlightSaving": "Guardando…",
-  "study.charsSelected": "{{count}} car. seleccionados",
   "study.loginRequired": "Debes iniciar sesión para guardar resaltados",
   "study.colorYellow": "Amarillo",
   "study.colorBlue": "Azul",
@@ -129,6 +124,7 @@
   "toast.bookmarkRemoved": "Marcador eliminado",
   "toast.bookmarkFailed": "No se pudo actualizar el marcador",
   "toast.highlightAdded": "Resaltado añadido",
+  "toast.highlightRemoved": "Resaltado eliminado",
   "toast.copied": "Copiado",
   "toast.highlightFailed": "No se pudo guardar el resaltado",
 
@@ -184,9 +180,15 @@
   "chat.member_other": "{{count}} miembros",
 
   "verse.copyReference": "Copiar referencia",
+  "verse.copySelectedText": "Copiar versículos seleccionados",
+  "verse.copySelectedReferences": "Copiar referencias seleccionadas",
   "verse.highlightVerse": "Resaltar versículo",
+  "verse.highlightSelectedVerses": "Resaltar versículos seleccionados",
+  "verse.removeHighlight": "Quitar resaltado",
+  "verse.removeSelectedHighlights": "Quitar resaltados",
   "verse.highlightVerseTip": "Resaltar versículo (H)",
   "verse.addNote": "Añadir nota",
+  "verse.selectedVerses": "{{count}} versículos seleccionados",
   "verse.removeFromFavorites": "Quitar de favoritos",
   "verse.addToFavorites": "Añadir a favoritos",
   "verse.copiedRef": "Copiado {{ref}}",
@@ -213,5 +215,9 @@
 
   "auth.emailPlaceholder": "tu@correo.com",
 
-  "toast.dismiss": "Descartar notificación"
+  "toast.dismiss": "Descartar notificación",
+
+  "updater.installing": "Instalando actualización {{version}}…",
+  "updater.installed": "Actualización instalada. Reiniciando…",
+  "updater.failed": "No se pudo instalar la actualización"
 }

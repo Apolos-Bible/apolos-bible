@@ -30,8 +30,7 @@ export function CrossReferencesPanel() {
       onClick={closePanel}
     >
       <div
-        className="w-full md:w-96 bg-bg-secondary rounded-t-2xl md:rounded-xl border border-border-subtle shadow-2xl flex flex-col overflow-hidden mx-0 md:mr-4 md:mb-4 md:mt-16"
-        style={{ maxHeight: 'calc(100vh - 4rem)' }}
+        className="max-app-viewport-minus-16 w-full md:w-96 bg-bg-secondary rounded-t-2xl md:rounded-xl border border-border-subtle shadow-2xl flex flex-col overflow-hidden mx-0 md:mr-4 md:mb-4 md:mt-16"
         onClick={e => e.stopPropagation()}
       >
         {/* Header */}

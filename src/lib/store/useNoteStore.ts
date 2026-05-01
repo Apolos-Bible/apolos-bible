@@ -6,6 +6,8 @@ export interface Note {
   body: string
   created_at: string
   user?: { id: number; name: string; email: string }
+  likes_count?: number
+  is_liked?: boolean
 }
 
 interface NoteState {
@@ -15,6 +17,8 @@ interface NoteState {
   addNote: (verseApiId: number, body: string) => Promise<void>
   updateNote: (verseApiId: number, noteId: number, body: string) => Promise<void>
   deleteNote: (verseApiId: number, noteId: number) => Promise<void>
+  likeNote: (verseApiId: number, noteId: number) => Promise<void>
+  unlikeNote: (verseApiId: number, noteId: number) => Promise<void>
 }
 
 export const useNoteStore = create<NoteState>((set, get) => ({
@@ -57,6 +61,30 @@ export const useNoteStore = create<NoteState>((set, get) => ({
       notes: {
         ...s.notes,
         [verseApiId]: s.notes[verseApiId]?.filter(n => n.id !== noteId) ?? [],
+      },
+    }))
+  },
+
+  likeNote: async (verseApiId, noteId) => {
+    const res = await api.post<{ likes_count: number }>(`/api/notes/${noteId}/like`, {})
+    set(s => ({
+      notes: {
+        ...s.notes,
+        [verseApiId]: s.notes[verseApiId]?.map(n =>
+          n.id === noteId ? { ...n, is_liked: true, likes_count: res.likes_count } : n,
+        ) ?? [],
+      },
+    }))
+  },
+
+  unlikeNote: async (verseApiId, noteId) => {
+    const res = await api.delete<{ likes_count: number } | undefined>(`/api/notes/${noteId}/like`)
+    set(s => ({
+      notes: {
+        ...s.notes,
+        [verseApiId]: s.notes[verseApiId]?.map(n =>
+          n.id === noteId ? { ...n, is_liked: false, likes_count: res?.likes_count ?? (n.likes_count ?? 1) - 1 } : n,
+        ) ?? [],
       },
     }))
   },

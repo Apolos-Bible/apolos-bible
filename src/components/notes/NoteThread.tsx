@@ -30,7 +30,7 @@ export default function NoteThread({ verseApiId }: NoteThreadProps) {
   }
 
   return (
-    <div className="flex-1 overflow-y-auto px-4 py-2 flex flex-col gap-2">
+    <div className="flex-1 overflow-y-auto">
       {loading ? (
         <p className="text-xs text-text-muted text-center py-6">Cargando notas…</p>
       ) : notes.length === 0 ? (
@@ -38,9 +38,11 @@ export default function NoteThread({ verseApiId }: NoteThreadProps) {
           Sin notas aún — agrega la primera
         </p>
       ) : (
-        notes.map((note) => (
-          <NoteItem key={note.id} note={note} verseApiId={verseApiId} />
-        ))
+        <div className="px-4 py-2">
+          {notes.map((note) => (
+            <NoteItem key={note.id} note={note} verseApiId={verseApiId} />
+          ))}
+        </div>
       )}
     </div>
   )

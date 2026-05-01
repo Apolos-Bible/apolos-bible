@@ -1,9 +1,4 @@
-import {
-  forwardRef,
-  useImperativeHandle,
-  useRef,
-  useState,
-} from 'react'
+import { useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useNoteStore } from '@/lib/store/useNoteStore'
 import { useUIStore } from '@/lib/store/useUIStore'
@@ -16,111 +11,97 @@ interface NoteInputProps {
   verseApiId: number
 }
 
-export interface NoteInputHandle {
-  focus: () => void
-}
+export default function NoteInput({ verseApiId }: NoteInputProps) {
+  const { t } = useTranslation()
+  const [content, setContent] = useState('')
+  const [submitting, setSubmitting] = useState(false)
+  const textareaRef = useRef<HTMLTextAreaElement>(null)
+  const addNote = useNoteStore((s) => s.addNote)
+  const addToast = useUIStore((s) => s.addToast)
+  const openAuthModal = useUIStore((s) => s.openAuthModal)
+  const user = useAuthStore((s) => s.user)
+  const isMobile = useIsMobile()
 
-const NoteInput = forwardRef<NoteInputHandle, NoteInputProps>(
-  function NoteInput({ verseApiId }, ref) {
-    const { t } = useTranslation()
-    const [content, setContent] = useState('')
-    const [submitting, setSubmitting] = useState(false)
-    const textareaRef = useRef<HTMLTextAreaElement>(null)
-    const addNote = useNoteStore((s) => s.addNote)
-    const addToast = useUIStore((s) => s.addToast)
-    const openAuthModal = useUIStore((s) => s.openAuthModal)
-    const user = useAuthStore((s) => s.user)
-    const isMobile = useIsMobile()
+  const initials = user?.name
+    ? user.name.split(' ').slice(0, 2).map((s) => s[0].toUpperCase()).join('')
+    : user?.email?.[0]?.toUpperCase() ?? '?'
 
-    useImperativeHandle(ref, () => ({
-      focus() {
-        textareaRef.current?.focus()
-      },
-    }))
+  function handleChange(e: React.ChangeEvent<HTMLTextAreaElement>) {
+    setContent(e.target.value)
+  }
 
-    function adjustHeight(el: HTMLTextAreaElement) {
-      el.style.height = 'auto'
-      el.style.height = `${Math.min(el.scrollHeight, 120)}px`
+  function handleKeyDown(e: React.KeyboardEvent<HTMLTextAreaElement>) {
+    if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') {
+      e.preventDefault()
+      handleSubmit()
     }
+  }
 
-    function handleChange(e: React.ChangeEvent<HTMLTextAreaElement>) {
-      setContent(e.target.value)
-      adjustHeight(e.target)
+  async function handleSubmit() {
+    const trimmed = content.trim()
+    if (!trimmed || submitting) return
+    if (!user) {
+      addToast(t('study.loginRequired'), 'error', {
+        action: { label: t('auth.logIn'), onClick: openAuthModal },
+      })
+      openAuthModal()
+      return
     }
-
-    function handleKeyDown(e: React.KeyboardEvent<HTMLTextAreaElement>) {
-      if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') {
-        e.preventDefault()
-        handleSubmit()
-      }
+    setSubmitting(true)
+    try {
+      await addNote(verseApiId, trimmed)
+      addToast(t('notes.saved'), 'success')
+      setContent('')
+    } catch {
+      addToast(t('notes.saveFailed'), 'error')
+    } finally {
+      setSubmitting(false)
     }
+  }
 
-    async function handleSubmit() {
-      const trimmed = content.trim()
-      if (!trimmed || submitting) return
-      if (!user) {
-        addToast(t('study.loginRequired'), 'error', {
-          action: { label: t('auth.logIn'), onClick: openAuthModal },
-        })
-        openAuthModal()
-        return
-      }
-      setSubmitting(true)
-      try {
-        await addNote(verseApiId, trimmed)
-        addToast(t('notes.saved'), 'success')
-        setContent('')
-        if (textareaRef.current) {
-          textareaRef.current.style.height = 'auto'
-        }
-      } catch {
-        addToast(t('notes.saveFailed'), 'error')
-      } finally {
-        setSubmitting(false)
-      }
-    }
-
-    const canSubmit = content.trim().length > 0 && !submitting
-
-    return (
-      <div className="border-t border-border-subtle px-4 py-3 bg-bg-secondary">
-        <textarea
-          ref={textareaRef}
-          value={content}
-          readOnly={!user}
-          onFocus={() => {
-            if (!user) openAuthModal()
-          }}
-          onChange={handleChange}
-          onKeyDown={handleKeyDown}
-          rows={1}
-          placeholder={!user ? t('study.loginRequired') : isMobile ? t('notes.placeholder') : t('notes.placeholderDesktop', { modKey })}
-          className={cn(
-            'w-full resize-none bg-bg-primary rounded-md border border-border-subtle',
-            'text-sm text-text-primary placeholder:text-text-muted',
-            'px-3 py-2 outline-none min-h-[40px] max-h-[120px] leading-relaxed',
-            'focus:border-accent transition-colors',
-            !user && 'cursor-not-allowed opacity-60',
-          )}
-        />
-        <div className="flex justify-end mt-2">
-          <button
-            type="button"
-            onClick={handleSubmit}
-            disabled={!user || !canSubmit}
+  return (
+    <div className="border-t border-border-subtle px-4 py-3 bg-bg-secondary">
+      <div className="flex gap-2.5 items-start">
+        <span className="shrink-0 w-7 h-7 rounded-full bg-accent/20 flex items-center justify-center text-[10px] font-semibold text-accent select-none">
+          {user ? initials : '?'}
+        </span>
+        <div className="flex-1 min-w-0">
+          <textarea
+            ref={textareaRef}
+            value={content}
+            readOnly={!user}
+            onFocus={() => {
+              if (!user) openAuthModal()
+            }}
+            onChange={handleChange}
+            onKeyDown={handleKeyDown}
+            rows={1}
+            placeholder={!user ? t('study.loginRequired') : isMobile ? t('notes.placeholder') : t('notes.placeholderDesktop', { modKey })}
             className={cn(
-              'text-xs px-3 py-1.5 rounded font-medium transition-colors',
-              user && canSubmit
-                ? 'bg-accent text-bg-primary hover:brightness-110'
-                : 'bg-bg-tertiary text-text-muted cursor-not-allowed',
+              'w-full resize-none bg-transparent text-sm text-text-primary placeholder:text-text-muted',
+              'outline-none min-h-[24px] max-h-[120px] leading-relaxed',
+              !user && 'cursor-not-allowed opacity-60',
             )}
-          >
-            {submitting ? t('notes.saving') : t('notes.addNote')}
-          </button>
+          />
+          {content.trim() && (
+            <div className="flex justify-end mt-1.5">
+              <button
+                type="button"
+                onClick={handleSubmit}
+                disabled={!user || !content.trim() || submitting}
+                className={cn(
+                  'text-xs font-medium transition-colors',
+                  user && content.trim() && !submitting
+                    ? 'text-accent hover:text-accent/80'
+                    : 'text-text-muted cursor-not-allowed',
+                )}
+              >
+                {submitting ? t('notes.saving') : t('notes.addNote')}
+              </button>
+            </div>
+          )}
         </div>
       </div>
-    )
-  },
-)
-
-export default NoteInput
+    </div>
+  )
+}

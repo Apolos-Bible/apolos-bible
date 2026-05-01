@@ -115,13 +115,24 @@ function VerseIcon({ className }: { className?: string }) {
   )
 }
 
+function NoteIcon({ size = 10 }: { size?: number }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" aria-hidden="true">
+      <rect x="2.5" y="2.5" width="11" height="11" rx="1.5" />
+      <path d="M5 6h6M5 8.5h4" />
+    </svg>
+  )
+}
+
 // ── Component ──────────────────────────────────────────────────────────────
 
 export function VerseList() {
   const { t }            = useTranslation()
   const verses           = useVerseStore((s) => s.verses)
-  const selectedVerseId  = useVerseStore((s) => s.selectedVerseId)
-  const selectVerse      = useVerseStore((s) => s.selectVerse)
+  const selectedVerseId   = useVerseStore((s) => s.selectedVerseId)
+  const selectedVerseIds  = useVerseStore((s) => s.selectedVerseIds)
+  const selectVerse       = useVerseStore((s) => s.selectVerse)
+  const toggleVerseSelection = useVerseStore((s) => s.toggleVerseSelection)
   const books            = useVerseStore((s) => s.books)
   const selectedBook     = useVerseStore((s) => s.selectedBook)
   const selectedChapter  = useVerseStore((s) => s.selectedChapter)
@@ -351,21 +362,6 @@ export function VerseList() {
     )
   }
 
-  function MyNotePreview({ bodies }: { bodies: string[] }) {
-    if (!bodies.length) return null
-
-    return (
-      <aside className="min-w-0 rounded-md border border-accent/20 bg-accent/[0.06] px-2.5 py-1.5 text-xs leading-relaxed text-text-secondary md:w-40 md:shrink-0">
-        <p className="mb-1 text-[9px] font-semibold uppercase tracking-[0.16em] text-accent/70">
-          My note{bodies.length > 1 ? 's' : ''}
-        </p>
-        <p className="line-clamp-3">{bodies[0]}</p>
-        {bodies.length > 1 && (
-          <p className="mt-1 text-2xs text-text-muted">+{bodies.length - 1} more</p>
-        )}
-      </aside>
-    )
-  }
 
   function getMyNoteBodies(verseApiId: number): string[] {
     if (!user) return []
@@ -376,7 +372,7 @@ export function VerseList() {
   }
 
   return (
-    <div className="bg-bg-secondary flex flex-col h-full md:h-screen relative">
+    <div className="bg-bg-secondary flex h-full flex-col relative">
       {/* Floating chapter navigation */}
       <div className="pointer-events-none absolute inset-x-0 top-16 bottom-0 z-20 hidden md:flex items-center">
         <div className="w-full max-w-[684px] mx-auto flex justify-between px-0">
@@ -507,11 +503,30 @@ export function VerseList() {
               <div className="mt-4 mx-auto w-8 h-px bg-accent/30" />
             </div>
 
+            {selectedVerseIds.length > 0 && (
+              <div className="mb-4 flex items-center justify-between bg-accent/[0.08] border border-accent/[0.15] rounded-lg px-3 py-2 text-xs animate-in fade-in slide-in-from-top-1 duration-200">
+                <span className="text-text-secondary">
+                  {selectedVerseIds.length === 1
+                    ? '1 verse selected'
+                    : `${selectedVerseIds.length} verses selected`}
+                </span>
+                <button
+                  onClick={() => selectVerse(null)}
+                  className="flex items-center gap-1 text-text-muted hover:text-text-primary transition-colors"
+                >
+                  <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round">
+                    <path d="M3 3l6 6M9 3l-6 6" />
+                  </svg>
+                  Clear
+                </button>
+              </div>
+            )}
+
             {/* ── Flow mode ── */}
             {readingMode === 'flow' && (
               <p className={cn('font-reading leading-[2.2] md:leading-[2.6] tracking-wide text-text-primary select-text', textSizeClass)}>
                 {verses.map((verse, i) => {
-                  const isSelected      = verse.id === selectedVerseId
+                  const isSelected      = selectedVerseIds.includes(verse.id)
                   const verseHighlights = highlights[verse.apiId] ?? []
                   const hasActivity     = (notes[verse.apiId]?.length ?? 0) > 0 || verseHighlights.length > 0
                   const hasFriendActivity = (activityByVerse[verse.verse]?.length ?? 0) > 0
@@ -524,7 +539,7 @@ export function VerseList() {
                     <span
                       key={verse.id}
                       data-verse-id={verse.id}
-                      onClick={() => selectVerse(isSelected ? null : verse.id)}
+                      onClick={() => toggleVerseSelection(verse.id)}
                       onContextMenu={(e) => handleContextMenu(e, verse)}
                       className={cn(
                         'cursor-pointer rounded-[2px] transition-[background-color] duration-150',
@@ -546,9 +561,7 @@ export function VerseList() {
                       )}
                       <VerseText inline text={verse.text} highlights={verseHighlights} />
                       {myNoteBodies.length > 0 && (
-                        <span className="inline-flex align-baseline ml-1 rounded border border-accent/20 bg-accent/[0.06] px-1 py-px text-[10px] leading-none text-accent/80">
-                          note
-                        </span>
+                        <NoteIcon size={10} />
                       )}
                     </span>
                   )
@@ -560,7 +573,7 @@ export function VerseList() {
             {readingMode === 'verse' && (
               <div className="space-y-4">
                 {verses.map((verse) => {
-                  const isSelected      = verse.id === selectedVerseId
+                  const isSelected      = selectedVerseIds.includes(verse.id)
                   const verseHighlights = highlights[verse.apiId] ?? []
                   const hasActivity     = (notes[verse.apiId]?.length ?? 0) > 0 || verseHighlights.length > 0
                   const hasFriendActivity = (activityByVerse[verse.verse]?.length ?? 0) > 0
@@ -573,12 +586,12 @@ export function VerseList() {
                     <div
                       key={verse.id}
                       data-verse-id={verse.id}
-                      onClick={() => selectVerse(isSelected ? null : verse.id)}
+                      onClick={() => toggleVerseSelection(verse.id)}
                       onContextMenu={(e) => handleContextMenu(e, verse)}
                       className={cn(
-                        'group flex gap-3 cursor-pointer rounded-md px-2 py-2 md:py-1 -mx-2 transition-[background-color] duration-150',
+                        'group flex gap-3 cursor-pointer rounded-md px-2 py-2 md:py-1 -mx-2 transition-all duration-150 border-l-2 border-l-transparent',
                         isBursting ? 'verse-burst-block' : '',
-                        isSelected ? 'bg-accent/[0.08]' : 'hover:bg-black/[0.03]',
+                        isSelected ? 'bg-accent/[0.08] border-l-accent' : 'hover:bg-black/[0.03]',
                       )}
                     >
                       <div className="relative shrink-0 w-6 flex items-start justify-end gap-[2px] pt-[3px]">
@@ -610,7 +623,9 @@ export function VerseList() {
                           )}
                         />
                       </div>
-                      <MyNotePreview bodies={myNoteBodies} />
+                      {myNoteBodies.length > 0 && (
+                        <NoteIcon size={12} />
+                      )}
                       <button
                         type="button"
                         onClick={(e) => {
