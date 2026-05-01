@@ -1,5 +1,12 @@
 import { create } from 'zustand'
 import i18n from '@/lib/i18n'
+import {
+  APP_LOCALE_STORAGE_KEY,
+  getBrowserLocale,
+  getStoredAppLocale,
+  selectDefaultAppLocale,
+  type AppLocale,
+} from '@/lib/defaultAppLocale'
 
 type Toast = {
   id: string
@@ -10,7 +17,7 @@ type Toast = {
 
 export type FontSize    = 'sm' | 'base' | 'lg'
 export type Theme       = 'dark' | 'light'
-export type Locale      = 'en' | 'es'
+export type Locale      = AppLocale
 export type Panel       = 'favorites' | 'my-notes' | 'friends' | 'chat'
 export type ReadingMode = 'flow' | 'verse'
 
@@ -56,7 +63,7 @@ type UIStore = {
 const savedFontSize    = (localStorage.getItem('fontSize')    as FontSize)    ?? 'base'
 const savedTheme       = (localStorage.getItem('theme')       as Theme)       ?? 'light'
 const savedReadingMode = (localStorage.getItem('readingMode') as ReadingMode) ?? 'verse'
-const savedLocale      = (localStorage.getItem('locale')      as Locale)      ?? null
+const savedLocale      = getStoredAppLocale()
 applyTheme(savedTheme)
 
 export const useUIStore = create<UIStore>((set) => ({
@@ -71,7 +78,7 @@ export const useUIStore = create<UIStore>((set) => ({
   activePanel: null,
   fontSize: savedFontSize,
   theme: savedTheme,
-  locale: savedLocale ?? (navigator.language.startsWith('es') ? 'es' : 'en'),
+  locale: savedLocale ?? selectDefaultAppLocale(getBrowserLocale()),
   readingMode: savedReadingMode,
 
   openCommandPalette: () => set({ commandPaletteOpen: true }),
@@ -110,7 +117,7 @@ export const useUIStore = create<UIStore>((set) => ({
   },
 
   setLocale: (l) => {
-    localStorage.setItem('locale', l)
+    localStorage.setItem(APP_LOCALE_STORAGE_KEY, l)
     void i18n.changeLanguage(l)
     set({ locale: l })
   },

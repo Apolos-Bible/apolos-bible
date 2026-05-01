@@ -2,12 +2,12 @@ import i18n from 'i18next'
 import { initReactI18next } from 'react-i18next'
 import en from '@/locales/en.json'
 import es from '@/locales/es.json'
+import { getBrowserLocale, getStoredAppLocale, selectDefaultAppLocale } from '@/lib/defaultAppLocale'
 
-const savedLocale = localStorage.getItem('locale')
-const osLocale   = navigator.language.startsWith('es') ? 'es' : 'en'
+const locale = getStoredAppLocale() ?? selectDefaultAppLocale(getBrowserLocale())
 
 i18n.use(initReactI18next).init({
-  lng: savedLocale ?? osLocale,
+  lng: locale,
   fallbackLng: 'en',
   resources: {
     en: { translation: en },
