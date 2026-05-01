@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next'
 import { UserAvatar } from '@/components/auth/UserAvatar'
 import { MessageBody } from './MessageBody'
 import { useAuthStore } from '@/lib/store/useAuthStore'
@@ -17,6 +18,7 @@ function formatTime(iso: string): string {
 }
 
 export function MessageItem({ message, isMine, compact, showReceipt, conversation }: MessageItemProps) {
+  const { t } = useTranslation()
   const selfId = useAuthStore(s => s.user?.id)
   const isGroup = conversation.type === 'group'
 
@@ -28,13 +30,13 @@ export function MessageItem({ message, isMine, compact, showReceipt, conversatio
     const readers = others.filter(p => p.last_read_at && new Date(p.last_read_at).getTime() >= messageTs)
 
     if (readers.length === 0) {
-      receiptLabel = 'Sent'
+      receiptLabel = t('chat.readReceiptSent')
     } else if (!isGroup) {
-      receiptLabel = 'Read'
+      receiptLabel = t('chat.readReceiptRead')
     } else if (readers.length === others.length) {
-      receiptLabel = 'Read by all'
+      receiptLabel = t('chat.readReceiptReadByAll')
     } else {
-      receiptLabel = `Read by ${readers.length}/${others.length}`
+      receiptLabel = t('chat.readReceiptReadBy', { readers: readers.length, total: others.length })
     }
   }
 

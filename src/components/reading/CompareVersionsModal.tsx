@@ -5,9 +5,11 @@ import { cn } from '@/lib/cn'
 
 export function CompareVersionsModal() {
   const { t } = useTranslation()
-  const { open, results, targetVerseNumber, closeCompare } = useCompareStore()
+  const { open, results, targetVerseNumbers, closeCompare } = useCompareStore()
   const scrollRefs = useRef<(HTMLDivElement | null)[]>([])
   const syncingRef = useRef(false)
+  const targetVerseSet = new Set(targetVerseNumbers)
+  const firstTargetVerseNumber = targetVerseNumbers[0] ?? null
 
   useEffect(() => {
     if (!open) return
@@ -33,17 +35,17 @@ export function CompareVersionsModal() {
   // Scroll to target verse once data loads
   const allLoaded = results.length > 0 && results.every(r => !r.loading)
   useEffect(() => {
-    if (!allLoaded || targetVerseNumber == null) return
+    if (!allLoaded || firstTargetVerseNumber == null) return
     // Give the DOM a tick to render verse rows
     const id = setTimeout(() => {
       scrollRefs.current.forEach(el => {
         if (!el) return
-        const target = el.querySelector<HTMLElement>(`[data-verse="${targetVerseNumber}"]`)
+        const target = el.querySelector<HTMLElement>(`[data-verse="${firstTargetVerseNumber}"]`)
         target?.scrollIntoView({ block: 'center', behavior: 'smooth' })
       })
     }, 50)
     return () => clearTimeout(id)
-  }, [allLoaded, targetVerseNumber])
+  }, [allLoaded, firstTargetVerseNumber])
 
   if (!open) return null
 
@@ -98,12 +100,12 @@ export function CompareVersionsModal() {
                     data-verse={verse.number}
                     className={cn(
                       'flex gap-2 text-sm leading-relaxed rounded px-1 -mx-1 transition-colors',
-                      verse.number === targetVerseNumber && 'bg-accent/10'
+                      targetVerseSet.has(verse.number) && 'bg-accent/10'
                     )}
                   >
                     <span className={cn(
                       'font-sans text-[10px] font-bold pt-[3px] shrink-0 w-5 text-right',
-                      verse.number === targetVerseNumber ? 'text-accent' : 'text-accent/60'
+                      targetVerseSet.has(verse.number) ? 'text-accent' : 'text-accent/60'
                     )}>
                       {verse.number}
                     </span>

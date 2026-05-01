@@ -1,14 +1,18 @@
+import { useTranslation } from 'react-i18next'
+
 interface TypingDotsProps {
   names: string[]
 }
 
 export function TypingDots({ names }: TypingDotsProps) {
+  const { t } = useTranslation()
+
   if (names.length === 0) return null
 
   const label =
-    names.length === 1 ? `${names[0]} is typing` :
-    names.length === 2 ? `${names[0]} and ${names[1]} are typing` :
-    `${names[0]} and ${names.length - 1} others are typing`
+    names.length === 1 ? t('chat.isTyping', { name: names[0] }) :
+    names.length === 2 ? t('chat.areTyping', { name1: names[0], name2: names[1] }) :
+    t('chat.othersTyping', { name: names[0], count: names.length - 1 })
 
   return (
     <div className="flex items-center gap-1.5 text-2xs text-text-muted py-1">

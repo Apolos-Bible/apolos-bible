@@ -13,6 +13,7 @@ import NoteThread from '@/components/notes/NoteThread'
 import NoteInput from '@/components/notes/NoteInput'
 import { EmptyState } from '@/components/ui/EmptyState'
 import { isAuthError } from '@/lib/auth'
+import { cn } from '@/lib/cn'
 import type { HighlightColor } from '@/types'
 
 function ColorDot({ color }: { color: string }) {
@@ -32,6 +33,7 @@ export function StudyPanel() {
   const { t } = useTranslation()
 
   const studyVerseId    = useVerseStore((s) => s.studyVerseId)
+  const selectedVerseIds = useVerseStore((s) => s.selectedVerseIds)
   const verses          = useVerseStore((s) => s.verses)
   const closeStudyPanel = useVerseStore((s) => s.closeStudyPanel)
 
@@ -41,15 +43,26 @@ export function StudyPanel() {
 
   const addToast = useUIStore((s) => s.addToast)
   const openAuthModal = useUIStore((s) => s.openAuthModal)
+  const showOthersNotes = useUIStore((s) => s.showOthersNotes)
+  const toggleShowOthersNotes = useUIStore((s) => s.toggleShowOthersNotes)
   const openMenu = useContextMenuStore((s) => s.openMenu)
   const user = useAuthStore((s) => s.user)
 
-  const verse           = verses.find((v) => v.id === studyVerseId) ?? null
+  const verse = verses.find((v) => v.id === studyVerseId) ?? null
+  const selectedVerses = selectedVerseIds
+    .map((id) => verses.find((v) => v.id === id))
+    .filter((v): v is NonNullable<typeof v> => Boolean(v))
+  const panelVerses = verse && selectedVerseIds.includes(verse.id) && selectedVerses.length > 1
+    ? selectedVerses
+    : verse
+      ? [verse]
+      : []
+  const isGroup = panelVerses.length > 1
   const verseHighlights = verse ? (highlights[verse.apiId] ?? []) : []
 
   useEffect(() => {
-    if (verse) loadHighlights(verse.apiId)
-  }, [verse?.apiId])
+    panelVerses.forEach((panelVerse) => loadHighlights(panelVerse.apiId))
+  }, [panelVerses.map((panelVerse) => panelVerse.apiId).join(','), loadHighlights])
 
   const HIGHLIGHT_COLORS: { label: string; value: HighlightColor; hex: string }[] = [
     { label: t('study.colorYellow'), value: 'yellow', hex: '#e5c07b' },
@@ -111,7 +124,9 @@ export function StudyPanel() {
       <PanelHeader
         title={
           verse
-            ? `${verse.book.charAt(0).toUpperCase()}${verse.book.slice(1)} ${verse.chapter}:${verse.verse}`
+            ? isGroup
+              ? t('study.selectedVersesTitle', { count: panelVerses.length })
+              : `${verse.book.charAt(0).toUpperCase()}${verse.book.slice(1)} ${verse.chapter}:${verse.verse}`
             : t('study.title')
         }
         actions={
@@ -119,7 +134,7 @@ export function StudyPanel() {
             <button
               type="button"
               onClick={closeStudyPanel}
-              aria-label="Close study panel"
+              aria-label={t('study.closePanel')}
               className="p-1 rounded text-text-muted hover:text-text-primary hover:bg-bg-tertiary transition-colors duration-100"
             >
               <svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true">
@@ -131,7 +146,7 @@ export function StudyPanel() {
       />
 
       {/* Body */}
-      {!verse ? (
+      {panelVerses.length === 0 ? (
         <EmptyState message={t('study.empty')} />
       ) : (
         <div className="flex-1 flex flex-col overflow-hidden">
@@ -140,18 +155,53 @@ export function StudyPanel() {
             {/* Verse text card */}
             <div
               className="bg-bg-tertiary rounded-lg mx-4 my-3 p-4"
-              onContextMenu={handleVerseTextContextMenu}
+              onContextMenu={isGroup ? undefined : handleVerseTextContextMenu}
             >
-              <div>
-                <VerseText text={verse.text} highlights={verseHighlights} />
-              </div>
+              {panelVerses.map((panelVerse) => (
+                <div key={panelVerse.id} className={cn(isGroup && 'mb-3 last:mb-0')}>
+                  {isGroup && (
+                    <VerseReference
+                      book={panelVerse.book}
+                      chapter={panelVerse.chapter}
+                      verse={panelVerse.verse}
+                    />
+                  )}
+                  <VerseText text={panelVerse.text} highlights={highlights[panelVerse.apiId] ?? []} />
+                </div>
+              ))}
             </div>
 
             {/* Notes thread */}
-            <NoteThread verseApiId={verse.apiId} />
+            {isGroup ? (
+              <p className="px-4 pb-3 text-xs text-text-muted">{t('study.groupNotesHint')}</p>
+            ) : (
+              <>
+                <div className="px-4 py-2 flex items-center gap-2">
+                  <span className="text-[11px] text-text-muted">{t('notes.showOthers')}</span>
+                  <button
+                    type="button"
+                    onClick={toggleShowOthersNotes}
+                    className={cn(
+                      'relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out',
+                      showOthersNotes ? 'bg-accent' : 'bg-bg-tertiary border-border-subtle',
+                    )}
+                    role="switch"
+                    aria-checked={showOthersNotes}
+                  >
+                    <span
+                      className={cn(
+                        'pointer-events-none inline-block h-3.5 w-3.5 translate-y-0 transform rounded-full bg-white shadow-sm ring-0 transition duration-200 ease-in-out',
+                        showOthersNotes ? 'translate-x-4' : 'translate-x-0.5',
+                      )}
+                    />
+                  </button>
+                </div>
+                <NoteThread verseApiId={panelVerses[0].apiId} />
+              </>
+            )}
           </div>
 
-          <NoteInput verseApiId={verse.apiId} />
+          <NoteInput verseApiIds={panelVerses.map((panelVerse) => panelVerse.apiId)} />
         </div>
       )}
     </div>

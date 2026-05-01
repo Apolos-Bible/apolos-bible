@@ -1,4 +1,5 @@
 import { useEffect, useRef } from 'react'
+import { useTranslation } from 'react-i18next'
 import { cn } from '@/lib/cn'
 import type { ApiSearchResult } from '@/lib/bibleApi'
 
@@ -12,6 +13,7 @@ interface Props {
 }
 
 export function VerseAutocomplete({ query, results, loading, activeIdx, onSelect, onHover }: Props) {
+  const { t } = useTranslation()
   const activeRef = useRef<HTMLButtonElement>(null)
 
   useEffect(() => {
@@ -26,17 +28,17 @@ export function VerseAutocomplete({ query, results, loading, activeIdx, onSelect
           <path d="M11 11l3 3" strokeLinecap="round" />
         </svg>
         <span className="text-2xs text-text-muted">
-          {query.trim() ? <>Buscando <span className="text-text-primary font-medium">"{query.trim()}"</span></> : 'Escribe una referencia o palabras del versículo…'}
+          {query.trim() ? <>{t('chat.searchVerseQuery', { query: query.trim() })}</> : t('chat.searchVersePlaceholder')}
         </span>
       </div>
 
       <div className="max-h-52 overflow-y-auto">
         {loading && (
-          <div className="px-3 py-3 text-xs text-text-muted text-center">Buscando…</div>
+          <div className="px-3 py-3 text-xs text-text-muted text-center">{t('chat.searching')}</div>
         )}
 
         {!loading && query.trim() && results.length === 0 && (
-          <div className="px-3 py-3 text-xs text-text-muted text-center">Sin resultados</div>
+          <div className="px-3 py-3 text-xs text-text-muted text-center">{t('commandPalette.noResults')}</div>
         )}
 
         {results.map((r, i) => (
@@ -62,9 +64,9 @@ export function VerseAutocomplete({ query, results, loading, activeIdx, onSelect
       </div>
 
       <div className="px-3 py-1.5 border-t border-border-subtle flex items-center gap-3">
-        <span className="text-2xs text-text-muted">↑↓ navegar</span>
-        <span className="text-2xs text-text-muted">↵ insertar</span>
-        <span className="text-2xs text-text-muted">Esc cerrar</span>
+        <span className="text-2xs text-text-muted">{t('chat.commandNavigate')}</span>
+        <span className="text-2xs text-text-muted">{t('chat.commandInsert')}</span>
+        <span className="text-2xs text-text-muted">{t('chat.commandClose')}</span>
       </div>
     </div>
   )

@@ -24,7 +24,10 @@ async function request<T>(path: string, init: RequestInit = {}): Promise<T> {
   const res = await fetch(`${BASE}${path}`, { ...init, headers })
   if (!res.ok) {
     const err = await res.json().catch(() => ({ message: res.statusText }))
-    const error = new Error(err.message ?? res.statusText) as Error & { status: number }
+    const validationMessage = err.errors && typeof err.errors === 'object'
+      ? Object.values(err.errors).flat().join('\n')
+      : null
+    const error = new Error(validationMessage || err.message || res.statusText) as Error & { status: number }
     error.status = res.status
     throw error
   }
@@ -35,6 +38,6 @@ async function request<T>(path: string, init: RequestInit = {}): Promise<T> {
 export const api = {
   get:    <T>(path: string)                  => request<T>(path),
   post:   <T>(path: string, body: unknown)   => request<T>(path, { method: 'POST',   body: JSON.stringify(body) }),
-  patch:  <T>(path: string, body: unknown)   => request<T>(path, { method: 'PATCH',  body: JSON.stringify(body) }),
-  delete: <T>(path: string)                  => request<T>(path, { method: 'DELETE' }),
+  patch:  <T>(path: string, body: unknown)   => request<T>(path, { method: 'POST',   body: JSON.stringify({ ...(body as object), _method: 'PATCH' }) }),
+  delete: <T>(path: string)                  => request<T>(path, { method: 'POST', body: JSON.stringify({ _method: 'DELETE' }) }),
 }

@@ -1,5 +1,6 @@
 
 import { useEffect, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { useVerseStore } from '@/lib/store/useVerseStore'
 import type { Book } from '@/lib/store/useVerseStore'
 import { cn } from '@/lib/cn'
@@ -93,6 +94,7 @@ function BookGroup({ label, books, selectedBook, openBook, selectedChapter, onOp
 }
 
 export function BookSelector() {
+  const { t } = useTranslation()
   const books = useVerseStore((s) => s.books)
   const selectedBook = useVerseStore((s) => s.selectedBook)
   const selectedChapter = useVerseStore((s) => s.selectedChapter)
@@ -109,7 +111,7 @@ export function BookSelector() {
   return (
     <div className="flex-1 overflow-y-auto py-1">
       <BookGroup
-        label="Old Testament"
+        label={t('sidebar.oldTestament')}
         books={oldTestament}
         selectedBook={selectedBook}
         openBook={openBook}
@@ -119,7 +121,7 @@ export function BookSelector() {
       />
       <div className="mt-2">
         <BookGroup
-          label="New Testament"
+          label={t('sidebar.newTestament')}
           books={newTestament}
           selectedBook={selectedBook}
           openBook={openBook}

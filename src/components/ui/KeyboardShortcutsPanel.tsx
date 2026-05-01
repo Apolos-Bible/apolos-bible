@@ -46,7 +46,7 @@ export function KeyboardShortcutsPanel() {
           <button
             onClick={toggleShortcutsPanel}
             className="text-text-muted hover:text-text-secondary transition-colors text-lg leading-none"
-            aria-label="Close shortcuts panel"
+            aria-label={t('shortcuts.closePanelAria')}
           >
             ×
           </button>

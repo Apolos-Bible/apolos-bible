@@ -2,6 +2,7 @@ import { create } from 'zustand'
 import { friendApi } from '@/lib/friendApi'
 import type { AppNotification } from '@/types'
 import { initEcho, getEcho } from '@/lib/echo'
+import i18n from '@/lib/i18n'
 import { useUIStore } from './useUIStore'
 
 type NotificationStore = {
@@ -81,12 +82,12 @@ export const useNotificationStore = create<NotificationStore>((set, get) => ({
       const classType: string = notif.type ?? ''
 
       if (classType === 'App\\Notifications\\FriendRequestReceived') {
-        const name: string = notif.requester_name ?? 'Someone'
-        useUIStore.getState().addToast(`${name} sent you a friend request`, 'info')
+        const name: string = notif.requester_name ?? i18n.t('notification.someone')
+        useUIStore.getState().addToast(i18n.t('notification.friendRequest', { name }), 'info')
         set((s) => ({ unreadCount: s.unreadCount + 1 }))
       } else if (classType === 'App\\Notifications\\FriendRequestAccepted') {
-        const name: string = notif.acceptor_name ?? 'Someone'
-        useUIStore.getState().addToast(`${name} accepted your friend request`, 'success')
+        const name: string = notif.acceptor_name ?? i18n.t('notification.someone')
+        useUIStore.getState().addToast(i18n.t('notification.friendAccepted', { name }), 'success')
         set((s) => ({ unreadCount: s.unreadCount + 1 }))
       }
 

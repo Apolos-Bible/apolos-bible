@@ -132,6 +132,7 @@ export function VerseList() {
   const selectedVerseId   = useVerseStore((s) => s.selectedVerseId)
   const selectedVerseIds  = useVerseStore((s) => s.selectedVerseIds)
   const selectVerse       = useVerseStore((s) => s.selectVerse)
+  const openStudyPanel    = useVerseStore((s) => s.openStudyPanel)
   const toggleVerseSelection = useVerseStore((s) => s.toggleVerseSelection)
   const books            = useVerseStore((s) => s.books)
   const selectedBook     = useVerseStore((s) => s.selectedBook)
@@ -282,7 +283,7 @@ export function VerseList() {
         icon: <IconNote />,
         onClick: () => {
           if (requireLogin()) return
-          selectVerse(verse.id)
+          openStudyPanel(verse.id)
         },
       },
       ...(hasCrossRefs ? [{ type: 'separator' as const }, {
@@ -459,6 +460,9 @@ export function VerseList() {
                 <div className="hidden md:block">
                   <ReadingToolbar />
                 </div>
+                <div className="md:hidden">
+                  <ReadingToolbar showVerseActions={false} />
+                </div>
                 <div className="flex gap-0.5 bg-bg-tertiary border border-border-subtle rounded-md p-0.5 pointer-events-auto shadow-sm">
                   <Tooltip label={t('verse.verseMode')} side="bottom">
                     <button
@@ -485,11 +489,6 @@ export function VerseList() {
                 </div>
               </div>
             </div>
-            {selectedVerseId && (
-              <div className="mt-2 flex justify-center md:hidden">
-                <ReadingToolbar />
-              </div>
-            )}
           </div>
 
           <div className="max-w-[660px] mx-auto px-4 md:px-10 pt-4 pb-16">
@@ -498,27 +497,53 @@ export function VerseList() {
             <div className="mb-6 md:mb-8 text-center">
               <h1 className="font-reading text-xl md:text-2xl font-medium tracking-tight text-text-primary">{bookName}</h1>
               <p className="mt-1 text-[10px] font-sans font-semibold uppercase tracking-[0.18em] text-accent/70">
-                Chapter {selectedChapter}
+                {t('layout.chapter', { n: selectedChapter })}
               </p>
               <div className="mt-4 mx-auto w-8 h-px bg-accent/30" />
             </div>
 
             {selectedVerseIds.length > 0 && (
-              <div className="mb-4 flex items-center justify-between bg-accent/[0.08] border border-accent/[0.15] rounded-lg px-3 py-2 text-xs animate-in fade-in slide-in-from-top-1 duration-200">
-                <span className="text-text-secondary">
-                  {selectedVerseIds.length === 1
-                    ? '1 verse selected'
-                    : `${selectedVerseIds.length} verses selected`}
-                </span>
-                <button
-                  onClick={() => selectVerse(null)}
-                  className="flex items-center gap-1 text-text-muted hover:text-text-primary transition-colors"
-                >
-                  <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round">
-                    <path d="M3 3l6 6M9 3l-6 6" />
-                  </svg>
-                  Clear
-                </button>
+              <div className="mb-4 flex flex-col gap-2 bg-accent/[0.08] border border-accent/[0.15] rounded-lg px-3 py-2 text-xs animate-in fade-in slide-in-from-top-1 duration-200 md:flex-row md:items-center md:justify-between">
+                <div className="flex items-center justify-between gap-3">
+                  <span className="text-text-secondary">
+                    {t('verse.selectedVerses', { count: selectedVerseIds.length })}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => selectVerse(null)}
+                    className="flex items-center gap-1 text-text-muted hover:text-text-primary transition-colors md:hidden"
+                  >
+                    <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round">
+                      <path d="M3 3l6 6M9 3l-6 6" />
+                    </svg>
+                    {t('verse.clear')}
+                  </button>
+                </div>
+                <div className="flex items-center justify-between gap-3 md:justify-end">
+                  <div className="md:hidden">
+                    <ReadingToolbar showCommentary={false} />
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (requireLogin()) return
+                      openStudyPanel(selectedVerseIds[0])
+                    }}
+                    className="font-medium text-accent hover:text-accent/80 transition-colors"
+                  >
+                    {t('verse.addNote')}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => selectVerse(null)}
+                    className="hidden items-center gap-1 text-text-muted hover:text-text-primary transition-colors md:flex"
+                  >
+                    <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round">
+                      <path d="M3 3l6 6M9 3l-6 6" />
+                    </svg>
+                    {t('verse.clear')}
+                  </button>
+                </div>
               </div>
             )}
 
@@ -561,7 +586,18 @@ export function VerseList() {
                       )}
                       <VerseText inline text={verse.text} highlights={verseHighlights} />
                       {myNoteBodies.length > 0 && (
-                        <NoteIcon size={10} />
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            openStudyPanel(verse.id)
+                          }}
+                          className="inline-flex align-super mx-[2px] text-accent/70 hover:text-accent"
+                          aria-label={t('verse.openNotes')}
+                          title={t('verse.openNotes')}
+                        >
+                          <NoteIcon size={10} />
+                        </button>
                       )}
                     </span>
                   )
@@ -624,7 +660,18 @@ export function VerseList() {
                         />
                       </div>
                       {myNoteBodies.length > 0 && (
-                        <NoteIcon size={12} />
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            openStudyPanel(verse.id)
+                          }}
+                          className="shrink-0 self-start mt-1 inline-flex h-6 w-6 items-center justify-center rounded-md text-accent/70 hover:text-accent hover:bg-bg-tertiary"
+                          aria-label={t('verse.openNotes')}
+                          title={t('verse.openNotes')}
+                        >
+                          <NoteIcon size={12} />
+                        </button>
                       )}
                       <button
                         type="button"
@@ -633,7 +680,7 @@ export function VerseList() {
                           openVerseMenuFromButton(e.currentTarget, verse)
                         }}
                         className="md:hidden shrink-0 self-start mt-0.5 inline-flex h-8 w-8 items-center justify-center rounded-md text-text-muted hover:text-text-primary hover:bg-bg-tertiary"
-                        aria-label={`Open actions for verse ${verse.verse}`}
+                        aria-label={t('verse.openActions', { verse: verse.verse })}
                       >
                         <IconMore />
                       </button>

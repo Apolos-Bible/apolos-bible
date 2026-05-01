@@ -85,7 +85,7 @@ export function FriendSearch() {
                 ) : (
                   <button
                     onClick={() => handleSend(user.id, user.name)}
-                    aria-label={`Send friend request to ${user.name}`}
+                    aria-label={t('friends.sendRequestTo', { name: user.name })}
                     className="text-2xs px-2 py-0.5 rounded border border-border-subtle text-text-secondary hover:text-accent hover:border-accent transition-colors shrink-0"
                   >
                     {t('friends.add')}

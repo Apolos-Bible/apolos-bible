@@ -60,7 +60,7 @@ export function NewChatDialog({ open, onClose }: NewChatDialogProps) {
     try {
       const c = mode === 'dm'
         ? await startDm(picked[0])
-        : await createGroup(name.trim() || 'New group', picked)
+        : await createGroup(name.trim() || t('chat.newGroupFallback'), picked)
       select(c.id)
       onClose()
     } catch {

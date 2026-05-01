@@ -6,6 +6,7 @@ import {
   getStoredBibleVersionId,
   selectDefaultBibleVersionId,
 } from '@/lib/defaultBibleVersion'
+import { saveUserSettingsSilently } from '@/lib/userSettingsApi'
 
 export interface Book {
   id: string  // slug used as id for compatibility
@@ -38,7 +39,7 @@ interface VerseState {
   verses: Verse[]
   loadingVerses: boolean
   loadVersions: () => Promise<void>
-  setVersion: (id: number) => Promise<void>
+  setVersion: (id: number, options?: { sync?: boolean }) => Promise<void>
   loadBooks: () => Promise<void>
   selectBook: (slug: string) => void
   selectChapter: (chapter: number) => void
@@ -83,9 +84,12 @@ export const useVerseStore = create<VerseState>((set, get) => ({
     }
   },
 
-  setVersion: async (id) => {
+  setVersion: async (id, options) => {
     localStorage.setItem(BIBLE_VERSION_STORAGE_KEY, String(id))
     set({ versionId: id, books: [], verses: [], selectedVerseId: null, selectedVerseIds: [], studyVerseId: null })
+    if (options?.sync !== false) {
+      saveUserSettingsSilently({ preferred_bible_version_id: id })
+    }
     await get().loadBooks()
   },
 
@@ -168,7 +172,14 @@ export const useVerseStore = create<VerseState>((set, get) => ({
     })
   },
 
-  openStudyPanel: (id) => set({ studyVerseId: id, selectedVerseId: id, selectedVerseIds: [id] }),
+  openStudyPanel: (id) => {
+    const { selectedVerseIds } = get()
+    set({
+      studyVerseId: id,
+      selectedVerseId: id,
+      selectedVerseIds: selectedVerseIds.includes(id) ? selectedVerseIds : [id],
+    })
+  },
 
   closeStudyPanel: () => set({ studyVerseId: null }),
 

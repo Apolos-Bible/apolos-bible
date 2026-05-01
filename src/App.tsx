@@ -25,6 +25,9 @@ import { useFriendStore } from '@/lib/store/useFriendStore'
 import { useChatStore } from '@/lib/store/useChatStore'
 import { checkForAppUpdates } from '@/lib/updater'
 
+const VISITED_STORAGE_KEY = 'verbum_has_visited'
+let hasLoggedStartupSettings = false
+
 export default function App() {
   const { t } = useTranslation()
   const openCommandPalette = useUIStore(s => s.openCommandPalette)
@@ -35,6 +38,10 @@ export default function App() {
   const navigateVerse = useVerseStore(s => s.navigateVerse)
   const studyVerseId = useVerseStore(s => s.studyVerseId)
   const loadBooks = useVerseStore(s => s.loadBooks)
+  const versions = useVerseStore(s => s.versions)
+  const versionId = useVerseStore(s => s.versionId)
+  const selectedBook = useVerseStore(s => s.selectedBook)
+  const locale = useUIStore(s => s.locale)
   const authInit = useAuthStore(s => s.init)
   const user = useAuthStore(s => s.user)
   const loadBookmarks = useBookmarkStore(s => s.load)
@@ -46,9 +53,34 @@ export default function App() {
   const addToast = useUIStore(s => s.addToast)
 
   useEffect(() => {
-    authInit()
-    loadBooks()
-  }, [])
+    void (async () => {
+      await authInit()
+      await loadBooks()
+    })()
+  }, [authInit, loadBooks])
+
+  useEffect(() => {
+    if (hasLoggedStartupSettings || !selectedBook) return
+
+    const firstVisit = localStorage.getItem(VISITED_STORAGE_KEY) !== 'true'
+    const version = versions.find((item) => item.id === versionId)
+
+    console.info('[Verbum settings]', {
+      locale,
+      bibleVersion: version
+        ? {
+            id: version.id,
+            abbreviation: version.abbreviation,
+            name: version.name,
+            language: version.language,
+          }
+        : { id: versionId },
+      firstVisit,
+    })
+
+    localStorage.setItem(VISITED_STORAGE_KEY, 'true')
+    hasLoggedStartupSettings = true
+  }, [locale, selectedBook, versionId, versions])
 
   useEffect(() => {
     void checkForAppUpdates(addToast, {

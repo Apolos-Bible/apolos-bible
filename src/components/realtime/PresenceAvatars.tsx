@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect } from 'react'
 import { createPortal } from 'react-dom'
+import { useTranslation } from 'react-i18next'
 import type { PresenceUser } from '@/types'
 import { cn } from '@/lib/cn'
 import { useChatStore } from '@/lib/store/useChatStore'
@@ -26,6 +27,7 @@ function UserTooltip({
   onMouseEnter: () => void
   onMouseLeave: () => void
 }) {
+  const { t }   = useTranslation()
   const startDm   = useChatStore(s => s.startDm)
   const openPanel = useUIStore(s => s.openPanel)
   const select    = useChatStore(s => s.select)
@@ -71,7 +73,7 @@ function UserTooltip({
         className="w-full text-2xs py-1 px-2 rounded bg-bg-tertiary hover:bg-border-subtle
                    text-text-secondary hover:text-text-primary transition-colors"
       >
-        Message
+        {t('presence.message')}
       </button>
     </div>,
     document.body,
@@ -79,6 +81,8 @@ function UserTooltip({
 }
 
 export function PresenceAvatars({ users }: PresenceAvatarsProps) {
+  const { t } = useTranslation()
+
   if (users.length === 0) return null
 
   const [hovered,  setHovered]  = useState<{ id: number; rect: DOMRect } | null>(null)
@@ -108,7 +112,7 @@ export function PresenceAvatars({ users }: PresenceAvatarsProps) {
 
   const visible  = users.slice(0, MAX_VISIBLE)
   const overflow = users.length - MAX_VISIBLE
-  const label    = users.map((u) => u.name).join(', ') + ' reading this chapter'
+  const label    = users.map((u) => u.name).join(', ') + t('presence.readingChapter')
 
   function enterUser(id: number, e: React.MouseEvent<HTMLDivElement>) {
     if (leaveTimer.current)  clearTimeout(leaveTimer.current)
@@ -155,7 +159,7 @@ export function PresenceAvatars({ users }: PresenceAvatarsProps) {
             'w-5 h-5 text-2xs bg-bg-tertiary text-text-muted rounded-full font-medium',
             'flex items-center justify-center shrink-0 ring-1 ring-bg-primary',
           )}
-          title={`+${overflow} more`}
+          title={t('presence.more', { count: overflow })}
         >
           +{overflow}
         </span>

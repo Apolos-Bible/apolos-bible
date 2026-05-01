@@ -3,18 +3,21 @@ import { api } from '@/lib/api'
 
 export interface Note {
   id: number
+  parent_id?: number | null
+  verse_id?: number
   body: string
   created_at: string
   user?: { id: number; name: string; email: string }
   likes_count?: number
   is_liked?: boolean
+  replies?: Note[]
 }
 
 interface NoteState {
   notes: Record<number, Note[]>   // keyed by numeric verse id
   loading: Record<number, boolean>
   loadNotes: (verseApiId: number) => Promise<void>
-  addNote: (verseApiId: number, body: string) => Promise<void>
+  addNote: (verseApiId: number, body: string, parentId?: number) => Promise<void>
   updateNote: (verseApiId: number, noteId: number, body: string) => Promise<void>
   deleteNote: (verseApiId: number, noteId: number) => Promise<void>
   likeNote: (verseApiId: number, noteId: number) => Promise<void>
@@ -38,8 +41,8 @@ export const useNoteStore = create<NoteState>((set, get) => ({
     }
   },
 
-  addNote: async (verseApiId, body) => {
-    const note = await api.post<Note>(`/api/verses/${verseApiId}/notes`, { body })
+  addNote: async (verseApiId, body, parentId) => {
+    const note = await api.post<Note>(`/api/verses/${verseApiId}/notes`, { body, parent_id: parentId ?? null })
     set(s => ({
       notes: { ...s.notes, [verseApiId]: [...(s.notes[verseApiId] ?? []), note] },
     }))
@@ -60,7 +63,7 @@ export const useNoteStore = create<NoteState>((set, get) => ({
     set(s => ({
       notes: {
         ...s.notes,
-        [verseApiId]: s.notes[verseApiId]?.filter(n => n.id !== noteId) ?? [],
+        [verseApiId]: removeNoteAndReplies(s.notes[verseApiId] ?? [], noteId),
       },
     }))
   },
@@ -89,3 +92,22 @@ export const useNoteStore = create<NoteState>((set, get) => ({
     }))
   },
 }))
+
+function removeNoteAndReplies(notes: Note[], noteId: number): Note[] {
+  const childIds = new Set<number>()
+  let changed = true
+
+  while (changed) {
+    changed = false
+    for (const note of notes) {
+      if (note.parent_id === noteId || (note.parent_id != null && childIds.has(note.parent_id))) {
+        if (!childIds.has(note.id)) {
+          childIds.add(note.id)
+          changed = true
+        }
+      }
+    }
+  }
+
+  return notes.filter(note => note.id !== noteId && !childIds.has(note.id))
+}

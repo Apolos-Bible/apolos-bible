@@ -8,10 +8,11 @@ import { modKey } from '@/lib/platform'
 import { useIsMobile } from '@/lib/useIsMobile'
 
 interface NoteInputProps {
-  verseApiId: number
+  verseApiId?: number
+  verseApiIds?: number[]
 }
 
-export default function NoteInput({ verseApiId }: NoteInputProps) {
+export default function NoteInput({ verseApiId, verseApiIds }: NoteInputProps) {
   const { t } = useTranslation()
   const [content, setContent] = useState('')
   const [submitting, setSubmitting] = useState(false)
@@ -21,6 +22,8 @@ export default function NoteInput({ verseApiId }: NoteInputProps) {
   const openAuthModal = useUIStore((s) => s.openAuthModal)
   const user = useAuthStore((s) => s.user)
   const isMobile = useIsMobile()
+  const targetVerseApiIds = verseApiIds ?? (verseApiId ? [verseApiId] : [])
+  const isGroupNote = targetVerseApiIds.length > 1
 
   const initials = user?.name
     ? user.name.split(' ').slice(0, 2).map((s) => s[0].toUpperCase()).join('')
@@ -39,7 +42,7 @@ export default function NoteInput({ verseApiId }: NoteInputProps) {
 
   async function handleSubmit() {
     const trimmed = content.trim()
-    if (!trimmed || submitting) return
+    if (!trimmed || submitting || targetVerseApiIds.length === 0) return
     if (!user) {
       addToast(t('study.loginRequired'), 'error', {
         action: { label: t('auth.logIn'), onClick: openAuthModal },
@@ -49,8 +52,8 @@ export default function NoteInput({ verseApiId }: NoteInputProps) {
     }
     setSubmitting(true)
     try {
-      await addNote(verseApiId, trimmed)
-      addToast(t('notes.saved'), 'success')
+      await Promise.all(targetVerseApiIds.map((id) => addNote(id, trimmed)))
+      addToast(isGroupNote ? t('notes.savedForVerses', { count: targetVerseApiIds.length }) : t('notes.saved'), 'success')
       setContent('')
     } catch {
       addToast(t('notes.saveFailed'), 'error')
@@ -76,7 +79,15 @@ export default function NoteInput({ verseApiId }: NoteInputProps) {
             onChange={handleChange}
             onKeyDown={handleKeyDown}
             rows={1}
-            placeholder={!user ? t('study.loginRequired') : isMobile ? t('notes.placeholder') : t('notes.placeholderDesktop', { modKey })}
+            placeholder={
+              !user
+                ? t('study.loginRequired')
+                : isGroupNote
+                  ? t('notes.groupPlaceholder', { count: targetVerseApiIds.length })
+                  : isMobile
+                    ? t('notes.placeholder')
+                    : t('notes.placeholderDesktop', { modKey })
+            }
             className={cn(
               'w-full resize-none bg-transparent text-sm text-text-primary placeholder:text-text-muted',
               'outline-none min-h-[24px] max-h-[120px] leading-relaxed',

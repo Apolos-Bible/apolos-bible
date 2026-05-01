@@ -1,14 +1,14 @@
 export interface ChatCommand {
   trigger:     string  // e.g. 'v'
   label:       string  // e.g. '/v'
-  description: string
+  description: string  // i18n key
 }
 
 export const CHAT_COMMANDS: ChatCommand[] = [
   {
     trigger:     'v',
     label:       '/v',
-    description: 'Buscar e insertar un versículo',
+    description: 'chat.commandVerseDesc',
   },
 ]
 
