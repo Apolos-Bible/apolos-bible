@@ -1,6 +1,7 @@
 {
   "$schema": "../node_modules/@tauri-apps/cli/config.schema.json",
   "productName": "Tulia Study",
+  "version": "../package.json",
   "identifier": "space.harbour.tulia-study",
   "build": {
     "frontendDist": "../out",

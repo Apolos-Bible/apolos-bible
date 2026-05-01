@@ -3,7 +3,7 @@ name: Release
 on:
   push:
     tags:
-      - 'app-v*'
+      - 'v*'
 
 permissions:
   contents: write
@@ -49,6 +49,9 @@ jobs:
 
       - name: Install frontend dependencies
         run: pnpm install --frozen-lockfile
+
+      - name: Validate release tag
+        run: node -e "const version = require('./package.json').version; const tag = process.env.GITHUB_REF_NAME; if (tag !== `v${version}`) { console.error(`Release tag ${tag} must match package.json version v${version}`); process.exit(1); }"
 
       - uses: tauri-apps/tauri-action@v0
         env:
