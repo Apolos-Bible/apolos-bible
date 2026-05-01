@@ -53,6 +53,34 @@ body,
   overflow: hidden;
 }
 
+@supports (height: 100svh) {
+  html,
+  body,
+  #root {
+    height: 100svh;
+  }
+}
+
+@supports (height: 100dvh) {
+  html,
+  body,
+  #root {
+    height: 100dvh;
+  }
+}
+
+.app-viewport {
+  height: 100%;
+  height: 100svh;
+  height: 100dvh;
+}
+
+.max-app-viewport-minus-16 {
+  max-height: calc(100% - 4rem);
+  max-height: calc(100svh - 4rem);
+  max-height: calc(100dvh - 4rem);
+}
+
 body {
   font-family: 'Inter', system-ui, sans-serif;
   background-color: var(--bg-primary);

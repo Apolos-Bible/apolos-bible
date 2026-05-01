@@ -33,7 +33,7 @@ export function PanelLayout({ sidebar, main, panel, leftPanel }: PanelLayoutProp
   }
 
   return (
-    <div className="h-[100dvh] md:h-screen w-full overflow-hidden bg-bg-primary">
+    <div className="app-viewport w-full overflow-hidden bg-bg-primary">
       <div className="md:hidden flex h-full flex-col">
         <div className="pointer-events-none absolute inset-x-0 bottom-4 z-20 flex items-center justify-between px-4 md:hidden">
           <button

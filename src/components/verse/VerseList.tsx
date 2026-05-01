@@ -376,7 +376,7 @@ export function VerseList() {
   }
 
   return (
-    <div className="bg-bg-secondary flex flex-col h-full md:h-screen relative">
+    <div className="bg-bg-secondary flex h-full flex-col relative">
       {/* Floating chapter navigation */}
       <div className="pointer-events-none absolute inset-x-0 top-16 bottom-0 z-20 hidden md:flex items-center">
         <div className="w-full max-w-[684px] mx-auto flex justify-between px-0">
