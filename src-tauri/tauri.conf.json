@@ -32,6 +32,16 @@
       "icons/32x32.png",
       "icons/128x128.png",
       "icons/128x128@2x.png",
+      "icons/android/mipmap-mdpi/ic_launcher.png",
+      "icons/android/mipmap-mdpi/ic_launcher_round.png",
+      "icons/android/mipmap-hdpi/ic_launcher.png",
+      "icons/android/mipmap-hdpi/ic_launcher_round.png",
+      "icons/android/mipmap-xhdpi/ic_launcher.png",
+      "icons/android/mipmap-xhdpi/ic_launcher_round.png",
+      "icons/android/mipmap-xxhdpi/ic_launcher.png",
+      "icons/android/mipmap-xxhdpi/ic_launcher_round.png",
+      "icons/android/mipmap-xxxhdpi/ic_launcher.png",
+      "icons/android/mipmap-xxxhdpi/ic_launcher_round.png",
       "icons/icon.icns",
       "icons/icon.ico"
     ]
