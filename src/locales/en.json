@@ -213,5 +213,9 @@
 
   "auth.emailPlaceholder": "you@example.com",
 
-  "toast.dismiss": "Dismiss notification"
+  "toast.dismiss": "Dismiss notification",
+
+  "updater.installing": "Installing update {{version}}…",
+  "updater.installed": "Update installed. Restarting…",
+  "updater.failed": "Could not install update"
 }

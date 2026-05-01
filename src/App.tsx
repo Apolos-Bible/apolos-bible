@@ -1,4 +1,5 @@
 import { useEffect } from 'react'
+import { useTranslation } from 'react-i18next'
 import { PanelLayout } from '@/components/layout/PanelLayout'
 import { Sidebar } from '@/components/sidebar/Sidebar'
 import { VerseList } from '@/components/verse/VerseList'
@@ -22,8 +23,10 @@ import { useAuthStore } from '@/lib/store/useAuthStore'
 import { useBookmarkStore } from '@/lib/store/useBookmarkStore'
 import { useFriendStore } from '@/lib/store/useFriendStore'
 import { useChatStore } from '@/lib/store/useChatStore'
+import { checkForAppUpdates } from '@/lib/updater'
 
 export default function App() {
+  const { t } = useTranslation()
   const openCommandPalette = useUIStore(s => s.openCommandPalette)
   const activePanel        = useUIStore(s => s.activePanel)
   const commentaryOpen     = useUIStore(s => s.commentaryOpen)
@@ -40,11 +43,20 @@ export default function App() {
   const resetChat = useChatStore(s => s.reset)
   const listenForChatUpdates = useChatStore(s => s.listenForUpdates)
   const stopChatUpdates = useChatStore(s => s.stopListeningForUpdates)
+  const addToast = useUIStore(s => s.addToast)
 
   useEffect(() => {
     authInit()
     loadBooks()
   }, [])
+
+  useEffect(() => {
+    void checkForAppUpdates(addToast, {
+      installing: (version) => t('updater.installing', { version }),
+      installed: t('updater.installed'),
+      failed: t('updater.failed'),
+    })
+  }, [addToast, t])
 
   useEffect(() => {
     if (!user) {

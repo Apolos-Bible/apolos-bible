@@ -17,6 +17,8 @@
     "@supabase/supabase-js": "^2.45.0",
     "@tauri-apps/api": "^2.10.1",
     "@tauri-apps/plugin-opener": "^2.5.3",
+    "@tauri-apps/plugin-process": "^2.3.1",
+    "@tauri-apps/plugin-updater": "^2.10.1",
     "clsx": "^2.1.1",
     "cmdk": "^1.0.0",
     "i18next": "^26.0.8",

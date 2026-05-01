@@ -213,5 +213,9 @@
 
   "auth.emailPlaceholder": "tu@correo.com",
 
-  "toast.dismiss": "Descartar notificación"
+  "toast.dismiss": "Descartar notificación",
+
+  "updater.installing": "Instalando actualización {{version}}…",
+  "updater.installed": "Actualización instalada. Reiniciando…",
+  "updater.failed": "No se pudo instalar la actualización"
 }
