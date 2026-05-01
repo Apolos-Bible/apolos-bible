@@ -218,3 +218,25 @@ html[data-theme="light"] .verse-aura-pulse-block { animation-name: verse-aura-bl
 }
 .tooltip-enter { animation: tooltip-in  120ms ease-out forwards; }
 .tooltip-exit  { animation: tooltip-out 100ms ease-in  forwards; }
+
+/* ── Note animations ──────────────────────────────────────────────────── */
+@keyframes note-enter {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.note-enter {
+  animation: note-enter 250ms ease-out forwards;
+}
+.note-enter:nth-child(1) { animation-delay: 0ms; }
+.note-enter:nth-child(2) { animation-delay: 40ms; }
+.note-enter:nth-child(3) { animation-delay: 80ms; }
+.note-enter:nth-child(4) { animation-delay: 120ms; }
+.note-enter:nth-child(5) { animation-delay: 160ms; }
+.note-enter:nth-child(6) { animation-delay: 200ms; }
+.note-enter:nth-child(7) { animation-delay: 240ms; }
+.note-enter:nth-child(8) { animation-delay: 280ms; }
+
+@keyframes note-stagger-fade {
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}

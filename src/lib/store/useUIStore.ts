@@ -67,7 +67,7 @@ const savedFontSize    = (localStorage.getItem('fontSize')    as FontSize)    ??
 const savedTheme       = (localStorage.getItem('theme')       as Theme)       ?? 'light'
 const savedReadingMode = (localStorage.getItem('readingMode') as ReadingMode) ?? 'verse'
 const savedLocale      = getStoredAppLocale()
-const savedShowOthers  = localStorage.getItem('showOthersNotes') !== 'false'
+const savedShowOthers  = localStorage.getItem('showOthersNotes') === 'true'
 applyTheme(savedTheme)
 
 export const useUIStore = create<UIStore>((set) => ({

@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
 import i18n from '@/lib/i18n'
 import type { Note } from '@/lib/store/useNoteStore'
@@ -14,6 +14,7 @@ interface NoteItemProps {
   depth?: number
   replyParentId?: number
   showReplyToggle?: boolean
+  hiddenParentIds?: Set<number>
 }
 
 function Avatar({ name, email }: { name: string; email?: string }) {
@@ -101,16 +102,24 @@ function ReplyInput({ onSubmit, onCancel }: { onSubmit: (body: string) => void; 
   )
 }
 
-export default function NoteItem({ note, verseApiId, depth = 0, replyParentId, showReplyToggle = true }: NoteItemProps) {
+export default function NoteItem({ note, verseApiId, depth = 0, replyParentId, showReplyToggle = true, hiddenParentIds }: NoteItemProps) {
   const { t } = useTranslation()
   const [isEditing, setIsEditing] = useState(false)
   const [confirmingDelete, setConfirmingDelete] = useState(false)
+  const [confirmingPublish, setConfirmingPublish] = useState(false)
   const [showReply, setShowReply] = useState(false)
   const [repliesOpen, setRepliesOpen] = useState(false)
+
+  useEffect(() => {
+    if (!confirmingPublish) return
+    const id = setTimeout(() => setConfirmingPublish(false), 3000)
+    return () => clearTimeout(id)
+  }, [confirmingPublish])
 
   const updateNote = useNoteStore((s) => s.updateNote)
   const deleteNote = useNoteStore((s) => s.deleteNote)
   const addNote = useNoteStore((s) => s.addNote)
+  const toggleNoteVisibility = useNoteStore((s) => s.toggleNoteVisibility)
   const likeNote = useNoteStore((s) => s.likeNote)
   const unlikeNote = useNoteStore((s) => s.unlikeNote)
   const addToast = useUIStore((s) => s.addToast)
@@ -119,6 +128,7 @@ export default function NoteItem({ note, verseApiId, depth = 0, replyParentId, s
   const authorName = note.user?.name ?? note.user?.email ?? t('notes.unknownAuthor')
   const relativeTime = formatRelativeTime(note.created_at)
   const canManage = user?.id === note.user?.id
+  const isOrphan = depth === 0 && note.parent_id != null && hiddenParentIds?.has(note.parent_id)
 
   async function handleSave(body: string) {
     if (!canManage) return
@@ -152,7 +162,7 @@ export default function NoteItem({ note, verseApiId, depth = 0, replyParentId, s
   }
 
   return (
-    <div className={cn(depth > 0 && 'pl-4 border-l border-border-subtle')}>
+    <div className={cn('note-enter', depth > 0 && 'pl-4 border-l border-border-subtle')}>
       <div className="group flex gap-2.5 py-1.5">
         <Avatar name={authorName} email={note.user?.email} />
 
@@ -165,10 +175,46 @@ export default function NoteItem({ note, verseApiId, depth = 0, replyParentId, s
             />
           ) : (
             <>
-              <div className="flex items-baseline gap-1.5">
+              <div className="flex items-center gap-1.5">
                 <span className="text-xs font-medium text-text-primary">{authorName}</span>
                 <span className="text-[10px] text-text-muted">{relativeTime}</span>
+                {canManage ? (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (confirmingPublish) {
+                        toggleNoteVisibility(verseApiId, note.id)
+                        setConfirmingPublish(false)
+                      } else {
+                        setConfirmingPublish(true)
+                      }
+                    }}
+                    onBlur={() => setConfirmingPublish(false)}
+                    className={cn(
+                      'text-[9px] px-1.5 py-px rounded-full font-medium transition-all duration-200',
+                      confirmingPublish
+                        ? 'bg-red-400/10 text-red-400 border border-red-400/30'
+                        : note.is_public
+                          ? 'bg-accent/15 text-accent border border-accent/30'
+                          : 'bg-bg-tertiary text-text-muted border border-border-subtle hover:border-accent/30 hover:text-text-secondary',
+                    )}
+                  >
+                    {confirmingPublish
+                      ? (note.is_public ? t('notes.unpublishConfirm') : t('notes.publishConfirm'))
+                      : (note.is_public ? t('notes.public') : t('notes.private'))}
+                  </button>
+                ) : (
+                  <span className="text-[9px] px-1.5 py-px rounded-full font-medium bg-accent/15 text-accent border border-accent/30">
+                    {t('notes.public')}
+                  </span>
+                )}
               </div>
+
+              {isOrphan && (
+                <p className="text-[10px] text-text-muted italic mt-0.5">
+                  {t('notes.replyToHidden')}
+                </p>
+              )}
 
               <p className="text-sm text-text-secondary leading-relaxed whitespace-pre-wrap break-words mt-0.5">
                 {note.body}

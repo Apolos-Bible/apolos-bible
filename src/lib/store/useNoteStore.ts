@@ -7,6 +7,7 @@ export interface Note {
   verse_id?: number
   body: string
   created_at: string
+  is_public: boolean
   user?: { id: number; name: string; email: string }
   likes_count?: number
   is_liked?: boolean
@@ -17,8 +18,9 @@ interface NoteState {
   notes: Record<number, Note[]>   // keyed by numeric verse id
   loading: Record<number, boolean>
   loadNotes: (verseApiId: number) => Promise<void>
-  addNote: (verseApiId: number, body: string, parentId?: number) => Promise<void>
+  addNote: (verseApiId: number, body: string, parentId?: number, isPublic?: boolean) => Promise<void>
   updateNote: (verseApiId: number, noteId: number, body: string) => Promise<void>
+  toggleNoteVisibility: (verseApiId: number, noteId: number) => Promise<void>
   deleteNote: (verseApiId: number, noteId: number) => Promise<void>
   likeNote: (verseApiId: number, noteId: number) => Promise<void>
   unlikeNote: (verseApiId: number, noteId: number) => Promise<void>
@@ -41,8 +43,8 @@ export const useNoteStore = create<NoteState>((set, get) => ({
     }
   },
 
-  addNote: async (verseApiId, body, parentId) => {
-    const note = await api.post<Note>(`/api/verses/${verseApiId}/notes`, { body, parent_id: parentId ?? null })
+  addNote: async (verseApiId, body, parentId, isPublic = false) => {
+    const note = await api.post<Note>(`/api/verses/${verseApiId}/notes`, { body, is_public: isPublic, parent_id: parentId ?? null })
     set(s => ({
       notes: { ...s.notes, [verseApiId]: [...(s.notes[verseApiId] ?? []), note] },
     }))
@@ -54,6 +56,19 @@ export const useNoteStore = create<NoteState>((set, get) => ({
       notes: {
         ...s.notes,
         [verseApiId]: s.notes[verseApiId]?.map(n => n.id === noteId ? { ...n, ...updated, user: updated.user ?? n.user } : n) ?? [],
+      },
+    }))
+  },
+
+  toggleNoteVisibility: async (verseApiId, noteId) => {
+    const current = get().notes[verseApiId]?.find(n => n.id === noteId)
+    if (!current) return
+    const next = !current.is_public
+    await api.patch(`/api/notes/${noteId}`, { is_public: next, body: current.body })
+    set(s => ({
+      notes: {
+        ...s.notes,
+        [verseApiId]: s.notes[verseApiId]?.map(n => n.id === noteId ? { ...n, is_public: next } : n) ?? [],
       },
     }))
   },
