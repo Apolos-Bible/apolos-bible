@@ -19,8 +19,18 @@ export default function NoteThread({ verseApiId }: NoteThreadProps) {
   const showOthersNotes = useUIStore((s) => s.showOthersNotes)
 
   const notes = rawNotes ?? []
-  const filteredNotes = showOthersNotes ? notes : notes.filter((n) => n.user?.id === user?.id)
+  const filteredNotes = showOthersNotes
+    ? notes.filter((n) => n.user?.id === user?.id || n.is_public)
+    : notes.filter((n) => n.user?.id === user?.id)
   const noteTree = buildNoteTree(filteredNotes)
+
+  const allNoteIds = new Set(notes.map((n) => n.id))
+  const visibleIds = new Set(filteredNotes.map((n) => n.id))
+  const hiddenParentIds = new Set(
+    notes
+      .filter((n) => n.parent_id && !visibleIds.has(n.parent_id) && allNoteIds.has(n.parent_id))
+      .map((n) => n.parent_id!),
+  )
 
   useEffect(() => {
     if (user) loadNotes(verseApiId)
@@ -47,7 +57,7 @@ export default function NoteThread({ verseApiId }: NoteThreadProps) {
       ) : (
         <div className="px-4 py-2">
           {noteTree.map((note) => (
-            <NoteItem key={note.id} note={note} verseApiId={verseApiId} />
+            <NoteItem key={note.id} note={note} verseApiId={verseApiId} hiddenParentIds={hiddenParentIds} />
           ))}
         </div>
       )}

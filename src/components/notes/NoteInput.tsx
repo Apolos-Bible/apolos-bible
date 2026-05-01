@@ -16,6 +16,7 @@ export default function NoteInput({ verseApiId, verseApiIds }: NoteInputProps) {
   const { t } = useTranslation()
   const [content, setContent] = useState('')
   const [submitting, setSubmitting] = useState(false)
+  const [isPublic, setIsPublic] = useState(false)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
   const addNote = useNoteStore((s) => s.addNote)
   const addToast = useUIStore((s) => s.addToast)
@@ -52,7 +53,7 @@ export default function NoteInput({ verseApiId, verseApiIds }: NoteInputProps) {
     }
     setSubmitting(true)
     try {
-      await Promise.all(targetVerseApiIds.map((id) => addNote(id, trimmed)))
+      await Promise.all(targetVerseApiIds.map((id) => addNote(id, trimmed, undefined, isPublic)))
       addToast(isGroupNote ? t('notes.savedForVerses', { count: targetVerseApiIds.length }) : t('notes.saved'), 'success')
       setContent('')
     } catch {
@@ -95,7 +96,28 @@ export default function NoteInput({ verseApiId, verseApiIds }: NoteInputProps) {
             )}
           />
           {content.trim() && (
-            <div className="flex justify-end mt-1.5">
+            <div className="flex items-center justify-end gap-2 mt-1.5">
+              <button
+                type="button"
+                onClick={() => setIsPublic(!isPublic)}
+                className={cn(
+                  'text-[11px] transition-all duration-200',
+                  isPublic ? 'text-accent' : 'text-text-muted hover:text-text-secondary',
+                )}
+                title={isPublic ? t('notes.public') : t('notes.private')}
+              >
+                {isPublic ? (
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+                    <circle cx="12" cy="12" r="3" />
+                  </svg>
+                ) : (
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
+                    <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+                  </svg>
+                )}
+              </button>
               <button
                 type="button"
                 onClick={handleSubmit}
