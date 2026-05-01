@@ -50,7 +50,7 @@
   },
   "plugins": {
     "updater": {
-      "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IEE0QjU0NzhFREJFQjYxMzYKUldRMllldmJqa2UxcE1rVnBDVGp3ejZhR0tGSTM2SDdRYTZrdW9vSTE4U3lSU2JNRW8xb2l2MFYK",
+      "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IDI3NzJEQ0JCRkYzRUEyMjgKUldRb29qNy91OXh5SjMrRmtDaElxWE9zM3Nyc21ISlZBSVYycTBaazZ6M1EzekNidUZ5ZmphdWUK",
       "endpoints": [
         "https://github.com/freddysae0/bible-tauri/releases/latest/download/latest.json"
       ],
