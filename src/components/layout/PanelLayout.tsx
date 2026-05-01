@@ -13,8 +13,8 @@ interface PanelLayoutProps {
 
 export function PanelLayout({ sidebar, main, panel, leftPanel }: PanelLayoutProps) {
   const { t } = useTranslation()
-  const selectedVerseId = useVerseStore((s) => s.selectedVerseId)
-  const selectVerse = useVerseStore((s) => s.selectVerse)
+  const studyVerseId = useVerseStore((s) => s.studyVerseId)
+  const closeStudyPanel = useVerseStore((s) => s.closeStudyPanel)
   const commentaryOpen = useUIStore((s) => s.commentaryOpen)
   const toggleCommentary = useUIStore((s) => s.toggleCommentary)
   const closePanel = useUIStore((s) => s.closePanel)
@@ -27,8 +27,8 @@ export function PanelLayout({ sidebar, main, panel, leftPanel }: PanelLayoutProp
     if (commentaryOpen) {
       toggleCommentary()
     }
-    if (selectedVerseId) {
-      selectVerse(null)
+    if (studyVerseId) {
+      closeStudyPanel()
     }
   }
 
@@ -120,7 +120,7 @@ export function PanelLayout({ sidebar, main, panel, leftPanel }: PanelLayoutProp
             panel ? 'pointer-events-auto opacity-100' : 'pointer-events-none opacity-0',
           )}
         >
-          <div className="absolute inset-0 bg-black/60" onClick={() => {}} />
+          <div className="absolute inset-0 bg-black/60" onClick={closeMobileStudyPanel} />
           <div className="absolute inset-x-0 bottom-0 top-4 rounded-t-2xl bg-bg-secondary shadow-2xl">
             <div className="h-full overflow-hidden">
               {panel}

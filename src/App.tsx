@@ -33,7 +33,7 @@ export default function App() {
   const authModalOpen      = useUIStore(s => s.authModalOpen)
   const closeAuthModal     = useUIStore(s => s.closeAuthModal)
   const navigateVerse = useVerseStore(s => s.navigateVerse)
-  const selectedVerseId = useVerseStore(s => s.selectedVerseId)
+  const studyVerseId = useVerseStore(s => s.studyVerseId)
   const loadBooks = useVerseStore(s => s.loadBooks)
   const authInit = useAuthStore(s => s.init)
   const user = useAuthStore(s => s.user)
@@ -107,7 +107,7 @@ export default function App() {
       <PanelLayout
         sidebar={<Sidebar />}
         main={<VerseList />}
-        panel={commentaryOpen ? <CommentaryPanel /> : selectedVerseId ? <StudyPanel /> : null}
+        panel={commentaryOpen ? <CommentaryPanel /> : studyVerseId ? <StudyPanel /> : null}
         leftPanel={leftPanelContent}
       />
       <CommandPalette />

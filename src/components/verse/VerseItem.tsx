@@ -174,7 +174,7 @@ export function VerseItem({ verse, isSelected, noteCount, highlightCount }: Vers
         className={cn(
           fontSize === 'sm' ? 'text-sm' : fontSize === 'lg' ? 'text-lg' : 'text-base',
           'leading-snug overflow-hidden line-clamp-2 transition-colors duration-100',
-          isSelected ? 'text-text-primary' : 'text-text-secondary group-hover:text-text-primary',
+          'text-text-secondary group-hover:text-text-primary',
         )}
       />
     </div>

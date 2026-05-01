@@ -26,6 +26,8 @@ interface VerseState {
   selectedBook: string
   selectedChapter: number
   selectedVerseId: string | null
+  selectedVerseIds: string[]
+  studyVerseId: string | null
   chapterId: number | null
   verses: Verse[]
   loadingVerses: boolean
@@ -35,6 +37,9 @@ interface VerseState {
   selectBook: (slug: string) => void
   selectChapter: (chapter: number) => void
   selectVerse: (id: string | null) => void
+  toggleVerseSelection: (id: string) => void
+  openStudyPanel: (id: string) => void
+  closeStudyPanel: () => void
   openVerse: (slug: string, chapter: number, verse: number) => Promise<void>
   navigateVerse: (dir: 'next' | 'prev') => void
   navigateChapter: (dir: 'next' | 'prev') => void
@@ -53,6 +58,8 @@ export const useVerseStore = create<VerseState>((set, get) => ({
   selectedBook: '',
   selectedChapter: 1,
   selectedVerseId: null,
+  selectedVerseIds: [],
+  studyVerseId: null,
   chapterId: null,
   verses: [],
   loadingVerses: false,
@@ -68,7 +75,7 @@ export const useVerseStore = create<VerseState>((set, get) => ({
 
   setVersion: async (id) => {
     localStorage.setItem('tulia_version_id', String(id))
-    set({ versionId: id, books: [], verses: [], selectedVerseId: null })
+    set({ versionId: id, books: [], verses: [], selectedVerseId: null, selectedVerseIds: [], studyVerseId: null })
     await get().loadBooks()
   },
 
@@ -97,7 +104,7 @@ export const useVerseStore = create<VerseState>((set, get) => ({
 
   loadChapter: async (slug, chapter) => {
     const { versionId } = get()
-    set({ selectedBook: slug, selectedChapter: chapter, loadingVerses: true, selectedVerseId: null })
+    set({ selectedBook: slug, selectedChapter: chapter, loadingVerses: true, selectedVerseId: null, selectedVerseIds: [], studyVerseId: null })
     try {
       const data = await bibleApi.chapter(versionId, slug, chapter)
       const verses: Verse[] = data.verses.map(v => ({
@@ -116,23 +123,44 @@ export const useVerseStore = create<VerseState>((set, get) => ({
   },
 
   selectBook: (slug) => {
-    set({ selectedBook: slug, selectedChapter: 1, selectedVerseId: null })
+    set({ selectedBook: slug, selectedChapter: 1, selectedVerseId: null, selectedVerseIds: [], studyVerseId: null })
     get().loadChapter(slug, 1)
   },
 
   selectChapter: (chapter) => {
     const { selectedBook } = get()
-    set({ selectedChapter: chapter, selectedVerseId: null })
+    set({ selectedChapter: chapter, selectedVerseId: null, selectedVerseIds: [], studyVerseId: null })
     get().loadChapter(selectedBook, chapter)
   },
 
-  selectVerse: (id) => set({ selectedVerseId: id }),
+  selectVerse: (id) => set({ selectedVerseId: id, selectedVerseIds: id ? [id] : [] }),
+
+  toggleVerseSelection: (id) => {
+    const { selectedVerseId, selectedVerseIds } = get()
+    const isSelected = selectedVerseIds.includes(id)
+    const nextIds = isSelected
+      ? selectedVerseIds.filter((selectedId) => selectedId !== id)
+      : [...selectedVerseIds, id]
+
+    set({
+      selectedVerseIds: nextIds,
+      selectedVerseId: isSelected
+        ? selectedVerseId === id
+          ? nextIds[nextIds.length - 1] ?? null
+          : selectedVerseId
+        : id,
+    })
+  },
+
+  openStudyPanel: (id) => set({ studyVerseId: id, selectedVerseId: id, selectedVerseIds: [id] }),
+
+  closeStudyPanel: () => set({ studyVerseId: null }),
 
   openVerse: async (slug, chapter, verse) => {
-    set({ selectedBook: slug, selectedChapter: chapter, selectedVerseId: null })
+    set({ selectedBook: slug, selectedChapter: chapter, selectedVerseId: null, selectedVerseIds: [], studyVerseId: null })
     await get().loadChapter(slug, chapter)
     const verseId = `${slug}-${chapter}-${verse}`
-    set({ selectedVerseId: verseId })
+    set({ selectedVerseId: verseId, selectedVerseIds: [verseId] })
   },
 
   navigateVerse: (dir) => {
@@ -142,7 +170,7 @@ export const useVerseStore = create<VerseState>((set, get) => ({
     const next = dir === 'next'
       ? verses[idx + 1] ?? verses[0]
       : verses[idx - 1] ?? verses[verses.length - 1]
-    set({ selectedVerseId: next.id })
+    set({ selectedVerseId: next.id, selectedVerseIds: [next.id] })
   },
 
   navigateChapter: (dir) => {
@@ -157,7 +185,7 @@ export const useVerseStore = create<VerseState>((set, get) => ({
         get().selectChapter(selectedChapter + 1)
       } else if (bookIdx < books.length - 1) {
         const nextBook = books[bookIdx + 1]
-        set({ selectedBook: nextBook.slug, selectedChapter: 1, selectedVerseId: null })
+        set({ selectedBook: nextBook.slug, selectedChapter: 1, selectedVerseId: null, selectedVerseIds: [], studyVerseId: null })
         get().loadChapter(nextBook.slug, 1)
       }
     } else {
@@ -165,7 +193,7 @@ export const useVerseStore = create<VerseState>((set, get) => ({
         get().selectChapter(selectedChapter - 1)
       } else if (bookIdx > 0) {
         const prevBook = books[bookIdx - 1]
-        set({ selectedBook: prevBook.slug, selectedChapter: prevBook.chapters, selectedVerseId: null })
+        set({ selectedBook: prevBook.slug, selectedChapter: prevBook.chapters, selectedVerseId: null, selectedVerseIds: [], studyVerseId: null })
         get().loadChapter(prevBook.slug, prevBook.chapters)
       }
     }
