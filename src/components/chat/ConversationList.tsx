@@ -1,3 +1,5 @@
+import { useTranslation } from 'react-i18next'
+import i18n from '@/lib/i18n'
 import { useChatStore } from '@/lib/store/useChatStore'
 import { useAuthStore } from '@/lib/store/useAuthStore'
 import { UserAvatar } from '@/components/auth/UserAvatar'
@@ -7,17 +9,17 @@ import type { Conversation } from '@/lib/chatApi'
 function relativeTime(iso: string | null): string {
   if (!iso) return ''
   const diff = Date.now() - new Date(iso).getTime()
-  if (diff < 60_000)         return 'now'
-  if (diff < 3600_000)       return `${Math.floor(diff / 60_000)}m`
-  if (diff < 86_400_000)     return `${Math.floor(diff / 3600_000)}h`
-  if (diff < 7 * 86_400_000) return `${Math.floor(diff / 86_400_000)}d`
+  if (diff < 60_000)         return i18n.t('time.now_short')
+  if (diff < 3600_000)       return i18n.t('time.m_short', { count: Math.floor(diff / 60_000) })
+  if (diff < 86_400_000)     return i18n.t('time.h_short', { count: Math.floor(diff / 3600_000) })
+  if (diff < 7 * 86_400_000) return i18n.t('time.d_short', { count: Math.floor(diff / 86_400_000) })
   return new Date(iso).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })
 }
 
 function conversationTitle(c: Conversation, selfId: number | undefined): string {
   if (c.type === 'group') return c.name ?? c.participants.map(p => p.name).join(', ')
   const other = c.participants.find(p => p.id !== selfId)
-  return other?.name ?? 'Direct message'
+  return other?.name ?? i18n.t('chat.directMessage')
 }
 
 function conversationAvatarEmail(c: Conversation, selfId: number | undefined): string {
@@ -26,6 +28,7 @@ function conversationAvatarEmail(c: Conversation, selfId: number | undefined): s
 }
 
 export function ConversationList() {
+  const { t }        = useTranslation()
   const conversations = useChatStore(s => s.conversations)
   const selectedId    = useChatStore(s => s.selectedId)
   const select        = useChatStore(s => s.select)
@@ -33,13 +36,13 @@ export function ConversationList() {
   const selfId        = useAuthStore(s => s.user?.id)
 
   if (loading && conversations.length === 0) {
-    return <p className="text-xs text-text-muted px-4 py-6">Loading…</p>
+    return <p className="text-xs text-text-muted px-4 py-6">{t('common.loading')}</p>
   }
 
   if (conversations.length === 0) {
     return (
       <p className="text-xs text-text-muted px-4 py-6">
-        No conversations yet. Start one from the + button.
+        {t('chat.conversationsEmpty')}
       </p>
     )
   }
@@ -52,8 +55,8 @@ export function ConversationList() {
         const isGroup  = c.type === 'group'
         const last     = c.last_message
         const preview  = last
-          ? `${last.user_id === selfId ? 'You: ' : isGroup && last.user_name ? `${last.user_name}: ` : ''}${last.body}`
-          : 'No messages yet'
+          ? `${last.user_id === selfId ? t('chat.youPrefix') : isGroup && last.user_name ? `${last.user_name}: ` : ''}${last.body}`
+          : t('chat.noMessagesPreview')
 
         return (
           <button

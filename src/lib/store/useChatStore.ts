@@ -275,8 +275,8 @@ export const useChatStore = create<ChatState>((set, get) => ({
 
       if (!existing) {
         const title = conversation.type === 'group'
-          ? (conversation.name ?? 'New group chat')
-          : (conversation.participants.find((p) => p.id !== userId)?.name ?? 'New chat')
+          ? (conversation.name ?? i18n.t('chat.newGroupChatFallback'))
+          : (conversation.participants.find((p) => p.id !== userId)?.name ?? i18n.t('chat.newChatFallback'))
         useUIStore.getState().addToast(i18n.t('chat.conversationAvailable', { title }), 'info')
       }
     })

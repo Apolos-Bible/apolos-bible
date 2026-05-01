@@ -39,12 +39,18 @@ function IconXRef() {
   )
 }
 
-export function ReadingToolbar() {
+interface ReadingToolbarProps {
+  showCommentary?: boolean
+  showVerseActions?: boolean
+}
+
+export function ReadingToolbar({ showCommentary = true, showVerseActions = true }: ReadingToolbarProps) {
   const versions        = useVerseStore(s => s.versions)
   const selectedBook    = useVerseStore(s => s.selectedBook)
   const selectedChapter = useVerseStore(s => s.selectedChapter)
   const loadVersions    = useVerseStore(s => s.loadVersions)
   const selectedVerseId = useVerseStore(s => s.selectedVerseId)
+  const selectedVerseIds = useVerseStore(s => s.selectedVerseIds)
   const verses          = useVerseStore(s => s.verses)
 
   const openCompare      = useCompareStore(s => s.openCompare)
@@ -56,6 +62,14 @@ export function ReadingToolbar() {
 
   const { t } = useTranslation()
   const selectedVerse = verses.find(v => v.id === selectedVerseId) ?? null
+  const selectedVerses = selectedVerseIds
+    .map((id) => verses.find((verse) => verse.id === id))
+    .filter((verse): verse is NonNullable<typeof verse> => Boolean(verse))
+  const targetVerses = selectedVerses.length > 0
+    ? selectedVerses
+    : selectedVerse
+      ? [selectedVerse]
+      : []
 
   const handleCompare = async () => {
     let vers = versions
@@ -63,12 +77,15 @@ export function ReadingToolbar() {
       await loadVersions()
       vers = useVerseStore.getState().versions
     }
-    openCompare(vers, selectedBook, selectedChapter, selectedVerse?.verse)
+    openCompare(vers, selectedBook, selectedChapter, targetVerses.map((verse) => verse.verse))
   }
 
   const handleXRef = () => {
-    if (!selectedVerse) return
-    openXRef(selectedVerse.apiId)
+    if (!targetVerses.length) return
+    openXRef(targetVerses.map((verse) => ({
+      verseApiId: verse.apiId,
+      label: `${verse.book} ${verse.chapter}:${verse.verse}`,
+    })))
   }
 
   const btnClass = (active: boolean) => cn(
@@ -80,25 +97,31 @@ export function ReadingToolbar() {
 
   return (
     <div className="flex gap-0.5 bg-bg-tertiary border border-border-subtle rounded-md p-0.5 pointer-events-auto shadow-sm">
-      <Tooltip label={t('toolbar.commentary')} side="bottom">
-        <button onClick={toggleCommentary} className={btnClass(commentaryOpen)}>
-          <IconCommentary />
-        </button>
-      </Tooltip>
-      <Tooltip label={t('toolbar.compareVersions')} side="bottom">
-        <button onClick={handleCompare} className={btnClass(compareOpen)}>
-          <IconCompare />
-        </button>
-      </Tooltip>
-      <Tooltip label={selectedVerse ? t('toolbar.crossReferences') : t('toolbar.selectVerseFirst')} side="bottom">
-        <button
-          onClick={handleXRef}
-          disabled={!selectedVerse}
-          className={cn(btnClass(xrefOpen), !selectedVerse && 'opacity-40 cursor-not-allowed')}
-        >
-          <IconXRef />
-        </button>
-      </Tooltip>
+      {showCommentary && (
+        <Tooltip label={t('toolbar.commentary')} side="bottom">
+          <button onClick={toggleCommentary} className={btnClass(commentaryOpen)}>
+            <IconCommentary />
+          </button>
+        </Tooltip>
+      )}
+      {showVerseActions && (
+        <>
+          <Tooltip label={t('toolbar.compareVersions')} side="bottom">
+            <button onClick={handleCompare} className={btnClass(compareOpen)}>
+              <IconCompare />
+            </button>
+          </Tooltip>
+          <Tooltip label={targetVerses.length ? t('toolbar.crossReferences') : t('toolbar.selectVerseFirst')} side="bottom">
+            <button
+              onClick={handleXRef}
+              disabled={!targetVerses.length}
+              className={cn(btnClass(xrefOpen), !targetVerses.length && 'opacity-40 cursor-not-allowed')}
+            >
+              <IconXRef />
+            </button>
+          </Tooltip>
+        </>
+      )}
     </div>
   )
 }

@@ -7,6 +7,7 @@ import {
   selectDefaultAppLocale,
   type AppLocale,
 } from '@/lib/defaultAppLocale'
+import { saveUserSettingsSilently } from '@/lib/userSettingsApi'
 
 type Toast = {
   id: string
@@ -32,7 +33,9 @@ type UIStore = {
   authModalOpen: boolean
   commentaryOpen: boolean
   mobileSidebarOpen: boolean
+  showOthersNotes: boolean
   toggleCommentary: () => void
+  toggleShowOthersNotes: () => void
   toasts: Toast[]
   activePanel: Panel | null
   fontSize: FontSize
@@ -64,6 +67,7 @@ const savedFontSize    = (localStorage.getItem('fontSize')    as FontSize)    ??
 const savedTheme       = (localStorage.getItem('theme')       as Theme)       ?? 'light'
 const savedReadingMode = (localStorage.getItem('readingMode') as ReadingMode) ?? 'verse'
 const savedLocale      = getStoredAppLocale()
+const savedShowOthers  = localStorage.getItem('showOthersNotes') !== 'false'
 applyTheme(savedTheme)
 
 export const useUIStore = create<UIStore>((set) => ({
@@ -73,7 +77,14 @@ export const useUIStore = create<UIStore>((set) => ({
   authModalOpen: false,
   commentaryOpen: false,
   mobileSidebarOpen: false,
+  showOthersNotes: savedShowOthers,
   toggleCommentary: () => set((s) => ({ commentaryOpen: !s.commentaryOpen })),
+  toggleShowOthersNotes: () =>
+    set((s) => {
+      const next = !s.showOthersNotes
+      localStorage.setItem('showOthersNotes', String(next))
+      return { showOthersNotes: next }
+    }),
   toasts: [],
   activePanel: null,
   fontSize: savedFontSize,
@@ -107,23 +118,27 @@ export const useUIStore = create<UIStore>((set) => ({
 
   setFontSize: (size) => {
     localStorage.setItem('fontSize', size)
+    saveUserSettingsSilently({ font_size: size })
     set({ fontSize: size })
   },
 
   setTheme: (t) => {
     localStorage.setItem('theme', t)
     applyTheme(t)
+    saveUserSettingsSilently({ theme: t })
     set({ theme: t })
   },
 
   setLocale: (l) => {
     localStorage.setItem(APP_LOCALE_STORAGE_KEY, l)
     void i18n.changeLanguage(l)
+    saveUserSettingsSilently({ locale: l })
     set({ locale: l })
   },
 
   setReadingMode: (mode) => {
     localStorage.setItem('readingMode', mode)
+    saveUserSettingsSilently({ reading_mode: mode })
     set({ readingMode: mode })
   },
 }))

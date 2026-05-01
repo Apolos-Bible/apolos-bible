@@ -136,7 +136,7 @@ export function AuthModal({ open, onClose }: AuthModalProps) {
               type="password"
               value={password}
               onChange={e => { setPassword(e.target.value); setError('') }}
-              placeholder="••••••••"
+              placeholder={t('auth.passwordPlaceholder')}
               autoComplete={mode === 'login' ? 'current-password' : 'new-password'}
               className={inputCls}
             />

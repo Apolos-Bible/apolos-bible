@@ -13,19 +13,25 @@ interface VersionChapter {
 interface CompareState {
   open: boolean
   results: VersionChapter[]
-  targetVerseNumber: number | null
-  openCompare: (versions: ApiVersion[], slug: string, chapter: number, verseNumber?: number) => Promise<void>
+  targetVerseNumbers: number[]
+  openCompare: (versions: ApiVersion[], slug: string, chapter: number, verseNumbers?: number | number[]) => Promise<void>
   closeCompare: () => void
 }
 
 export const useCompareStore = create<CompareState>((set) => ({
   open: false,
   results: [],
-  targetVerseNumber: null,
+  targetVerseNumbers: [],
 
-  openCompare: async (versions, slug, chapter, verseNumber) => {
+  openCompare: async (versions, slug, chapter, verseNumbers) => {
     const initial: VersionChapter[] = versions.map(v => ({ version: v, data: null, loading: true, error: false, notAvailable: false }))
-    set({ open: true, results: initial, targetVerseNumber: verseNumber ?? null })
+    const targets = Array.isArray(verseNumbers)
+      ? verseNumbers
+      : verseNumbers != null
+        ? [verseNumbers]
+        : []
+
+    set({ open: true, results: initial, targetVerseNumbers: targets })
 
     const settled = await Promise.allSettled(
       versions.map(v => bibleApi.chapter(v.id, slug, chapter))
@@ -43,5 +49,5 @@ export const useCompareStore = create<CompareState>((set) => ({
     })
   },
 
-  closeCompare: () => set({ open: false, results: [], targetVerseNumber: null }),
+  closeCompare: () => set({ open: false, results: [], targetVerseNumbers: [] }),
 }))

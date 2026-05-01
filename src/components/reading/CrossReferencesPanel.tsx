@@ -5,7 +5,7 @@ import { useVerseStore } from '@/lib/store/useVerseStore'
 
 export function CrossReferencesPanel() {
   const { t } = useTranslation()
-  const { open, results, loading, closePanel } = useCrossRefStore()
+  const { open, results, groups, loading, closePanel } = useCrossRefStore()
   const selectBook    = useVerseStore(s => s.selectBook)
   const selectChapter = useVerseStore(s => s.selectChapter)
 
@@ -52,10 +52,10 @@ export function CrossReferencesPanel() {
           {loading && (
             <p className="text-xs text-text-muted text-center py-8 animate-pulse">{t('common.loading')}</p>
           )}
-          {!loading && results.length === 0 && (
+          {!loading && groups.length <= 1 && results.length === 0 && (
             <p className="text-xs text-text-muted text-center py-8">{t('crossRef.empty')}</p>
           )}
-          {!loading && results.map(ref => (
+          {!loading && groups.length <= 1 && results.map(ref => (
             <button
               key={ref.id}
               onClick={() => navigate(ref.slug, ref.chapter)}
@@ -68,6 +68,29 @@ export function CrossReferencesPanel() {
                 {ref.text}
               </p>
             </button>
+          ))}
+          {!loading && groups.length > 1 && groups.map(group => (
+            <div key={group.source.verseApiId} className="border-b border-border-subtle">
+              <div className="sticky top-0 z-10 bg-bg-primary px-4 py-2 text-[10px] font-semibold uppercase tracking-[0.16em] text-accent border-b border-border-subtle">
+                {group.source.label}
+              </div>
+              {group.results.length === 0 ? (
+                <p className="px-4 py-3 text-xs text-text-muted">{t('crossRef.empty')}</p>
+              ) : group.results.map(ref => (
+                <button
+                  key={`${group.source.verseApiId}-${ref.id}`}
+                  onClick={() => navigate(ref.slug, ref.chapter)}
+                  className="w-full text-left px-4 py-3 border-b border-border-subtle last:border-b-0 hover:bg-bg-tertiary transition-colors group"
+                >
+                  <p className="text-xs text-accent font-medium mb-1">
+                    {ref.book} {ref.chapter}:{ref.verse}
+                  </p>
+                  <p className="font-reading text-sm text-text-secondary leading-relaxed group-hover:text-text-primary transition-colors">
+                    {ref.text}
+                  </p>
+                </button>
+              ))}
+            </div>
           ))}
         </div>
       </div>

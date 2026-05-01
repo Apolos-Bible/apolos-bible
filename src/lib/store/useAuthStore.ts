@@ -1,5 +1,6 @@
 import { create } from 'zustand'
 import { api, setToken, clearToken } from '@/lib/api'
+import { applyUserSettings, fetchUserSettings, persistClientSettings } from '@/lib/userSettings'
 
 interface AuthUser {
   id: number
@@ -25,6 +26,8 @@ export const useAuthStore = create<AuthState>((set) => ({
     if (!token) { set({ loading: false }); return }
     try {
       const user = await api.get<AuthUser>('/api/user')
+      const settings = await fetchUserSettings()
+      await applyUserSettings(settings)
       set({ user, loading: false })
     } catch {
       clearToken()
@@ -35,12 +38,14 @@ export const useAuthStore = create<AuthState>((set) => ({
   login: async (email, password) => {
     const { token, user } = await api.post<{ token: string; user: AuthUser }>('/api/auth/login', { email, password })
     setToken(token)
+    await persistClientSettings()
     set({ user })
   },
 
   register: async (name, email, password) => {
     const { token, user } = await api.post<{ token: string; user: AuthUser }>('/api/auth/register', { name, email, password })
     setToken(token)
+    await persistClientSettings()
     set({ user })
   },
 

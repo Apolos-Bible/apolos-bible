@@ -86,7 +86,7 @@ export function FriendsPanel() {
         <span className="text-sm font-medium text-text-primary">{t('friends.title')}</span>
         <button
           onClick={closePanel}
-          aria-label="Close friends panel"
+          aria-label={t('friends.closePanel')}
           className="text-text-muted hover:text-text-primary transition-colors"
         >
           <svg aria-hidden="true" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" className="w-4 h-4">

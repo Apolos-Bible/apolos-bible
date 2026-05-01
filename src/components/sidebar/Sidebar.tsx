@@ -1,4 +1,5 @@
 import { useState, useEffect, type ReactNode } from 'react'
+import { useTranslation } from 'react-i18next'
 import { useUIStore } from '@/lib/store/useUIStore'
 import { useAuthStore } from '@/lib/store/useAuthStore'
 import { useNotificationStore } from '@/lib/store/useNotificationStore'
@@ -96,6 +97,7 @@ function SearchIcon() {
 }
 
 export function Sidebar() {
+  const { t }          = useTranslation()
   const openCommandPalette = useUIStore(s => s.openCommandPalette)
   const togglePanel        = useUIStore(s => s.togglePanel)
   const openSettings       = useUIStore(s => s.openSettings)
@@ -149,24 +151,24 @@ export function Sidebar() {
           <span className="w-4 h-4 flex items-center justify-center opacity-70">
             <SearchIcon />
           </span>
-          <span className="flex-1">Search Bible</span>
+          <span className="flex-1">{t('nav.searchBible')}</span>
           <kbd className="hidden font-mono text-2xs text-text-muted md:inline">
             {modKey}K
           </kbd>
         </button>
       </div>
 
-      <SectionLabel>Library</SectionLabel>
+      <SectionLabel>{t('nav.library')}</SectionLabel>
 
       <BookSelector />
 
       <div className="shrink-0 border-t border-border-subtle px-2 pb-2">
-        <SectionLabel>Personal</SectionLabel>
-        <NavItem icon={<StarIcon />}    label="Favorites" active={activePanel === 'favorites'} onClick={() => user ? toggleSidebarPanel('favorites') : openAuthModal()} />
-        <NavItem icon={<NoteIcon />}    label="My Notes"  active={activePanel === 'my-notes'} onClick={() => user ? toggleSidebarPanel('my-notes')  : openAuthModal()} />
-        <SectionLabel>Social</SectionLabel>
-        <NavItem icon={<PeopleIcon />} label="Friends" active={activePanel === 'friends'} badge={unreadCount} onClick={() => user ? toggleSidebarPanel('friends') : openAuthModal()} />
-        <NavItem icon={<ChatIcon />} label="Chat" active={activePanel === 'chat'} badge={chatUnread} onClick={() => user ? toggleSidebarPanel('chat') : openAuthModal()} />
+        <SectionLabel>{t('nav.personal')}</SectionLabel>
+        <NavItem icon={<StarIcon />}    label={t('nav.favorites')} active={activePanel === 'favorites'} onClick={() => user ? toggleSidebarPanel('favorites') : openAuthModal()} />
+        <NavItem icon={<NoteIcon />}    label={t('nav.myNotes')}  active={activePanel === 'my-notes'} onClick={() => user ? toggleSidebarPanel('my-notes')  : openAuthModal()} />
+        <SectionLabel>{t('nav.social')}</SectionLabel>
+        <NavItem icon={<PeopleIcon />} label={t('nav.friends')} active={activePanel === 'friends'} badge={unreadCount} onClick={() => user ? toggleSidebarPanel('friends') : openAuthModal()} />
+        <NavItem icon={<ChatIcon />} label={t('nav.chat')} active={activePanel === 'chat'} badge={chatUnread} onClick={() => user ? toggleSidebarPanel('chat') : openAuthModal()} />
       </div>
 
       {/* Footer */}
@@ -202,7 +204,7 @@ export function Sidebar() {
               </svg>
             </div>
             <span className="text-sm text-text-muted group-hover:text-text-secondary transition-colors">
-              Sign in
+              {t('nav.signIn')}
             </span>
           </button>
         )}
