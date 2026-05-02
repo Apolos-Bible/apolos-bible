@@ -22,6 +22,5 @@ src-tauri/target/
 *.sln
 *.sw?
 
-# OS
-.DS_Store
-Thumbs.db
+# Firebase
+.firebase/
