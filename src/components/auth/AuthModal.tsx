@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useAuthStore } from '@/lib/store/useAuthStore'
 import { cn } from '@/lib/cn'
@@ -6,13 +6,14 @@ import { cn } from '@/lib/cn'
 interface AuthModalProps {
   open: boolean
   onClose: () => void
+  initialMode?: Mode
 }
 
 type Mode = 'login' | 'register' | 'forgot-password' | 'reset-password'
 
-export function AuthModal({ open, onClose }: AuthModalProps) {
+export function AuthModal({ open, onClose, initialMode = 'login' }: AuthModalProps) {
   const { t } = useTranslation()
-  const [mode, setMode] = useState<Mode>('login')
+  const [mode, setMode] = useState<Mode>(initialMode)
   const [name, setName] = useState('')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
@@ -26,6 +27,20 @@ export function AuthModal({ open, onClose }: AuthModalProps) {
   const register = useAuthStore(s => s.register)
   const forgotPassword = useAuthStore(s => s.forgotPassword)
   const resetPassword = useAuthStore(s => s.resetPassword)
+
+  useEffect(() => {
+    if (open) {
+      setMode(initialMode)
+      setError('')
+      setSent(false)
+      if (initialMode === 'reset-password') {
+        const storedToken = sessionStorage.getItem('reset_token')
+        const storedEmail = sessionStorage.getItem('reset_email')
+        if (storedToken) { setToken(storedToken); sessionStorage.removeItem('reset_token') }
+        if (storedEmail) { setEmail(storedEmail); sessionStorage.removeItem('reset_email') }
+      }
+    }
+  }, [open, initialMode])
 
   if (!open) return null
 

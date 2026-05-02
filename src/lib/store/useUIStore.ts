@@ -31,6 +31,7 @@ type UIStore = {
   shortcutsPanelOpen: boolean
   settingsOpen: boolean
   authModalOpen: boolean
+  authModalMode: 'login' | 'register' | 'forgot-password' | 'reset-password'
   commentaryOpen: boolean
   mobileSidebarOpen: boolean
   showOthersNotes: boolean
@@ -47,7 +48,7 @@ type UIStore = {
   toggleShortcutsPanel: () => void
   openSettings: () => void
   closeSettings: () => void
-  openAuthModal: () => void
+  openAuthModal: (mode?: 'login' | 'register' | 'forgot-password' | 'reset-password') => void
   closeAuthModal: () => void
   openMobileSidebar: () => void
   closeMobileSidebar: () => void
@@ -75,6 +76,7 @@ export const useUIStore = create<UIStore>((set) => ({
   shortcutsPanelOpen: false,
   settingsOpen: false,
   authModalOpen: false,
+  authModalMode: 'login',
   commentaryOpen: false,
   mobileSidebarOpen: false,
   showOthersNotes: savedShowOthers,
@@ -97,7 +99,7 @@ export const useUIStore = create<UIStore>((set) => ({
   toggleShortcutsPanel: () => set((s) => ({ shortcutsPanelOpen: !s.shortcutsPanelOpen })),
   openSettings: () => set({ settingsOpen: true }),
   closeSettings: () => set({ settingsOpen: false }),
-  openAuthModal: () => set({ authModalOpen: true }),
+  openAuthModal: (mode = 'login') => set({ authModalOpen: true, authModalMode: mode }),
   closeAuthModal: () => set({ authModalOpen: false }),
   openMobileSidebar: () => set({ mobileSidebarOpen: true }),
   closeMobileSidebar: () => set({ mobileSidebarOpen: false }),

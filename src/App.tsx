@@ -44,6 +44,8 @@ export default function App() {
   const locale = useUIStore(s => s.locale)
   const authInit = useAuthStore(s => s.init)
   const user = useAuthStore(s => s.user)
+  const authModalMode = useUIStore(s => s.authModalMode)
+  const openAuthModalFunc = useUIStore(s => s.openAuthModal)
   const loadBookmarks = useBookmarkStore(s => s.load)
   const loadFriends = useFriendStore(s => s.load)
   const loadChat = useChatStore(s => s.load)
@@ -58,6 +60,21 @@ export default function App() {
       await loadBooks()
     })()
   }, [authInit, loadBooks])
+
+  // Detect reset-password params from email link
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search)
+    const token = params.get('reset_token')
+    const email = params.get('reset_email')
+    if (token && email) {
+      openAuthModalFunc('reset-password')
+      // Store token/email in sessionStorage so AuthModal can read them
+      sessionStorage.setItem('reset_token', token)
+      sessionStorage.setItem('reset_email', email)
+      // Clean URL
+      window.history.replaceState({}, '', window.location.pathname)
+    }
+  }, [openAuthModalFunc])
 
   useEffect(() => {
     if (hasLoggedStartupSettings || !selectedBook) return
@@ -146,7 +163,7 @@ export default function App() {
       <Toast />
       <KeyboardShortcutsPanel />
       <SettingsModal />
-      <AuthModal open={authModalOpen} onClose={closeAuthModal} />
+      <AuthModal open={authModalOpen} onClose={closeAuthModal} initialMode={authModalMode} />
       <ContextMenu />
       <CompareVersionsModal />
       <CrossReferencesPanel />
