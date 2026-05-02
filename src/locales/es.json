@@ -39,6 +39,13 @@
   "auth.creatingAccount": "Creando cuenta…",
   "auth.somethingWentWrong": "Algo salió mal",
   "auth.logIn": "Inicia sesión",
+  "auth.forgotPassword": "¿Olvidaste tu contraseña?",
+  "auth.forgotPasswordTitle": "Restablecer contraseña",
+  "auth.forgotPasswordDescription": "Escribe tu correo y te enviaremos un link para restablecerla.",
+  "auth.sendResetLink": "Enviar link",
+  "auth.sendingResetLink": "Enviando…",
+  "auth.resetLinkSent": "Si una cuenta existe con ese correo, recibirás un link. Revisa tu bandeja de entrada.",
+  "auth.backToLogin": "Volver al inicio",
 
   "commentary.title": "Comentario",
   "commentary.loading": "Cargando…",

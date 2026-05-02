@@ -39,6 +39,13 @@
   "auth.creatingAccount": "Creating account…",
   "auth.somethingWentWrong": "Something went wrong",
   "auth.logIn": "Log in",
+  "auth.forgotPassword": "Forgot password?",
+  "auth.forgotPasswordTitle": "Reset your password",
+  "auth.forgotPasswordDescription": "Enter your email and we'll send you a reset link.",
+  "auth.sendResetLink": "Send reset link",
+  "auth.sendingResetLink": "Sending…",
+  "auth.resetLinkSent": "If an account with that email exists, a reset link has been sent. Check your inbox.",
+  "auth.backToLogin": "Back to login",
 
   "commentary.title": "Commentary",
   "commentary.loading": "Loading…",
