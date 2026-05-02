@@ -117,10 +117,11 @@ export function AuthModal({ open, onClose, initialMode = 'login' }: AuthModalPro
               ×
             </button>
           </div>
-        ) : isForgotPassword && sent ? (
+        ) : isForgotPassword ? (
           <div className="flex items-start justify-between mb-5">
             <div>
               <h2 className="text-md font-medium text-text-primary">{t('auth.forgotPasswordTitle')}</h2>
+              {!sent && <p className="text-sm text-text-muted mt-0.5">{t('auth.forgotPasswordDescription')}</p>}
             </div>
             <button
               onClick={handleClose}
