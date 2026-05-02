@@ -45,6 +45,7 @@ export default function App() {
   const authInit = useAuthStore(s => s.init)
   const user = useAuthStore(s => s.user)
   const authModalMode = useUIStore(s => s.authModalMode)
+  const authModalKey = useUIStore(s => s.authModalKey)
   const openAuthModalFunc = useUIStore(s => s.openAuthModal)
   const loadBookmarks = useBookmarkStore(s => s.load)
   const loadFriends = useFriendStore(s => s.load)
@@ -163,7 +164,7 @@ export default function App() {
       <Toast />
       <KeyboardShortcutsPanel />
       <SettingsModal />
-      <AuthModal key={`auth-${Number(authModalOpen)}-${authModalMode}`} open={authModalOpen} onClose={closeAuthModal} initialMode={authModalMode} />
+      <AuthModal key={authModalKey} open={authModalOpen} onClose={closeAuthModal} initialMode={authModalMode} />
       <ContextMenu />
       <CompareVersionsModal />
       <CrossReferencesPanel />
