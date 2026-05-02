@@ -100,7 +100,7 @@ export const useUIStore = create<UIStore>((set) => ({
   openSettings: () => set({ settingsOpen: true }),
   closeSettings: () => set({ settingsOpen: false }),
   openAuthModal: (mode = 'login') => set({ authModalOpen: true, authModalMode: mode }),
-  closeAuthModal: () => set({ authModalOpen: false }),
+  closeAuthModal: () => set({ authModalOpen: false, authModalMode: 'login' }),
   openMobileSidebar: () => set({ mobileSidebarOpen: true }),
   closeMobileSidebar: () => set({ mobileSidebarOpen: false }),
   toggleMobileSidebar: () => set((s) => ({ mobileSidebarOpen: !s.mobileSidebarOpen })),
