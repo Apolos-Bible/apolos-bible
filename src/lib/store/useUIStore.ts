@@ -101,7 +101,13 @@ export const useUIStore = create<UIStore>((set) => ({
   toggleShortcutsPanel: () => set((s) => ({ shortcutsPanelOpen: !s.shortcutsPanelOpen })),
   openSettings: () => set({ settingsOpen: true }),
   closeSettings: () => set({ settingsOpen: false }),
-  openAuthModal: (mode = 'login') => set(s => ({ authModalOpen: true, authModalMode: mode, authModalKey: s.authModalKey + 1 })),
+  openAuthModal: (mode) => {
+    const valid = ['login', 'register', 'forgot-password', 'reset-password'] as const
+    const safe = (valid as readonly string[]).includes(mode as string)
+      ? (mode as typeof valid[number])
+      : 'login'
+    set(s => ({ authModalOpen: true, authModalMode: safe, authModalKey: s.authModalKey + 1 }))
+  },
   closeAuthModal: () => set({ authModalOpen: false, authModalMode: 'login' }),
   openMobileSidebar: () => set({ mobileSidebarOpen: true }),
   closeMobileSidebar: () => set({ mobileSidebarOpen: false }),
