@@ -61,8 +61,10 @@ export function AuthModal({ open, onClose }: AuthModalProps) {
         setSent(true)
       } else if (mode === 'reset-password') {
         await resetPassword(email.trim(), token.trim(), password, passwordConfirmation)
+        setPassword('')
+        setPasswordConfirmation('')
+        setToken('')
         setMode('login')
-        setSent(true)
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : t('auth.somethingWentWrong'))
