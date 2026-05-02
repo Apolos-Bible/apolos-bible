@@ -221,18 +221,9 @@ export function AuthModal({ open, onClose, initialMode = 'login' }: AuthModalPro
                 />
               </Field>
 
-              {/* Token — reset password only */}
+              {/* Token — reset password only, hidden from user */}
               {isResetPassword && (
-                <Field label={t('auth.resetToken')}>
-                  <input
-                    type="text"
-                    value={token}
-                    onChange={e => { setToken(e.target.value); setError('') }}
-                    placeholder={t('auth.resetTokenPlaceholder')}
-                    autoComplete="off"
-                    className={inputCls}
-                  />
-                </Field>
+                <input type="hidden" value={token} />
               )}
 
               {/* Password — login / register / reset */}
