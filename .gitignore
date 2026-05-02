@@ -16,6 +16,8 @@ src-tauri/target/
 # editor
 .vscode/
 .idea/
+.agents/
+skills-lock.json
 *.suo
 *.ntvs*
 *.njsproj
@@ -24,3 +26,4 @@ src-tauri/target/
 
 # Firebase
 .firebase/
+.DS_Store

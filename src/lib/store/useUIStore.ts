@@ -19,7 +19,7 @@ type Toast = {
 export type FontSize    = 'sm' | 'base' | 'lg'
 export type Theme       = 'dark' | 'light'
 export type Locale      = AppLocale
-export type Panel       = 'favorites' | 'my-notes' | 'friends' | 'chat'
+export type Panel       = 'favorites' | 'my-notes' | 'friends' | 'chat' | 'my-studies'
 export type ReadingMode = 'flow' | 'verse'
 
 function applyTheme(t: Theme) {
@@ -33,6 +33,7 @@ type UIStore = {
   authModalOpen: boolean
   authModalMode: 'login' | 'register' | 'forgot-password' | 'reset-password'
   authModalKey: number
+  studyMode: boolean
   commentaryOpen: boolean
   mobileSidebarOpen: boolean
   showOthersNotes: boolean
@@ -63,6 +64,8 @@ type UIStore = {
   setTheme: (t: Theme) => void
   setLocale: (l: Locale) => void
   setReadingMode: (mode: ReadingMode) => void
+  enterStudyMode: () => void
+  exitStudyMode: () => void
 }
 
 const savedFontSize    = (localStorage.getItem('fontSize')    as FontSize)    ?? 'base'
@@ -72,6 +75,8 @@ const savedLocale      = getStoredAppLocale()
 const savedShowOthers  = localStorage.getItem('showOthersNotes') === 'true'
 applyTheme(savedTheme)
 
+let _toastSeq = 0
+
 export const useUIStore = create<UIStore>((set) => ({
   commandPaletteOpen: false,
   shortcutsPanelOpen: false,
@@ -79,6 +84,7 @@ export const useUIStore = create<UIStore>((set) => ({
   authModalOpen: false,
   authModalMode: 'login',
   authModalKey: 0,
+  studyMode: false,
   commentaryOpen: false,
   mobileSidebarOpen: false,
   showOthersNotes: savedShowOthers,
@@ -114,7 +120,7 @@ export const useUIStore = create<UIStore>((set) => ({
   toggleMobileSidebar: () => set((s) => ({ mobileSidebarOpen: !s.mobileSidebarOpen })),
 
   addToast: (message, type = 'info', options) => {
-    const id = `toast-${Date.now()}`
+    const id = `toast-${++_toastSeq}-${Date.now()}`
     set((s) => ({ toasts: [...s.toasts, { id, message, type, action: options?.action }] }))
     setTimeout(() => set((s) => ({ toasts: s.toasts.filter(t => t.id !== id) })), options?.duration ?? 3000)
     return id
@@ -151,4 +157,7 @@ export const useUIStore = create<UIStore>((set) => ({
     saveUserSettingsSilently({ reading_mode: mode })
     set({ readingMode: mode })
   },
+
+  enterStudyMode: () => set({ studyMode: true }),
+  exitStudyMode: () => set({ studyMode: false }),
 }))
