@@ -31,6 +31,8 @@ type UIStore = {
   shortcutsPanelOpen: boolean
   settingsOpen: boolean
   authModalOpen: boolean
+  authModalMode: 'login' | 'register' | 'forgot-password' | 'reset-password'
+  authModalKey: number
   commentaryOpen: boolean
   mobileSidebarOpen: boolean
   showOthersNotes: boolean
@@ -47,7 +49,7 @@ type UIStore = {
   toggleShortcutsPanel: () => void
   openSettings: () => void
   closeSettings: () => void
-  openAuthModal: () => void
+  openAuthModal: (mode?: 'login' | 'register' | 'forgot-password' | 'reset-password') => void
   closeAuthModal: () => void
   openMobileSidebar: () => void
   closeMobileSidebar: () => void
@@ -75,6 +77,8 @@ export const useUIStore = create<UIStore>((set) => ({
   shortcutsPanelOpen: false,
   settingsOpen: false,
   authModalOpen: false,
+  authModalMode: 'login',
+  authModalKey: 0,
   commentaryOpen: false,
   mobileSidebarOpen: false,
   showOthersNotes: savedShowOthers,
@@ -97,8 +101,14 @@ export const useUIStore = create<UIStore>((set) => ({
   toggleShortcutsPanel: () => set((s) => ({ shortcutsPanelOpen: !s.shortcutsPanelOpen })),
   openSettings: () => set({ settingsOpen: true }),
   closeSettings: () => set({ settingsOpen: false }),
-  openAuthModal: () => set({ authModalOpen: true }),
-  closeAuthModal: () => set({ authModalOpen: false }),
+  openAuthModal: (mode) => {
+    const valid = ['login', 'register', 'forgot-password', 'reset-password'] as const
+    const safe = (valid as readonly string[]).includes(mode as string)
+      ? (mode as typeof valid[number])
+      : 'login'
+    set(s => ({ authModalOpen: true, authModalMode: safe, authModalKey: s.authModalKey + 1 }))
+  },
+  closeAuthModal: () => set({ authModalOpen: false, authModalMode: 'login' }),
   openMobileSidebar: () => set({ mobileSidebarOpen: true }),
   closeMobileSidebar: () => set({ mobileSidebarOpen: false }),
   toggleMobileSidebar: () => set((s) => ({ mobileSidebarOpen: !s.mobileSidebarOpen })),

@@ -13,6 +13,8 @@ interface AuthState {
   loading: boolean
   login: (email: string, password: string) => Promise<void>
   register: (name: string, email: string, password: string) => Promise<void>
+  forgotPassword: (email: string) => Promise<void>
+  resetPassword: (email: string, token: string, password: string, passwordConfirmation: string) => Promise<void>
   logout: () => Promise<void>
   init: () => Promise<void>
 }
@@ -47,6 +49,19 @@ export const useAuthStore = create<AuthState>((set) => ({
     setToken(token)
     await persistClientSettings()
     set({ user })
+  },
+
+  forgotPassword: async (email) => {
+    await api.post('/api/auth/forgot-password', { email })
+  },
+
+  resetPassword: async (email, token, password, passwordConfirmation) => {
+    await api.post('/api/auth/reset-password', {
+      email,
+      token,
+      password,
+      password_confirmation: passwordConfirmation,
+    })
   },
 
   logout: async () => {

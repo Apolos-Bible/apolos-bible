@@ -1,0 +1,13 @@
+{
+  "projects": {},
+  "targets": {
+    "tulia-bible": {
+      "hosting": {
+        "tulia-bible": [
+          "bible.tulia.study"
+        ]
+      }
+    }
+  },
+  "etags": {}
+}
