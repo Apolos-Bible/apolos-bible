@@ -163,7 +163,7 @@ export default function App() {
       <Toast />
       <KeyboardShortcutsPanel />
       <SettingsModal />
-      <AuthModal open={authModalOpen} onClose={closeAuthModal} initialMode={authModalMode} />
+      <AuthModal key={String(authModalOpen)} open={authModalOpen} onClose={closeAuthModal} initialMode={authModalMode} />
       <ContextMenu />
       <CompareVersionsModal />
       <CrossReferencesPanel />
