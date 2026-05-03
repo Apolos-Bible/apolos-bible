@@ -7,7 +7,7 @@
     "frontendDist": "../out",
     "devUrl": "http://localhost:1420",
     "beforeDevCommand": "pnpm dev",
-    "beforeBuildCommand": "pnpm build"
+    "beforeBuildCommand": "node scripts/sync-version.mjs && pnpm build"
   },
   "app": {
     "windows": [

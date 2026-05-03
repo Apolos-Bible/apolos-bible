@@ -1,4 +1,4 @@
-import { writeFileSync, mkdirSync, existsSync, readFileSync } from 'node:fs'
+import { writeFileSync, mkdirSync, existsSync, readFileSync, readdirSync } from 'node:fs'
 import { resolve, dirname } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
@@ -22,24 +22,46 @@ loadEnv(resolve(ROOT, '.env.production'))
 
 const API_BASE = `${process.env.VITE_API_URL}/api`
 const SITE_BASE = process.env.VITE_SITE_URL || process.env.VITE_API_URL
-const VERSION_ID = 1
 const CONCURRENCY = 8
+
+// Preferred version IDs per language (first match wins for slug ownership).
+// Later versions in the list act as fallback if earlier ones don't have a slug.
+const PREFERRED_VERSIONS = [
+  3,   // en: KJV (King James Version)
+  1,   // en: ASV (American Standard Version)
+  38,  // es: RVR1960 (Reina-Valera 1960)
+  10,  // es: RVR (Reina-Valera)
+  22,  // fr: Crampon 1923
+  25,  // de: Elberfelder 1905
+  30,  // pt: Bíblia Livre
+]
+
+function pickBestVersion(versions, lang) {
+  // Preferred versions first, then any version in that language
+  const langVersions = versions.filter(v => v.language === lang)
+  for (const prefId of PREFERRED_VERSIONS) {
+    const found = langVersions.find(v => v.id === prefId)
+    if (found) return found
+  }
+  return langVersions[0] || null
+}
 
 const OUT_DIR = resolve(ROOT, 'out')
 
-function chapterUrl(slug, n) {
-  return `${SITE_BASE}/bible/${slug}/${n}`
+function chapterUrl(slug, n, lang) {
+  const langPrefix = lang && lang !== 'en' ? `${lang}/` : ''
+  return `${SITE_BASE}/bible/${langPrefix}${slug}/${n}`
 }
 
-function seoHead(bookName, slug, chapter, firstVerseText) {
+function seoHead(bookName, slug, chapter, firstVerseText, lang) {
   const title = `${bookName} ${chapter} — Tulia Bible`
   const description = firstVerseText
     ? `${firstVerseText.slice(0, 155).trim()}`
     : `Read ${bookName} chapter ${chapter} in Tulia Bible, the collaborative Bible study app.`
-  const canonical = chapterUrl(slug, chapter)
+  const canonical = chapterUrl(slug, chapter, lang)
   const breadcrumbs = [
     { '@type': 'ListItem', position: 1, name: 'Tulia Bible', item: SITE_BASE },
-    { '@type': 'ListItem', position: 2, name: bookName, item: `${SITE_BASE}/bible/${slug}` },
+    { '@type': 'ListItem', position: 2, name: bookName, item: chapterUrl(slug, 1, lang).replace(/\/\d+$/, '') },
     { '@type': 'ListItem', position: 3, name: `Chapter ${chapter}`, item: canonical },
   ]
 
@@ -111,23 +133,29 @@ function escapeHtml(str) {
     .replace(/'/g, '&#39;')
 }
 
-async function fetchBooks() {
-  const res = await fetch(`${API_BASE}/versions/${VERSION_ID}/books`)
-  if (!res.ok) throw new Error(`Books API returned ${res.status}`)
+async function fetchAllVersions() {
+  const res = await fetch(`${API_BASE}/versions`)
+  if (!res.ok) throw new Error(`Versions API returned ${res.status}`)
   return res.json()
 }
 
-async function fetchChapter(slug, chapter) {
-  const url = `${API_BASE}/versions/${VERSION_ID}/books/${slug}/chapters/${chapter}`
+async function fetchVersionBooks(versionId) {
+  const res = await fetch(`${API_BASE}/versions/${versionId}/books`)
+  if (!res.ok) throw new Error(`Books API returned ${res.status} for version ${versionId}`)
+  return res.json()
+}
+
+async function fetchChapter(slug, chapter, versionId) {
+  const url = `${API_BASE}/versions/${versionId}/books/${slug}/chapters/${chapter}`
   const res = await fetch(url)
   if (!res.ok) throw new Error(`Chapter API returned ${res.status} for ${slug} ${chapter}`)
   return res.json()
 }
 
-function generateChapterHtml(data) {
+function generateChapterHtml(data, lang) {
   const { book, chapter, verses } = data
   const firstVerseText = verses.length > 0 ? verses[0].text : null
-  let html = seoHead(book.name, book.slug, chapter, firstVerseText)
+  let html = seoHead(book.name, book.slug, chapter, firstVerseText, lang)
 
   for (const v of verses) {
     html += `  <div class="verse"><span class="verse-num">${v.number}</span><span class="verse-text">${escapeHtml(v.text)}</span></div>\n`
@@ -141,14 +169,15 @@ function generateChapterHtml(data) {
   return html
 }
 
-function generateBookHtml(book) {
+function generateBookHtml(book, lang) {
   const title = `${book.name} — Tulia Bible`
   const description = `Read the book of ${book.name} (${book.chapters_count} chapters) in Tulia Bible, the collaborative Bible study app.`
-  const canonical = `${SITE_BASE}/bible/${book.slug}`
+  const langPrefix = lang && lang !== 'en' ? `${lang}/` : ''
+  const canonical = `${SITE_BASE}/bible/${langPrefix}${book.slug}`
 
   let chapterLinks = ''
   for (let c = 1; c <= book.chapters_count; c++) {
-    chapterLinks += `      <li><a href="${SITE_BASE}/bible/${book.slug}/${c}">Chapter ${c}</a></li>\n`
+    chapterLinks += `      <li><a href="${SITE_BASE}/bible/${langPrefix}${book.slug}/${c}">Chapter ${c}</a></li>\n`
   }
 
   const jsonLd = JSON.stringify({
@@ -211,61 +240,139 @@ ${chapterLinks}    </ul>
 }
 
 async function main() {
-  console.log('[static-chapters] Fetching book list...')
-  const books = await fetchBooks()
-  console.log(`[static-chapters] ${books.length} books loaded`)
-
-  // Generate book index pages
-  console.log('[static-chapters] Generating book index pages...')
-  for (const book of books) {
-    const bookDir = resolve(OUT_DIR, 'bible', book.slug)
-    if (!existsSync(bookDir)) mkdirSync(bookDir, { recursive: true })
-    const html = generateBookHtml(book)
-    writeFileSync(resolve(bookDir, 'index.html'), html, 'utf-8')
-  }
-  console.log('[static-chapters] 66 book index pages written')
-
-  // Generate chapter pages
-  const allChapters = []
-  for (const book of books) {
-    for (let c = 1; c <= book.chapters_count; c++) {
-      allChapters.push({ slug: book.slug, chapter: c, bookName: book.name })
+  // Skip if already generated (Bible content never changes)
+  const bibleDir = resolve(OUT_DIR, 'bible')
+  if (existsSync(bibleDir)) {
+    const files = readdirSync(bibleDir, { recursive: true })
+    if (files.length > 100) {
+      console.log('[static-chapters] Skipping: out/bible/ already populated with', files.length, 'files')
+      return
     }
   }
-  console.log(`[static-chapters] Generating ${allChapters.length} chapter pages...`)
 
-  let done = 0
-  let errors = 0
+  console.log('[static-chapters] Fetching versions...')
+  const versions = await fetchAllVersions()
+  console.log(`[static-chapters] ${versions.length} versions found`)
 
-  async function processOne({ slug, chapter, bookName }) {
-    try {
-      const data = await fetchChapter(slug, chapter)
-      const html = generateChapterHtml(data)
-      const dir = resolve(OUT_DIR, 'bible', slug, String(chapter))
-      if (!existsSync(dir)) mkdirSync(dir, { recursive: true })
-      writeFileSync(resolve(dir, 'index.html'), html, 'utf-8')
-    } catch (err) {
-      errors++
-      if (errors <= 5) {
-        console.error(`[static-chapters] Error on ${slug}/${chapter}:`, err.message)
+  // Build per-language slug map: slugKey → { lang: { name, versionId, chapters } }
+  const slugLangMap = new Map()
+  for (const v of versions) {
+    let books
+    try { books = await fetchVersionBooks(v.id) }
+    catch (err) { console.error(`[static-chapters] Skipping version ${v.id}:`, err.message); continue }
+
+    for (const b of books) {
+      if (!slugLangMap.has(b.slug)) slugLangMap.set(b.slug, {})
+      const entry = slugLangMap.get(b.slug)
+      if (!entry[v.language]) {
+        entry[v.language] = { name: b.name, versionId: v.id, chapters: b.chapters_count }
       }
     }
-    done++
-    if (done % 50 === 0 || done === allChapters.length) {
-      console.log(`[static-chapters] ${done}/${allChapters.length} chapters (${errors} errors)`)
+  }
+  console.log(`[static-chapters] ${slugLangMap.size} unique slugs across languages`)
+
+  // Pick best version per language per slug
+  const bestPerLangSlug = new Map() // lang → Map(slug → info)
+  for (const [slug, langs] of slugLangMap) {
+    for (const lang of Object.keys(langs)) {
+      if (!bestPerLangSlug.has(lang)) bestPerLangSlug.set(lang, new Map())
+      const langMap = bestPerLangSlug.get(lang)
+
+      // If multiple versions have this slug in this lang, pick preferred
+      if (langMap.has(slug)) continue // already picked (first preferred wins via outer loop order? no, versions are iterated in API order)
+      langMap.set(slug, langs[lang])
     }
   }
 
-  // Process with concurrency
-  for (let i = 0; i < allChapters.length; i += CONCURRENCY) {
-    const batch = allChapters.slice(i, i + CONCURRENCY)
-    await Promise.all(batch.map(processOne))
+  // Resolve: for each lang+slug, find the actual best version via pickBestVersion
+  const outputMap = new Map() // lang → Map(slug → { name, versionId, chapters })
+  for (const [lang, slugMap] of bestPerLangSlug) {
+    const bestVersion = pickBestVersion(versions, lang)
+    if (!bestVersion) continue
+
+    const langOutput = new Map()
+    outputMap.set(lang, langOutput)
+
+    for (const [slug, info] of slugMap) {
+      // Fetch books from the best version for this language to get correct name
+      try {
+        const books = await fetchVersionBooks(bestVersion.id)
+        const book = books.find(b => b.slug === slug)
+        if (book) {
+          langOutput.set(slug, { name: book.name, versionId: bestVersion.id, chapters: book.chapters_count })
+        }
+      } catch (err) {
+        // Fallback: use whatever we have
+        if (!langOutput.has(slug)) {
+          langOutput.set(slug, { name: info.name, versionId: info.versionId, chapters: info.chapters })
+        }
+      }
+    }
+  }
+  console.log(`[static-chapters] ${outputMap.size} languages: ${[...outputMap.keys()].join(', ')}`)
+
+  // Ensure default language (en) is first
+  const defaultLang = 'en'
+  const languages = [defaultLang, ...[...outputMap.keys()].filter(l => l !== defaultLang)]
+  const isDefault = (lang) => lang === defaultLang
+
+  // Generate book index and chapter pages per language
+  if (!existsSync(bibleDir)) mkdirSync(bibleDir, { recursive: true })
+
+  let totalChapters = 0
+  let totalBooks = 0
+
+  for (const lang of languages) {
+    const slugMap = outputMap.get(lang)
+    if (!slugMap) continue
+
+    const langPrefix = isDefault(lang) ? '' : `${lang}/`
+    const langDir = isDefault(lang) ? bibleDir : resolve(bibleDir, lang)
+    if (!existsSync(langDir)) mkdirSync(langDir, { recursive: true })
+
+    // Book index pages
+    for (const [slug, info] of slugMap) {
+      const slugDir = resolve(langDir, slug)
+      if (!existsSync(slugDir)) mkdirSync(slugDir, { recursive: true })
+      const html = generateBookHtml({ slug, name: info.name, chapters_count: info.chapters }, lang)
+      writeFileSync(resolve(langDir, `${slug}.html`), html, 'utf-8')
+      totalBooks++
+    }
+
+    // Chapter pages
+    const chapters = []
+    for (const [slug, info] of slugMap) {
+      for (let c = 1; c <= info.chapters; c++) {
+        chapters.push({ slug, chapter: c, bookName: info.name, versionId: info.versionId, langDir, lang })
+      }
+    }
+    totalChapters += chapters.length
+    console.log(`[static-chapters] ${lang}: ${slugMap.size} books, ${chapters.length} chapters`)
+
+    let done = 0
+    let errors = 0
+    async function processOne({ slug, chapter, bookName, versionId, langDir, lang }) {
+      try {
+        const data = await fetchChapter(slug, chapter, versionId)
+        const html = generateChapterHtml(data, lang)
+        const slugDir = resolve(langDir, slug)
+        if (!existsSync(slugDir)) mkdirSync(slugDir, { recursive: true })
+        writeFileSync(resolve(slugDir, `${chapter}.html`), html, 'utf-8')
+      } catch (err) {
+        errors++
+        if (errors <= 5) console.error(`[static-chapters] Error on ${slug}/${chapter}:`, err.message)
+      }
+      done++
+      if (done % 200 === 0 || done === chapters.length) {
+        console.log(`[static-chapters]   ${done}/${chapters.length} (${errors} errors)`)
+      }
+    }
+    for (let i = 0; i < chapters.length; i += CONCURRENCY) {
+      await Promise.all(chapters.slice(i, i + CONCURRENCY).map(processOne))
+    }
   }
 
-  console.log(`[static-chapters] Done: ${done} chapters, ${errors} errors`)
-  if (errors > 0) {
-    console.error(`[static-chapters] WARNING: ${errors} chapters failed to generate`)
-  }
+  console.log(`[static-chapters] Done: ${totalBooks} book indexes, ${totalChapters} chapters`)
 }
 
 main().catch(err => {

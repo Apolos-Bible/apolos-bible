@@ -4,6 +4,8 @@ node_modules/
 # build outputs
 out/
 dist/
+.next/
+tsconfig.tsbuildinfo
 
 # Tauri
 src-tauri/target/
@@ -27,3 +29,4 @@ skills-lock.json
 # Firebase
 .firebase/
 .DS_Store
+public/sitemap.xml
