@@ -1,5 +1,5 @@
 
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useVerseStore } from '@/lib/store/useVerseStore'
 import type { Book } from '@/lib/store/useVerseStore'
@@ -102,20 +102,22 @@ export function BookSelector() {
   const selectedChapter = useVerseStore((s) => s.selectedChapter)
   const loadChapter = useVerseStore((s) => s.loadChapter)
   const [openBook, setOpenBook] = useState(selectedBook)
+  const scrollRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     if (selectedBook) setOpenBook(selectedBook)
   }, [selectedBook])
 
   useEffect(() => {
-    if (!selectedBook) return
+    if (!selectedBook || !scrollRef.current) return
+    const container = scrollRef.current
     const timer = setTimeout(() => {
       const chapterId = `${selectedBook}-${selectedChapter}`
-      const chapterEl = document.querySelector(`[data-chapter-id="${chapterId}"]`)
+      const chapterEl = container.querySelector<HTMLElement>(`[data-chapter-id="${chapterId}"]`)
       if (chapterEl) {
         chapterEl.scrollIntoView({ block: 'center', behavior: 'smooth' })
       } else {
-        const bookEl = document.querySelector(`[data-book-id="${selectedBook}"]`)
+        const bookEl = container.querySelector<HTMLElement>(`[data-book-id="${selectedBook}"]`)
         if (bookEl) {
           bookEl.scrollIntoView({ block: 'start', behavior: 'smooth' })
         }
@@ -128,7 +130,7 @@ export function BookSelector() {
   const newTestament = books.filter((b) => b.testament === 'new')
 
   return (
-    <div className="flex-1 overflow-y-auto py-1">
+    <div ref={scrollRef} className="flex-1 overflow-y-auto py-1">
       <BookGroup
         label={t('sidebar.oldTestament')}
         books={oldTestament}
