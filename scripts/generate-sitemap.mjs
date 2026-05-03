@@ -24,16 +24,6 @@ const API_BASE = `${process.env.VITE_API_URL}/api`
 const SITE_BASE = process.env.VITE_SITE_URL || process.env.VITE_API_URL
 const OUT_DIR = resolve(ROOT, 'public')
 
-const PREFERRED_VERSIONS = [
-  3,   // en: KJV
-  1,   // en: ASV
-  38,  // es: RVR1960
-  10,  // es: RVR
-  22,  // fr: Crampon 1923
-  25,  // de: Elberfelder 1905
-  30,  // pt: Bíblia Livre
-]
-
 async function fetchAllVersions() {
   const res = await fetch(`${API_BASE}/versions`)
   if (!res.ok) throw new Error(`Versions API returned ${res.status}`)
@@ -46,26 +36,27 @@ async function fetchVersionBooks(versionId) {
   return res.json()
 }
 
-function generateSitemap(books) {
+function generateSitemap(langSlugs) {
   const urls = []
 
   // Homepage
   urls.push({ loc: `${SITE_BASE}/`, priority: '1.0', changefreq: 'daily' })
 
-  // Book pages and chapter pages
-  for (const book of books) {
-    urls.push({
-      loc: `${SITE_BASE}/bible/${book.slug}`,
-      priority: '0.9',
-      changefreq: 'monthly',
-    })
-
-    for (let chapter = 1; chapter <= book.chapters_count; chapter++) {
+  for (const [lang, books] of langSlugs) {
+    const langPrefix = lang === 'en' ? '' : `${lang}/`
+    for (const book of books) {
       urls.push({
-        loc: `${SITE_BASE}/bible/${book.slug}/${chapter}`,
-        priority: '0.8',
+        loc: `${SITE_BASE}/bible/${langPrefix}${book.slug}`,
+        priority: '0.9',
         changefreq: 'monthly',
       })
+      for (let chapter = 1; chapter <= book.chapters_count; chapter++) {
+        urls.push({
+          loc: `${SITE_BASE}/bible/${langPrefix}${book.slug}/${chapter}`,
+          priority: '0.8',
+          changefreq: 'monthly',
+        })
+      }
     }
   }
 
@@ -88,46 +79,55 @@ async function main() {
     const versions = await fetchAllVersions()
     console.log(`${versions.length} versions found`)
 
-    const versionMap = new Map(versions.map(v => [v.id, v]))
-    const ordered = [
-      ...PREFERRED_VERSIONS.filter(id => versionMap.has(id)).map(id => versionMap.get(id)),
-      ...versions.filter(v => !PREFERRED_VERSIONS.includes(v.id)),
-    ]
+    // Collect unique slugs per language
+    const langSlugs = new Map() // lang → Map(slug → chapters_count)
+    for (const v of versions) {
+      let books
+      try { books = await fetchVersionBooks(v.id) }
+      catch (err) { console.error(`Skipping version ${v.id}:`, err.message); continue }
 
-    const slugMap = new Map()
-    console.log('Fetching books from all versions...')
-    for (const v of ordered) {
-      try {
-        const books = await fetchVersionBooks(v.id)
-        for (const b of books) {
-          if (!slugMap.has(b.slug)) {
-            slugMap.set(b.slug, b.chapters_count)
-          }
+      if (!langSlugs.has(v.language)) langSlugs.set(v.language, new Map())
+      const langMap = langSlugs.get(v.language)
+      for (const b of books) {
+        if (!langMap.has(b.slug)) {
+          langMap.set(b.slug, b.chapters_count)
         }
-      } catch (err) {
-        console.error(`Skipping version ${v.id} (${v.abbreviation}):`, err.message)
       }
     }
-    console.log(`${slugMap.size} unique book slugs collected`)
 
-    const books = []
-    for (const [slug, chapters] of slugMap) {
-      books.push({ slug, chapters_count: chapters })
+    // Convert to arrays
+    const allLangSlugs = new Map()
+    for (const [lang, slugs] of langSlugs) {
+      const books = []
+      for (const [slug, chapters] of slugs) {
+        books.push({ slug, chapters_count: chapters })
+      }
+      allLangSlugs.set(lang, books)
     }
 
-    const xml = generateSitemap(books)
+    // Ensure en is first
+    const ordered = new Map()
+    if (allLangSlugs.has('en')) ordered.set('en', allLangSlugs.get('en'))
+    for (const [lang, books] of allLangSlugs) {
+      if (lang !== 'en') ordered.set(lang, books)
+    }
+
+    const xml = generateSitemap(ordered)
 
     const outPath = resolve(OUT_DIR, 'sitemap.xml')
     writeFileSync(outPath, xml, 'utf-8')
-    console.log(`Sitemap written to ${outPath} (${urlsCount(books)} URLs)`)
+
+    let total = 0
+    for (const [lang, books] of ordered) {
+      const n = books.length + books.reduce((s, b) => s + b.chapters_count, 0)
+      console.log(`  ${lang}: ${n} URLs (${books.length} books)`)
+      total += n
+    }
+    console.log(`Sitemap written: ${outPath} (1 homepage + ${total} URLs)`)
   } catch (err) {
     console.error('Failed to generate sitemap:', err.message)
     process.exit(1)
   }
-}
-
-function urlsCount(books) {
-  return 1 + books.length + books.reduce((sum, b) => sum + b.chapters_count, 0)
 }
 
 main()
