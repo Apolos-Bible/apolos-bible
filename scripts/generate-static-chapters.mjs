@@ -215,13 +215,14 @@ async function main() {
   const books = await fetchBooks()
   console.log(`[static-chapters] ${books.length} books loaded`)
 
-  // Generate book index pages
+  // Generate book index pages (out/bible/<slug>.html → served at /bible/<slug>)
   console.log('[static-chapters] Generating book index pages...')
+  if (!existsSync(resolve(OUT_DIR, 'bible'))) mkdirSync(resolve(OUT_DIR, 'bible'), { recursive: true })
   for (const book of books) {
-    const bookDir = resolve(OUT_DIR, 'bible', book.slug)
-    if (!existsSync(bookDir)) mkdirSync(bookDir, { recursive: true })
+    const slugDir = resolve(OUT_DIR, 'bible', book.slug)
+    if (!existsSync(slugDir)) mkdirSync(slugDir, { recursive: true })
     const html = generateBookHtml(book)
-    writeFileSync(resolve(bookDir, 'index.html'), html, 'utf-8')
+    writeFileSync(resolve(OUT_DIR, 'bible', `${book.slug}.html`), html, 'utf-8')
   }
   console.log('[static-chapters] 66 book index pages written')
 
@@ -241,9 +242,9 @@ async function main() {
     try {
       const data = await fetchChapter(slug, chapter)
       const html = generateChapterHtml(data)
-      const dir = resolve(OUT_DIR, 'bible', slug, String(chapter))
-      if (!existsSync(dir)) mkdirSync(dir, { recursive: true })
-      writeFileSync(resolve(dir, 'index.html'), html, 'utf-8')
+      const slugDir = resolve(OUT_DIR, 'bible', slug)
+      if (!existsSync(slugDir)) mkdirSync(slugDir, { recursive: true })
+      writeFileSync(resolve(slugDir, `${chapter}.html`), html, 'utf-8')
     } catch (err) {
       errors++
       if (errors <= 5) {
