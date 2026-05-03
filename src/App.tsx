@@ -6,6 +6,7 @@ import { VerseList } from '@/components/verse/VerseList'
 import { StudyPanel } from '@/components/study/StudyPanel'
 import { FavoritesPanel } from '@/components/sidebar/FavoritesPanel'
 import { MyNotesPanel } from '@/components/sidebar/MyNotesPanel'
+import { MyStudiesPanel } from '@/components/study/MyStudiesPanel'
 import { FriendsPanel } from '@/components/friends/FriendsPanel'
 import { ChatPanel } from '@/components/chat/ChatPanel'
 import { CommandPalette } from '@/components/ui/CommandPalette'
@@ -15,6 +16,8 @@ import { SettingsModal } from '@/components/ui/SettingsModal'
 import { ContextMenu } from '@/components/ui/ContextMenu'
 import { CompareVersionsModal } from '@/components/reading/CompareVersionsModal'
 import { CrossReferencesPanel } from '@/components/reading/CrossReferencesPanel'
+import { StudyMode } from '@/components/study/StudyMode'
+import { useStudyStore } from '@/lib/store/useStudyStore'
 import { CommentaryPanel } from '@/components/reading/CommentaryPanel'
 import { AuthModal } from '@/components/auth/AuthModal'
 import { useUIStore } from '@/lib/store/useUIStore'
@@ -54,6 +57,9 @@ export default function App() {
   const listenForChatUpdates = useChatStore(s => s.listenForUpdates)
   const stopChatUpdates = useChatStore(s => s.stopListeningForUpdates)
   const addToast = useUIStore(s => s.addToast)
+  const studyMode = useUIStore(s => s.studyMode)
+  const studyActiveSession = useStudyStore(s => s.activeSession)
+  const studyWsToken = useStudyStore(s => s.wsToken)
 
   useEffect(() => {
     void (async () => {
@@ -146,8 +152,13 @@ export default function App() {
     return () => window.removeEventListener('keydown', handleKey)
   }, [openCommandPalette, navigateVerse])
 
+  if (studyMode && studyActiveSession && studyWsToken) {
+    return <StudyMode />
+  }
+
   const leftPanelContent = activePanel === 'favorites' ? <FavoritesPanel />
     : activePanel === 'my-notes' ? <MyNotesPanel />
+    : activePanel === 'my-studies' ? <MyStudiesPanel />
     : activePanel === 'friends' ? <FriendsPanel />
     : activePanel === 'chat' ? <ChatPanel />
     : null

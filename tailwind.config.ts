@@ -10,6 +10,7 @@ const config: Config = {
           secondary: 'var(--bg-secondary)',
           tertiary:  'var(--bg-tertiary)',
         },
+        surface: 'var(--surface)',
         text: {
           primary:   'var(--text-primary)',
           secondary: 'var(--text-secondary)',

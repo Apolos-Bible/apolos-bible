@@ -15,12 +15,18 @@
     "test:watch": "vitest"
   },
   "dependencies": {
+    "@hocuspocus/provider": "^2.15.3",
     "@supabase/ssr": "^0.5.0",
     "@supabase/supabase-js": "^2.45.0",
     "@tauri-apps/api": "^2.10.1",
     "@tauri-apps/plugin-opener": "^2.5.3",
     "@tauri-apps/plugin-process": "^2.3.1",
     "@tauri-apps/plugin-updater": "^2.10.1",
+    "@tiptap/extension-collaboration": "^3.22.5",
+    "@tiptap/extension-collaboration-cursor": "^2.26.2",
+    "@tiptap/react": "^3.22.5",
+    "@tiptap/starter-kit": "^3.22.5",
+    "@xyflow/react": "^12.10.2",
     "clsx": "^2.1.1",
     "cmdk": "^1.0.0",
     "i18next": "^26.0.8",
@@ -31,6 +37,8 @@
     "react-dom": "^18.3.0",
     "react-i18next": "^17.0.6",
     "tailwind-merge": "^2.5.0",
+    "y-websocket": "^3.0.0",
+    "yjs": "^13.6.30",
     "zustand": "^5.0.0"
   },
   "devDependencies": {

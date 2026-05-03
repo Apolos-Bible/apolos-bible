@@ -4,11 +4,14 @@ import { useUIStore } from '@/lib/store/useUIStore'
 import { useAuthStore } from '@/lib/store/useAuthStore'
 import { useNotificationStore } from '@/lib/store/useNotificationStore'
 import { useChatStore } from '@/lib/store/useChatStore'
+import { useStudyStore } from '@/lib/store/useStudyStore'
 import { destroyEcho } from '@/lib/echo'
 import { BookSelector } from './BookSelector'
 import { UserAvatar } from '@/components/auth/UserAvatar'
+import { StartStudyModal } from '@/components/study/StartStudyModal'
 import { cn } from '@/lib/cn'
 import { modKey } from '@/lib/platform'
+import { BookOpen } from 'lucide-react'
 
 interface NavItemProps {
   icon: ReactNode
@@ -111,6 +114,9 @@ export function Sidebar() {
   const listenForPush = useNotificationStore(s => s.listenForPush)
   const stopPush      = useNotificationStore(s => s.stopPush)
   const chatUnread    = useChatStore(s => s.conversations.reduce((acc, c) => acc + (c.unread_count || 0), 0))
+  const pendingInvitations = useStudyStore(s => s.pendingInvitations.length)
+  const loadInvitations = useStudyStore(s => s.loadInvitations)
+  const [showStartStudy, setShowStartStudy] = useState(false)
 
   const toggleSidebarPanel = (panel: Parameters<typeof togglePanel>[0]) => {
     togglePanel(panel)
@@ -126,6 +132,7 @@ export function Sidebar() {
     }
     startPolling()
     listenForPush(String(user.id))
+    loadInvitations()
     return () => {
       stopPolling()
       stopPush()
@@ -166,6 +173,8 @@ export function Sidebar() {
         <SectionLabel>{t('nav.personal')}</SectionLabel>
         <NavItem icon={<StarIcon />}    label={t('nav.favorites')} active={activePanel === 'favorites'} onClick={() => user ? toggleSidebarPanel('favorites') : openAuthModal()} />
         <NavItem icon={<NoteIcon />}    label={t('nav.myNotes')}  active={activePanel === 'my-notes'} onClick={() => user ? toggleSidebarPanel('my-notes')  : openAuthModal()} />
+        <NavItem icon={<BookOpen className="w-3.5 h-3.5" />} label={t('nav.myStudies')} active={activePanel === 'my-studies'} badge={pendingInvitations} onClick={() => user ? toggleSidebarPanel('my-studies') : openAuthModal()} />
+        <NavItem icon={<BookOpen className="w-3.5 h-3.5" />} label="New Study" active={false} onClick={() => user ? setShowStartStudy(true) : openAuthModal()} />
         <SectionLabel>{t('nav.social')}</SectionLabel>
         <NavItem icon={<PeopleIcon />} label={t('nav.friends')} active={activePanel === 'friends'} badge={unreadCount} onClick={() => user ? toggleSidebarPanel('friends') : openAuthModal()} />
         <NavItem icon={<ChatIcon />} label={t('nav.chat')} active={activePanel === 'chat'} badge={chatUnread} onClick={() => user ? toggleSidebarPanel('chat') : openAuthModal()} />
@@ -209,6 +218,7 @@ export function Sidebar() {
           </button>
         )}
       </div>
+      <StartStudyModal open={showStartStudy} onClose={() => setShowStartStudy(false)} />
     </div>
   )
 }
