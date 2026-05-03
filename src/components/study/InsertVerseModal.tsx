@@ -1,9 +1,13 @@
-import { useState, useCallback, useEffect, useRef } from 'react';
+import { useState, useCallback, useEffect, useRef, useMemo } from 'react';
 import { X, Search, BookOpen } from 'lucide-react';
 import { type ApiSearchResult } from '@/lib/bibleApi';
 import { searchVerses } from '@/lib/verseSearch';
 import { useVerseStore } from '@/lib/store/useVerseStore';
 import { cn } from '@/lib/cn';
+
+type FlatItem =
+  | { kind: 'chapter'; groupKey: string; results: ApiSearchResult[] }
+  | { kind: 'verse'; result: ApiSearchResult };
 
 interface InsertVerseModalProps {
   open: boolean;
@@ -57,6 +61,23 @@ export function InsertVerseModal({ open, onClose }: InsertVerseModalProps) {
     [doSearch],
   );
 
+  const flatItems = useMemo<FlatItem[]>(() => {
+    const groups = new Map<string, ApiSearchResult[]>();
+    results.forEach((r) => {
+      const key = `${r.book} ${r.chapter}`;
+      if (!groups.has(key)) groups.set(key, []);
+      groups.get(key)!.push(r);
+    });
+    const items: FlatItem[] = [];
+    for (const [key, groupResults] of groups) {
+      items.push({ kind: 'chapter', groupKey: key, results: groupResults });
+      for (const r of groupResults) {
+        items.push({ kind: 'verse', result: r });
+      }
+    }
+    return items;
+  }, [results]);
+
   const handleSelect = useCallback(
     (r: ApiSearchResult) => {
       (window as any).__studyCanvasActions?.addVerseNode?.({
@@ -70,22 +91,42 @@ export function InsertVerseModal({ open, onClose }: InsertVerseModalProps) {
     [versionId, onClose],
   );
 
+  const handleChapterInsert = useCallback(
+    (groupResults: ApiSearchResult[]) => {
+      groupResults.forEach((r) => {
+        (window as any).__studyCanvasActions?.addVerseNode?.({
+          verseId: r.id,
+          reference: `${r.book} ${r.chapter}:${r.verse}`,
+          version_id: versionId,
+          text: r.text,
+        });
+      });
+      onClose();
+    },
+    [versionId, onClose],
+  );
+
   const handleKey = useCallback(
     (e: React.KeyboardEvent) => {
       if (e.key === 'ArrowDown') {
         e.preventDefault();
-        setActiveIdx((i) => Math.min(i + 1, results.length - 1));
+        setActiveIdx((i) => Math.min(i + 1, flatItems.length - 1));
       } else if (e.key === 'ArrowUp') {
         e.preventDefault();
         setActiveIdx((i) => Math.max(i - 1, 0));
-      } else if (e.key === 'Enter' && results[activeIdx]) {
+      } else if (e.key === 'Enter' && flatItems[activeIdx]) {
         e.preventDefault();
-        handleSelect(results[activeIdx]);
+        const item = flatItems[activeIdx];
+        if (item.kind === 'chapter') {
+          handleChapterInsert(item.results);
+        } else {
+          handleSelect(item.result);
+        }
       } else if (e.key === 'Escape') {
         onClose();
       }
     },
-    [results, activeIdx, handleSelect, onClose],
+    [flatItems, activeIdx, handleSelect, handleChapterInsert, onClose],
   );
 
   if (!open) return null;
@@ -132,23 +173,42 @@ export function InsertVerseModal({ open, onClose }: InsertVerseModalProps) {
               Type at least 2 characters to search
             </p>
           )}
-          {results.map((r, i) => (
-            <button
-              key={r.id}
-              onClick={() => handleSelect(r)}
-              className={cn(
-                'w-full text-left px-3 py-2 flex flex-col gap-0.5 rounded-lg transition-colors',
-                i === activeIdx ? 'bg-accent/10' : 'hover:bg-bg-tertiary',
-              )}
-            >
-              <span className="text-xs font-medium text-accent">
-                {r.book} {r.chapter}:{r.verse}
-              </span>
-              <span className="text-xs text-text-muted line-clamp-2 leading-snug">
-                {r.text}
-              </span>
-            </button>
-          ))}
+          {flatItems.map((item, i) =>
+            item.kind === 'chapter' ? (
+              <button
+                key={`ch-${item.groupKey}`}
+                onClick={() => handleChapterInsert(item.results)}
+                className={cn(
+                  'w-full text-left px-3 py-1.5 flex items-center gap-2 rounded-lg transition-colors',
+                  i === activeIdx ? 'bg-accent/10' : 'hover:bg-bg-tertiary',
+                )}
+              >
+                <BookOpen className="w-3.5 h-3.5 text-accent shrink-0" />
+                <span className="text-xs font-medium text-accent">
+                  {item.groupKey}
+                </span>
+                <span className="text-2xs text-text-muted ml-auto">
+                  {item.results.length} verse{item.results.length !== 1 ? 's' : ''}
+                </span>
+              </button>
+            ) : (
+              <button
+                key={item.result.id}
+                onClick={() => handleSelect(item.result)}
+                className={cn(
+                  'w-full text-left px-3 py-2 flex flex-col gap-0.5 rounded-lg transition-colors',
+                  i === activeIdx ? 'bg-accent/10' : 'hover:bg-bg-tertiary',
+                )}
+              >
+                <span className="text-xs font-medium text-accent">
+                  {item.result.book} {item.result.chapter}:{item.result.verse}
+                </span>
+                <span className="text-xs text-text-muted line-clamp-2 leading-snug">
+                  {item.result.text}
+                </span>
+              </button>
+            ),
+          )}
         </div>
       </div>
     </div>

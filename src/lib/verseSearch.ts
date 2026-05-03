@@ -64,6 +64,11 @@ export async function searchVerses(
         verses = verses.filter((v) => v.number === ref.verse);
       }
 
+      const isChapterQuery = ref.verse === null;
+      const groupLabel = isChapterQuery
+        ? `${chapter.book.name} ${chapter.chapter}`
+        : undefined;
+
       return verses.map((v) => ({
         id: v.id,
         book: chapter.book.name,
@@ -71,6 +76,7 @@ export async function searchVerses(
         chapter: chapter.chapter,
         verse: v.number,
         text: v.text,
+        chapterGroup: groupLabel,
       }));
     } catch {
       // Chapter fetch failed — fall through to text search

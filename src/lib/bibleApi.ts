@@ -35,6 +35,7 @@ export interface ApiSearchResult {
   chapter: number
   verse: number
   text: string
+  chapterGroup?: string
 }
 
 export interface ApiCrossRef {
