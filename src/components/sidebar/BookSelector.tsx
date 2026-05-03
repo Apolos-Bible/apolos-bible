@@ -29,6 +29,7 @@ function BookGroup({ label, books, selectedBook, openBook, selectedChapter, onOp
         return (
           <div key={book.id}>
             <button
+              data-book-id={book.id}
               onClick={() => onOpenBook(book.id)}
               aria-expanded={isOpen}
               className={cn(
@@ -70,6 +71,7 @@ function BookGroup({ label, books, selectedBook, openBook, selectedChapter, onOp
                     return (
                       <button
                         key={chapter}
+                        data-chapter-id={`${book.id}-${chapter}`}
                         onClick={() => onSelectChapter(book.id, chapter)}
                         tabIndex={isOpen ? 0 : -1}
                         className={cn(
@@ -104,6 +106,23 @@ export function BookSelector() {
   useEffect(() => {
     if (selectedBook) setOpenBook(selectedBook)
   }, [selectedBook])
+
+  useEffect(() => {
+    if (!selectedBook) return
+    const timer = setTimeout(() => {
+      const chapterId = `${selectedBook}-${selectedChapter}`
+      const chapterEl = document.querySelector(`[data-chapter-id="${chapterId}"]`)
+      if (chapterEl) {
+        chapterEl.scrollIntoView({ block: 'center', behavior: 'smooth' })
+      } else {
+        const bookEl = document.querySelector(`[data-book-id="${selectedBook}"]`)
+        if (bookEl) {
+          bookEl.scrollIntoView({ block: 'start', behavior: 'smooth' })
+        }
+      }
+    }, 300)
+    return () => clearTimeout(timer)
+  }, [selectedBook, selectedChapter])
 
   const oldTestament = books.filter((b) => b.testament === 'old')
   const newTestament = books.filter((b) => b.testament === 'new')
