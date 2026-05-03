@@ -8,6 +8,8 @@ import {
 } from '@/lib/defaultBibleVersion'
 import { saveUserSettingsSilently } from '@/lib/userSettingsApi'
 
+const LAST_READING_KEY = 'verbum_last_reading'
+
 export interface Book {
   id: string  // slug used as id for compatibility
   number: number
@@ -51,6 +53,7 @@ interface VerseState {
   navigateVerse: (dir: 'next' | 'prev') => void
   navigateChapter: (dir: 'next' | 'prev') => void
   loadChapter: (slug: string, chapter: number) => Promise<void>
+  clearLastReading: () => void
 }
 
 // Books 1-39 are OT, 40+ are NT
@@ -114,6 +117,22 @@ export const useVerseStore = create<VerseState>((set, get) => ({
       const defaultBook = books[0]
       set({ books })
       if (defaultBook) {
+        try {
+          const raw = localStorage.getItem(LAST_READING_KEY)
+          if (raw) {
+            const parsed = JSON.parse(raw)
+            if (parsed && typeof parsed.book === 'string' && typeof parsed.chapter === 'number') {
+              const matchedBook = books.find(b => b.slug === parsed.book)
+              if (matchedBook && parsed.chapter >= 1 && parsed.chapter <= matchedBook.chapters) {
+                set({ selectedBook: matchedBook.slug, selectedChapter: parsed.chapter })
+                get().loadChapter(matchedBook.slug, parsed.chapter)
+                return
+              }
+            }
+          }
+        } catch {
+          // ignore parse errors, fall through to default
+        }
         set({ selectedBook: defaultBook.slug })
         get().loadChapter(defaultBook.slug, 1)
       }
@@ -125,6 +144,7 @@ export const useVerseStore = create<VerseState>((set, get) => ({
   loadChapter: async (slug, chapter) => {
     const { versionId } = get()
     set({ selectedBook: slug, selectedChapter: chapter, loadingVerses: true, selectedVerseId: null, selectedVerseIds: [], studyVerseId: null })
+    localStorage.setItem(LAST_READING_KEY, JSON.stringify({ book: slug, chapter }))
     try {
       const data = await bibleApi.chapter(versionId, slug, chapter)
       const verses: Verse[] = data.verses.map(v => ({
@@ -144,12 +164,14 @@ export const useVerseStore = create<VerseState>((set, get) => ({
 
   selectBook: (slug) => {
     set({ selectedBook: slug, selectedChapter: 1, selectedVerseId: null, selectedVerseIds: [], studyVerseId: null })
+    localStorage.setItem(LAST_READING_KEY, JSON.stringify({ book: slug, chapter: 1 }))
     get().loadChapter(slug, 1)
   },
 
   selectChapter: (chapter) => {
     const { selectedBook } = get()
     set({ selectedChapter: chapter, selectedVerseId: null, selectedVerseIds: [], studyVerseId: null })
+    localStorage.setItem(LAST_READING_KEY, JSON.stringify({ book: selectedBook, chapter }))
     get().loadChapter(selectedBook, chapter)
   },
 
@@ -182,6 +204,10 @@ export const useVerseStore = create<VerseState>((set, get) => ({
   },
 
   closeStudyPanel: () => set({ studyVerseId: null }),
+
+  clearLastReading: () => {
+    localStorage.removeItem(LAST_READING_KEY)
+  },
 
   openVerse: async (slug, chapter, verse) => {
     set({ selectedBook: slug, selectedChapter: chapter, selectedVerseId: null, selectedVerseIds: [], studyVerseId: null })
