@@ -12,6 +12,7 @@ import { StartStudyModal } from '@/components/study/StartStudyModal'
 import { cn } from '@/lib/cn'
 import { modKey } from '@/lib/platform'
 import { BookOpen } from 'lucide-react'
+import { Logo } from '@/components/brand/Logo'
 
 interface NavItemProps {
   icon: ReactNode
@@ -144,10 +145,7 @@ export function Sidebar() {
     <div className="w-full h-full bg-bg-secondary border-r border-border-subtle flex flex-col overflow-hidden">
       {/* App name */}
       <div className="px-4 pt-3 pb-2 shrink-0">
-        <span className="font-medium text-md">
-          <span className="text-accent">tulia</span>
-          <span className="text-text-muted">.study</span>
-        </span>
+        <Logo symbolSize={20} textSize={14} />
       </div>
 
       <div className="px-2 pb-2">

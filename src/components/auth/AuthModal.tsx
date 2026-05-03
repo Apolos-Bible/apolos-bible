@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useAuthStore } from '@/lib/store/useAuthStore'
 import { cn } from '@/lib/cn'
+import { LogoStacked } from '@/components/brand/Logo'
 
 interface AuthModalProps {
   open: boolean
@@ -151,7 +152,11 @@ export function AuthModal({ open, onClose, initialMode = 'login' }: AuthModalPro
 
         {/* Mode tabs — only for login/register */}
         {isAuth && (
-          <div className="flex gap-1 mb-4 bg-bg-tertiary rounded-lg p-1">
+          <>
+            <div className="flex justify-center mb-5">
+              <LogoStacked symbolSize={40} textSize={18} />
+            </div>
+            <div className="flex gap-1 mb-4 bg-bg-tertiary rounded-lg p-1">
             {(['login', 'register'] as Mode[]).map(m => (
               <button
                 key={m}
@@ -167,6 +172,7 @@ export function AuthModal({ open, onClose, initialMode = 'login' }: AuthModalPro
               </button>
             ))}
           </div>
+          </>
         )}
 
         <form onSubmit={handleSubmit} className="flex flex-col gap-3" noValidate>

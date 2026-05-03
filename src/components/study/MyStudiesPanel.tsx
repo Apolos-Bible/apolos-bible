@@ -15,6 +15,7 @@ export function MyStudiesPanel() {
   const acceptInvitation = useStudyStore((s) => s.acceptInvitation);
   const declineInvitation = useStudyStore((s) => s.declineInvitation);
   const enterStudyMode = useUIStore((s) => s.enterStudyMode);
+  const closePanel     = useUIStore((s) => s.closePanel);
   const [filter, setFilter] = useState<'all' | 'active' | 'ended'>('all');
 
   useEffect(() => {
@@ -47,13 +48,24 @@ export function MyStudiesPanel() {
     <div className="h-full flex flex-col bg-bg-secondary border-r border-border-subtle">
       <div className="px-4 pt-3 pb-2 shrink-0 flex items-center justify-between">
         <span className="font-medium text-md text-text-primary">My Studies</span>
-        <button
-          onClick={() => { loadMyStudies(); loadInvitations(); }}
-          className="w-6 h-6 flex items-center justify-center rounded text-text-muted hover:text-text-primary hover:bg-bg-tertiary transition-colors"
-          title="Refresh"
-        >
-          <RefreshCw className="w-3.5 h-3.5" />
-        </button>
+        <div className="flex items-center gap-1">
+          <button
+            onClick={() => { loadMyStudies(); loadInvitations(); }}
+            className="w-6 h-6 flex items-center justify-center rounded text-text-muted hover:text-text-primary hover:bg-bg-tertiary transition-colors"
+            title="Refresh"
+          >
+            <RefreshCw className="w-3.5 h-3.5" />
+          </button>
+          <button
+            onClick={closePanel}
+            className="w-6 h-6 flex items-center justify-center rounded text-text-muted hover:text-text-primary hover:bg-bg-tertiary transition-colors"
+            title="Close"
+          >
+            <svg width="12" height="12" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round">
+              <path d="M2 2l10 10M12 2L2 12" />
+            </svg>
+          </button>
+        </div>
       </div>
 
       {/* Pending invitations */}

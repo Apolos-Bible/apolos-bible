@@ -6,6 +6,8 @@ import { useNoteStore } from '@/lib/store/useNoteStore'
 import { useUIStore } from '@/lib/store/useUIStore'
 import { useAuthStore } from '@/lib/store/useAuthStore'
 import { cn } from '@/lib/cn'
+import { NOTE_TYPE_LIST, getNoteTypeDef } from '@/lib/noteTypes'
+import type { NoteType } from '@/lib/noteTypes'
 import NoteEditor from '@/components/notes/NoteEditor'
 
 interface NoteItemProps {
@@ -102,6 +104,15 @@ function ReplyInput({ onSubmit, onCancel }: { onSubmit: (body: string) => void; 
   )
 }
 
+function SettingsIcon({ className }: { className?: string }) {
+  return (
+    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" className={className}>
+      <circle cx="12" cy="12" r="3" />
+      <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z" />
+    </svg>
+  )
+}
+
 export default function NoteItem({ note, verseApiId, depth = 0, replyParentId, showReplyToggle = true, hiddenParentIds }: NoteItemProps) {
   const { t } = useTranslation()
   const [isEditing, setIsEditing] = useState(false)
@@ -109,6 +120,7 @@ export default function NoteItem({ note, verseApiId, depth = 0, replyParentId, s
   const [confirmingPublish, setConfirmingPublish] = useState(false)
   const [showReply, setShowReply] = useState(false)
   const [repliesOpen, setRepliesOpen] = useState(false)
+  const [settingsOpen, setSettingsOpen] = useState(false)
 
   useEffect(() => {
     if (!confirmingPublish) return
@@ -116,10 +128,17 @@ export default function NoteItem({ note, verseApiId, depth = 0, replyParentId, s
     return () => clearTimeout(id)
   }, [confirmingPublish])
 
+  useEffect(() => {
+    if (!settingsOpen) return
+    if (confirmingDelete) setConfirmingDelete(false)
+    if (confirmingPublish) setConfirmingPublish(false)
+  }, [settingsOpen])
+
   const updateNote = useNoteStore((s) => s.updateNote)
   const deleteNote = useNoteStore((s) => s.deleteNote)
   const addNote = useNoteStore((s) => s.addNote)
   const toggleNoteVisibility = useNoteStore((s) => s.toggleNoteVisibility)
+  const updateNoteType = useNoteStore((s) => s.updateNoteType)
   const likeNote = useNoteStore((s) => s.likeNote)
   const unlikeNote = useNoteStore((s) => s.unlikeNote)
   const addToast = useUIStore((s) => s.addToast)
@@ -129,6 +148,7 @@ export default function NoteItem({ note, verseApiId, depth = 0, replyParentId, s
   const relativeTime = formatRelativeTime(note.created_at)
   const canManage = user?.id === note.user?.id
   const isOrphan = depth === 0 && note.parent_id != null && hiddenParentIds?.has(note.parent_id)
+  const typeDef = getNoteTypeDef(note.note_type)
 
   async function handleSave(body: string) {
     if (!canManage) return
@@ -161,9 +181,18 @@ export default function NoteItem({ note, verseApiId, depth = 0, replyParentId, s
     }
   }
 
+  function handleTypeChange(newType: NoteType) {
+    updateNoteType(verseApiId, note.id, newType)
+  }
+
   return (
     <div className={cn('note-enter', depth > 0 && 'pl-4 border-l border-border-subtle')}>
-      <div className="group flex gap-2.5 py-1.5">
+      <div className={cn(
+        'group relative flex gap-2.5 py-1.5 px-2 -mx-2 rounded-md border-l-2 transition-colors duration-150',
+        typeDef.bgClass,
+        typeDef.borderClass,
+        settingsOpen && 'bg-bg-tertiary/50',
+      )}>
         <Avatar name={authorName} email={note.user?.email} />
 
         <div className="flex-1 min-w-0">
@@ -176,7 +205,12 @@ export default function NoteItem({ note, verseApiId, depth = 0, replyParentId, s
           ) : (
             <>
               <div className="flex items-center gap-1.5">
-                <span className="text-xs font-medium text-text-primary">{authorName}</span>
+                <span className="flex items-center gap-1">
+                  <span className={cn('shrink-0', typeDef.indicatorClass)}>
+                    <typeDef.icon />
+                  </span>
+                  <span className="text-xs font-medium text-text-primary">{authorName}</span>
+                </span>
                 <span className="text-[10px] text-text-muted">{relativeTime}</span>
                 {canManage ? (
                   <button
@@ -204,9 +238,11 @@ export default function NoteItem({ note, verseApiId, depth = 0, replyParentId, s
                       : (note.is_public ? t('notes.public') : t('notes.private'))}
                   </button>
                 ) : (
-                  <span className="text-[9px] px-1.5 py-px rounded-full font-medium bg-accent/15 text-accent border border-accent/30">
-                    {t('notes.public')}
-                  </span>
+                  note.is_public && (
+                    <span className="text-[9px] px-1.5 py-px rounded-full font-medium bg-accent/15 text-accent border border-accent/30">
+                      {t('notes.public')}
+                    </span>
+                  )
                 )}
               </div>
 
@@ -216,7 +252,10 @@ export default function NoteItem({ note, verseApiId, depth = 0, replyParentId, s
                 </p>
               )}
 
-              <p className="text-sm text-text-secondary leading-relaxed whitespace-pre-wrap break-words mt-0.5">
+              <p className={cn(
+                'text-sm text-text-secondary leading-relaxed whitespace-pre-wrap break-words mt-0.5',
+                typeDef.italic && 'italic',
+              )}>
                 {note.body}
               </p>
 
@@ -248,47 +287,85 @@ export default function NoteItem({ note, verseApiId, depth = 0, replyParentId, s
                 <div className="flex-1" />
 
                 {canManage && (
-                  <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                    {confirmingDelete ? (
-                      <>
-                        <span className="text-[10px] text-text-muted mr-1">{t('notes.confirmDelete')}</span>
-                        <button
-                          type="button"
-                          onClick={handleDelete}
-                          className="text-[10px] px-1.5 py-0.5 rounded text-red-400 hover:bg-red-400/10 transition-colors font-medium"
-                        >
-                          {t('notes.deleteYes')}
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => setConfirmingDelete(false)}
-                          className="text-[10px] px-1.5 py-0.5 rounded text-text-secondary hover:bg-bg-primary transition-colors"
-                        >
-                          {t('notes.deleteNo')}
-                        </button>
-                      </>
-                    ) : (
-                      <>
-                        <button
-                          type="button"
-                          onClick={() => setIsEditing(true)}
-                          className="text-[10px] px-1.5 py-0.5 rounded text-text-muted hover:text-text-secondary hover:bg-bg-primary transition-colors"
-                        >
-                          {t('notes.edit')}
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => setConfirmingDelete(true)}
-                          className="text-[10px] px-1.5 py-0.5 rounded text-text-muted hover:text-red-400 hover:bg-red-400/10 transition-colors"
-                        >
-                          {t('notes.delete')}
-                        </button>
-                      </>
+                  <button
+                    type="button"
+                    onClick={() => setSettingsOpen(!settingsOpen)}
+                    className={cn(
+                      'text-text-muted hover:text-text-secondary transition-colors rounded p-0.5',
+                      settingsOpen && 'text-accent bg-accent/10',
                     )}
-                  </div>
+                    title={t('notes.settings')}
+                  >
+                    <SettingsIcon />
+                  </button>
                 )}
               </div>
             </>
+          )}
+
+          {settingsOpen && canManage && (
+            <div className="mt-2 bg-bg-tertiary rounded-lg border border-border-subtle p-3 animate-in fade-in slide-in-from-top-1 duration-150">
+              <div className="flex items-center gap-2 mb-2.5">
+                {NOTE_TYPE_LIST.map((nt) => (
+                  <button
+                    key={nt.type}
+                    type="button"
+                    onClick={() => handleTypeChange(nt.type)}
+                    className={cn(
+                      'flex items-center gap-1.5 px-2 py-1 rounded-md text-[11px] font-medium transition-all duration-150 border',
+                      note.note_type === nt.type || (!note.note_type && nt.type === 'note')
+                        ? `${nt.borderClass.replace('border-l-', 'border-')} ${nt.bgClass} ${nt.indicatorClass}`
+                        : 'border-transparent text-text-muted hover:text-text-secondary hover:bg-bg-primary',
+                    )}
+                    title={t(nt.labelKey as any)}
+                  >
+                    <nt.icon />
+                    <span className="hidden sm:inline">{t(nt.labelKey as any)}</span>
+                  </button>
+                ))}
+              </div>
+
+              <div className="flex items-center gap-1 pt-2 border-t border-border-subtle">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setSettingsOpen(false)
+                    setIsEditing(true)
+                  }}
+                  className="text-[11px] px-2 py-1 rounded text-text-secondary hover:text-text-primary hover:bg-bg-primary transition-colors"
+                >
+                  {t('notes.edit')}
+                </button>
+
+                {confirmingDelete ? (
+                  <>
+                    <span className="text-[10px] text-text-muted ml-1">{t('notes.confirmDelete')}</span>
+                    <button
+                      type="button"
+                      onClick={handleDelete}
+                      className="text-[10px] px-1.5 py-0.5 rounded text-red-400 hover:bg-red-400/10 transition-colors font-medium"
+                    >
+                      {t('notes.deleteYes')}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setConfirmingDelete(false)}
+                      className="text-[10px] px-1.5 py-0.5 rounded text-text-secondary hover:bg-bg-primary transition-colors"
+                    >
+                      {t('notes.deleteNo')}
+                    </button>
+                  </>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => setConfirmingDelete(true)}
+                    className="text-[11px] px-2 py-1 rounded text-text-muted hover:text-red-400 hover:bg-red-400/10 transition-colors"
+                  >
+                    {t('notes.delete')}
+                  </button>
+                )}
+              </div>
+            </div>
           )}
 
           {showReply && (

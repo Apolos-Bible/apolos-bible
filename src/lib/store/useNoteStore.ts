@@ -1,5 +1,6 @@
 import { create } from 'zustand'
 import { api } from '@/lib/api'
+import type { NoteType } from '@/lib/noteTypes'
 
 export interface Note {
   id: number
@@ -8,6 +9,7 @@ export interface Note {
   body: string
   created_at: string
   is_public: boolean
+  note_type?: NoteType
   user?: { id: number; name: string; email: string }
   likes_count?: number
   is_liked?: boolean
@@ -18,8 +20,9 @@ interface NoteState {
   notes: Record<number, Note[]>   // keyed by numeric verse id
   loading: Record<number, boolean>
   loadNotes: (verseApiId: number) => Promise<void>
-  addNote: (verseApiId: number, body: string, parentId?: number, isPublic?: boolean) => Promise<void>
+  addNote: (verseApiId: number, body: string, parentId?: number, isPublic?: boolean, noteType?: NoteType) => Promise<void>
   updateNote: (verseApiId: number, noteId: number, body: string) => Promise<void>
+  updateNoteType: (verseApiId: number, noteId: number, noteType: NoteType) => Promise<void>
   toggleNoteVisibility: (verseApiId: number, noteId: number) => Promise<void>
   deleteNote: (verseApiId: number, noteId: number) => Promise<void>
   likeNote: (verseApiId: number, noteId: number) => Promise<void>
@@ -43,15 +46,16 @@ export const useNoteStore = create<NoteState>((set, get) => ({
     }
   },
 
-  addNote: async (verseApiId, body, parentId, isPublic = false) => {
-    const note = await api.post<Note>(`/api/verses/${verseApiId}/notes`, { body, is_public: isPublic, parent_id: parentId ?? null })
+  addNote: async (verseApiId, body, parentId, isPublic = false, noteType = 'note') => {
+    const note = await api.post<Note>(`/api/verses/${verseApiId}/notes`, { body, is_public: isPublic, parent_id: parentId ?? null, note_type: noteType })
     set(s => ({
-      notes: { ...s.notes, [verseApiId]: [...(s.notes[verseApiId] ?? []), note] },
+      notes: { ...s.notes, [verseApiId]: [...(s.notes[verseApiId] ?? []), { ...note, note_type: note.note_type ?? noteType }] },
     }))
   },
 
   updateNote: async (verseApiId, noteId, body) => {
-    const updated = await api.patch<Note>(`/api/notes/${noteId}`, { body })
+    const current = get().notes[verseApiId]?.find(n => n.id === noteId)
+    const updated = await api.patch<Note>(`/api/notes/${noteId}`, { body, note_type: current?.note_type ?? 'note' })
     set(s => ({
       notes: {
         ...s.notes,
@@ -64,11 +68,21 @@ export const useNoteStore = create<NoteState>((set, get) => ({
     const current = get().notes[verseApiId]?.find(n => n.id === noteId)
     if (!current) return
     const next = !current.is_public
-    await api.patch(`/api/notes/${noteId}`, { is_public: next, body: current.body })
+    await api.patch(`/api/notes/${noteId}`, { is_public: next, body: current.body, note_type: current.note_type ?? 'note' })
     set(s => ({
       notes: {
         ...s.notes,
         [verseApiId]: s.notes[verseApiId]?.map(n => n.id === noteId ? { ...n, is_public: next } : n) ?? [],
+      },
+    }))
+  },
+
+  updateNoteType: async (verseApiId, noteId, noteType) => {
+    await api.patch(`/api/notes/${noteId}`, { note_type: noteType })
+    set(s => ({
+      notes: {
+        ...s.notes,
+        [verseApiId]: s.notes[verseApiId]?.map(n => n.id === noteId ? { ...n, note_type: noteType } : n) ?? [],
       },
     }))
   },

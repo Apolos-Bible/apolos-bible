@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 16 16" fill="none" shapeRendering="crispEdges">
+  <style>
+    @media (prefers-color-scheme: dark) {
+      .ink { stroke: #eaeaea; fill: #eaeaea; }
+      .base { fill: #c8a96a; }
+    }
+    @media (prefers-color-scheme: light) {
+      .ink { stroke: #111; fill: #111; }
+      .base { fill: #b8943a; }
+    }
+  </style>
+  <line class="ink" x1="8" y1="3" x2="3" y2="12" stroke="#eaeaea" stroke-width="1.2"/>
+  <line class="ink" x1="8" y1="3" x2="13" y2="12" stroke="#eaeaea" stroke-width="1.2"/>
+  <rect class="base" x="3" y="11" width="10" height="2" fill="#c8a96a"/>
+  <rect class="ink" x="7" y="2" width="2" height="2" fill="#eaeaea"/>
+  <rect class="ink" x="2" y="11" width="2" height="2" fill="#eaeaea"/>
+  <rect class="ink" x="12" y="11" width="2" height="2" fill="#eaeaea"/>
+</svg>

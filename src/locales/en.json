@@ -100,6 +100,12 @@
   "notes.publishConfirm": "Click to publish",
   "notes.unpublishConfirm": "Click to unpublish",
   "notes.replyToHidden": "In reply to a hidden note",
+  "notes.typeNote": "Note",
+  "notes.typePrayer": "Prayer",
+  "notes.typeInsight": "Insight",
+  "notes.typeQuestion": "Question",
+  "notes.typeApplication": "Application",
+  "notes.settings": "Note settings",
 
   "study.title": "Study",
   "study.empty": "Select a verse to begin studying",
