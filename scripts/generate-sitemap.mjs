@@ -24,6 +24,16 @@ const API_BASE = `${process.env.VITE_API_URL}/api`
 const SITE_BASE = process.env.VITE_SITE_URL || process.env.VITE_API_URL
 const OUT_DIR = resolve(ROOT, 'public')
 
+const PREFERRED_VERSIONS = [
+  3,   // en: KJV
+  1,   // en: ASV
+  38,  // es: RVR1960
+  10,  // es: RVR
+  22,  // fr: Crampon 1923
+  25,  // de: Elberfelder 1905
+  30,  // pt: Bíblia Livre
+]
+
 async function fetchAllVersions() {
   const res = await fetch(`${API_BASE}/versions`)
   if (!res.ok) throw new Error(`Versions API returned ${res.status}`)
@@ -78,9 +88,15 @@ async function main() {
     const versions = await fetchAllVersions()
     console.log(`${versions.length} versions found`)
 
+    const versionMap = new Map(versions.map(v => [v.id, v]))
+    const ordered = [
+      ...PREFERRED_VERSIONS.filter(id => versionMap.has(id)).map(id => versionMap.get(id)),
+      ...versions.filter(v => !PREFERRED_VERSIONS.includes(v.id)),
+    ]
+
     const slugMap = new Map()
     console.log('Fetching books from all versions...')
-    for (const v of versions) {
+    for (const v of ordered) {
       try {
         const books = await fetchVersionBooks(v.id)
         for (const b of books) {

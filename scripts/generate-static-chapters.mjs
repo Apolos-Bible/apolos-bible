@@ -24,6 +24,18 @@ const API_BASE = `${process.env.VITE_API_URL}/api`
 const SITE_BASE = process.env.VITE_SITE_URL || process.env.VITE_API_URL
 const CONCURRENCY = 8
 
+// Preferred version IDs per language (first match wins for slug ownership).
+// Later versions in the list act as fallback if earlier ones don't have a slug.
+const PREFERRED_VERSIONS = [
+  3,   // en: KJV (King James Version)
+  1,   // en: ASV (American Standard Version)
+  38,  // es: RVR1960 (Reina-Valera 1960)
+  10,  // es: RVR (Reina-Valera)
+  22,  // fr: Crampon 1923
+  25,  // de: Elberfelder 1905
+  30,  // pt: Bíblia Livre
+]
+
 const OUT_DIR = resolve(ROOT, 'out')
 
 function chapterUrl(slug, n) {
@@ -220,10 +232,17 @@ async function main() {
   const versions = await fetchAllVersions()
   console.log(`[static-chapters] ${versions.length} versions found`)
 
+  // Reorder: preferred versions first, then the rest
+  const versionMap = new Map(versions.map(v => [v.id, v]))
+  const ordered = [
+    ...PREFERRED_VERSIONS.filter(id => versionMap.has(id)).map(id => versionMap.get(id)),
+    ...versions.filter(v => !PREFERRED_VERSIONS.includes(v.id)),
+  ]
+
   // Collect unique slug→{ name, chapters_count, versionId } across ALL versions
   const slugMap = new Map()
   console.log('[static-chapters] Fetching books from all versions...')
-  for (const v of versions) {
+  for (const v of ordered) {
     try {
       const books = await fetchVersionBooks(v.id)
       for (const b of books) {
