@@ -151,6 +151,7 @@ export function VerseList() {
   const loadNotes  = useNoteStore((s) => s.loadNotes)
   const highlights = useHighlightStore((s) => s.highlights)
   const addHighlight = useHighlightStore((s) => s.addHighlight)
+  const removeHighlight = useHighlightStore((s) => s.removeHighlight)
   const loadHighlightsForChapter = useHighlightStore((s) => s.loadHighlightsForChapter)
 
   const bookmarkedIds  = useBookmarkStore((s) => s.bookmarkedIds)
@@ -229,15 +230,36 @@ export function VerseList() {
 
   function addVerseHighlight(verse: Verse, color: HighlightColor) {
     if (requireLogin()) return
-    addHighlight(verse.apiId, 0, verse.text.length, color).catch((error) => {
-      if (isAuthError(error)) {
-        addToast(t('study.loginRequired'), 'error', {
-          action: { label: t('auth.logIn'), onClick: openAuthModal },
-        })
-        return
-      }
-      addToast(t('toast.highlightFailed'), 'error')
-    })
+    const existingHighlights = highlights[verse.apiId] ?? []
+    Promise.all(existingHighlights.map(h => removeHighlight(verse.apiId, h.id)))
+      .then(() => addHighlight(verse.apiId, 0, verse.text.length, color))
+      .catch((error) => {
+        if (isAuthError(error)) {
+          addToast(t('study.loginRequired'), 'error', {
+            action: { label: t('auth.logIn'), onClick: openAuthModal },
+          })
+          return
+        }
+        addToast(t('toast.highlightFailed'), 'error')
+      })
+  }
+
+  function addVerseHighlights(verses: Verse[], color: HighlightColor) {
+    if (requireLogin()) return
+    Promise.all(verses.map(async v => {
+      const existingHighlights = highlights[v.apiId] ?? []
+      await Promise.all(existingHighlights.map(h => removeHighlight(v.apiId, h.id)))
+      await addHighlight(v.apiId, 0, v.text.length, color)
+    }))
+      .catch((error) => {
+        if (isAuthError(error)) {
+          addToast(t('study.loginRequired'), 'error', {
+            action: { label: t('auth.logIn'), onClick: openAuthModal },
+          })
+          return
+        }
+        addToast(t('toast.highlightFailed'), 'error')
+      })
   }
 
   function buildVerseMenu(verse: Verse): MenuItem[] {
@@ -322,15 +344,106 @@ export function VerseList() {
     return items
   }
 
+  function buildMultiVerseMenu(): MenuItem[] {
+    const multiVerses = verses.filter(v => selectedVerseIds.includes(v.id))
+    const allBookmarked = multiVerses.every(v => bookmarkedIds.has(v.apiId))
+
+    const items: MenuItem[] = [
+      {
+        type: 'action',
+        label: t('study.copyVerseText'),
+        icon: <IconCopy />,
+        shortcut: `${modKey}C`,
+        onClick: () => {
+          const text = multiVerses.map(v => v.text).join('\n\n')
+          navigator.clipboard.writeText(text)
+          addToast(t('toast.copied'), 'success')
+        },
+      },
+      {
+        type: 'action',
+        label: t('verse.copyReference'),
+        icon: <IconCopy />,
+        onClick: () => {
+          const refs = multiVerses.map(v => `${bookName} ${v.chapter}:${v.verse}`).join(', ')
+          navigator.clipboard.writeText(refs)
+          addToast(t('verse.copiedRef', { ref: refs }), 'success')
+        },
+      },
+      { type: 'separator' },
+      { type: 'label', text: t('verse.highlightVerse') },
+      {
+        type: 'action', label: t('study.colorYellow'), icon: <ColorDot color="#e5c07b" />,
+        onClick: () => addVerseHighlights(multiVerses, 'yellow'),
+      },
+      {
+        type: 'action', label: t('study.colorBlue'), icon: <ColorDot color="#61afef" />,
+        onClick: () => addVerseHighlights(multiVerses, 'blue'),
+      },
+      {
+        type: 'action', label: t('study.colorGreen'), icon: <ColorDot color="#98c379" />,
+        onClick: () => addVerseHighlights(multiVerses, 'green'),
+      },
+      { type: 'separator' },
+      {
+        type: 'action',
+        label: t('verse.addNote'),
+        icon: <IconNote />,
+        onClick: () => {
+          if (requireLogin()) return
+          openStudyPanel(multiVerses[0].id)
+        },
+      },
+      { type: 'separator' },
+      {
+        type: 'action',
+        label: allBookmarked ? t('verse.removeFromFavorites') : t('verse.addToFavorites'),
+        icon: <IconStar filled={allBookmarked} />,
+        onClick: () => {
+          if (requireLogin()) return
+          Promise.all(multiVerses.map(v =>
+            toggleBookmark(v.apiId).then(() => {
+              if (!bookmarkedIds.has(v.apiId)) {
+                setBurstId(v.apiId)
+                setTimeout(() => setBurstId(null), 900)
+              }
+            }),
+          ))
+            .catch((error) => {
+              if (isAuthError(error)) {
+                addToast(t('study.loginRequired'), 'error', {
+                  action: { label: t('auth.logIn'), onClick: openAuthModal },
+                })
+                return
+              }
+              addToast(t('toast.bookmarkFailed'), 'error')
+            })
+        },
+      },
+    ]
+
+    return items
+  }
+
   function handleContextMenu(e: React.MouseEvent, verse: Verse) {
     e.preventDefault()
     e.stopPropagation()
-    openMenu(e.clientX, e.clientY, buildVerseMenu(verse))
+    if (selectedVerseIds.includes(verse.id) && selectedVerseIds.length > 1) {
+      openMenu(e.clientX, e.clientY, buildMultiVerseMenu())
+    } else {
+      selectVerse(verse.id)
+      openMenu(e.clientX, e.clientY, buildVerseMenu(verse))
+    }
   }
 
   function openVerseMenuFromButton(target: HTMLElement, verse: Verse) {
     const rect = target.getBoundingClientRect()
-    openMenu(rect.right - 12, rect.bottom + 8, buildVerseMenu(verse))
+    if (selectedVerseIds.includes(verse.id) && selectedVerseIds.length > 1) {
+      openMenu(rect.right - 12, rect.bottom + 8, buildMultiVerseMenu())
+    } else {
+      selectVerse(verse.id)
+      openMenu(rect.right - 12, rect.bottom + 8, buildVerseMenu(verse))
+    }
   }
 
   // ── Verse number pill ────────────────────────────────────────────────────
@@ -423,8 +536,8 @@ export function VerseList() {
         <div className="flex-1 overflow-y-auto no-scrollbar relative">
 
           {/* Mobile keeps navigation/display primary; study tools appear after selecting a verse. */}
-          <div className="sticky top-0 z-10 border-b border-border-subtle bg-bg-secondary px-3 py-2 md:border-b-0 md:bg-transparent md:px-4 md:py-2 pointer-events-none">
-            <div className="flex flex-wrap items-center justify-between gap-2">
+          <div className="sticky top-0 z-10 bg-bg-secondary pointer-events-none">
+            <div className="flex flex-wrap items-center justify-between gap-2 border-b border-border-subtle px-3 py-2 md:border-b-0 md:bg-transparent md:px-4 md:py-2">
               <div className="hidden md:block pointer-events-auto">
                 <PresenceAvatars users={others} />
               </div>
@@ -489,21 +602,9 @@ export function VerseList() {
                 </div>
               </div>
             </div>
-          </div>
-
-          <div className="max-w-[660px] mx-auto px-4 md:px-10 pt-4 pb-16">
-
-            {/* Chapter heading */}
-            <div className="mb-6 md:mb-8 text-center">
-              <h1 className="font-reading text-xl md:text-2xl font-medium tracking-tight text-text-primary">{bookName}</h1>
-              <p className="mt-1 text-[10px] font-sans font-semibold uppercase tracking-[0.18em] text-accent/70">
-                {t('layout.chapter', { n: selectedChapter })}
-              </p>
-              <div className="mt-4 mx-auto w-8 h-px bg-accent/30" />
-            </div>
 
             {selectedVerseIds.length > 0 && (
-              <div className="mb-4 flex flex-col gap-2 bg-accent/[0.08] border border-accent/[0.15] rounded-lg px-3 py-2 text-xs animate-in fade-in slide-in-from-top-1 duration-200 md:flex-row md:items-center md:justify-between">
+              <div className="pointer-events-auto flex flex-col gap-2 bg-accent/[0.08] border-b border-accent/[0.15] px-3 py-2 text-xs animate-in fade-in slide-in-from-top-1 duration-200 md:flex-row md:items-center md:justify-between md:px-4">
                 <div className="flex items-center justify-between gap-3">
                   <span className="text-text-secondary">
                     {t('verse.selectedVerses', { count: selectedVerseIds.length })}
@@ -546,6 +647,18 @@ export function VerseList() {
                 </div>
               </div>
             )}
+          </div>
+
+          <div className="max-w-[660px] mx-auto px-4 md:px-10 pt-4 pb-16">
+
+            {/* Chapter heading */}
+            <div className="mb-6 md:mb-8 text-center">
+              <h1 className="font-reading text-xl md:text-2xl font-medium tracking-tight text-text-primary">{bookName}</h1>
+              <p className="mt-1 text-[10px] font-sans font-semibold uppercase tracking-[0.18em] text-accent/70">
+                {t('layout.chapter', { n: selectedChapter })}
+              </p>
+              <div className="mt-4 mx-auto w-8 h-px bg-accent/30" />
+            </div>
 
             {/* ── Flow mode ── */}
             {readingMode === 'flow' && (
@@ -590,6 +703,7 @@ export function VerseList() {
                           type="button"
                           onClick={(e) => {
                             e.stopPropagation()
+                            selectVerse(verse.id)
                             openStudyPanel(verse.id)
                           }}
                           className="inline-flex align-super mx-[2px] text-accent/70 hover:text-accent"
@@ -664,6 +778,7 @@ export function VerseList() {
                           type="button"
                           onClick={(e) => {
                             e.stopPropagation()
+                            selectVerse(verse.id)
                             openStudyPanel(verse.id)
                           }}
                           className="shrink-0 self-start mt-1 inline-flex h-6 w-6 items-center justify-center rounded-md text-accent/70 hover:text-accent hover:bg-bg-tertiary"

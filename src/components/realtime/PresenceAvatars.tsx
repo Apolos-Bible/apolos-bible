@@ -83,8 +83,6 @@ function UserTooltip({
 export function PresenceAvatars({ users }: PresenceAvatarsProps) {
   const { t } = useTranslation()
 
-  if (users.length === 0) return null
-
   const [hovered,  setHovered]  = useState<{ id: number; rect: DOMRect } | null>(null)
   const [closing,  setClosing]  = useState(false)
   const leaveTimer  = useRef<ReturnType<typeof setTimeout> | null>(null)
@@ -109,6 +107,8 @@ export function PresenceAvatars({ users }: PresenceAvatarsProps) {
       window.removeEventListener('resize', close)
     }
   }, [hovered])
+
+  if (users.length === 0) return null
 
   const visible  = users.slice(0, MAX_VISIBLE)
   const overflow = users.length - MAX_VISIBLE
