@@ -22,6 +22,7 @@ loadEnv(resolve(ROOT, '.env.production'))
 
 const API_BASE = `${process.env.VITE_API_URL}/api`
 const SITE_BASE = process.env.VITE_SITE_URL || process.env.VITE_API_URL
+const OUT_DIR = resolve(ROOT, 'public')
 
 async function fetchAllVersions() {
   const res = await fetch(`${API_BASE}/versions`)
