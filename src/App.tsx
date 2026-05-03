@@ -66,7 +66,10 @@ export default function App() {
   useEffect(() => {
     void (async () => {
       await authInit()
-      await loadBooks(initialRoute ?? undefined)
+      if (initialRoute?.lang && initialRoute.lang !== useUIStore.getState().locale) {
+        useUIStore.getState().setLocale(initialRoute.lang as 'en' | 'es')
+      }
+      await loadBooks(initialRoute ? { book: initialRoute.book, chapter: initialRoute.chapter, verse: initialRoute.verse } : undefined)
     })()
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])

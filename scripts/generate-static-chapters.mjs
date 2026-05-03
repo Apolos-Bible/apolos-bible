@@ -48,9 +48,16 @@ function pickBestVersion(versions, lang) {
 
 const OUT_DIR = resolve(ROOT, 'out')
 
+function langSlug(lang) {
+  return lang && lang !== 'en' ? `${lang}/` : ''
+}
+
 function chapterUrl(slug, n, lang) {
-  const langPrefix = lang && lang !== 'en' ? `${lang}/` : ''
-  return `${SITE_BASE}/bible/${langPrefix}${slug}/${n}`
+  return `${SITE_BASE}/bible/${langSlug(lang)}${slug}/${n}`
+}
+
+function bookUrl(slug, lang) {
+  return `${SITE_BASE}/bible/${langSlug(lang)}${slug}`
 }
 
 function seoHead(bookName, slug, chapter, firstVerseText, lang) {
@@ -61,7 +68,7 @@ function seoHead(bookName, slug, chapter, firstVerseText, lang) {
   const canonical = chapterUrl(slug, chapter, lang)
   const breadcrumbs = [
     { '@type': 'ListItem', position: 1, name: 'Tulia Bible', item: SITE_BASE },
-    { '@type': 'ListItem', position: 2, name: bookName, item: chapterUrl(slug, 1, lang).replace(/\/\d+$/, '') },
+    { '@type': 'ListItem', position: 2, name: bookName, item: bookUrl(slug, lang) },
     { '@type': 'ListItem', position: 3, name: `Chapter ${chapter}`, item: canonical },
   ]
 
@@ -163,7 +170,7 @@ function generateChapterHtml(data, lang) {
 
   html += `  <nav class="nav">\n    <span></span>\n    <span></span>\n  </nav>\n`
   html += `  <div class="footer">
-    <p>Read <a href="${SITE_BASE}/bible/${book.slug}/${chapter}">${escapeHtml(book.name)} ${chapter}</a> interactively on <a href="${SITE_BASE}">Tulia Bible</a> — with highlights, notes, cross-references, and collaborative study.</p>
+    <p>Read <a href="${chapterUrl(book.slug, chapter, lang)}">${escapeHtml(book.name)} ${chapter}</a> interactively on <a href="${SITE_BASE}">Tulia Bible</a> — with highlights, notes, cross-references, and collaborative study.</p>
   </div>\n`
   html += `</body>\n</html>\n`
   return html
@@ -172,12 +179,11 @@ function generateChapterHtml(data, lang) {
 function generateBookHtml(book, lang) {
   const title = `${book.name} — Tulia Bible`
   const description = `Read the book of ${book.name} (${book.chapters_count} chapters) in Tulia Bible, the collaborative Bible study app.`
-  const langPrefix = lang && lang !== 'en' ? `${lang}/` : ''
-  const canonical = `${SITE_BASE}/bible/${langPrefix}${book.slug}`
+  const canonical = bookUrl(book.slug, lang)
 
   let chapterLinks = ''
   for (let c = 1; c <= book.chapters_count; c++) {
-    chapterLinks += `      <li><a href="${SITE_BASE}/bible/${langPrefix}${book.slug}/${c}">Chapter ${c}</a></li>\n`
+    chapterLinks += `      <li><a href="${chapterUrl(book.slug, c, lang)}">Chapter ${c}</a></li>\n`
   }
 
   const jsonLd = JSON.stringify({
@@ -232,7 +238,7 @@ function generateBookHtml(book, lang) {
     <ul class="chapters">
 ${chapterLinks}    </ul>
     <div class="footer">
-      <p>Read <a href="${SITE_BASE}/bible/${book.slug}">${escapeHtml(book.name)}</a> interactively on <a href="${SITE_BASE}">Tulia Bible</a>.</p>
+      <p>Read <a href="${bookUrl(book.slug, lang)}">${escapeHtml(book.name)}</a> interactively on <a href="${SITE_BASE}">Tulia Bible</a>.</p>
     </div>
   </body>
 </html>

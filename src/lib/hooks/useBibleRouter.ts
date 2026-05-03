@@ -1,18 +1,34 @@
 import { useEffect, useRef } from 'react'
 import { useVerseStore } from '@/lib/store/useVerseStore'
+import { useUIStore } from '@/lib/store/useUIStore'
+import type { AppLocale } from '@/lib/defaultAppLocale'
 
-function parseBibleUrl(pathname: string): { book: string; chapter: number; verse?: number } | null {
-  const match = pathname.match(/^\/bible\/([^/]+)(?:\/(\d+))?(?:\/(\d+))?/)
+const APP_LOCALES = new Set<string>(['en', 'es'])
+
+function parseBibleUrl(pathname: string): { book: string; chapter: number; verse?: number; lang?: string } | null {
+  const match = pathname.match(/^\/bible\/(?:([a-z]{2})\/)?([^/]+)(?:\/(\d+))?(?:\/(\d+))?/)
   if (!match) return null
+
+  if (match[1] && APP_LOCALES.has(match[1])) {
+    return {
+      lang: match[1],
+      book: match[2],
+      chapter: match[3] ? parseInt(match[3], 10) : 1,
+      verse: match[4] ? parseInt(match[4], 10) : undefined,
+    }
+  }
+
   return {
-    book: match[1],
-    chapter: match[2] ? parseInt(match[2], 10) : 1,
+    book: match[1] || match[2],
+    chapter: match[2] ? parseInt(match[2], 10) : match[3] ? parseInt(match[3], 10) : 1,
     verse: match[3] ? parseInt(match[3], 10) : undefined,
   }
 }
 
 function buildPath(book: string, chapter: number, verseId: string | null): string {
-  let path = `/bible/${book}/${chapter}`
+  const locale = useUIStore.getState().locale
+  const langPrefix = locale && locale !== 'en' ? `/${locale}` : ''
+  let path = `${langPrefix}/bible/${book}/${chapter}`
   if (verseId) {
     const parts = verseId.split('-')
     if (parts.length >= 3) path += `/${parts[2]}`
@@ -22,8 +38,8 @@ function buildPath(book: string, chapter: number, verseId: string | null): strin
 
 export function useBibleRouter() {
   const programmaticNav = useRef(false)
+  const locale = useUIStore(s => s.locale)
 
-  // Store → URL sync via Zustand subscribe (fires synchronously on set())
   useEffect(() => {
     let prevBook = ''
     let prevChapter = 0
@@ -48,7 +64,17 @@ export function useBibleRouter() {
     return unsub
   }, [])
 
-  // Browser back/forward → Store via popstate
+  useEffect(() => {
+    const { selectedBook, selectedChapter, selectedVerseId } = useVerseStore.getState()
+    if (!selectedBook) return
+
+    const path = buildPath(selectedBook, selectedChapter, selectedVerseId)
+    if (window.location.pathname === path) return
+
+    programmaticNav.current = true
+    window.history.replaceState(null, '', path)
+  }, [locale])
+
   useEffect(() => {
     const handlePopstate = () => {
       if (programmaticNav.current) {
@@ -57,6 +83,14 @@ export function useBibleRouter() {
       }
       const route = parseBibleUrl(window.location.pathname)
       if (!route) return
+
+      if (route.lang && route.lang !== useUIStore.getState().locale) {
+        const valid = route.lang as AppLocale
+        if (APP_LOCALES.has(valid)) {
+          useUIStore.getState().setLocale(valid)
+        }
+      }
+
       const state = useVerseStore.getState()
       if (state.books.length === 0) return
       if (route.book !== state.selectedBook || route.chapter !== state.selectedChapter) {
@@ -72,6 +106,5 @@ export function useBibleRouter() {
     return () => window.removeEventListener('popstate', handlePopstate)
   }, [])
 
-  // Parse URL on mount so caller can use it for initial load
   return parseBibleUrl(window.location.pathname)
 }

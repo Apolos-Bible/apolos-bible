@@ -1,4 +1,5 @@
 import { useVerseStore } from '@/lib/store/useVerseStore'
+import { useUIStore } from '@/lib/store/useUIStore'
 
 const BASE_URL = 'https://bible.tulia.study'
 const OG_IMAGE = `${BASE_URL}/logo.png`
@@ -22,6 +23,7 @@ export function useSEOMeta(): SEOMetaData {
   const selectedVerseId = useVerseStore(s => s.selectedVerseId)
   const verses = useVerseStore(s => s.verses)
   const books = useVerseStore(s => s.books)
+  const locale = useUIStore(s => s.locale)
 
   const book = books.find(b => b.slug === selectedBook)
   const bookName = book?.name ?? selectedBook
@@ -46,19 +48,21 @@ export function useSEOMeta(): SEOMetaData {
     description = `Read ${bookName} chapter ${selectedChapter} in Tulia Bible, the collaborative Bible study app with cross-references, highlights, notes, and real-time study sessions.`
   }
 
+  const langPrefix = locale && locale !== 'en' ? `${locale}/` : ''
+
   let canonicalUrl: string
   if (verseNumber) {
-    canonicalUrl = `${BASE_URL}/bible/${selectedBook}/${selectedChapter}/${verseNumber}`
+    canonicalUrl = `${BASE_URL}/bible/${langPrefix}${selectedBook}/${selectedChapter}/${verseNumber}`
   } else {
-    canonicalUrl = `${BASE_URL}/bible/${selectedBook}/${selectedChapter}`
+    canonicalUrl = `${BASE_URL}/bible/${langPrefix}${selectedBook}/${selectedChapter}`
   }
 
   const breadcrumbs = [
     { name: 'Tulia Bible', url: BASE_URL },
-    { name: bookName, url: `${BASE_URL}/bible/${selectedBook}` },
+    { name: bookName, url: `${BASE_URL}/bible/${langPrefix}${selectedBook}` },
   ]
   if (verseNumber) {
-    breadcrumbs.push({ name: `Chapter ${selectedChapter}`, url: `${BASE_URL}/bible/${selectedBook}/${selectedChapter}` })
+    breadcrumbs.push({ name: `Chapter ${selectedChapter}`, url: `${BASE_URL}/bible/${langPrefix}${selectedBook}/${selectedChapter}` })
     breadcrumbs.push({ name: `Verse ${verseNumber}`, url: canonicalUrl })
   } else {
     breadcrumbs.push({ name: `Chapter ${selectedChapter}`, url: canonicalUrl })
