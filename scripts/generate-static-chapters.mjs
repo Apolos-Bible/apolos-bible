@@ -317,7 +317,6 @@ async function main() {
   const isDefault = (lang) => lang === defaultLang
 
   // Generate book index and chapter pages per language
-  const bibleDir = resolve(OUT_DIR, 'bible')
   if (!existsSync(bibleDir)) mkdirSync(bibleDir, { recursive: true })
 
   let totalChapters = 0

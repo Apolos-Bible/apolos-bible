@@ -46,6 +46,7 @@ export default defineConfig({
       },
       workbox: {
         globPatterns: ['**/*.{js,css,html,svg,png,ico,woff,woff2}'],
+        globIgnores: ['**/bible/**'],
         runtimeCaching: [
           {
             urlPattern: /^https:\/\/verbum\.test\/api\/.*/i,
