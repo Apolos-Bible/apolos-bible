@@ -22,13 +22,16 @@ loadEnv(resolve(ROOT, '.env.production'))
 
 const API_BASE = `${process.env.VITE_API_URL}/api`
 const SITE_BASE = process.env.VITE_SITE_URL || process.env.VITE_API_URL
-const VERSION_ID = 1
 
-const OUT_DIR = resolve(ROOT, 'public')
+async function fetchAllVersions() {
+  const res = await fetch(`${API_BASE}/versions`)
+  if (!res.ok) throw new Error(`Versions API returned ${res.status}`)
+  return res.json()
+}
 
-async function fetchBooks() {
-  const res = await fetch(`${API_BASE}/versions/${VERSION_ID}/books`)
-  if (!res.ok) throw new Error(`API returned ${res.status}`)
+async function fetchVersionBooks(versionId) {
+  const res = await fetch(`${API_BASE}/versions/${versionId}/books`)
+  if (!res.ok) throw new Error(`Books API returned ${res.status} for version ${versionId}`)
   return res.json()
 }
 
@@ -70,9 +73,30 @@ ${urls.map(u => `  <url>
 
 async function main() {
   try {
-    console.log('Fetching books from API...')
-    const books = await fetchBooks()
-    console.log(`Fetched ${books.length} books`)
+    console.log('Fetching versions from API...')
+    const versions = await fetchAllVersions()
+    console.log(`${versions.length} versions found`)
+
+    const slugMap = new Map()
+    console.log('Fetching books from all versions...')
+    for (const v of versions) {
+      try {
+        const books = await fetchVersionBooks(v.id)
+        for (const b of books) {
+          if (!slugMap.has(b.slug)) {
+            slugMap.set(b.slug, b.chapters_count)
+          }
+        }
+      } catch (err) {
+        console.error(`Skipping version ${v.id} (${v.abbreviation}):`, err.message)
+      }
+    }
+    console.log(`${slugMap.size} unique book slugs collected`)
+
+    const books = []
+    for (const [slug, chapters] of slugMap) {
+      books.push({ slug, chapters_count: chapters })
+    }
 
     const xml = generateSitemap(books)
 

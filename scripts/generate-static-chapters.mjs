@@ -22,7 +22,6 @@ loadEnv(resolve(ROOT, '.env.production'))
 
 const API_BASE = `${process.env.VITE_API_URL}/api`
 const SITE_BASE = process.env.VITE_SITE_URL || process.env.VITE_API_URL
-const VERSION_ID = 1
 const CONCURRENCY = 8
 
 const OUT_DIR = resolve(ROOT, 'out')
@@ -111,14 +110,20 @@ function escapeHtml(str) {
     .replace(/'/g, '&#39;')
 }
 
-async function fetchBooks() {
-  const res = await fetch(`${API_BASE}/versions/${VERSION_ID}/books`)
-  if (!res.ok) throw new Error(`Books API returned ${res.status}`)
+async function fetchAllVersions() {
+  const res = await fetch(`${API_BASE}/versions`)
+  if (!res.ok) throw new Error(`Versions API returned ${res.status}`)
   return res.json()
 }
 
-async function fetchChapter(slug, chapter) {
-  const url = `${API_BASE}/versions/${VERSION_ID}/books/${slug}/chapters/${chapter}`
+async function fetchVersionBooks(versionId) {
+  const res = await fetch(`${API_BASE}/versions/${versionId}/books`)
+  if (!res.ok) throw new Error(`Books API returned ${res.status} for version ${versionId}`)
+  return res.json()
+}
+
+async function fetchChapter(slug, chapter, versionId) {
+  const url = `${API_BASE}/versions/${versionId}/books/${slug}/chapters/${chapter}`
   const res = await fetch(url)
   if (!res.ok) throw new Error(`Chapter API returned ${res.status} for ${slug} ${chapter}`)
   return res.json()
@@ -211,26 +216,47 @@ ${chapterLinks}    </ul>
 }
 
 async function main() {
-  console.log('[static-chapters] Fetching book list...')
-  const books = await fetchBooks()
-  console.log(`[static-chapters] ${books.length} books loaded`)
+  console.log('[static-chapters] Fetching versions...')
+  const versions = await fetchAllVersions()
+  console.log(`[static-chapters] ${versions.length} versions found`)
 
-  // Generate book index pages (out/bible/<slug>.html → served at /bible/<slug>)
+  // Collect unique slug→{ name, chapters_count, versionId } across ALL versions
+  const slugMap = new Map()
+  console.log('[static-chapters] Fetching books from all versions...')
+  for (const v of versions) {
+    try {
+      const books = await fetchVersionBooks(v.id)
+      for (const b of books) {
+        if (!slugMap.has(b.slug)) {
+          slugMap.set(b.slug, {
+            name: b.name,
+            chapters_count: b.chapters_count,
+            versionId: v.id,
+          })
+        }
+      }
+    } catch (err) {
+      console.error(`[static-chapters] Skipping version ${v.id} (${v.abbreviation}):`, err.message)
+    }
+  }
+  console.log(`[static-chapters] ${slugMap.size} unique book slugs collected across all versions`)
+
+  // Generate book index pages
   console.log('[static-chapters] Generating book index pages...')
   if (!existsSync(resolve(OUT_DIR, 'bible'))) mkdirSync(resolve(OUT_DIR, 'bible'), { recursive: true })
-  for (const book of books) {
-    const slugDir = resolve(OUT_DIR, 'bible', book.slug)
+  for (const [slug, info] of slugMap) {
+    const slugDir = resolve(OUT_DIR, 'bible', slug)
     if (!existsSync(slugDir)) mkdirSync(slugDir, { recursive: true })
-    const html = generateBookHtml(book)
-    writeFileSync(resolve(OUT_DIR, 'bible', `${book.slug}.html`), html, 'utf-8')
+    const html = generateBookHtml({ slug, name: info.name, chapters_count: info.chapters_count })
+    writeFileSync(resolve(OUT_DIR, 'bible', `${slug}.html`), html, 'utf-8')
   }
-  console.log('[static-chapters] 66 book index pages written')
+  console.log(`[static-chapters] ${slugMap.size} book index pages written`)
 
-  // Generate chapter pages
+  // Build chapter work list (unique slug+chapter, using the version that owns the slug)
   const allChapters = []
-  for (const book of books) {
-    for (let c = 1; c <= book.chapters_count; c++) {
-      allChapters.push({ slug: book.slug, chapter: c, bookName: book.name })
+  for (const [slug, info] of slugMap) {
+    for (let c = 1; c <= info.chapters_count; c++) {
+      allChapters.push({ slug, chapter: c, bookName: info.name, versionId: info.versionId })
     }
   }
   console.log(`[static-chapters] Generating ${allChapters.length} chapter pages...`)
@@ -238,9 +264,9 @@ async function main() {
   let done = 0
   let errors = 0
 
-  async function processOne({ slug, chapter, bookName }) {
+  async function processOne({ slug, chapter, bookName, versionId }) {
     try {
-      const data = await fetchChapter(slug, chapter)
+      const data = await fetchChapter(slug, chapter, versionId)
       const html = generateChapterHtml(data)
       const slugDir = resolve(OUT_DIR, 'bible', slug)
       if (!existsSync(slugDir)) mkdirSync(slugDir, { recursive: true })
@@ -252,12 +278,11 @@ async function main() {
       }
     }
     done++
-    if (done % 50 === 0 || done === allChapters.length) {
+    if (done % 100 === 0 || done === allChapters.length) {
       console.log(`[static-chapters] ${done}/${allChapters.length} chapters (${errors} errors)`)
     }
   }
 
-  // Process with concurrency
   for (let i = 0; i < allChapters.length; i += CONCURRENCY) {
     const batch = allChapters.slice(i, i + CONCURRENCY)
     await Promise.all(batch.map(processOne))
