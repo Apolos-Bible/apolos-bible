@@ -14,22 +14,14 @@ export function LogoIcon({
   accentColor = '#c8a96a',
 }: LogoIconProps) {
   return (
-    <svg
+    <img
+      src="/logo.png"
+      alt=""
       width={size}
       height={size}
-      viewBox="0 0 64 64"
-      fill="none"
-      className={className}
-      shapeRendering="geometricPrecision"
+      className={cn('object-contain', className)}
       aria-hidden="true"
-    >
-      <line x1="32" y1="14" x2="14" y2="48" stroke={inkColor} strokeWidth="1.6" strokeLinecap="round" />
-      <line x1="32" y1="14" x2="50" y2="48" stroke={inkColor} strokeWidth="1.6" strokeLinecap="round" />
-      <line x1="14" y1="48" x2="50" y2="48" stroke={accentColor} strokeWidth="4" strokeLinecap="round" />
-      <circle cx="32" cy="14" r="3.2" fill={inkColor} />
-      <circle cx="14" cy="48" r="3.2" fill={inkColor} />
-      <circle cx="50" cy="48" r="3.2" fill={inkColor} />
-    </svg>
+    />
   )
 }
 
