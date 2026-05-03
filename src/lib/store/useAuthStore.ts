@@ -67,6 +67,7 @@ export const useAuthStore = create<AuthState>((set) => ({
   logout: async () => {
     await api.post('/api/auth/logout', {}).catch(() => {})
     clearToken()
+    localStorage.removeItem('verbum_last_reading')
     set({ user: null })
   },
 }))
