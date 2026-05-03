@@ -461,6 +461,12 @@ function StudyCanvasInner({
           target: connection.target,
         });
       }, 'local');
+
+      // Update React state immediately (observer filters out 'local' origin)
+      setEdges((eds) => [
+        ...eds,
+        { id, source: connection.source, target: connection.target, type: 'default' },
+      ]);
     },
     [],
   );
