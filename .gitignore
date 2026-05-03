@@ -27,3 +27,4 @@ skills-lock.json
 # Firebase
 .firebase/
 .DS_Store
+public/sitemap.xml

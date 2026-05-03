@@ -74,6 +74,7 @@ export default defineConfig({
   },
   build: {
     outDir: 'out',
+    emptyOutDir: false,
   },
   test: {
     environment: 'happy-dom',

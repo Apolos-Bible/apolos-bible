@@ -5,7 +5,7 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
-    "build:web": "node scripts/generate-sitemap.mjs || true && vite build",
+    "build:web": "node scripts/generate-sitemap.mjs || true && mkdir -p out && rm -rf out/index.html out/assets out/registerSW.js out/sw.js out/workbox-*.js out/manifest.webmanifest && vite build",
     "generate-sitemap": "node scripts/generate-sitemap.mjs",
     "generate-static": "node scripts/generate-static-chapters.mjs",
     "preview": "vite preview",

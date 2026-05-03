@@ -1,4 +1,4 @@
-import { writeFileSync, readFileSync } from 'node:fs'
+import { writeFileSync, readFileSync, existsSync, statSync } from 'node:fs'
 import { resolve, dirname } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
@@ -75,6 +75,16 @@ ${urls.map(u => `  <url>
 
 async function main() {
   try {
+    const sitemapPath = resolve(OUT_DIR, 'sitemap.xml')
+    if (existsSync(sitemapPath)) {
+      const stat = statSync(sitemapPath)
+      const hoursSince = (Date.now() - stat.mtimeMs) / 3600000
+      if (hoursSince < 24) {
+        console.log(`Sitemap exists (${hoursSince.toFixed(1)}h old), skipping generation`)
+        return
+      }
+    }
+
     console.log('Fetching versions from API...')
     const versions = await fetchAllVersions()
     console.log(`${versions.length} versions found`)

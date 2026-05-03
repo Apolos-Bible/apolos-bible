@@ -1,4 +1,4 @@
-import { writeFileSync, mkdirSync, existsSync, readFileSync } from 'node:fs'
+import { writeFileSync, mkdirSync, existsSync, readFileSync, readdirSync } from 'node:fs'
 import { resolve, dirname } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
@@ -240,6 +240,16 @@ ${chapterLinks}    </ul>
 }
 
 async function main() {
+  // Skip if already generated (Bible content never changes)
+  const bibleDir = resolve(OUT_DIR, 'bible')
+  if (existsSync(bibleDir)) {
+    const files = readdirSync(bibleDir, { recursive: true })
+    if (files.length > 100) {
+      console.log('[static-chapters] Skipping: out/bible/ already populated with', files.length, 'files')
+      return
+    }
+  }
+
   console.log('[static-chapters] Fetching versions...')
   const versions = await fetchAllVersions()
   console.log(`[static-chapters] ${versions.length} versions found`)
