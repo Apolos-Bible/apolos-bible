@@ -42,7 +42,7 @@ interface VerseState {
   loadingVerses: boolean
   loadVersions: () => Promise<void>
   setVersion: (id: number, options?: { sync?: boolean }) => Promise<void>
-  loadBooks: () => Promise<void>
+  loadBooks: (initialRoute?: { book: string; chapter: number; verse?: number }) => Promise<void>
   selectBook: (slug: string) => void
   selectChapter: (chapter: number) => void
   selectVerse: (id: string | null) => void
@@ -96,7 +96,7 @@ export const useVerseStore = create<VerseState>((set, get) => ({
     await get().loadBooks()
   },
 
-  loadBooks: async () => {
+  loadBooks: async (initialRoute?: { book: string; chapter: number; verse?: number }) => {
     let { versionId, versions } = get()
     try {
       if (!getStoredBibleVersionId() && versions.length === 0) {
@@ -114,28 +114,43 @@ export const useVerseStore = create<VerseState>((set, get) => ({
         testament: testament(b.number),
         chapters: b.chapters_count,
       }))
-      const defaultBook = books[0]
       set({ books })
-      if (defaultBook) {
-        try {
-          const raw = localStorage.getItem(LAST_READING_KEY)
-          if (raw) {
-            const parsed = JSON.parse(raw)
-            if (parsed && typeof parsed.book === 'string' && typeof parsed.chapter === 'number') {
-              const matchedBook = books.find(b => b.slug === parsed.book)
-              if (matchedBook && parsed.chapter >= 1 && parsed.chapter <= matchedBook.chapters) {
-                set({ selectedBook: matchedBook.slug, selectedChapter: parsed.chapter })
-                get().loadChapter(matchedBook.slug, parsed.chapter)
-                return
-              }
+
+      if (books.length === 0) return
+
+      if (initialRoute) {
+        const matchedBook = books.find(b => b.slug === initialRoute.book)
+        if (matchedBook) {
+          const chapter = Math.min(Math.max(initialRoute.chapter, 1), matchedBook.chapters)
+          set({ selectedBook: matchedBook.slug, selectedChapter: chapter })
+          if (initialRoute.verse) {
+            get().openVerse(matchedBook.slug, chapter, initialRoute.verse)
+          } else {
+            get().loadChapter(matchedBook.slug, chapter)
+          }
+          return
+        }
+      }
+
+      const defaultBook = books[0]
+      try {
+        const raw = localStorage.getItem(LAST_READING_KEY)
+        if (raw) {
+          const parsed = JSON.parse(raw)
+          if (parsed && typeof parsed.book === 'string' && typeof parsed.chapter === 'number') {
+            const matchedBook = books.find(b => b.slug === parsed.book)
+            if (matchedBook && parsed.chapter >= 1 && parsed.chapter <= matchedBook.chapters) {
+              set({ selectedBook: matchedBook.slug, selectedChapter: parsed.chapter })
+              get().loadChapter(matchedBook.slug, parsed.chapter)
+              return
             }
           }
-        } catch {
-          // ignore parse errors, fall through to default
         }
-        set({ selectedBook: defaultBook.slug })
-        get().loadChapter(defaultBook.slug, 1)
+      } catch {
+        // ignore parse errors, fall through to default
       }
+      set({ selectedBook: defaultBook.slug })
+      get().loadChapter(defaultBook.slug, 1)
     } catch (e) {
       console.error('Failed to load books', e)
     }

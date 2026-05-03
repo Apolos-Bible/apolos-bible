@@ -20,6 +20,7 @@ import { PresenceAvatars } from '@/components/realtime/PresenceAvatars'
 import { Tooltip } from '@/components/ui/Tooltip'
 import { VerseText } from '@/components/verse/VerseText'
 import { EmptyState } from '@/components/ui/EmptyState'
+import { SEOMeta } from '@/components/seo/SEOMeta'
 import { cn } from '@/lib/cn'
 import { isAuthError } from '@/lib/auth'
 import type { HighlightColor } from '@/types'
@@ -487,6 +488,7 @@ export function VerseList() {
 
   return (
     <div className="bg-bg-secondary flex h-full flex-col relative">
+      <SEOMeta />
       {/* Floating chapter navigation */}
       <div className="pointer-events-none absolute inset-x-0 top-16 bottom-0 z-20 hidden md:flex items-center">
         <div className="w-full max-w-[684px] mx-auto flex justify-between px-0">

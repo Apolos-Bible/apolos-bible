@@ -1,5 +1,6 @@
-import { useEffect } from 'react'
+import { useEffect, useRef } from 'react'
 import { useTranslation } from 'react-i18next'
+import { useNavigate, useLocation } from 'react-router-dom'
 import { PanelLayout } from '@/components/layout/PanelLayout'
 import { Sidebar } from '@/components/sidebar/Sidebar'
 import { VerseList } from '@/components/verse/VerseList'
@@ -31,8 +32,21 @@ import { checkForAppUpdates } from '@/lib/updater'
 const VISITED_STORAGE_KEY = 'verbum_has_visited'
 let hasLoggedStartupSettings = false
 
+function parseBibleUrl(pathname: string): { book: string; chapter: number; verse?: number } | null {
+  const match = pathname.match(/^\/bible\/([^/]+)(?:\/(\d+))?(?:\/(\d+))?/)
+  if (!match) return null
+  return {
+    book: match[1],
+    chapter: match[2] ? parseInt(match[2], 10) : 1,
+    verse: match[3] ? parseInt(match[3], 10) : undefined,
+  }
+}
+
 export default function App() {
   const { t } = useTranslation()
+  const navigate = useNavigate()
+  const location = useLocation()
+  const manualNav = useRef(false)
   const openCommandPalette = useUIStore(s => s.openCommandPalette)
   const activePanel        = useUIStore(s => s.activePanel)
   const commentaryOpen     = useUIStore(s => s.commentaryOpen)
@@ -44,6 +58,9 @@ export default function App() {
   const versions = useVerseStore(s => s.versions)
   const versionId = useVerseStore(s => s.versionId)
   const selectedBook = useVerseStore(s => s.selectedBook)
+  const selectedChapter = useVerseStore(s => s.selectedChapter)
+  const selectedVerseId = useVerseStore(s => s.selectedVerseId)
+  const books = useVerseStore(s => s.books)
   const locale = useUIStore(s => s.locale)
   const authInit = useAuthStore(s => s.init)
   const user = useAuthStore(s => s.user)
@@ -62,11 +79,13 @@ export default function App() {
   const studyWsToken = useStudyStore(s => s.wsToken)
 
   useEffect(() => {
+    const initialRoute = parseBibleUrl(window.location.pathname)
     void (async () => {
       await authInit()
-      await loadBooks()
+      await loadBooks(initialRoute ?? undefined)
     })()
-  }, [authInit, loadBooks])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   // Detect reset-password params from email link
   useEffect(() => {
@@ -82,6 +101,42 @@ export default function App() {
       window.history.replaceState({}, '', window.location.pathname)
     }
   }, [openAuthModalFunc])
+
+  // Sync store navigation to URL
+  useEffect(() => {
+    if (!selectedBook) return
+
+    let path = `/bible/${selectedBook}/${selectedChapter}`
+    if (selectedVerseId) {
+      const parts = selectedVerseId.split('-')
+      if (parts.length >= 3) {
+        path += `/${parts[2]}`
+      }
+    }
+
+    if (window.location.pathname !== path) {
+      manualNav.current = true
+      navigate(path, { replace: true })
+    }
+  }, [selectedBook, selectedChapter, selectedVerseId, navigate])
+
+  // Handle browser back/forward: URL → store
+  useEffect(() => {
+    if (manualNav.current) {
+      manualNav.current = false
+      return
+    }
+    const route = parseBibleUrl(location.pathname)
+    if (!route || books.length === 0) return
+    const state = useVerseStore.getState()
+    if (route.book !== state.selectedBook || route.chapter !== state.selectedChapter) {
+      if (route.verse) {
+        state.openVerse(route.book, route.chapter, route.verse)
+      } else {
+        state.loadChapter(route.book, route.chapter)
+      }
+    }
+  }, [location.pathname, books.length])
 
   useEffect(() => {
     if (hasLoggedStartupSettings || !selectedBook) return

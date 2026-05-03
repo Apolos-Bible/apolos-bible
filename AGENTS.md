@@ -7,13 +7,16 @@
 ## Commands
 
 ```bash
-pnpm dev              # Vite web dev server on port 1420
-pnpm tauri:dev        # Desktop dev with hot reload — use PowerShell on Windows (cargo PATH broken in Git Bash)
-pnpm build            # Vite → out/
-pnpm tauri:build      # Full desktop binary
-pnpm test             # vitest run (happy-dom) — 4 test files in src/lib/
-pnpm test:watch       # vitest watch mode
-pnpm deploy           # pnpm build && firebase deploy --only hosting
+pnpm dev                # Vite web dev server on port 1420
+pnpm tauri:dev           # Desktop dev with hot reload — use PowerShell on Windows (cargo PATH broken in Git Bash)
+pnpm build               # vite build → out/ (used by Tauri beforeBuildCommand)
+pnpm build:web           # generate-sitemap.mjs + vite build → out/ (SEO-ready web build)
+pnpm generate-sitemap    # Fetch books from API → public/sitemap.xml (1256 URLs)
+pnpm generate-static     # Fetch all chapters from API → out/bible/*/index.html (1255 static HTML files)
+pnpm tauri:build         # Full desktop binary
+pnpm test                # vitest run (happy-dom) — 4 test files in src/lib/
+pnpm test:watch           # vitest watch mode
+pnpm deploy               # pnpm build:web && generate-static-chapters.mjs && firebase deploy --only hosting
 ```
 
 No lint or typecheck scripts exist.
@@ -49,9 +52,9 @@ No lint or typecheck scripts exist.
 
 ### Key facts
 
-- **No router** — navigation is state-driven via `useVerseStore`.
+- **Router:** `react-router-dom` v7 with `BrowserRouter`. URL ↔ store two-way sync via `useVerseStore.loadBooks(initialRoute?)`. Routes: `/` (home), `/bible/:book`, `/bible/:book/:chapter`, `/bible/:book/:chapter/:verse`.
 - **Path alias:** `@/*` → `./src/*`.
-- **Build output:** `out/` (not `dist/`).
+- **Build output:** `out/` (not `dist/`). When built with `build:web`, also includes `out/bible/` static chapter pages. When built with `build` (Tauri), only the SPA shell.
 - **Verse IDs:** slug format `book-chapter-verse` in UI; numeric `apiId` for backend calls.
 - **Verse display formats:** `flow` (continuous paragraph with superscript numbers) and `verse` (each verse in its own block).
 
@@ -69,6 +72,17 @@ Books/Chapters  | Favorites / My Notes / Friends   | Verses| Study / Commentary
 - **Font:** Inter (body, `font-sans`), Lora (reading, `font-reading`). Sizes: `2xs`(10px) to `lg`(15px).
 - **Theme toggle:** sets `data-theme` attribute on `<html>`.
 - **Design patterns manifesto:** `docs/design-patterns.md` — consult before creating/modifying UI components.
+
+### SEO
+
+- **Head management:** `react-helmet-async` + `HelmetProvider` in `src/main.tsx`. Per-route dynamic meta via `<SEOMeta />` in `VerseList`.
+- **Hook:** `src/lib/hooks/useSEOMeta.ts` generates title, description, canonical URL, OG tags, Twitter Card, and JSON-LD `BreadcrumbList` + `WebPage` from current book/chapter/verse.
+- **Static fallback:** `scripts/generate-static-chapters.mjs` generates 1255 static HTML files (`out/bible/<slug>/<chapter>/index.html`) with full verse content, meta tags, and JSON-LD. Served directly by Firebase before the SPA rewrite kicks in. Run via `pnpm generate-static` or as part of `pnpm deploy`.
+- **Static head:** `index.html` has base OG/Twitter/JSON-LD as fallback (`Organization` + `WebApplication` schema).
+- **robots.txt:** `public/robots.txt` allows crawling, points to sitemap.
+- **Sitemap:** `scripts/generate-sitemap.mjs` fetches books from API → `public/sitemap.xml` (1256 URLs: homepage + 66 books + 1189 chapters). Runs before every build.
+- **Canonical URLs:** set via `<link rel="canonical">` in `<SEOMeta>`, updated per page.
+- **URL structure:** `/bible/:book/:chapter` and `/bible/:book/:chapter/:verse`. Store ↔ URL sync in `App.tsx`.
 
 ### Realtime systems (4 coexist)
 
