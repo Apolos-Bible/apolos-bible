@@ -16,6 +16,7 @@ interface AuthState {
   forgotPassword: (email: string) => Promise<void>
   resetPassword: (email: string, token: string, password: string, passwordConfirmation: string) => Promise<void>
   logout: () => Promise<void>
+  deleteAccount: (password: string) => Promise<void>
   init: () => Promise<void>
 }
 
@@ -66,6 +67,13 @@ export const useAuthStore = create<AuthState>((set) => ({
 
   logout: async () => {
     await api.post('/api/auth/logout', {}).catch(() => {})
+    clearToken()
+    localStorage.removeItem('verbum_last_reading')
+    set({ user: null })
+  },
+
+  deleteAccount: async (password: string) => {
+    await api.delete('/api/user', { password })
     clearToken()
     localStorage.removeItem('verbum_last_reading')
     set({ user: null })

@@ -1,4 +1,4 @@
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useUIStore, type FontSize, type Theme, type Locale } from '@/lib/store/useUIStore'
 import { useVerseStore } from '@/lib/store/useVerseStore'
@@ -71,6 +71,29 @@ export function SettingsModal() {
 
   const user   = useAuthStore(s => s.user)
   const logout = useAuthStore(s => s.logout)
+  const deleteAccount = useAuthStore(s => s.deleteAccount)
+
+  const [deleting, setDeleting] = useState(false)
+  const [deleteConfirm, setDeleteConfirm] = useState(false)
+  const [deletePassword, setDeletePassword] = useState('')
+  const [deleteError, setDeleteError] = useState('')
+
+  const handleDelete = async () => {
+    if (!deletePassword) return
+    setDeleting(true)
+    setDeleteError('')
+    try {
+      await deleteAccount(deletePassword)
+      useUIStore.getState().addToast(t('settings.deleteAccount.success'), 'success')
+      closeSettings()
+    } catch (e: unknown) {
+      const msg = (e as Error).message || String(e)
+      const isBadPassword = /password/i.test(msg)
+      setDeleteError(isBadPassword ? t('settings.deleteAccount.wrongPassword') : t('settings.deleteAccount.failed'))
+    } finally {
+      setDeleting(false)
+    }
+  }
 
   useEffect(() => {
     if (settingsOpen && versions.length === 0) loadVersions()
@@ -210,6 +233,51 @@ export function SettingsModal() {
               >
                 {t('settings.signOut')}
               </button>
+
+              {!deleteConfirm ? (
+                <button
+                  onClick={() => setDeleteConfirm(true)}
+                  className="mt-2 block text-sm text-text-muted hover:text-red-400 transition-colors"
+                >
+                  {t('settings.deleteAccount')}
+                </button>
+              ) : (
+                <div className="mt-4 p-3 rounded-lg border border-red-500/30 bg-red-500/5">
+                  <p className="text-xs text-text-secondary mb-3">
+                    {t('settings.deleteAccount.confirm')}
+                  </p>
+                  <input
+                    type="password"
+                    value={deletePassword}
+                    onChange={e => { setDeletePassword(e.target.value); setDeleteError('') }}
+                    placeholder={t('settings.deleteAccount.passwordPlaceholder')}
+                    className={cn(
+                      'w-full bg-bg-tertiary border rounded-lg px-3 py-2 text-sm text-text-primary outline-none transition-colors',
+                      deleteError ? 'border-red-500' : 'border-border-subtle focus:border-accent/50',
+                    )}
+                    onKeyDown={e => { if (e.key === 'Enter') handleDelete() }}
+                  />
+                  {deleteError && (
+                    <p className="text-xs text-red-400 mt-1.5">{deleteError}</p>
+                  )}
+                  <div className="flex gap-2 mt-3">
+                    <button
+                      onClick={handleDelete}
+                      disabled={deleting || !deletePassword}
+                      className="flex-1 rounded-lg bg-red-600 hover:bg-red-500 disabled:opacity-50 text-white text-sm font-medium py-2 transition-colors"
+                    >
+                      {deleting ? t('settings.deleteAccount.deleting') : t('settings.deleteAccount.yesDelete')}
+                    </button>
+                    <button
+                      onClick={() => { setDeleteConfirm(false); setDeletePassword(''); setDeleteError('') }}
+                      disabled={deleting}
+                      className="flex-1 rounded-lg border border-border-subtle text-text-secondary text-sm font-medium py-2 hover:bg-bg-tertiary transition-colors"
+                    >
+                      {t('settings.deleteAccount.cancel')}
+                    </button>
+                  </div>
+                </div>
+              )}
             </div>
           )}
 
