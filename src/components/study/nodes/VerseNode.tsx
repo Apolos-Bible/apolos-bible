@@ -1,4 +1,5 @@
 import { Handle, Position, type NodeProps, type Node } from '@xyflow/react';
+import { useTranslation } from 'react-i18next';
 import { cn } from '@/lib/cn';
 import { useVerseStore } from '@/lib/store/useVerseStore';
 
@@ -12,6 +13,7 @@ export type VerseNodeData = {
 type VerseNodeType = Node<VerseNodeData, 'verse'>;
 
 export function VerseNode({ data, selected }: NodeProps<VerseNodeType>) {
+  const { t } = useTranslation();
   const versions = useVerseStore((s) => s.versions);
 
   const versionName = versions.find((v) => v.id === data.version_id)?.abbreviation ?? '';
@@ -29,7 +31,7 @@ export function VerseNode({ data, selected }: NodeProps<VerseNodeType>) {
         {versionName && <span className="text-text-muted ml-1">({versionName})</span>}
       </div>
       <div className="text-sm leading-relaxed text-text-primary">
-        {data.text || 'Loading...'}
+        {data.text || t('study.verseNode.loading')}
       </div>
       <Handle type="source" position={Position.Bottom} className="!bg-border" />
     </div>

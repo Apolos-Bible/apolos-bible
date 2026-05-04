@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { X, BookOpen, StickyNote } from 'lucide-react'
 import { useStudyStore } from '@/lib/store/useStudyStore'
 import { useUIStore } from '@/lib/store/useUIStore'
@@ -9,6 +10,7 @@ interface StartStudyModalProps {
 }
 
 export function StartStudyModal({ open, onClose }: StartStudyModalProps) {
+  const { t } = useTranslation();
   const start = useStudyStore(s => s.start)
   const [type, setType] = useState<'verse' | 'chapter' | 'free'>('verse')
   const [anchorRef, setAnchorRef] = useState('')
@@ -21,11 +23,11 @@ export function StartStudyModal({ open, onClose }: StartStudyModalProps) {
   const handleStart = async () => {
     setError('')
     if (!title.trim()) {
-      setError('Title is required')
+      setError(t('study.start.titleRequired'))
       return
     }
     if ((type === 'verse' || type === 'chapter') && !anchorRef.trim()) {
-      setError('Anchor reference is required for this type')
+      setError(t('study.start.anchorRequired'))
       return
     }
     setLoading(true)
@@ -41,7 +43,7 @@ export function StartStudyModal({ open, onClose }: StartStudyModalProps) {
       setAnchorRef('')
       setType('verse')
     } catch (e: any) {
-      setError(e?.message || 'Failed to start study')
+      setError(e?.message || t('study.start.failed'))
     } finally {
       setLoading(false)
     }
@@ -57,7 +59,7 @@ export function StartStudyModal({ open, onClose }: StartStudyModalProps) {
       <div className="absolute inset-0 bg-black/50" />
       <div className="relative bg-surface border border-border rounded-2xl shadow-xl p-6 max-w-md w-full mx-4">
         <div className="flex items-center justify-between mb-5">
-          <h2 className="text-md font-semibold text-text-primary">Start a Study Session</h2>
+          <h2 className="text-md font-semibold text-text-primary">{t('study.start.title')}</h2>
           <button
             onClick={onClose}
             className="w-7 h-7 flex items-center justify-center rounded-md text-text-muted hover:text-text-primary hover:bg-bg-tertiary transition-colors"
@@ -67,12 +69,12 @@ export function StartStudyModal({ open, onClose }: StartStudyModalProps) {
         </div>
 
         <div className="mb-4">
-          <label className="block text-xs font-medium text-text-secondary mb-2">Type</label>
+          <label className="block text-xs font-medium text-text-secondary mb-2">{t('study.start.type')}</label>
           <div className="flex gap-1.5">
             {[
-              { value: 'verse', label: 'Verse', Icon: BookOpen },
-              { value: 'chapter', label: 'Chapter', Icon: BookOpen },
-              { value: 'free', label: 'Free', Icon: StickyNote },
+              { value: 'verse', label: t('study.start.typeVerse'), Icon: BookOpen },
+              { value: 'chapter', label: t('study.start.typeChapter'), Icon: BookOpen },
+              { value: 'free', label: t('study.start.typeFree'), Icon: StickyNote },
             ].map(({ value, label, Icon }) => (
               <button
                 key={value}
@@ -93,13 +95,13 @@ export function StartStudyModal({ open, onClose }: StartStudyModalProps) {
         {(type === 'verse' || type === 'chapter') && (
           <div className="mb-4">
             <label className="block text-xs font-medium text-text-secondary mb-1.5">
-              Anchor Reference
+              {t('study.start.anchorRef')}
             </label>
             <input
               type="text"
               value={anchorRef}
               onChange={(e) => setAnchorRef(e.target.value)}
-              placeholder="e.g. juan-3-16 or romanos-8"
+              placeholder={t('study.start.anchorRefPlaceholder')}
               className="w-full bg-bg-primary border border-border rounded-lg px-3 py-2 text-sm text-text-primary placeholder:text-text-muted outline-none focus:border-accent transition-colors"
             />
           </div>
@@ -107,13 +109,13 @@ export function StartStudyModal({ open, onClose }: StartStudyModalProps) {
 
         <div className="mb-5">
           <label className="block text-xs font-medium text-text-secondary mb-1.5">
-            Title <span className="text-accent">*</span>
+            {t('study.start.titleLabel')} <span className="text-accent">*</span>
           </label>
           <input
             type="text"
             value={title}
             onChange={(e) => setTitle(e.target.value)}
-            placeholder="My study session"
+            placeholder={t('study.start.titlePlaceholder')}
             className="w-full bg-bg-primary border border-border rounded-lg px-3 py-2 text-sm text-text-primary placeholder:text-text-muted outline-none focus:border-accent transition-colors"
           />
         </div>
@@ -127,14 +129,14 @@ export function StartStudyModal({ open, onClose }: StartStudyModalProps) {
             onClick={onClose}
             className="px-4 py-2 rounded-lg text-sm text-text-secondary hover:text-text-primary hover:bg-bg-tertiary transition-colors"
           >
-            Cancel
+            {t('study.start.cancel')}
           </button>
           <button
             onClick={handleStart}
             disabled={loading}
             className="px-4 py-2 rounded-lg text-sm font-medium bg-accent text-bg-primary hover:opacity-90 transition-opacity disabled:opacity-50"
           >
-            {loading ? 'Starting...' : 'Start'}
+            {loading ? t('study.start.starting') : t('study.start.start')}
           </button>
         </div>
       </div>

@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { ChevronLeft, UserPlus, MoreHorizontal } from 'lucide-react'
 import { useStudyStore } from '@/lib/store/useStudyStore'
 import { useUIStore } from '@/lib/store/useUIStore'
@@ -7,6 +8,7 @@ import { InviteModal } from './InviteModal'
 import type { AwarenessUser } from '@/hooks/useStudySession'
 
 export function StudyTopBar({ users }: { users: AwarenessUser[] }) {
+  const { t } = useTranslation();
   const activeSession = useStudyStore(s => s.activeSession)
   const leave = useStudyStore(s => s.leave)
   const end = useStudyStore(s => s.end)
@@ -28,7 +30,7 @@ export function StudyTopBar({ users }: { users: AwarenessUser[] }) {
         className="flex items-center gap-1.5 text-sm text-text-secondary hover:text-text-primary transition-colors shrink-0"
       >
         <ChevronLeft className="w-4 h-4" />
-        <span>Exit</span>
+        <span>{t('study.topBar.exit')}</span>
       </button>
 
       <input
@@ -42,7 +44,7 @@ export function StudyTopBar({ users }: { users: AwarenessUser[] }) {
       <button
         onClick={() => setShowInvite(true)}
         className="w-7 h-7 flex items-center justify-center rounded-md text-text-secondary hover:text-text-primary hover:bg-bg-tertiary transition-colors"
-        title="Invite"
+        title={t('study.topBar.invite')}
       >
         <UserPlus className="w-4 h-4" />
       </button>
@@ -51,7 +53,7 @@ export function StudyTopBar({ users }: { users: AwarenessUser[] }) {
         <button
           onClick={() => setShowMenu(!showMenu)}
           className="w-7 h-7 flex items-center justify-center rounded-md text-text-secondary hover:text-text-primary hover:bg-bg-tertiary transition-colors"
-          title="More"
+          title={t('study.topBar.more')}
         >
           <MoreHorizontal className="w-4 h-4" />
         </button>
@@ -63,7 +65,7 @@ export function StudyTopBar({ users }: { users: AwarenessUser[] }) {
                 onClick={handleEndSession}
                 className="w-full text-left px-3 py-1.5 text-sm text-red-400 hover:bg-bg-tertiary transition-colors"
               >
-                End Session
+                {t('study.topBar.endSession')}
               </button>
             </div>
           </>

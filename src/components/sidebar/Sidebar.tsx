@@ -172,7 +172,7 @@ export function Sidebar() {
         <NavItem icon={<StarIcon />}    label={t('nav.favorites')} active={activePanel === 'favorites'} onClick={() => user ? toggleSidebarPanel('favorites') : openAuthModal()} />
         <NavItem icon={<NoteIcon />}    label={t('nav.myNotes')}  active={activePanel === 'my-notes'} onClick={() => user ? toggleSidebarPanel('my-notes')  : openAuthModal()} />
         <NavItem icon={<BookOpen className="w-3.5 h-3.5" />} label={t('nav.myStudies')} active={activePanel === 'my-studies'} badge={pendingInvitations} onClick={() => user ? toggleSidebarPanel('my-studies') : openAuthModal()} />
-        <NavItem icon={<BookOpen className="w-3.5 h-3.5" />} label="New Study" active={false} onClick={() => user ? setShowStartStudy(true) : openAuthModal()} />
+        <NavItem icon={<BookOpen className="w-3.5 h-3.5" />} label={t('nav.newStudy')} active={false} onClick={() => user ? setShowStartStudy(true) : openAuthModal()} />
         <SectionLabel>{t('nav.social')}</SectionLabel>
         <NavItem icon={<PeopleIcon />} label={t('nav.friends')} active={activePanel === 'friends'} badge={unreadCount} onClick={() => user ? toggleSidebarPanel('friends') : openAuthModal()} />
         <NavItem icon={<ChatIcon />} label={t('nav.chat')} active={activePanel === 'chat'} badge={chatUnread} onClick={() => user ? toggleSidebarPanel('chat') : openAuthModal()} />

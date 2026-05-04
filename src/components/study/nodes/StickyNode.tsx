@@ -1,14 +1,15 @@
 import { useContext, useEffect, useRef, useState, useCallback } from 'react';
 import { Handle, Position, type NodeProps, type Node } from '@xyflow/react';
+import { useTranslation } from 'react-i18next';
 import { cn } from '@/lib/cn';
 import { StudyDocContext } from '@/lib/study/StudyDocContext';
 import { getNodesMap } from '@/lib/study/yDocHelpers';
 
 const STICKY_COLORS = [
-  { value: 'yellow', bg: 'bg-yellow-500/10 border-yellow-500/30', name: 'Yellow' },
-  { value: 'blue', bg: 'bg-blue-500/10 border-blue-500/30', name: 'Blue' },
-  { value: 'green', bg: 'bg-green-500/10 border-green-500/30', name: 'Green' },
-  { value: 'pink', bg: 'bg-pink-500/10 border-pink-500/30', name: 'Pink' },
+  { value: 'yellow', bg: 'bg-yellow-500/10 border-yellow-500/30', colorKey: 'study.colorYellow' },
+  { value: 'blue', bg: 'bg-blue-500/10 border-blue-500/30', colorKey: 'study.colorBlue' },
+  { value: 'green', bg: 'bg-green-500/10 border-green-500/30', colorKey: 'study.colorGreen' },
+  { value: 'pink', bg: 'bg-pink-500/10 border-pink-500/30', colorKey: 'study.colorPink' },
 ];
 
 export type StickyNodeData = {
@@ -19,6 +20,7 @@ export type StickyNodeData = {
 type StickyNodeType = Node<StickyNodeData, 'sticky'>;
 
 export function StickyNode({ id, data, selected }: NodeProps<StickyNodeType>) {
+  const { t } = useTranslation();
   const doc = useContext(StudyDocContext);
 
   const [text, setText] = useState(data.text ?? '');
@@ -99,7 +101,7 @@ export function StickyNode({ id, data, selected }: NodeProps<StickyNodeType>) {
         value={text}
         onChange={(e) => handleTextChange(e.target.value)}
         className="w-full bg-transparent border-none outline-none resize-none text-sm text-text-primary p-3 placeholder:text-text-muted"
-        placeholder="Write a note..."
+        placeholder={t('study.sticky.placeholder')}
         rows={1}
       />
 
@@ -116,7 +118,7 @@ export function StickyNode({ id, data, selected }: NodeProps<StickyNodeType>) {
               c.value === 'pink' && 'bg-pink-500/80 border-pink-500',
               color === c.value && 'ring-1 ring-text-primary ring-offset-1 ring-offset-bg-primary',
             )}
-            title={c.name}
+            title={t(c.colorKey)}
           />
         ))}
       </div>
