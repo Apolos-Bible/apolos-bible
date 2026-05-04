@@ -2,7 +2,9 @@
 
 A desktop Bible study app built for focus, depth, and collaboration.
 
-![tulia.study screenshot](docs/screenshot.png)
+<img width="1680" height="960" alt="Screenshot 2026-05-04 at 17 10 29" src="https://github.com/user-attachments/assets/7c0a9ca9-33ea-47bc-9cb8-3067a0514508" />
+<img width="3360" height="1918" alt="image" src="https://github.com/user-attachments/assets/90be971d-51f7-449a-bb77-8ede0ae4b918" />
+<img width="1680" height="954" alt="Screenshot 2026-05-04 at 17 08 30" src="https://github.com/user-attachments/assets/c7799d54-dc25-486a-8db0-02d4e04a9565" />
 
 ---
 
