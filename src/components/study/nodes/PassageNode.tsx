@@ -1,5 +1,6 @@
 import { useContext, useEffect, useState } from 'react';
 import { Handle, Position, type NodeProps, type Node } from '@xyflow/react';
+import { useTranslation } from 'react-i18next';
 import { cn } from '@/lib/cn';
 import { bibleApi } from '@/lib/bibleApi';
 import { StudyDocContext } from '@/lib/study/StudyDocContext';
@@ -18,6 +19,7 @@ export type PassageNodeData = {
 type PassageNodeType = Node<PassageNodeData, 'passage'>;
 
 export function PassageNode({ id, data, selected }: NodeProps<PassageNodeType>) {
+  const { t } = useTranslation();
   const doc = useContext(StudyDocContext);
   const [loadFailed, setLoadFailed] = useState(false);
   const verses = data.verses ?? [];
@@ -89,9 +91,9 @@ export function PassageNode({ id, data, selected }: NodeProps<PassageNodeType>) 
             </div>
           ))
         ) : loadFailed ? (
-          <p className="text-sm text-red-400">Could not load passage.</p>
+          <p className="text-sm text-red-400">{t('study.passage.loadFailed')}</p>
         ) : (
-          <p className="text-sm text-text-muted">Loading passage...</p>
+          <p className="text-sm text-text-muted">{t('study.passage.loading')}</p>
         )}
       </div>
       <Handle type="source" position={Position.Bottom} className="!bg-border" />

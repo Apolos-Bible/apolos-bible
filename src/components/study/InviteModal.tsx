@@ -1,4 +1,5 @@
 import { useState, useCallback, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { X, Search, UserPlus, Check, Clock } from 'lucide-react';
 import { useFriendStore } from '@/lib/store/useFriendStore';
 import { useStudyStore } from '@/lib/store/useStudyStore';
@@ -12,6 +13,7 @@ interface InviteModalProps {
 }
 
 export function InviteModal({ open, onClose }: InviteModalProps) {
+  const { t } = useTranslation();
   const friends = useFriendStore((s) => s.friends);
   const searchUsers = useFriendStore((s) => s.searchUsers);
   const searchResults = useFriendStore((s) => s.searchResults);
@@ -73,11 +75,11 @@ export function InviteModal({ open, onClose }: InviteModalProps) {
         selectedIds.forEach(id => next.set(id, 'Pending'));
         return next;
       });
-      addToast('Invitations sent!', 'success');
+      addToast(t('study.invite.sent'), 'success');
       setSelectedIds(new Set());
       setQuery('');
     } catch {
-      addToast('Failed to send invitations', 'error');
+      addToast(t('study.invite.failed'), 'error');
     } finally {
       setSending(false);
     }
@@ -96,7 +98,7 @@ export function InviteModal({ open, onClose }: InviteModalProps) {
       <div className="absolute inset-0 bg-black/50" onClick={onClose} />
       <div className="relative bg-surface border border-border rounded-2xl shadow-xl p-6 max-w-md w-full mx-4">
         <div className="flex items-center justify-between mb-4">
-          <h2 className="text-md font-semibold text-text-primary">Invite to Study</h2>
+          <h2 className="text-md font-semibold text-text-primary">{t('study.invite.title')}</h2>
           <button onClick={onClose} className="text-text-muted hover:text-text-primary transition-colors">
             <X className="w-4 h-4" />
           </button>
@@ -106,7 +108,7 @@ export function InviteModal({ open, onClose }: InviteModalProps) {
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-text-muted" />
           <input
             type="text"
-            placeholder="Search friends..."
+            placeholder={t('study.invite.searchPlaceholder')}
             value={query}
             onChange={(e) => handleSearch(e.target.value)}
             className="w-full pl-9 pr-3 py-2 bg-bg-tertiary border border-border rounded-lg text-sm text-text-primary outline-none focus:border-accent/50 placeholder:text-text-muted"
@@ -116,7 +118,7 @@ export function InviteModal({ open, onClose }: InviteModalProps) {
         <div className="max-h-60 overflow-y-auto space-y-1 mb-4">
           {shownUsers.length === 0 ? (
             <p className="text-sm text-text-muted text-center py-4">
-              {query.trim().length >= 2 ? 'No users found' : 'No friends yet'}
+              {query.trim().length >= 2 ? t('study.invite.noUsersFound') : t('study.invite.noFriendsYet')}
             </p>
           ) : (
             shownUsers.map((user) => {
@@ -148,7 +150,9 @@ export function InviteModal({ open, onClose }: InviteModalProps) {
                       {status === 'In session' ? <Check className="w-3 h-3" /> :
                        status === 'Pending' ? <Clock className="w-3 h-3" /> :
                        <Check className="w-3 h-3" />}
-                      {status}
+                      {status === 'In session' ? t('study.invite.inSession') :
+                       status === 'Pending' ? t('study.invite.pending') :
+                       status}
                     </span>
                   ) : (
                     <div
@@ -181,7 +185,7 @@ export function InviteModal({ open, onClose }: InviteModalProps) {
           )}
         >
           <UserPlus className="w-4 h-4" />
-          {sending ? 'Sending...' : `Invite (${selectedIds.size})`}
+          {sending ? t('study.invite.sending') : t('study.invite.inviteButton', { count: selectedIds.size })}
         </button>
       </div>
     </div>

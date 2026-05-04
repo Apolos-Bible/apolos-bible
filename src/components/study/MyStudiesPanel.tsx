@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { RotateCw, Clock, Users, Play, RefreshCw, Check, X } from 'lucide-react';
 import { useStudyStore } from '@/lib/store/useStudyStore';
 import { useUIStore } from '@/lib/store/useUIStore';
@@ -6,6 +7,7 @@ import { cn } from '@/lib/cn';
 import type { StudySession } from '@/lib/study/studyApi';
 
 export function MyStudiesPanel() {
+  const { t } = useTranslation();
   const myStudies = useStudyStore((s) => s.myStudies);
   const pendingInvitations = useStudyStore((s) => s.pendingInvitations);
   const loadMyStudies = useStudyStore((s) => s.loadMyStudies);
@@ -47,19 +49,19 @@ export function MyStudiesPanel() {
   return (
     <div className="h-full flex flex-col bg-bg-secondary border-r border-border-subtle">
       <div className="px-4 pt-3 pb-2 shrink-0 flex items-center justify-between">
-        <span className="font-medium text-md text-text-primary">My Studies</span>
+        <span className="font-medium text-md text-text-primary">{t('study.my.title')}</span>
         <div className="flex items-center gap-1">
           <button
             onClick={() => { loadMyStudies(); loadInvitations(); }}
             className="w-6 h-6 flex items-center justify-center rounded text-text-muted hover:text-text-primary hover:bg-bg-tertiary transition-colors"
-            title="Refresh"
+            title={t('study.my.refresh')}
           >
             <RefreshCw className="w-3.5 h-3.5" />
           </button>
           <button
             onClick={closePanel}
             className="w-6 h-6 flex items-center justify-center rounded text-text-muted hover:text-text-primary hover:bg-bg-tertiary transition-colors"
-            title="Close"
+            title={t('study.my.close')}
           >
             <svg width="12" height="12" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round">
               <path d="M2 2l10 10M12 2L2 12" />
@@ -72,7 +74,7 @@ export function MyStudiesPanel() {
       {pendingInvitations.length > 0 && (
         <div className="px-3 pb-3 shrink-0">
           <p className="text-2xs font-medium text-text-muted uppercase tracking-wider mb-1.5 px-1">
-            Pending Invitations ({pendingInvitations.length})
+            {t('study.my.pendingInvitations', { count: pendingInvitations.length })}
           </p>
           <div className="space-y-1">
             {pendingInvitations.map((inv) => (
@@ -85,20 +87,20 @@ export function MyStudiesPanel() {
                     {inv.session?.title ?? 'Study session'}
                   </p>
                   <p className="text-2xs text-text-muted">
-                    Invited by user #{inv.inviter_id}
+                    {t('study.my.invitedBy', { id: inv.inviter_id })}
                   </p>
                 </div>
                 <button
                   onClick={() => handleAcceptInvitation(inv.id)}
                   className="w-7 h-7 flex items-center justify-center rounded-md bg-green-500/10 text-green-400 hover:bg-green-500/20 transition-colors"
-                  title="Accept"
-                >
-                  <Check className="w-3.5 h-3.5" />
-                </button>
-                <button
-                  onClick={() => declineInvitation(inv.id)}
-                  className="w-7 h-7 flex items-center justify-center rounded-md bg-red-500/10 text-red-400 hover:bg-red-500/20 transition-colors"
-                  title="Decline"
+                    title={t('study.my.accept')}
+                  >
+                    <Check className="w-3.5 h-3.5" />
+                  </button>
+                  <button
+                    onClick={() => declineInvitation(inv.id)}
+                    className="w-7 h-7 flex items-center justify-center rounded-md bg-red-500/10 text-red-400 hover:bg-red-500/20 transition-colors"
+                    title={t('study.my.decline')}
                 >
                   <X className="w-3.5 h-3.5" />
                 </button>
@@ -120,7 +122,7 @@ export function MyStudiesPanel() {
                 : 'text-text-muted hover:text-text-secondary hover:bg-bg-tertiary',
             )}
           >
-            {f === 'all' ? 'All' : f}
+            {f === 'all' ? t('study.my.filterAll') : f === 'active' ? t('study.my.filterActive') : t('study.my.filterEnded')}
             {f === 'active' && activeCount > 0 && (
               <span className="ml-1 opacity-70">{activeCount}</span>
             )}
@@ -132,10 +134,10 @@ export function MyStudiesPanel() {
         {filtered.length === 0 ? (
           <div className="text-center py-8">
             <p className="text-sm text-text-muted">
-              {filter === 'active' ? 'No active studies' : filter === 'ended' ? 'No ended studies' : 'No studies yet'}
+              {filter === 'active' ? t('study.my.noActive') : filter === 'ended' ? t('study.my.noEnded') : t('study.my.noStudies')}
             </p>
             <p className="text-2xs text-text-muted mt-1">
-              Start a new study from the sidebar
+              {t('study.my.startFromSidebar')}
             </p>
           </div>
         ) : (
@@ -178,10 +180,10 @@ export function MyStudiesPanel() {
                     </div>
                     <p className="text-2xs text-text-muted mt-0.5">
                       {session.type === 'verse'
-                        ? `Verse: ${session.anchor_ref}`
+                        ? `${t('study.my.verse')}: ${session.anchor_ref}`
                         : session.type === 'chapter'
-                          ? `Chapter: ${session.anchor_ref}`
-                          : 'Free study'}
+                          ? `${t('study.my.chapter')}: ${session.anchor_ref}`
+                          : t('study.my.freeStudy')}
                     </p>
                     <div className="flex items-center gap-3 mt-1.5 text-2xs text-text-muted">
                       <span className="flex items-center gap-1">
@@ -197,7 +199,7 @@ export function MyStudiesPanel() {
                       {session.status === 'ended' && (
                         <span className="flex items-center gap-1 text-orange-400">
                           <RotateCw className="w-3 h-3" />
-                          Reopen
+                          {t('study.my.reopen')}
                         </span>
                       )}
                     </div>

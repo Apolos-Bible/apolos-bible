@@ -1,4 +1,5 @@
 import { useState, useCallback, useEffect, useRef, useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
 import { X, Search, BookOpen } from 'lucide-react';
 import { type ApiSearchResult } from '@/lib/bibleApi';
 import { searchVerses } from '@/lib/verseSearch';
@@ -15,6 +16,7 @@ interface InsertVerseModalProps {
 }
 
 export function InsertVerseModal({ open, onClose }: InsertVerseModalProps) {
+  const { t } = useTranslation();
   const versionId = useVerseStore((s) => s.versionId);
   const [query, setQuery] = useState('');
   const [results, setResults] = useState<ApiSearchResult[]>([]);
@@ -138,7 +140,7 @@ export function InsertVerseModal({ open, onClose }: InsertVerseModalProps) {
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-md font-semibold text-text-primary flex items-center gap-2">
             <BookOpen className="w-4 h-4 text-accent" />
-            Insert Verse
+            {t('study.insertVerse.title')}
           </h2>
           <button
             onClick={onClose}
@@ -156,21 +158,21 @@ export function InsertVerseModal({ open, onClose }: InsertVerseModalProps) {
             value={query}
             onChange={(e) => handleChange(e.target.value)}
             onKeyDown={handleKey}
-            placeholder="Search verses (e.g. John 3:16)..."
+            placeholder={t('study.insertVerse.searchPlaceholder')}
             className="w-full pl-9 pr-3 py-2 bg-bg-primary border border-border rounded-lg text-sm text-text-primary outline-none focus:border-accent/50 placeholder:text-text-muted"
           />
         </div>
 
         <div className="max-h-64 overflow-y-auto">
           {loading && (
-            <p className="text-sm text-text-muted text-center py-6">Searching...</p>
+            <p className="text-sm text-text-muted text-center py-6">{t('study.insertVerse.searching')}</p>
           )}
           {!loading && query.trim().length >= 2 && results.length === 0 && (
-            <p className="text-sm text-text-muted text-center py-6">No results found</p>
+            <p className="text-sm text-text-muted text-center py-6">{t('study.insertVerse.noResults')}</p>
           )}
           {!loading && query.trim().length < 2 && (
             <p className="text-sm text-text-muted text-center py-6">
-              Type at least 2 characters to search
+              {t('study.insertVerse.typeMoreChars')}
             </p>
           )}
           {flatItems.map((item, i) =>
@@ -188,7 +190,7 @@ export function InsertVerseModal({ open, onClose }: InsertVerseModalProps) {
                   {item.groupKey}
                 </span>
                 <span className="text-2xs text-text-muted ml-auto">
-                  {item.results.length} verse{item.results.length !== 1 ? 's' : ''}
+                  {item.results.length} {t('study.insertVerse.verse_one', { count: item.results.length })}
                 </span>
               </button>
             ) : (

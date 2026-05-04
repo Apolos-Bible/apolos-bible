@@ -1,4 +1,5 @@
 import { useEffect, useState, useCallback } from 'react'
+import { useTranslation } from 'react-i18next'
 import { X, ChevronLeft, ChevronRight, Check, Plus } from 'lucide-react'
 import { useVerseStore } from '@/lib/store/useVerseStore'
 import { useBiblePreviewStore } from '@/lib/store/useBiblePreviewStore'
@@ -11,6 +12,7 @@ interface BiblePanelProps {
 }
 
 export function BiblePanel({ open, onClose }: BiblePanelProps) {
+  const { t } = useTranslation();
   const books = useVerseStore(s => s.books)
   const {
     bookSlug, bookName, chapter, verses,
@@ -87,7 +89,7 @@ export function BiblePanel({ open, onClose }: BiblePanelProps) {
               onClick={() => setBookSelectorOpen(!bookSelectorOpen)}
               className="text-sm font-medium text-text-primary hover:text-accent transition-colors truncate"
             >
-              {bookName || 'Select book'}
+              {bookName || t('study.bible.selectBook')}
             </button>
             <div className="flex-1" />
             <button
@@ -124,7 +126,7 @@ export function BiblePanel({ open, onClose }: BiblePanelProps) {
                     testamentTab === 'old' ? 'text-accent border-b-2 border-accent' : 'text-text-muted hover:text-text-secondary',
                   )}
                 >
-                  Old Testament
+                  {t('study.bible.oldTestament')}
                 </button>
                 <button
                   onClick={() => setTestamentTab('new')}
@@ -133,7 +135,7 @@ export function BiblePanel({ open, onClose }: BiblePanelProps) {
                     testamentTab === 'new' ? 'text-accent border-b-2 border-accent' : 'text-text-muted hover:text-text-secondary',
                   )}
                 >
-                  New Testament
+                  {t('study.bible.newTestament')}
                 </button>
               </div>
               <div className="overflow-y-auto p-2 space-y-0.5">
@@ -157,9 +159,9 @@ export function BiblePanel({ open, onClose }: BiblePanelProps) {
           {/* Verse list */}
           <div className="flex-1 overflow-y-auto">
             {loading ? (
-              <p className="text-sm text-text-muted text-center py-8">Loading...</p>
+              <p className="text-sm text-text-muted text-center py-8">{t('study.bible.loading')}</p>
             ) : verses.length === 0 ? (
-              <p className="text-sm text-text-muted text-center py-8">Select a book to begin</p>
+              <p className="text-sm text-text-muted text-center py-8">{t('study.bible.selectToBegin')}</p>
             ) : (
               verses.map((v) => {
                 const selected = selectedIds.has(v.id)
@@ -205,7 +207,7 @@ export function BiblePanel({ open, onClose }: BiblePanelProps) {
                 className="w-full flex items-center justify-center gap-2 py-2 rounded-lg bg-accent text-bg-primary text-sm font-medium hover:opacity-90 transition-opacity"
               >
                 <Plus className="w-4 h-4" />
-                Add {selectedCount} verse{selectedCount > 1 ? 's' : ''} to canvas
+                {t('study.bible.addVerses', { count: selectedCount })}
               </button>
             </div>
           )}
@@ -228,7 +230,7 @@ export function BiblePanel({ open, onClose }: BiblePanelProps) {
                   onClick={() => setBookSelectorOpen(!bookSelectorOpen)}
                   className="text-sm font-medium text-text-primary truncate"
                 >
-                  {bookName || 'Select'}
+                  {bookName || t('study.bible.select')}
                 </button>
                 <div className="flex-1" />
                 <button
@@ -255,8 +257,8 @@ export function BiblePanel({ open, onClose }: BiblePanelProps) {
               {bookSelectorOpen && (
                 <div className="shrink-0 border-b border-border">
                   <div className="flex border-b border-border">
-                    <button onClick={() => setTestamentTab('old')} className={cn('flex-1 py-2 text-xs font-medium', testamentTab === 'old' ? 'text-accent border-b-2 border-accent' : 'text-text-muted')}>OT</button>
-                    <button onClick={() => setTestamentTab('new')} className={cn('flex-1 py-2 text-xs font-medium', testamentTab === 'new' ? 'text-accent border-b-2 border-accent' : 'text-text-muted')}>NT</button>
+                    <button onClick={() => setTestamentTab('old')} className={cn('flex-1 py-2 text-xs font-medium', testamentTab === 'old' ? 'text-accent border-b-2 border-accent' : 'text-text-muted')}>{t('study.bible.ot')}</button>
+                    <button onClick={() => setTestamentTab('new')} className={cn('flex-1 py-2 text-xs font-medium', testamentTab === 'new' ? 'text-accent border-b-2 border-accent' : 'text-text-muted')}>{t('study.bible.nt')}</button>
                   </div>
                   <div className="max-h-40 overflow-y-auto p-2 space-y-0.5">
                     {filteredBooks.map((book) => (
@@ -299,7 +301,7 @@ export function BiblePanel({ open, onClose }: BiblePanelProps) {
                 <div className="shrink-0 border-t border-border p-3">
                   <button onClick={handleAddToCanvas} className="w-full flex items-center justify-center gap-2 py-2 rounded-lg bg-accent text-bg-primary text-sm font-medium">
                     <Plus className="w-4 h-4" />
-                    Add {selectedCount} verse{selectedCount > 1 ? 's' : ''}
+                    {t('study.bible.addVerses', { count: selectedCount })}
                   </button>
                 </div>
               )}
