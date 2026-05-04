@@ -442,7 +442,6 @@ export function VerseList() {
     if (selectedVerseIds.includes(verse.id) && selectedVerseIds.length > 1) {
       openMenu(rect.right - 12, rect.bottom + 8, buildMultiVerseMenu())
     } else {
-      selectVerse(verse.id)
       openMenu(rect.right - 12, rect.bottom + 8, buildVerseMenu(verse))
     }
   }
