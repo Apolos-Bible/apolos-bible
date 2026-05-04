@@ -40,7 +40,8 @@ export default function App() {
   const commentaryOpen     = useUIStore(s => s.commentaryOpen)
   const authModalOpen      = useUIStore(s => s.authModalOpen)
   const closeAuthModal     = useUIStore(s => s.closeAuthModal)
-  const navigateVerse = useVerseStore(s => s.navigateVerse)
+  const navigateVerse   = useVerseStore(s => s.navigateVerse)
+  const navigateChapter = useVerseStore(s => s.navigateChapter)
   const studyVerseId = useVerseStore(s => s.studyVerseId)
   const loadBooks = useVerseStore(s => s.loadBooks)
   const versions = useVerseStore(s => s.versions)
@@ -151,12 +152,14 @@ export default function App() {
 
       if (e.key === 'j') navigateVerse('next')
       if (e.key === 'k') navigateVerse('prev')
+      if (e.key === 'ArrowLeft')  { e.preventDefault(); navigateChapter('prev') }
+      if (e.key === 'ArrowRight') { e.preventDefault(); navigateChapter('next') }
       if (e.key === '?') useUIStore.getState().toggleShortcutsPanel()
     }
 
     window.addEventListener('keydown', handleKey)
     return () => window.removeEventListener('keydown', handleKey)
-  }, [openCommandPalette, navigateVerse])
+  }, [openCommandPalette, navigateVerse, navigateChapter])
 
   if (studyMode && studyActiveSession && studyWsToken) {
     return <StudyMode />
