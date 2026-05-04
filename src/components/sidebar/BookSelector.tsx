@@ -3,6 +3,7 @@ import { useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useVerseStore } from '@/lib/store/useVerseStore'
 import type { Book } from '@/lib/store/useVerseStore'
+import { useUIStore } from '@/lib/store/useUIStore'
 import { cn } from '@/lib/cn'
 
 interface BookGroupProps {
@@ -101,8 +102,14 @@ export function BookSelector() {
   const selectedBook = useVerseStore((s) => s.selectedBook)
   const selectedChapter = useVerseStore((s) => s.selectedChapter)
   const loadChapter = useVerseStore((s) => s.loadChapter)
+  const closeMobileSidebar = useUIStore((s) => s.closeMobileSidebar)
   const [openBook, setOpenBook] = useState(selectedBook)
   const scrollRef = useRef<HTMLDivElement>(null)
+
+  const handleSelectChapter = (bookId: string, chapter: number) => {
+    loadChapter(bookId, chapter)
+    closeMobileSidebar()
+  }
 
   useEffect(() => {
     if (selectedBook) setOpenBook(selectedBook)
@@ -138,7 +145,7 @@ export function BookSelector() {
         openBook={openBook}
         selectedChapter={selectedChapter}
         onOpenBook={setOpenBook}
-        onSelectChapter={loadChapter}
+        onSelectChapter={handleSelectChapter}
       />
       <div className="mt-2">
         <BookGroup
@@ -148,7 +155,7 @@ export function BookSelector() {
           openBook={openBook}
           selectedChapter={selectedChapter}
           onOpenBook={setOpenBook}
-          onSelectChapter={loadChapter}
+          onSelectChapter={handleSelectChapter}
         />
       </div>
     </div>
