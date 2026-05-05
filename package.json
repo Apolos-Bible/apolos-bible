@@ -27,6 +27,7 @@
     "@xyflow/react": "^12.10.2",
     "clsx": "^2.1.1",
     "cmdk": "^1.0.0",
+    "dexie": "^4.4.2",
     "i18next": "^26.0.8",
     "laravel-echo": "^2.3.4",
     "lucide-react": "^0.441.0",

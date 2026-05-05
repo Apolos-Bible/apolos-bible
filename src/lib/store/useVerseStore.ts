@@ -7,6 +7,7 @@ import {
   selectDefaultBibleVersionId,
 } from '@/lib/defaultBibleVersion'
 import { saveUserSettingsSilently } from '@/lib/userSettingsApi'
+import { prefetchVersion } from '@/lib/prefetchBible'
 
 const LAST_READING_KEY = 'verbum_last_reading'
 
@@ -106,6 +107,11 @@ export const useVerseStore = create<VerseState>((set, get) => ({
       }
 
       const apiBooks: ApiBook[] = await bibleApi.books(versionId)
+      if (!Array.isArray(apiBooks)) {
+        console.error('[bibleApi.books] non-array response', { versionId, apiBooks })
+        return
+      }
+      prefetchVersion(versionId, apiBooks)
       const books: Book[] = apiBooks.map(b => ({
         id: b.slug,
         number: b.number,
