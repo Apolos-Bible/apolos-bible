@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next'
 import { cn } from '@/lib/cn'
 import { useVerseStore } from '@/lib/store/useVerseStore'
 import { useUIStore } from '@/lib/store/useUIStore'
+import { useContextMenuStore } from '@/lib/store/useContextMenuStore'
 
 interface PanelLayoutProps {
   sidebar: ReactNode
@@ -34,6 +35,9 @@ export function PanelLayout({ sidebar, main, panel, leftPanel }: PanelLayoutProp
 
   const selectedVerseIds = useVerseStore((s) => s.selectedVerseIds)
   const selectVerse = useVerseStore((s) => s.selectVerse)
+  const verses = useVerseStore((s) => s.verses)
+  const openMenu = useContextMenuStore((s) => s.openMenu)
+  const addToast = useUIStore((s) => s.addToast)
 
   return (
     <div className="app-viewport w-full overflow-hidden bg-bg-primary">
@@ -51,18 +55,70 @@ export function PanelLayout({ sidebar, main, panel, leftPanel }: PanelLayoutProp
           </button>
 
           {selectedVerseIds.length > 0 && (
-            <div className="pointer-events-auto absolute left-1/2 -translate-x-1/2">
-              <button
-                type="button"
-                onClick={() => selectVerse(null)}
-                className="relative inline-flex h-10 px-3 items-center justify-center rounded-full border border-border-subtle bg-bg-secondary text-text-secondary shadow-sm gap-1.5"
-                aria-label={t('verse.clear')}
-              >
+            <div className="pointer-events-auto absolute left-1/2 -translate-x-1/2 flex items-center gap-1.5">
+              <div className="relative inline-flex h-10 px-3 items-center justify-center rounded-full border border-border-subtle bg-bg-secondary text-text-secondary shadow-sm gap-1.5">
                 <span className="text-xs font-medium tabular-nums">{selectedVerseIds.length}</span>
-                <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round">
-                  <path d="M3 3l6 6M9 3l-6 6" />
-                </svg>
-              </button>
+                {selectedVerseIds.length > 1 && (
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      const multiVerses = verses.filter(v => selectedVerseIds.includes(v.id))
+                      const bookName = multiVerses[0]?.book ?? ''
+                      const rect = e.currentTarget.getBoundingClientRect()
+                      openMenu(rect.left + rect.width / 2, rect.top - 8, [
+                        {
+                          type: 'action',
+                          label: t('study.copyVerseText'),
+                          onClick: () => {
+                            navigator.clipboard.writeText(multiVerses.map(v => v.text).join('\n\n'))
+                            addToast(t('toast.copied'), 'success')
+                          },
+                        },
+                        {
+                          type: 'action',
+                          label: t('verse.copyReference'),
+                          onClick: () => {
+                            const refs = multiVerses.map(v => `${bookName} ${v.chapter}:${v.verse}`).join(', ')
+                            navigator.clipboard.writeText(refs)
+                            addToast(t('verse.copiedRef', { ref: refs }), 'success')
+                          },
+                        },
+                        {
+                          type: 'action',
+                          label: t('verse.shareVerse'),
+                          onClick: () => {
+                            const shareText = multiVerses.map(v => `${bookName} ${v.chapter}:${v.verse} — ${v.text}`).join('\n\n')
+                            if (navigator.share) {
+                              navigator.share({ title: t('verse.shareVerse'), text: shareText })
+                            } else {
+                              navigator.clipboard.writeText(shareText)
+                              addToast(t('toast.copied'), 'success')
+                            }
+                          },
+                        },
+                      ])
+                    }}
+                    className="flex items-center justify-center text-text-muted hover:text-text-primary transition-colors"
+                    aria-label={t('verse.openActions', { verse: selectedVerseIds.length })}
+                  >
+                    <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true">
+                      <circle cx="3.5" cy="8" r="1.2" />
+                      <circle cx="8" cy="8" r="1.2" />
+                      <circle cx="12.5" cy="8" r="1.2" />
+                    </svg>
+                  </button>
+                )}
+                <button
+                  type="button"
+                  onClick={() => selectVerse(null)}
+                  className="flex items-center justify-center text-text-muted hover:text-text-primary transition-colors"
+                  aria-label={t('verse.clear')}
+                >
+                  <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round">
+                    <path d="M3 3l6 6M9 3l-6 6" />
+                  </svg>
+                </button>
+              </div>
             </div>
           )}
 

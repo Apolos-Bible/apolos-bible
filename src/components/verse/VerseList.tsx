@@ -793,7 +793,10 @@ export function VerseList() {
                           e.stopPropagation()
                           openVerseMenuFromButton(e.currentTarget, verse)
                         }}
-                        className="md:hidden shrink-0 self-start mt-0.5 inline-flex h-8 w-8 items-center justify-center rounded-md text-text-muted hover:text-text-primary hover:bg-bg-tertiary"
+                        className={cn(
+                          'shrink-0 self-start mt-0.5 inline-flex h-8 w-8 items-center justify-center rounded-md text-text-muted hover:text-text-primary hover:bg-bg-tertiary',
+                          selectedVerseIds.length > 1 ? 'hidden' : 'md:hidden',
+                        )}
                         aria-label={t('verse.openActions', { verse: verse.verse })}
                       >
                         <IconMore />
@@ -809,10 +812,23 @@ export function VerseList() {
       )}
 
       {selectedVerseIds.length > 0 && (
-        <div className="hidden md:flex fixed bottom-4 left-4 z-20 items-center gap-2 bg-bg-tertiary border border-border-subtle rounded-lg px-3 py-2 shadow-lg text-xs">
-          <span className="text-text-secondary">
+        <div className="hidden md:flex fixed bottom-4 right-4 z-20 items-center gap-2 bg-bg-tertiary border border-border-subtle rounded-lg px-3 py-2 shadow-lg text-xs">
+          <span className="text-text-secondary tabular-nums">
             {t('verse.selectedVerses', { count: selectedVerseIds.length })}
           </span>
+          {selectedVerseIds.length > 1 && (
+            <button
+              type="button"
+              onClick={(e) => {
+                const firstVerse = verses.find(v => v.id === selectedVerseIds[0])
+                if (firstVerse) openVerseMenuFromButton(e.currentTarget, firstVerse)
+              }}
+              className="flex items-center gap-1 text-text-muted hover:text-text-primary transition-colors"
+              aria-label={t('verse.openActions', { verse: selectedVerseIds.length })}
+            >
+              <IconMore />
+            </button>
+          )}
           <button
             type="button"
             onClick={() => selectVerse(null)}
