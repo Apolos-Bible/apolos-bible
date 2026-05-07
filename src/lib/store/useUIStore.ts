@@ -122,7 +122,9 @@ export const useUIStore = create<UIStore>((set) => ({
   addToast: (message, type = 'info', options) => {
     const id = `toast-${++_toastSeq}-${Date.now()}`
     set((s) => ({ toasts: [...s.toasts, { id, message, type, action: options?.action }] }))
-    setTimeout(() => set((s) => ({ toasts: s.toasts.filter(t => t.id !== id) })), options?.duration ?? 3000)
+    if (options?.duration !== 0) {
+      setTimeout(() => set((s) => ({ toasts: s.toasts.filter(t => t.id !== id) })), options?.duration ?? 3000)
+    }
     return id
   },
 

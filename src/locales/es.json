@@ -424,5 +424,8 @@
 
   "updater.installing": "Instalando actualización {{version}}…",
   "updater.installed": "Actualización instalada. Reiniciando…",
-  "updater.failed": "No se pudo instalar la actualización"
+  "updater.failed": "No se pudo instalar la actualización",
+
+  "sw.updateAvailable": "Hay una nueva versión disponible.",
+  "sw.update": "Actualizar"
 }

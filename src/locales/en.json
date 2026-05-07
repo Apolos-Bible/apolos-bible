@@ -424,5 +424,8 @@
 
   "updater.installing": "Installing update {{version}}…",
   "updater.installed": "Update installed. Restarting…",
-  "updater.failed": "Could not install update"
+  "updater.failed": "Could not install update",
+
+  "sw.updateAvailable": "A new version is available.",
+  "sw.update": "Update"
 }

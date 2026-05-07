@@ -1,5 +1,18 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest'
 
+vi.mock('@/lib/db', () => ({
+  db: {
+    versions: { get: vi.fn(), put: vi.fn() },
+    books: { get: vi.fn(), put: vi.fn() },
+    chapters: {
+      get: vi.fn(), put: vi.fn(),
+      where: vi.fn(() => ({ equals: vi.fn(() => ({ primaryKeys: vi.fn(() => []) })) })),
+    },
+    crossRefs: { get: vi.fn(), put: vi.fn() },
+    crossRefIds: { get: vi.fn(), put: vi.fn() },
+  },
+}))
+
 vi.mock('@/lib/bibleApi', () => ({
   bibleApi: {
     versions: vi.fn(),
