@@ -75,6 +75,17 @@ function IconMore() {
   )
 }
 
+function IconShare() {
+  return (
+    <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round">
+      <circle cx="3.5" cy="6" r="2" />
+      <circle cx="8.5" cy="3" r="2" />
+      <circle cx="8.5" cy="9" r="2" />
+      <path d="M5 5l2-1.5M5 7l2 1.5" />
+    </svg>
+  )
+}
+
 function ColorDot({ color }: { color: string }) {
   return <span className="w-3 h-3 rounded-full shrink-0 inline-block" style={{ backgroundColor: color }} />
 }
@@ -285,6 +296,21 @@ export function VerseList() {
           addToast(t('verse.copiedRef', { ref }), 'success')
         },
       },
+      {
+        type: 'action',
+        label: t('verse.shareVerse'),
+        icon: <IconShare />,
+        onClick: () => {
+          const ref = `${bookName} ${verse.chapter}:${verse.verse}`
+          const shareText = `${ref} — ${verse.text}`
+          if (navigator.share) {
+            navigator.share({ title: ref, text: shareText, url: window.location.href })
+          } else {
+            navigator.clipboard.writeText(shareText)
+            addToast(t('toast.copied'), 'success')
+          }
+        },
+      },
       { type: 'separator' },
       { type: 'label', text: t('verse.highlightVerse') },
       {
@@ -369,6 +395,23 @@ export function VerseList() {
           const refs = multiVerses.map(v => `${bookName} ${v.chapter}:${v.verse}`).join(', ')
           navigator.clipboard.writeText(refs)
           addToast(t('verse.copiedRef', { ref: refs }), 'success')
+        },
+      },
+      {
+        type: 'action',
+        label: t('verse.shareVerse'),
+        icon: <IconShare />,
+        onClick: () => {
+          const shareText = multiVerses.map(v =>
+            `${bookName} ${v.chapter}:${v.verse} — ${v.text}`
+          ).join('\n\n')
+          const refs = multiVerses.map(v => `${bookName} ${v.chapter}:${v.verse}`).join(', ')
+          if (navigator.share) {
+            navigator.share({ title: refs, text: shareText, url: window.location.href })
+          } else {
+            navigator.clipboard.writeText(shareText)
+            addToast(t('toast.copied'), 'success')
+          }
         },
       },
       { type: 'separator' },

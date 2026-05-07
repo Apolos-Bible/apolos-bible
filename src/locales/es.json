@@ -393,6 +393,8 @@
   "verse.clear": "Limpiar",
   "verse.openActions": "Abrir acciones para versículo {{verse}}",
 
+  "verse.shareVerse": "Compartir versículo",
+
   "friends.removeAria": "Quitar a {{name}} de amigos",
   "friends.removeTitle": "Quitar amigo",
   "friends.searchAria": "Buscar personas para agregar como amigos",

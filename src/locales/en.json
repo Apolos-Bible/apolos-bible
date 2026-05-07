@@ -393,6 +393,8 @@
   "verse.clear": "Clear",
   "verse.openActions": "Open actions for verse {{verse}}",
 
+  "verse.shareVerse": "Share verse",
+
   "friends.removeAria": "Remove {{name}} from friends",
   "friends.removeTitle": "Remove friend",
   "friends.searchAria": "Search for people to add as friends",
