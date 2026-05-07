@@ -1,27 +1,47 @@
 export function registerServiceWorker(onUpdate: (reload: () => void) => void) {
   if (!('serviceWorker' in navigator)) return
 
+  function triggerUpdate(worker: ServiceWorker) {
+    onUpdate(() => {
+      worker.postMessage({ type: 'SKIP_WAITING' })
+      window.location.reload()
+    })
+  }
+
+  function trackInstalling(registration: ServiceWorkerRegistration) {
+    const installing = registration.installing
+    if (!installing) return
+
+    if (installing.state === 'installed' && navigator.serviceWorker.controller) {
+      triggerUpdate(installing)
+      return
+    }
+
+    installing.addEventListener('statechange', () => {
+      if (
+        installing.state === 'installed' &&
+        navigator.serviceWorker.controller
+      ) {
+        triggerUpdate(installing)
+      }
+    })
+  }
+
   window.addEventListener('load', async () => {
     try {
       const registration = await navigator.serviceWorker.register('/sw.js')
 
-      registration.addEventListener('updatefound', () => {
-        const newWorker = registration.installing
-        if (!newWorker) return
+      if (registration.waiting) {
+        triggerUpdate(registration.waiting)
+        return
+      }
 
-        newWorker.addEventListener('statechange', () => {
-          if (
-            newWorker.state === 'installed' &&
-            navigator.serviceWorker.controller
-          ) {
-            onUpdate(() => {
-              newWorker.postMessage({ type: 'SKIP_WAITING' })
-              navigator.serviceWorker.addEventListener('controllerchange', () => {
-                window.location.reload()
-              })
-            })
-          }
-        })
+      if (registration.installing) {
+        trackInstalling(registration)
+      }
+
+      registration.addEventListener('updatefound', () => {
+        trackInstalling(registration)
       })
     } catch {
       // SW registration failed — app works without offline support

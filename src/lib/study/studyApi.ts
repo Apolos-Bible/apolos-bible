@@ -36,6 +36,12 @@ export const studyApi = {
 
   declineInvitation: (invitationId: number) =>
     api.post<{ ok: boolean }>(`/api/studies/invitations/${invitationId}/decline`),
+
+  shareLink: (id: string) =>
+    api.post<{ share_token: string; share_url: string }>(`/api/studies/${id}/share`),
+
+  getSharedSession: (shareToken: string) =>
+    api.get<{ session: StudySession; guest_ws_token: string }>(`/api/studies/share/${shareToken}`),
 };
 
 export interface StudyParticipant {

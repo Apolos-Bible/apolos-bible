@@ -5,6 +5,8 @@ import type { StudySession, StudyInvitation, StudyParticipant } from '@/lib/stud
 type StudyStore = {
   activeSession: StudySession | null
   wsToken: string | null
+  isGuest: boolean
+  shareToken: string | null
   myStudies: StudySession[]
   pendingInvitations: StudyInvitation[]
   start: (input: { type: string; anchor_ref?: string; title: string }) => Promise<void>
@@ -17,11 +19,16 @@ type StudyStore = {
   loadInvitations: () => Promise<void>
   acceptInvitation: (id: number) => Promise<void>
   declineInvitation: (id: number) => Promise<void>
+  generateShareLink: () => Promise<string | null>
+  loadSharedSession: (shareToken: string) => Promise<void>
+  clearSession: () => void
 }
 
 export const useStudyStore = create<StudyStore>((set, get) => ({
   activeSession: null,
   wsToken: null,
+  isGuest: false,
+  shareToken: null,
   myStudies: [],
   pendingInvitations: [],
 
@@ -44,15 +51,19 @@ export const useStudyStore = create<StudyStore>((set, get) => ({
   leave: async () => {
     const session = get().activeSession
     if (!session) return
-    await studyApi.leave(session.id)
-    set({ activeSession: null, wsToken: null })
+    if (!get().isGuest) {
+      await studyApi.leave(session.id)
+    }
+    set({ activeSession: null, wsToken: null, isGuest: false, shareToken: null })
   },
 
   end: async () => {
     const session = get().activeSession
     if (!session) return
-    await studyApi.end(session.id)
-    set({ activeSession: null, wsToken: null })
+    if (!get().isGuest) {
+      await studyApi.end(session.id)
+    }
+    set({ activeSession: null, wsToken: null, isGuest: false, shareToken: null })
   },
 
   invite: async (userIds) => {
@@ -92,5 +103,32 @@ export const useStudyStore = create<StudyStore>((set, get) => ({
     set((s) => ({
       pendingInvitations: s.pendingInvitations.filter((i) => i.id !== id),
     }))
+  },
+
+  generateShareLink: async () => {
+    const session = get().activeSession
+    if (!session) return null
+    const res = await studyApi.shareLink(session.id)
+    set({ shareToken: res.share_token })
+    return res.share_url
+  },
+
+  loadSharedSession: async (shareToken) => {
+    const res = await studyApi.getSharedSession(shareToken)
+    set({
+      activeSession: res.session,
+      wsToken: res.guest_ws_token,
+      isGuest: true,
+      shareToken,
+    })
+  },
+
+  clearSession: () => {
+    set({
+      activeSession: null,
+      wsToken: null,
+      isGuest: false,
+      shareToken: null,
+    })
   },
 }))
