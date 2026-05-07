@@ -1,6 +1,7 @@
 import { useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useBibleRouter } from '@/lib/hooks/useBibleRouter'
+import { useStudyRoute } from '@/lib/hooks/useStudyRoute'
 import { PanelLayout } from '@/components/layout/PanelLayout'
 import { Sidebar } from '@/components/sidebar/Sidebar'
 import { VerseList } from '@/components/verse/VerseList'
@@ -35,6 +36,7 @@ let hasLoggedStartupSettings = false
 
 export default function App() {
   const initialRoute = useBibleRouter()
+  useStudyRoute()
   const { t } = useTranslation()
   const openCommandPalette = useUIStore(s => s.openCommandPalette)
   const activePanel        = useUIStore(s => s.activePanel)

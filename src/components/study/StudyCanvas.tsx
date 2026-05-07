@@ -23,6 +23,7 @@ import '@xyflow/react/dist/style.css';
 import * as Y from 'yjs';
 import { useStudyStore } from '@/lib/store/useStudyStore';
 import { useAuthStore } from '@/lib/store/useAuthStore';
+import { useUIStore } from '@/lib/store/useUIStore';
 import { useVerseStore } from '@/lib/store/useVerseStore';
 import {
   getNodesMap,
@@ -52,6 +53,7 @@ interface StudyCanvasProps {
   setLocalCursor: (x: number, y: number) => void;
   setLocalSelection: (nodeIds: string[]) => void;
   setLocalDragging: (dragging: boolean) => void;
+  isGuest: boolean;
 }
 
 function stripEphemeralNodeData(data: any) {
@@ -103,11 +105,13 @@ function StudyCanvasInner({
   setLocalCursor,
   setLocalSelection,
   setLocalDragging,
+  isGuest,
 }: StudyCanvasProps) {
   const activeSession = useStudyStore((s) => s.activeSession);
   const { screenToFlowPosition, zoomIn, zoomOut, fitView } = useReactFlow();
   const isInteractive = useStore((s) => s.nodesDraggable || s.nodesConnectable || s.elementsSelectable);
   const rfStore = useStoreApi();
+  const openAuthModal = useUIStore((s) => s.openAuthModal);
 
   const toggleLock = useCallback(() => {
     const s = rfStore.getState();
@@ -252,6 +256,7 @@ function StudyCanvasInner({
   }, [cancelRemotePositionAnimation]);
 
   const flushPendingPositionWrites = useCallback(() => {
+    if (isGuest) return;
     const d = docRef.current;
     if (!d || pendingPositionWritesRef.current.size === 0) return;
 
@@ -273,9 +278,10 @@ function StudyCanvasInner({
         }
       });
     }, 'local');
-  }, []);
+  }, [isGuest]);
 
   const schedulePositionWrite = useCallback((nodeId: string, position: { x: number; y: number }) => {
+    if (isGuest) return;
     pendingPositionWritesRef.current.set(nodeId, position);
 
     if (positionWriteTimerRef.current) return;
@@ -284,7 +290,7 @@ function StudyCanvasInner({
       positionWriteTimerRef.current = null;
       flushPendingPositionWrites();
     }, POSITION_SYNC_INTERVAL_MS);
-  }, [flushPendingPositionWrites]);
+  }, [flushPendingPositionWrites, isGuest]);
 
   useEffect(() => {
     return () => {
@@ -301,7 +307,9 @@ function StudyCanvasInner({
 
     const nodesMap = getNodesMap(doc);
     const edgesMap = getEdgesMap(doc);
-    undoManagerRef.current = new Y.UndoManager([nodesMap, edgesMap]);
+    if (!isGuest) {
+      undoManagerRef.current = new Y.UndoManager([nodesMap, edgesMap]);
+    }
 
     const syncFromYjs = (_events: any[], transaction: any) => {
       if (transaction?.origin === 'local') return;
@@ -344,7 +352,7 @@ function StudyCanvasInner({
 
   // --- Auto-start: create initial nodes for verse/chapter sessions ---
   useEffect(() => {
-    if (!doc || !activeSession || !user) return;
+    if (!doc || !activeSession || !user || isGuest) return;
     if (activeSession.type === 'free') return;
     if (!activeSession.anchor_ref) return;
 
@@ -402,6 +410,8 @@ function StudyCanvasInner({
         return;
       }
 
+      if (isGuest) return;
+
       if (changes.some((change) => change.type === 'position')) {
         cancelRemotePositionAnimation();
       }
@@ -421,7 +431,7 @@ function StudyCanvasInner({
 
       setNodes((nds) => applyNodeChanges(changes, nds));
     },
-    [cancelRemotePositionAnimation, schedulePositionWrite],
+    [cancelRemotePositionAnimation, schedulePositionWrite, isGuest],
   );
 
   const handleEdgesChange: OnEdgesChange = useCallback(
@@ -431,6 +441,8 @@ function StudyCanvasInner({
         setEdges((eds) => applyEdgeChanges(changes, eds));
         return;
       }
+
+      if (isGuest) return;
 
       d.transact(() => {
         const edgesMap = getEdgesMap(d);
@@ -443,11 +455,12 @@ function StudyCanvasInner({
 
       setEdges((eds) => applyEdgeChanges(changes, eds));
     },
-    [],
+    [isGuest],
   );
 
   const handleConnect: OnConnect = useCallback(
     (connection) => {
+      if (isGuest) return;
       const d = docRef.current;
       if (!d || !connection.source || !connection.target) return;
 
@@ -468,12 +481,13 @@ function StudyCanvasInner({
         { id, source: connection.source, target: connection.target, type: 'default' },
       ]);
     },
-    [],
+    [isGuest],
   );
 
   // --- Canvas actions (accessed by toolbar) ---
   // These use docRef.current so they always have the latest doc
   const addStickyNote = useCallback((pos?: { x: number; y: number }) => {
+    if (isGuest) return;
     const d = docRef.current;
     if (!d) return;
     const id = `sticky-${Date.now()}`;
@@ -482,9 +496,10 @@ function StudyCanvasInner({
       const nodesMap = getNodesMap(d);
       writeNodeToMap(nodesMap, { id, type: 'sticky', position, data: { text: '', color: 'yellow' } });
     });
-  }, []);
+  }, [isGuest]);
 
   const addVerseNode = useCallback((data: { verseId: number; reference: string; version_id: number }) => {
+    if (isGuest) return;
     const d = docRef.current;
     if (!d) return;
     const id = `verse-${data.verseId}-${Date.now()}`;
@@ -494,9 +509,10 @@ function StudyCanvasInner({
       const nodesMap = getNodesMap(d);
       writeNodeToMap(nodesMap, { id, type: 'verse', position, data });
     });
-  }, [screenToFlowPosition]);
+  }, [screenToFlowPosition, isGuest]);
 
   const addPassageNode = useCallback((data: { bookSlug: string; chapter: number; reference: string; version_id: number; verses: { verseId: number; reference: string; verse: number; text: string }[] }) => {
+    if (isGuest) return;
     const d = docRef.current;
     if (!d) return;
     const id = `passage-${Date.now()}`;
@@ -506,15 +522,17 @@ function StudyCanvasInner({
       const nodesMap = getNodesMap(d);
       writeNodeToMap(nodesMap, { id, type: 'passage', position, data });
     });
-  }, [screenToFlowPosition]);
+  }, [screenToFlowPosition, isGuest]);
 
   const undo = useCallback(() => {
+    if (isGuest) return;
     undoManagerRef.current?.undo();
-  }, []);
+  }, [isGuest]);
 
   const redo = useCallback(() => {
+    if (isGuest) return;
     undoManagerRef.current?.redo();
-  }, []);
+  }, [isGuest]);
 
   useEffect(() => {
     (window as any).__studyCanvasActions = { addStickyNote, addVerseNode, addPassageNode, undo, redo, zoomIn, zoomOut, fitView, toggleLock };
@@ -525,10 +543,11 @@ function StudyCanvasInner({
   // --- Cursor tracking ---
   const handleCanvasPointerMove = useCallback(
     (event: React.MouseEvent<Element, MouseEvent>) => {
+      if (isGuest) return;
       const pos = screenToFlowPosition({ x: event.clientX, y: event.clientY });
       setLocalCursor(pos.x, pos.y);
     },
-    [setLocalCursor, screenToFlowPosition],
+    [setLocalCursor, screenToFlowPosition, isGuest],
   );
 
   const getSelectedNodeIds = useCallback((fallbackNodeId: string) => {
@@ -543,35 +562,39 @@ function StudyCanvasInner({
 
   const handleNodeDragStart: OnNodeDrag = useCallback(
     (event, node) => {
+      if (isGuest) return;
       handleCanvasPointerMove(event);
       setLocalDragging(true);
       setLocalSelection(getSelectedNodeIds(node.id));
     },
-    [getSelectedNodeIds, handleCanvasPointerMove, setLocalDragging, setLocalSelection],
+    [getSelectedNodeIds, handleCanvasPointerMove, setLocalDragging, setLocalSelection, isGuest],
   );
 
   const handleNodeDrag: OnNodeDrag = useCallback(
     (event) => {
+      if (isGuest) return;
       handleCanvasPointerMove(event);
     },
-    [handleCanvasPointerMove],
+    [handleCanvasPointerMove, isGuest],
   );
 
   const handleNodeDragStop: OnNodeDrag = useCallback(
     (event, node) => {
+      if (isGuest) return;
       handleCanvasPointerMove(event);
       flushPendingPositionWrites();
       setLocalDragging(false);
       setLocalSelection(getSelectedNodeIds(node.id));
     },
-    [flushPendingPositionWrites, getSelectedNodeIds, handleCanvasPointerMove, setLocalDragging, setLocalSelection],
+    [flushPendingPositionWrites, getSelectedNodeIds, handleCanvasPointerMove, setLocalDragging, setLocalSelection, isGuest],
   );
 
   const handleSelectionChange: OnSelectionChangeFunc = useCallback(
     ({ nodes: selectedNodes }) => {
+      if (isGuest) return;
       setLocalSelection(selectedNodes.map((node) => node.id));
     },
-    [setLocalSelection],
+    [setLocalSelection, isGuest],
   );
 
   return (
@@ -582,7 +605,7 @@ function StudyCanvasInner({
             Connecting...
           </div>
         )}
-        {connected && nodes.length === 0 && (
+        {connected && nodes.length === 0 && !isGuest && (
           <div className="absolute inset-0 z-10 flex items-center justify-center pointer-events-none">
             <div className="text-center">
               <p className="text-sm text-text-muted mb-4">Start your study</p>
@@ -592,6 +615,11 @@ function StudyCanvasInner({
                 <span><kbd className="px-1.5 py-0.5 rounded bg-bg-tertiary border border-border text-2xs font-mono text-text-secondary">Space</kbd> Pan</span>
               </div>
             </div>
+          </div>
+        )}
+        {connected && nodes.length === 0 && isGuest && (
+          <div className="absolute inset-0 z-10 flex items-center justify-center pointer-events-none">
+            <p className="text-sm text-text-muted">The study canvas is empty</p>
           </div>
         )}
         <ReactFlow
@@ -605,6 +633,7 @@ function StudyCanvasInner({
           onNodeDrag={handleNodeDrag}
           onNodeDragStop={handleNodeDragStop}
           onSelectionChange={handleSelectionChange}
+          onPaneClick={isGuest ? () => openAuthModal('login') : undefined}
           nodeTypes={studyNodeTypes}
           edgeTypes={studyEdgeTypes}
           fitView
@@ -613,11 +642,11 @@ function StudyCanvasInner({
           selectionKeyCode="Shift"
           className="bg-bg-secondary"
           defaultEdgeOptions={{ type: 'default', animated: false }}
-          panOnDrag={tool === 'hand' ? [0, 1] : [1]}
-          nodesDraggable={tool === 'select'}
-          nodesConnectable={tool === 'select'}
-          elementsSelectable={tool === 'select'}
-          selectionOnDrag={tool === 'select'}
+          panOnDrag={tool === 'hand' || isGuest ? [0, 1] : [1]}
+          nodesDraggable={!isGuest && tool === 'select'}
+          nodesConnectable={!isGuest && tool === 'select'}
+          elementsSelectable={!isGuest || tool === 'select'}
+          selectionOnDrag={!isGuest && tool === 'select'}
         >
           <Background
             variant={BackgroundVariant.Dots}

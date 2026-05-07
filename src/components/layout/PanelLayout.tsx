@@ -32,10 +32,13 @@ export function PanelLayout({ sidebar, main, panel, leftPanel }: PanelLayoutProp
     }
   }
 
+  const selectedVerseIds = useVerseStore((s) => s.selectedVerseIds)
+  const selectVerse = useVerseStore((s) => s.selectVerse)
+
   return (
     <div className="app-viewport w-full overflow-hidden bg-bg-primary">
       <div className="md:hidden flex h-full flex-col">
-        <div className="pointer-events-none absolute inset-x-0 bottom-4 z-20 flex items-center justify-between px-4 md:hidden">
+        <div className="pointer-events-none absolute inset-x-0 bottom-4 z-20 flex items-center px-4 md:hidden">
           <button
             type="button"
             onClick={openMobileSidebar}
@@ -46,10 +49,27 @@ export function PanelLayout({ sidebar, main, panel, leftPanel }: PanelLayoutProp
               <path d="M2.5 4h11M2.5 8h11M2.5 12h11" strokeLinecap="round" />
             </svg>
           </button>
+
+          {selectedVerseIds.length > 0 && (
+            <div className="pointer-events-auto absolute left-1/2 -translate-x-1/2">
+              <button
+                type="button"
+                onClick={() => selectVerse(null)}
+                className="relative inline-flex h-10 px-3 items-center justify-center rounded-full border border-border-subtle bg-bg-secondary text-text-secondary shadow-sm gap-1.5"
+                aria-label={t('verse.clear')}
+              >
+                <span className="text-xs font-medium tabular-nums">{selectedVerseIds.length}</span>
+                <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round">
+                  <path d="M3 3l6 6M9 3l-6 6" />
+                </svg>
+              </button>
+            </div>
+          )}
+
           <button
             type="button"
             onClick={openCommandPalette}
-            className="pointer-events-auto inline-flex h-10 w-10 items-center justify-center rounded-full border border-border-subtle bg-bg-secondary text-text-secondary shadow-sm"
+            className="pointer-events-auto ml-auto inline-flex h-10 w-10 items-center justify-center rounded-full border border-border-subtle bg-bg-secondary text-text-secondary shadow-sm"
             aria-label={t('layout.search')}
           >
             <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" className="h-4 w-4">

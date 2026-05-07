@@ -646,51 +646,6 @@ export function VerseList() {
                 </div>
               </div>
             </div>
-
-            {selectedVerseIds.length > 0 && (
-              <div className="pointer-events-auto flex flex-col gap-2 bg-accent/[0.08] border-b border-accent/[0.15] px-3 py-2 text-xs animate-in fade-in slide-in-from-top-1 duration-200 md:flex-row md:items-center md:justify-between md:px-4">
-                <div className="flex items-center justify-between gap-3">
-                  <span className="text-text-secondary">
-                    {t('verse.selectedVerses', { count: selectedVerseIds.length })}
-                  </span>
-                  <button
-                    type="button"
-                    onClick={() => selectVerse(null)}
-                    className="flex items-center gap-1 text-text-muted hover:text-text-primary transition-colors md:hidden"
-                  >
-                    <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round">
-                      <path d="M3 3l6 6M9 3l-6 6" />
-                    </svg>
-                    {t('verse.clear')}
-                  </button>
-                </div>
-                <div className="flex items-center justify-between gap-3 md:justify-end">
-                  <div className="md:hidden">
-                    <ReadingToolbar showCommentary={false} />
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      if (requireLogin()) return
-                      openStudyPanel(selectedVerseIds[0])
-                    }}
-                    className="font-medium text-accent hover:text-accent/80 transition-colors"
-                  >
-                    {t('verse.addNote')}
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => selectVerse(null)}
-                    className="hidden items-center gap-1 text-text-muted hover:text-text-primary transition-colors md:flex"
-                  >
-                    <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round">
-                      <path d="M3 3l6 6M9 3l-6 6" />
-                    </svg>
-                    {t('verse.clear')}
-                  </button>
-                </div>
-              </div>
-            )}
           </div>
 
           <div className="max-w-[660px] mx-auto px-4 md:px-10 pt-4 pb-16">
@@ -850,6 +805,23 @@ export function VerseList() {
             )}
 
           </div>
+        </div>
+      )}
+
+      {selectedVerseIds.length > 0 && (
+        <div className="hidden md:flex fixed bottom-4 left-4 z-20 items-center gap-2 bg-bg-tertiary border border-border-subtle rounded-lg px-3 py-2 shadow-lg text-xs">
+          <span className="text-text-secondary">
+            {t('verse.selectedVerses', { count: selectedVerseIds.length })}
+          </span>
+          <button
+            type="button"
+            onClick={() => selectVerse(null)}
+            className="flex items-center gap-1 text-text-muted hover:text-text-primary transition-colors"
+          >
+            <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round">
+              <path d="M3 3l6 6M9 3l-6 6" />
+            </svg>
+          </button>
         </div>
       )}
     </div>

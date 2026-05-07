@@ -5,12 +5,13 @@ import { cn } from '@/lib/cn';
 import { modKey } from '@/lib/platform';
 import { Tooltip } from '@/components/ui/Tooltip';
 import { InsertVerseModal } from './InsertVerseModal';
+import { useUIStore } from '@/lib/store/useUIStore';
 import type { Tool } from './StudyMode';
 
 function ToolbarButton({
-  icon, active, onClick,
+  icon, active, onClick, disabled,
 }: {
-  icon: React.ReactNode; active?: boolean; onClick: () => void;
+  icon: React.ReactNode; active?: boolean; onClick: () => void; disabled?: boolean;
 }) {
   return (
     <button
@@ -18,6 +19,7 @@ function ToolbarButton({
       className={cn(
         'w-8 h-8 flex items-center justify-center rounded-lg text-text-secondary hover:text-text-primary hover:bg-bg-tertiary transition-colors',
         active && 'text-accent bg-bg-tertiary',
+        disabled && 'opacity-40 cursor-not-allowed hover:text-text-secondary hover:bg-transparent',
       )}
     >
       {icon}
@@ -33,22 +35,26 @@ interface StudyToolbarProps {
   onCloseInsertVerse: () => void;
   biblePanelOpen: boolean;
   onToggleBiblePanel: () => void;
+  isGuest: boolean;
 }
 
-export function StudyToolbar({ tool, onToolChange, showInsertVerse, onOpenInsertVerse, onCloseInsertVerse, biblePanelOpen, onToggleBiblePanel }: StudyToolbarProps) {
+export function StudyToolbar({ tool, onToolChange, showInsertVerse, onOpenInsertVerse, onCloseInsertVerse, biblePanelOpen, onToggleBiblePanel, isGuest }: StudyToolbarProps) {
   const { t } = useTranslation();
   const getActions = useCallback(() => (window as any).__studyCanvasActions, []);
+  const openAuthModal = useUIStore(s => s.openAuthModal);
   const [locked, setLocked] = useState(false);
 
   const handleSticky = useCallback(() => {
+    if (isGuest) { openAuthModal('login'); return; }
     getActions()?.addStickyNote?.();
     onToolChange('select');
-  }, [getActions, onToolChange]);
+  }, [getActions, onToolChange, isGuest, openAuthModal]);
 
   const handleVerse = useCallback(() => {
+    if (isGuest) { openAuthModal('login'); return; }
     onToolChange('verse');
     onOpenInsertVerse();
-  }, [onToolChange, onOpenInsertVerse]);
+  }, [onToolChange, onOpenInsertVerse, isGuest, openAuthModal]);
 
   const handleUndo = useCallback(() => getActions()?.undo?.(), [getActions]);
   const handleRedo = useCallback(() => getActions()?.redo?.(), [getActions]);
@@ -76,10 +82,10 @@ export function StudyToolbar({ tool, onToolChange, showInsertVerse, onOpenInsert
           <div className="h-px bg-border mx-1" />
 
           {/* Create */}
-          <Tooltip label={t('study.toolbar.stickyNote')} side="right">
-            <ToolbarButton icon={<StickyNote className="w-4 h-4" />} active={tool === 'sticky'} onClick={handleSticky} />
+          <Tooltip label={isGuest ? 'Log in to edit' : t('study.toolbar.stickyNote')} side="right">
+            <ToolbarButton icon={<StickyNote className="w-4 h-4" />} active={tool === 'sticky'} onClick={handleSticky} disabled={isGuest} />
           </Tooltip>
-          <Tooltip label={t('study.toolbar.insertVerse')} side="right">
+          <Tooltip label={isGuest ? 'Log in to edit' : t('study.toolbar.insertVerse')} side="right">
             <ToolbarButton
               icon={
                 <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" className="w-4 h-4">
@@ -90,6 +96,7 @@ export function StudyToolbar({ tool, onToolChange, showInsertVerse, onOpenInsert
               }
               active={tool === 'verse'}
               onClick={handleVerse}
+              disabled={isGuest}
             />
           </Tooltip>
 
@@ -104,17 +111,17 @@ export function StudyToolbar({ tool, onToolChange, showInsertVerse, onOpenInsert
             />
           </Tooltip>
 
-          <div className="h-px bg-border mx-1" />
+          {!isGuest && <div className="h-px bg-border mx-1" />}
 
           {/* History */}
-          <Tooltip label={t('study.toolbar.undo', { modKey })} side="right">
+          {!isGuest && <Tooltip label={t('study.toolbar.undo', { modKey })} side="right">
             <ToolbarButton icon={<Undo className="w-4 h-4" />} onClick={handleUndo} />
-          </Tooltip>
-          <Tooltip label={t('study.toolbar.redo', { modKey })} side="right">
+          </Tooltip>}
+          {!isGuest && <Tooltip label={t('study.toolbar.redo', { modKey })} side="right">
             <ToolbarButton icon={<Redo className="w-4 h-4" />} onClick={handleRedo} />
-          </Tooltip>
+          </Tooltip>}
 
-          <div className="h-px bg-border mx-1" />
+          {!isGuest && <div className="h-px bg-border mx-1" />}
 
           {/* View controls */}
           <Tooltip label={t('study.toolbar.zoomIn')} side="right">

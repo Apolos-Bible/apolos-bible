@@ -14,8 +14,11 @@ export type Tool = 'select' | 'hand' | 'sticky' | 'verse'
 export function StudyMode() {
   const activeSession = useStudyStore(s => s.activeSession)
   const wsToken = useStudyStore(s => s.wsToken)
+  const isGuest = useStudyStore(s => s.isGuest)
+  const clearSession = useStudyStore(s => s.clearSession)
   const user = useAuthStore(s => s.user)
   const exitStudyMode = useUIStore(s => s.exitStudyMode)
+  const openAuthModal = useUIStore(s => s.openAuthModal)
   const [tool, setTool] = useState<Tool>('select')
   const [showInsertVerse, setShowInsertVerse] = useState(false)
   const [biblePanelOpen, setBiblePanelOpen] = useState(false)
@@ -35,20 +38,24 @@ export function StudyMode() {
   const getActions = useCallback(() => (window as any).__studyCanvasActions, [])
 
   useEffect(() => {
-    if (user) {
+    if (user && !isGuest) {
       setLocalUser({
         id: user.id,
         name: user.name,
         color: getRandomCursorColor(),
       })
     }
-  }, [user, setLocalUser])
+  }, [user, setLocalUser, isGuest])
 
   useEffect(() => {
     if (!activeSession) {
       exitStudyMode()
+      if (isGuest) {
+        clearSession()
+        window.history.replaceState(null, '', '/')
+      }
     }
-  }, [activeSession, exitStudyMode])
+  }, [activeSession, exitStudyMode, isGuest, clearSession])
 
   useEffect(() => {
     const handleKey = (e: KeyboardEvent) => {
@@ -59,6 +66,17 @@ export function StudyMode() {
         if (showInsertVerse) {
           setShowInsertVerse(false)
           setTool('select')
+        }
+        return
+      }
+
+      if (isGuest) {
+        if (!isInput) {
+          if (e.key === 'n' || e.key === 'N' || e.key === 'i' || e.key === 'I' ||
+              (e.key === 'z' && (e.metaKey || e.ctrlKey))) {
+            e.preventDefault()
+            openAuthModal('login')
+          }
         }
         return
       }
@@ -95,11 +113,28 @@ export function StudyMode() {
     }
     window.addEventListener('keydown', handleKey)
     return () => window.removeEventListener('keydown', handleKey)
-  }, [exitStudyMode, showInsertVerse, getActions])
+  }, [exitStudyMode, showInsertVerse, getActions, isGuest, openAuthModal])
 
   return (
     <div className="fixed inset-0 z-50 bg-bg-primary flex flex-col">
-      <StudyTopBar users={users} />
+      <StudyTopBar users={users} isGuest={isGuest} />
+      {isGuest && (
+        <div className="h-8 bg-accent/10 border-b border-accent/20 flex items-center justify-center gap-2 shrink-0">
+          <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" className="w-3.5 h-3.5 text-accent">
+            <rect x="2" y="6" width="12" height="8" rx="1" />
+            <path d="M5 6V4a3 3 0 0 1 6 0v2" strokeLinecap="round" />
+          </svg>
+          <span className="text-2xs text-accent">
+            You are viewing this study as a guest
+          </span>
+          <button
+            onClick={() => openAuthModal('login')}
+            className="text-2xs text-accent underline hover:no-underline"
+          >
+            Log in to edit
+          </button>
+        </div>
+      )}
       <div className="flex-1 relative">
         <StudyToolbar
           tool={tool}
@@ -109,6 +144,7 @@ export function StudyMode() {
           onCloseInsertVerse={() => { setShowInsertVerse(false); setTool('select') }}
           biblePanelOpen={biblePanelOpen}
           onToggleBiblePanel={() => setBiblePanelOpen(v => !v)}
+          isGuest={isGuest}
         />
         <StudyCanvas
           tool={tool}
@@ -120,6 +156,7 @@ export function StudyMode() {
           setLocalCursor={setLocalCursor}
           setLocalSelection={setLocalSelection}
           setLocalDragging={setLocalDragging}
+          isGuest={isGuest}
         />
         <BiblePanel open={biblePanelOpen} onClose={() => setBiblePanelOpen(false)} />
       </div>
