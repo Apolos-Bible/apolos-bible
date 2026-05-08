@@ -535,6 +535,21 @@ function StudyCanvasInner({
   }, [isGuest]);
 
   useEffect(() => {
+    if (isGuest) return;
+    const handler = (e: KeyboardEvent) => {
+      if (!(e.metaKey || e.ctrlKey)) return;
+      if (e.key !== 'z' && e.key !== 'Z') return;
+      const target = e.target as HTMLElement | null;
+      if (target && (target.isContentEditable || ['INPUT', 'TEXTAREA', 'SELECT'].includes(target.tagName))) return;
+      e.preventDefault();
+      if (e.shiftKey) redo();
+      else undo();
+    };
+    window.addEventListener('keydown', handler);
+    return () => window.removeEventListener('keydown', handler);
+  }, [undo, redo, isGuest]);
+
+  useEffect(() => {
     (window as any).__studyCanvasActions = { addStickyNote, addVerseNode, addPassageNode, undo, redo, zoomIn, zoomOut, fitView, toggleLock };
     (window as any).__studyCanvasState = { isLocked: !isInteractive };
     return () => { delete (window as any).__studyCanvasActions; delete (window as any).__studyCanvasState; };
@@ -642,6 +657,7 @@ function StudyCanvasInner({
           selectionKeyCode="Shift"
           className="bg-bg-secondary"
           defaultEdgeOptions={{ type: 'default', animated: false }}
+          proOptions={{ hideAttribution: true }}
           panOnDrag={tool === 'hand' || isGuest ? [0, 1] : [1]}
           nodesDraggable={!isGuest && tool === 'select'}
           nodesConnectable={!isGuest && tool === 'select'}

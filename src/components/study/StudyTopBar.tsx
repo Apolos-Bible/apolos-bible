@@ -25,15 +25,29 @@ export function StudyTopBar({ users, isGuest }: { users: AwarenessUser[]; isGues
   const [showInvite, setShowInvite] = useState(false)
 
   const handleShare = useCallback(async () => {
-    const session = useStudyStore.getState().activeSession
-    let url = await generateShareLink()
-    if (!url && session) {
-      const token = useStudyStore.getState().shareToken
-      url = `${window.location.origin}${paths.study({ sessionId: session.id, shareToken: token })}`
-    }
-    if (url) {
+    try {
+      const session = useStudyStore.getState().activeSession
+      let url: string | null = null
+      try {
+        url = await generateShareLink()
+      } catch (err) {
+        console.warn('[StudyTopBar] generateShareLink failed, falling back', err)
+      }
+      if (!url && session) {
+        const token = useStudyStore.getState().shareToken
+        if (token) {
+          url = `${window.location.origin}${paths.study({ sessionId: session.id, shareToken: token })}`
+        }
+      }
+      if (!url) {
+        addToast('Could not create share link', 'error')
+        return
+      }
       await navigator.clipboard.writeText(url)
       addToast('Share link copied to clipboard', 'success')
+    } catch (err) {
+      console.error('[StudyTopBar] share failed', err)
+      addToast('Could not copy share link', 'error')
     }
   }, [generateShareLink, addToast])
 
