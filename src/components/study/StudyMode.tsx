@@ -1,4 +1,5 @@
 import { useEffect, useState, useCallback } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { useStudyStore } from '@/lib/store/useStudyStore'
 import { useAuthStore } from '@/lib/store/useAuthStore'
 import { useUIStore } from '@/lib/store/useUIStore'
@@ -12,12 +13,11 @@ import { BiblePanel } from './BiblePanel'
 export type Tool = 'select' | 'hand' | 'sticky' | 'verse'
 
 export function StudyMode() {
+  const navigate = useNavigate()
   const activeSession = useStudyStore(s => s.activeSession)
   const wsToken = useStudyStore(s => s.wsToken)
   const isGuest = useStudyStore(s => s.isGuest)
-  const clearSession = useStudyStore(s => s.clearSession)
   const user = useAuthStore(s => s.user)
-  const exitStudyMode = useUIStore(s => s.exitStudyMode)
   const openAuthModal = useUIStore(s => s.openAuthModal)
   const [tool, setTool] = useState<Tool>('select')
   const [showInsertVerse, setShowInsertVerse] = useState(false)
@@ -48,14 +48,8 @@ export function StudyMode() {
   }, [user, setLocalUser, isGuest])
 
   useEffect(() => {
-    if (!activeSession) {
-      exitStudyMode()
-      if (isGuest) {
-        clearSession()
-        window.history.replaceState(null, '', '/')
-      }
-    }
-  }, [activeSession, exitStudyMode, isGuest, clearSession])
+    if (!activeSession) navigate('/', { replace: true })
+  }, [activeSession, navigate])
 
   useEffect(() => {
     const handleKey = (e: KeyboardEvent) => {
@@ -113,7 +107,7 @@ export function StudyMode() {
     }
     window.addEventListener('keydown', handleKey)
     return () => window.removeEventListener('keydown', handleKey)
-  }, [exitStudyMode, showInsertVerse, getActions, isGuest, openAuthModal])
+  }, [showInsertVerse, getActions, isGuest, openAuthModal])
 
   return (
     <div className="fixed inset-0 z-50 bg-bg-primary flex flex-col">

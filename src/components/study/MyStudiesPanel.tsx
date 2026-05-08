@@ -1,22 +1,23 @@
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { useNavigate } from 'react-router-dom';
 import { RotateCw, Clock, Users, Play, RefreshCw, Check, X } from 'lucide-react';
 import { useStudyStore } from '@/lib/store/useStudyStore';
 import { useUIStore } from '@/lib/store/useUIStore';
+import { paths } from '@/router/paths';
 import { cn } from '@/lib/cn';
 import type { StudySession } from '@/lib/study/studyApi';
 
 export function MyStudiesPanel() {
   const { t } = useTranslation();
+  const navigate = useNavigate();
   const myStudies = useStudyStore((s) => s.myStudies);
   const pendingInvitations = useStudyStore((s) => s.pendingInvitations);
   const loadMyStudies = useStudyStore((s) => s.loadMyStudies);
   const loadInvitations = useStudyStore((s) => s.loadInvitations);
-  const join = useStudyStore((s) => s.join);
   const reopen = useStudyStore((s) => s.reopen);
   const acceptInvitation = useStudyStore((s) => s.acceptInvitation);
   const declineInvitation = useStudyStore((s) => s.declineInvitation);
-  const enterStudyMode = useUIStore((s) => s.enterStudyMode);
   const closePanel     = useUIStore((s) => s.closePanel);
   const [filter, setFilter] = useState<'all' | 'active' | 'ended'>('all');
 
@@ -32,16 +33,14 @@ export function MyStudiesPanel() {
   const handleJoin = async (session: StudySession) => {
     if (session.status === 'ended') {
       await reopen(session.id);
-      enterStudyMode();
-    } else {
-      await join(session.id);
-      enterStudyMode();
     }
+    navigate(paths.study({ sessionId: session.id }));
   };
 
   const handleAcceptInvitation = async (invitationId: number) => {
     await acceptInvitation(invitationId);
-    enterStudyMode();
+    const sessionId = useStudyStore.getState().activeSession?.id;
+    if (sessionId) navigate(paths.study({ sessionId }));
   };
 
   const activeCount = myStudies.filter((s) => s.status === 'active').length;

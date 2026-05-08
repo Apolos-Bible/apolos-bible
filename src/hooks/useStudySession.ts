@@ -32,24 +32,33 @@ export function useStudySession(sessionId: string | null, wsToken: string | null
     providerRef.current = provider;
     setDoc(provider.document);
 
-    // Manual awareness subscription
+    // Manual awareness subscription. Multiple tabs/devices for the same user
+    // each get their own awareness clientID — collapse them into one entry per
+    // user.id so the participants bar and remote cursors don't show duplicates.
     const onAwareness = () => {
       const states = provider.awareness.getStates();
-      const list: AwarenessUser[] = [];
+      const byId = new Map<number, AwarenessUser>();
       states.forEach((state) => {
-        if (state.user) {
-          list.push({
-            id: state.user.id,
-            name: state.user.name,
-            color: state.user.color ?? '#c8a96a',
-            cursor: state.cursor,
-            selectedNodeIds: Array.isArray(state.selectedNodeIds) ? state.selectedNodeIds : [],
-            dragging: Boolean(state.dragging),
-            role: state.user.role,
-          });
+        if (!state.user) return;
+        const candidate: AwarenessUser = {
+          id: state.user.id,
+          name: state.user.name,
+          color: state.user.color ?? '#c8a96a',
+          cursor: state.cursor,
+          selectedNodeIds: Array.isArray(state.selectedNodeIds) ? state.selectedNodeIds : [],
+          dragging: Boolean(state.dragging),
+          role: state.user.role,
+        };
+        const existing = byId.get(candidate.id);
+        // Prefer the connection with active signal (cursor / selection / drag),
+        // so the most "engaged" tab wins when a user is connected from many.
+        if (!existing || (!existing.cursor && candidate.cursor) ||
+            (!existing.dragging && candidate.dragging) ||
+            ((existing.selectedNodeIds?.length ?? 0) === 0 && (candidate.selectedNodeIds?.length ?? 0) > 0)) {
+          byId.set(candidate.id, candidate);
         }
       });
-      setUsers(list);
+      setUsers(Array.from(byId.values()));
     };
 
     const onStatus = (e: { status: string }) => {

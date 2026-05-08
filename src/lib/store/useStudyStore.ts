@@ -45,6 +45,8 @@ export const useStudyStore = create<StudyStore>((set, get) => ({
     set({
       activeSession: res.session,
       wsToken: res.ws_token,
+      isGuest: false,
+      shareToken: null,
     })
   },
 

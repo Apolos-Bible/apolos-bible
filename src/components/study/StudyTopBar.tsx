@@ -1,21 +1,22 @@
 import { useState, useCallback } from 'react'
 import { useTranslation } from 'react-i18next'
+import { useNavigate } from 'react-router-dom'
 import { ChevronLeft, UserPlus, MoreHorizontal, Share2, Link, Eye } from 'lucide-react'
 import { useStudyStore } from '@/lib/store/useStudyStore'
 import { useUIStore } from '@/lib/store/useUIStore'
 import { useAuthStore } from '@/lib/store/useAuthStore'
+import { paths } from '@/router/paths'
 import { StudyParticipants } from './StudyParticipants'
 import { InviteModal } from './InviteModal'
 import type { AwarenessUser } from '@/hooks/useStudySession'
 
 export function StudyTopBar({ users, isGuest }: { users: AwarenessUser[]; isGuest: boolean }) {
   const { t } = useTranslation();
+  const navigate = useNavigate()
   const activeSession = useStudyStore(s => s.activeSession)
-  const leave = useStudyStore(s => s.leave)
   const end = useStudyStore(s => s.end)
   const generateShareLink = useStudyStore(s => s.generateShareLink)
   const shareToken = useStudyStore(s => s.shareToken)
-  const exitStudyMode = useUIStore(s => s.exitStudyMode)
   const openAuthModal = useUIStore(s => s.openAuthModal)
   const addToast = useUIStore(s => s.addToast)
   const user = useAuthStore(s => s.user)
@@ -24,7 +25,12 @@ export function StudyTopBar({ users, isGuest }: { users: AwarenessUser[]; isGues
   const [showInvite, setShowInvite] = useState(false)
 
   const handleShare = useCallback(async () => {
-    const url = await generateShareLink()
+    const session = useStudyStore.getState().activeSession
+    let url = await generateShareLink()
+    if (!url && session) {
+      const token = useStudyStore.getState().shareToken
+      url = `${window.location.origin}${paths.study({ sessionId: session.id, shareToken: token })}`
+    }
     if (url) {
       await navigator.clipboard.writeText(url)
       addToast('Share link copied to clipboard', 'success')
@@ -34,14 +40,11 @@ export function StudyTopBar({ users, isGuest }: { users: AwarenessUser[]; isGues
   const handleEndSession = async () => {
     setShowMenu(false)
     await end()
-    exitStudyMode()
+    navigate('/')
   }
 
   const handleExit = () => {
-    if (isGuest) {
-      useStudyStore.getState().clearSession()
-    }
-    exitStudyMode()
+    navigate('/')
   }
 
   return (
