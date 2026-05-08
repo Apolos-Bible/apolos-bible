@@ -308,7 +308,9 @@ function StudyCanvasInner({
     const nodesMap = getNodesMap(doc);
     const edgesMap = getEdgesMap(doc);
     if (!isGuest) {
-      undoManagerRef.current = new Y.UndoManager([nodesMap, edgesMap]);
+      undoManagerRef.current = new Y.UndoManager([nodesMap, edgesMap], {
+        trackedOrigins: new Set([null, 'local']),
+      });
     }
 
     const syncFromYjs = (_events: any[], transaction: any) => {

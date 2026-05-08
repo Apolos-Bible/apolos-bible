@@ -1,6 +1,7 @@
 import { create } from 'zustand'
 import { api, setToken, clearToken } from '@/lib/api'
 import { applyUserSettings, fetchUserSettings, persistClientSettings } from '@/lib/userSettings'
+import { hydrateUserSession, resetUserSession } from '@/lib/userSession'
 
 interface AuthUser {
   id: number
@@ -32,6 +33,7 @@ export const useAuthStore = create<AuthState>((set) => ({
       const settings = await fetchUserSettings()
       await applyUserSettings(settings)
       set({ user, loading: false })
+      void hydrateUserSession()
     } catch {
       clearToken()
       set({ loading: false })
@@ -41,15 +43,19 @@ export const useAuthStore = create<AuthState>((set) => ({
   login: async (email, password) => {
     const { token, user } = await api.post<{ token: string; user: AuthUser }>('/api/auth/login', { email, password })
     setToken(token)
+    resetUserSession()
     await persistClientSettings()
     set({ user })
+    void hydrateUserSession()
   },
 
   register: async (name, email, password) => {
     const { token, user } = await api.post<{ token: string; user: AuthUser }>('/api/auth/register', { name, email, password })
     setToken(token)
+    resetUserSession()
     await persistClientSettings()
     set({ user })
+    void hydrateUserSession()
   },
 
   forgotPassword: async (email) => {
@@ -69,6 +75,7 @@ export const useAuthStore = create<AuthState>((set) => ({
     await api.post('/api/auth/logout', {}).catch(() => {})
     clearToken()
     localStorage.removeItem('verbum_last_reading')
+    resetUserSession()
     set({ user: null })
   },
 
@@ -76,6 +83,7 @@ export const useAuthStore = create<AuthState>((set) => ({
     await api.delete('/api/user', { password })
     clearToken()
     localStorage.removeItem('verbum_last_reading')
+    resetUserSession()
     set({ user: null })
   },
 }))
