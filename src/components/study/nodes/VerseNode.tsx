@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { Handle, Position, type NodeProps, type Node } from '@xyflow/react';
 import { useTranslation } from 'react-i18next';
 import { Network } from 'lucide-react';
@@ -22,6 +22,7 @@ export function VerseNode({ id, data, selected }: NodeProps<VerseNodeType>) {
   const versions = useVerseStore((s) => s.versions);
   const versionName = versions.find((v) => v.id === data.version_id)?.abbreviation ?? '';
   const { ref: scrollRef, className: scrollClass } = useNoWheelOnOverflow<HTMLDivElement>();
+  const xrefBtnRef = useRef<HTMLButtonElement>(null);
   const [xrefOpen, setXrefOpen] = useState(false);
 
   return (
@@ -40,6 +41,7 @@ export function VerseNode({ id, data, selected }: NodeProps<VerseNodeType>) {
             {versionName && <span className="text-text-muted ml-1">({versionName})</span>}
           </div>
           <button
+            ref={xrefBtnRef}
             type="button"
             onClick={(e) => {
               e.stopPropagation();
@@ -70,6 +72,7 @@ export function VerseNode({ id, data, selected }: NodeProps<VerseNodeType>) {
 
         {xrefOpen && (
           <CrossReferencePopover
+            anchorEl={xrefBtnRef.current}
             sourceNodeId={id}
             verseId={data.verseId}
             reference={data.reference}

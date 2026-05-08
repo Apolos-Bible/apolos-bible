@@ -1,22 +1,50 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { useTranslation } from 'react-i18next';
 import { X, Loader2, Plus, Check } from 'lucide-react';
 import { cn } from '@/lib/cn';
 import { bibleApi, type ApiCrossRef } from '@/lib/bibleApi';
 
-// Cross-references in the DB are seeded against the canonical (ASV) version.
-// We insert the resulting verse nodes referencing that version so the cached
-// text matches the verse id.
 const CANONICAL_VERSION_ID = 1;
 
+const POPOVER_WIDTH = 340;
+const POPOVER_MAX_HEIGHT = 420;
+const ANCHOR_GAP = 6;
+
 type CrossReferencePopoverProps = {
+  anchorEl: HTMLElement | null;
   sourceNodeId: string;
   verseId: number;
   reference: string;
   onClose: () => void;
 };
 
+type Position = { left: number; top: number };
+
+function computePosition(rect: DOMRect): Position {
+  const vw = window.innerWidth;
+  const vh = window.innerHeight;
+  const margin = 8;
+
+  let left = rect.left;
+  if (left + POPOVER_WIDTH + margin > vw) {
+    left = Math.max(margin, vw - POPOVER_WIDTH - margin);
+  }
+  if (left < margin) left = margin;
+
+  // Open downward by default; flip if we'd clip the bottom and there's more
+  // room above.
+  const spaceBelow = vh - rect.bottom;
+  const spaceAbove = rect.top;
+  let top = rect.bottom + ANCHOR_GAP;
+  if (spaceBelow < 220 && spaceAbove > spaceBelow) {
+    top = Math.max(margin, rect.top - ANCHOR_GAP - POPOVER_MAX_HEIGHT);
+  }
+  return { left, top };
+}
+
 export function CrossReferencePopover({
+  anchorEl,
   sourceNodeId,
   verseId,
   reference,
@@ -26,8 +54,10 @@ export function CrossReferencePopover({
   const [refs, setRefs] = useState<ApiCrossRef[] | null>(null);
   const [error, setError] = useState(false);
   const [insertedIds, setInsertedIds] = useState<Set<number>>(new Set());
+  const [pos, setPos] = useState<Position | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
 
+  // Fetch refs.
   useEffect(() => {
     let cancelled = false;
     setRefs(null);
@@ -47,12 +77,31 @@ export function CrossReferencePopover({
     };
   }, [verseId]);
 
-  // Close on outside click + Escape.
+  // Track anchor position via rAF so canvas pan/zoom keeps the popover glued.
+  useLayoutEffect(() => {
+    if (!anchorEl) return;
+    let raf = 0;
+    let lastKey = '';
+    const tick = () => {
+      const rect = anchorEl.getBoundingClientRect();
+      const key = `${rect.left}|${rect.top}|${rect.right}|${rect.bottom}`;
+      if (key !== lastKey) {
+        lastKey = key;
+        setPos(computePosition(rect));
+      }
+      raf = requestAnimationFrame(tick);
+    };
+    raf = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(raf);
+  }, [anchorEl]);
+
+  // Outside click + Escape.
   useEffect(() => {
     const onDown = (e: MouseEvent) => {
-      if (!containerRef.current?.contains(e.target as globalThis.Node | null)) {
-        onClose();
-      }
+      const target = e.target as globalThis.Node | null;
+      if (containerRef.current?.contains(target)) return;
+      if (anchorEl?.contains(target)) return;
+      onClose();
     };
     const onKey = (e: KeyboardEvent) => {
       if (e.key === 'Escape') onClose();
@@ -63,7 +112,7 @@ export function CrossReferencePopover({
       window.removeEventListener('mousedown', onDown);
       window.removeEventListener('keydown', onKey);
     };
-  }, [onClose]);
+  }, [anchorEl, onClose]);
 
   const insert = (ref: ApiCrossRef) => {
     (window as any).__studyCanvasActions?.addCrossRefNode?.(
@@ -77,20 +126,30 @@ export function CrossReferencePopover({
   const insertAll = () => {
     if (!refs) return;
     refs.forEach((ref, i) => {
-      // small stagger so positions don't collide on initial calc
       setTimeout(() => insert(ref), i * 30);
     });
   };
 
-  return (
+  if (!pos) return null;
+
+  return createPortal(
     <div
       ref={containerRef}
+      style={{
+        position: 'fixed',
+        left: pos.left,
+        top: pos.top,
+        width: POPOVER_WIDTH,
+        maxHeight: POPOVER_MAX_HEIGHT,
+        zIndex: 1000,
+      }}
       className={cn(
-        'nodrag nowheel absolute top-full left-0 mt-2 z-20',
-        'w-[340px] max-h-[420px] overflow-hidden flex flex-col',
+        'flex flex-col overflow-hidden',
         'bg-surface border border-border rounded-lg shadow-xl',
       )}
       onClick={(e) => e.stopPropagation()}
+      onMouseDown={(e) => e.stopPropagation()}
+      onWheel={(e) => e.stopPropagation()}
     >
       <div className="flex items-center justify-between gap-2 px-3 py-2 border-b border-border shrink-0">
         <div className="text-2xs uppercase tracking-wide text-text-muted truncate">
@@ -178,6 +237,7 @@ export function CrossReferencePopover({
           </button>
         </div>
       )}
-    </div>
+    </div>,
+    document.body,
   );
 }
