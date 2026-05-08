@@ -77,6 +77,7 @@ export function VerseNode({ id, data, selected }: NodeProps<VerseNodeType>) {
             verseId={data.verseId}
             reference={data.reference}
             verseText={data.text ?? ''}
+            versionId={data.version_id}
             onClose={() => setXrefOpen(false)}
           />
         )}

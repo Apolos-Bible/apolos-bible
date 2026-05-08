@@ -19,6 +19,10 @@ type CrossReferencePopoverProps = {
   verseId: number;
   reference: string;
   verseText: string;
+  /** version_id of the source verse — used for the "similar" tab so the
+   *  search runs in the user's reading language (cross-refs tab still uses
+   *  the canonical/ASV version where the TSK mappings live). */
+  versionId: number;
   onClose: () => void;
 };
 
@@ -71,7 +75,7 @@ const STOPWORDS = new Set([
   'tampoco','o sea',
 ]);
 
-function extractKeywords(text: string, max = 5): string[] {
+function extractKeywords(text: string, max = 6): string[] {
   if (!text) return [];
   const tokens = text
     .toLowerCase()
@@ -79,7 +83,7 @@ function extractKeywords(text: string, max = 5): string[] {
     .replace(/[̀-ͯ]/g, '') // strip accents
     .replace(/[^a-z0-9\s]/g, ' ')
     .split(/\s+/)
-    .filter((w) => w.length >= 4 && !STOPWORDS.has(w));
+    .filter((w) => w.length >= 3 && !STOPWORDS.has(w));
 
   const seen = new Set<string>();
   const unique: string[] = [];
@@ -100,6 +104,7 @@ export function CrossReferencePopover({
   verseId,
   reference,
   verseText,
+  versionId,
   onClose,
 }: CrossReferencePopoverProps) {
   const { t } = useTranslation();
@@ -131,6 +136,8 @@ export function CrossReferencePopover({
   }, [verseId]);
 
   // Fetch similar verses lazily on first visit to that tab.
+  // The backend's /search does a `LIKE %q%` substring match, so we fan out
+  // one request per keyword and merge by how many keywords each verse hits.
   useEffect(() => {
     if (tab !== 'similar') return;
     if (similar !== null || similarError) return;
@@ -139,18 +146,33 @@ export function CrossReferencePopover({
       return;
     }
     let cancelled = false;
-    bibleApi
-      .search(CANONICAL_VERSION_ID, keywords.join(' '))
-      .then((data) => {
+    Promise.all(
+      keywords.map((kw) =>
+        bibleApi.search(versionId, kw).catch(() => [] as ApiSearchResult[]),
+      ),
+    )
+      .then((batches) => {
         if (cancelled) return;
-        // Drop the source verse itself from results.
-        setSimilar((data ?? []).filter((r) => r.id !== verseId).slice(0, 30));
+        type Hit = ApiSearchResult & { _score: number };
+        const byId = new Map<number, Hit>();
+        batches.forEach((batch) => {
+          batch.forEach((r) => {
+            if (r.id === verseId) return;
+            const existing = byId.get(r.id);
+            if (existing) existing._score += 1;
+            else byId.set(r.id, { ...r, _score: 1 });
+          });
+        });
+        const merged = Array.from(byId.values())
+          .sort((a, b) => b._score - a._score || a.text.length - b.text.length)
+          .slice(0, 30);
+        setSimilar(merged);
       })
       .catch(() => !cancelled && setSimilarError(true));
     return () => {
       cancelled = true;
     };
-  }, [tab, keywords, similar, similarError, verseId]);
+  }, [tab, keywords, similar, similarError, verseId, versionId]);
 
   // Track anchor position via rAF.
   useLayoutEffect(() => {
@@ -189,17 +211,26 @@ export function CrossReferencePopover({
     };
   }, [anchorEl, onClose]);
 
-  const insert = (ref: { id: number; book: string; slug: string; chapter: number; verse: number; text: string }) => {
+  const insertWith = (
+    ref: { id: number; book: string; slug: string; chapter: number; verse: number; text: string },
+    insertVersionId: number,
+  ) => {
     (window as any).__studyCanvasActions?.addCrossRefNode?.(
       sourceNodeId,
       ref,
-      CANONICAL_VERSION_ID,
+      insertVersionId,
     );
     setInsertedIds((prev) => new Set(prev).add(ref.id));
   };
 
-  const insertAll = (list: { id: number; book: string; slug: string; chapter: number; verse: number; text: string }[]) => {
-    list.forEach((ref, i) => setTimeout(() => insert(ref), i * 30));
+  const insertCross = (ref: ResultRow) => insertWith(ref, CANONICAL_VERSION_ID);
+  const insertSimilar = (ref: ResultRow) => insertWith(ref, versionId);
+
+  const insertAll = (
+    list: ResultRow[],
+    insertVersionId: number,
+  ) => {
+    list.forEach((ref, i) => setTimeout(() => insertWith(ref, insertVersionId), i * 30));
   };
 
   if (!pos) return null;
@@ -258,7 +289,7 @@ export function CrossReferencePopover({
             items={xrefs}
             error={xrefsError}
             insertedIds={insertedIds}
-            onInsert={insert}
+            onInsert={insertCross}
             emptyText={t('study.crossRefs.empty')}
             loadingText={t('study.crossRefs.loading')}
             errorText={t('study.crossRefs.error')}
@@ -269,7 +300,7 @@ export function CrossReferencePopover({
             items={similar}
             error={similarError}
             insertedIds={insertedIds}
-            onInsert={insert}
+            onInsert={insertSimilar}
             emptyText={
               keywords.length === 0
                 ? t('study.crossRefs.similar.noKeywords')
@@ -302,11 +333,12 @@ export function CrossReferencePopover({
       {(() => {
         const list = tab === 'cross' ? xrefs : tab === 'similar' ? similar : null;
         if (!list || list.length <= 1) return null;
+        const ver = tab === 'cross' ? CANONICAL_VERSION_ID : versionId;
         return (
           <div className="border-t border-border px-3 py-2 shrink-0">
             <button
               type="button"
-              onClick={() => insertAll(list)}
+              onClick={() => insertAll(list, ver)}
               className="cursor-pointer w-full text-xs text-accent hover:text-accent/80 transition-colors text-left"
             >
               {t('study.crossRefs.insertAll')}
