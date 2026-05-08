@@ -29,7 +29,7 @@ export function selectDefaultBibleVersionId(
   }
 
   if (languageCode === 'en') {
-    return byLanguage[0]?.id ?? versions[0].id
+    return byLanguage.find(isKingJamesVersion)?.id ?? byLanguage[0]?.id ?? versions[0].id
   }
 
   return byLanguage[0]?.id ?? versions[0].id
@@ -46,4 +46,12 @@ function isReinaValera1960(version: ApiVersion): boolean {
     value.includes('1960') &&
     (value.includes('reina') || value.includes('valera') || value.includes('rvr') || value.includes('rv60'))
   )
+}
+
+function isKingJamesVersion(version: ApiVersion): boolean {
+  const abbr = version.abbreviation.toLowerCase()
+  const name = version.name.toLowerCase()
+
+  // Match KJV but exclude variants like AKJV (American KJV) or NKJV.
+  return abbr === 'kjv' || (name.includes('king james') && !name.includes('american') && !name.includes('new king james'))
 }
