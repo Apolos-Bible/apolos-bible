@@ -5,8 +5,6 @@ import { X, Loader2, Plus, Check, Sparkles } from 'lucide-react';
 import { cn } from '@/lib/cn';
 import { bibleApi, type ApiCrossRef, type ApiSearchResult } from '@/lib/bibleApi';
 
-const CANONICAL_VERSION_ID = 1;
-
 const POPOVER_WIDTH = 360;
 const POPOVER_MAX_HEIGHT = 460;
 const ANCHOR_GAP = 6;
@@ -121,19 +119,21 @@ export function CrossReferencePopover({
 
   const keywords = useMemo(() => extractKeywords(verseText), [verseText]);
 
-  // Fetch cross-refs.
+  // Fetch cross-refs in the source verse's version so the user gets results
+  // in their reading language (TSK mappings live on canonical/ASV; backend
+  // does the per-version mapping when version_id is passed).
   useEffect(() => {
     let cancelled = false;
     setXrefs(null);
     setXrefsError(false);
     bibleApi
-      .crossRefs(verseId)
+      .crossRefs(verseId, versionId)
       .then((data) => !cancelled && setXrefs(data ?? []))
       .catch(() => !cancelled && setXrefsError(true));
     return () => {
       cancelled = true;
     };
-  }, [verseId]);
+  }, [verseId, versionId]);
 
   // Fetch similar verses lazily on first visit to that tab.
   // The backend's /search does a `LIKE %q%` substring match, so we fan out
@@ -223,7 +223,7 @@ export function CrossReferencePopover({
     setInsertedIds((prev) => new Set(prev).add(ref.id));
   };
 
-  const insertCross = (ref: ResultRow) => insertWith(ref, CANONICAL_VERSION_ID);
+  const insertCross = (ref: ResultRow) => insertWith(ref, versionId);
   const insertSimilar = (ref: ResultRow) => insertWith(ref, versionId);
 
   const insertAll = (
@@ -333,7 +333,7 @@ export function CrossReferencePopover({
       {(() => {
         const list = tab === 'cross' ? xrefs : tab === 'similar' ? similar : null;
         if (!list || list.length <= 1) return null;
-        const ver = tab === 'cross' ? CANONICAL_VERSION_ID : versionId;
+        const ver = versionId;
         return (
           <div className="border-t border-border px-3 py-2 shrink-0">
             <button
