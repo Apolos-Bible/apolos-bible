@@ -1,8 +1,9 @@
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
+import { useNavigate } from 'react-router-dom'
 import { X, BookOpen, StickyNote } from 'lucide-react'
 import { useStudyStore } from '@/lib/store/useStudyStore'
-import { useUIStore } from '@/lib/store/useUIStore'
+import { paths } from '@/router/paths'
 
 interface StartStudyModalProps {
   open: boolean
@@ -11,6 +12,7 @@ interface StartStudyModalProps {
 
 export function StartStudyModal({ open, onClose }: StartStudyModalProps) {
   const { t } = useTranslation();
+  const navigate = useNavigate();
   const start = useStudyStore(s => s.start)
   const [type, setType] = useState<'verse' | 'chapter' | 'free'>('verse')
   const [anchorRef, setAnchorRef] = useState('')
@@ -37,11 +39,12 @@ export function StartStudyModal({ open, onClose }: StartStudyModalProps) {
         anchor_ref: (type === 'verse' || type === 'chapter') ? anchorRef.trim() : undefined,
         title: title.trim(),
       })
-      useUIStore.getState().enterStudyMode()
+      const sessionId = useStudyStore.getState().activeSession?.id
       onClose()
       setTitle('')
       setAnchorRef('')
       setType('verse')
+      if (sessionId) navigate(paths.study({ sessionId }))
     } catch (e: any) {
       setError(e?.message || t('study.start.failed'))
     } finally {
