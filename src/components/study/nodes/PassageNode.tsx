@@ -6,6 +6,7 @@ import { bibleApi } from '@/lib/bibleApi';
 import { StudyDocContext } from '@/lib/study/StudyDocContext';
 import { getNodesMap } from '@/lib/study/yDocHelpers';
 import { ResizableNode } from './ResizableNode';
+import { useNoWheelOnOverflow } from './useNoWheelOnOverflow';
 
 export type PassageNodeData = {
   bookSlug: string;
@@ -24,6 +25,7 @@ export function PassageNode({ id, data, selected }: NodeProps<PassageNodeType>) 
   const doc = useContext(StudyDocContext);
   const [loadFailed, setLoadFailed] = useState(false);
   const verses = data.verses ?? [];
+  const { ref: scrollRef, className: scrollClass } = useNoWheelOnOverflow<HTMLDivElement>();
 
   useEffect(() => {
     if (!doc || verses.length > 0 || !data.bookSlug || !data.chapter || !data.version_id) return;
@@ -82,7 +84,7 @@ export function PassageNode({ id, data, selected }: NodeProps<PassageNodeType>) 
         <div className="text-2xs text-accent uppercase tracking-wide mb-2 shrink-0">
           {data.reference}
         </div>
-        <div className="flex-1 overflow-y-auto space-y-1.5 pr-1 min-h-0">
+        <div ref={scrollRef} className={cn('flex-1 overflow-y-auto space-y-1.5 pr-1 min-h-0', scrollClass)}>
           {verses.length > 0 ? (
             verses.map((v) => (
               <div key={v.verse} className="flex gap-2 text-sm leading-relaxed">

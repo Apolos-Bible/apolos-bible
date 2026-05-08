@@ -1,6 +1,7 @@
 import { Handle, Position, type NodeProps, type Node } from '@xyflow/react';
 import { cn } from '@/lib/cn';
 import { ResizableNode } from './ResizableNode';
+import { useNoWheelOnOverflow } from './useNoWheelOnOverflow';
 
 export type CommentNodeData = {
   authorName: string;
@@ -11,6 +12,7 @@ export type CommentNodeData = {
 type CommentNodeType = Node<CommentNodeData, 'comment'>;
 
 export function CommentNode({ id, data, selected }: NodeProps<CommentNodeType>) {
+  const { ref: scrollRef, className: scrollClass } = useNoWheelOnOverflow<HTMLParagraphElement>();
   return (
     <ResizableNode id={id} selected={selected} minWidth={200} minHeight={80}>
       <div
@@ -27,7 +29,7 @@ export function CommentNode({ id, data, selected }: NodeProps<CommentNodeType>) 
           <span className="text-xs font-medium text-text-primary">{data.authorName}</span>
           <span className="text-2xs text-text-muted ml-auto">{data.createdAt}</span>
         </div>
-        <p className="text-sm text-text-secondary overflow-auto flex-1">{data.text}</p>
+        <p ref={scrollRef} className={cn('text-sm text-text-secondary overflow-auto flex-1', scrollClass)}>{data.text}</p>
         <Handle type="source" position={Position.Bottom} className="!bg-border" />
       </div>
     </ResizableNode>

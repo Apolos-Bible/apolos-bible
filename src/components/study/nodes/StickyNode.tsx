@@ -6,6 +6,7 @@ import { cn } from '@/lib/cn';
 import { StudyDocContext } from '@/lib/study/StudyDocContext';
 import { getNodesMap } from '@/lib/study/yDocHelpers';
 import { ResizableNode } from './ResizableNode';
+import { useNoWheelOnOverflow } from './useNoWheelOnOverflow';
 
 const STICKY_COLORS = [
   { value: 'yellow', bg: 'bg-yellow-500/10 border-yellow-500/30', swatch: 'bg-yellow-500', colorKey: 'study.colorYellow' },
@@ -28,7 +29,7 @@ export function StickyNode({ id, data, selected }: NodeProps<StickyNodeType>) {
   const [text, setText] = useState(data.text ?? '');
   const [color, setColor] = useState(data.color ?? 'yellow');
   const [settingsOpen, setSettingsOpen] = useState(false);
-  const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const { ref: textareaRef, className: textareaWheelClass } = useNoWheelOnOverflow<HTMLTextAreaElement>();
   const settingsRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -125,7 +126,7 @@ useEffect(() => {
         ref={textareaRef}
         value={text}
         onChange={(e) => handleTextChange(e.target.value)}
-        className="nodrag cursor-text flex-1 min-h-[60px] w-full bg-transparent border-none outline-none resize-none text-sm text-text-primary px-3 pb-3 pt-1 placeholder:text-text-muted leading-relaxed"
+        className={cn('nodrag cursor-text flex-1 min-h-[60px] w-full bg-transparent border-none outline-none resize-none text-sm text-text-primary px-3 pb-3 pt-1 placeholder:text-text-muted leading-relaxed', textareaWheelClass)}
         placeholder={t('study.sticky.placeholder')}
       />
 

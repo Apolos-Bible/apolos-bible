@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { cn } from '@/lib/cn';
 import { useVerseStore } from '@/lib/store/useVerseStore';
 import { ResizableNode } from './ResizableNode';
+import { useNoWheelOnOverflow } from './useNoWheelOnOverflow';
 
 export type VerseNodeData = {
   verseId: number;
@@ -18,6 +19,7 @@ export function VerseNode({ id, data, selected }: NodeProps<VerseNodeType>) {
   const versions = useVerseStore((s) => s.versions);
 
   const versionName = versions.find((v) => v.id === data.version_id)?.abbreviation ?? '';
+  const { ref: scrollRef, className: scrollClass } = useNoWheelOnOverflow<HTMLDivElement>();
 
   return (
     <ResizableNode id={id} selected={selected} minWidth={240} minHeight={90}>
@@ -32,7 +34,7 @@ export function VerseNode({ id, data, selected }: NodeProps<VerseNodeType>) {
           {data.reference}
           {versionName && <span className="text-text-muted ml-1">({versionName})</span>}
         </div>
-        <div className="text-sm leading-relaxed text-text-primary overflow-auto flex-1">
+        <div ref={scrollRef} className={cn('text-sm leading-relaxed text-text-primary overflow-auto flex-1', scrollClass)}>
           {data.text || t('study.verseNode.loading')}
         </div>
         <Handle type="source" position={Position.Bottom} className="!bg-border" />
