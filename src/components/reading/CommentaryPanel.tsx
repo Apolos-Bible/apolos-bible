@@ -16,7 +16,7 @@ export function CommentaryPanel() {
   const [error, setError]           = useState(false)
   const contentRef = useRef<HTMLDivElement>(null)
 
-  const { t } = useTranslation()
+  const { t, i18n } = useTranslation()
   const bookName = books.find((b) => b.slug === selectedBook)?.name ?? selectedBook
 
   useEffect(() => {
@@ -24,11 +24,11 @@ export function CommentaryPanel() {
     setLoading(true)
     setError(false)
     setCommentary(null)
-    commentaryApi.get(selectedBook, selectedChapter)
+    commentaryApi.get(selectedBook, selectedChapter, i18n.language)
       .then(setCommentary)
       .catch(() => setError(true))
       .finally(() => setLoading(false))
-  }, [selectedBook, selectedChapter])
+  }, [selectedBook, selectedChapter, i18n.language])
 
   // Attach native click handlers to every external link after HTML renders
   useEffect(() => {
