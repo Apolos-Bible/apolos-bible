@@ -6,9 +6,12 @@ export interface Commentary {
   chapter: number
   content: string
   scraped_at: string
+  locale: 'en' | 'es'
 }
 
 export const commentaryApi = {
-  get: (bookSlug: string, chapter: number) =>
-    api.get<Commentary>(`/api/commentary/${bookSlug}/${chapter}`),
+  get: (bookSlug: string, chapter: number, locale: string) => {
+    const lang = locale.startsWith('es') ? 'es' : 'en'
+    return api.get<Commentary>(`/api/commentary/${bookSlug}/${chapter}?locale=${lang}`)
+  },
 }
