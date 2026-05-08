@@ -9,12 +9,17 @@ export function getEdgesMap(doc: Y.Doc): Y.Map<Y.Map<any>> {
 }
 
 export function nodeFromYMap(id: string, m: Y.Map<any>) {
-  return {
+  const node: any = {
     id: m.get('id') ?? id,
     type: m.get('type') ?? 'sticky',
     position: m.get('position') ?? { x: 0, y: 0 },
     data: m.get('data') ?? {},
   };
+  const width = m.get('width');
+  const height = m.get('height');
+  if (typeof width === 'number') node.width = width;
+  if (typeof height === 'number') node.height = height;
+  return node;
 }
 
 export function edgeFromYMap(id: string, m: Y.Map<any>) {
@@ -27,12 +32,14 @@ export function edgeFromYMap(id: string, m: Y.Map<any>) {
   };
 }
 
-export function writeNodeToMap(nodesMap: Y.Map<Y.Map<any>>, node: { id: string; type?: string; position?: { x: number; y: number }; data?: any }) {
+export function writeNodeToMap(nodesMap: Y.Map<Y.Map<any>>, node: { id: string; type?: string; position?: { x: number; y: number }; data?: any; width?: number; height?: number }) {
   const nodeMap = nodesMap.get(node.id) ?? new Y.Map();
   nodeMap.set('id', node.id);
   if (node.type) nodeMap.set('type', node.type);
   if (node.position) nodeMap.set('position', node.position);
   if (node.data) nodeMap.set('data', node.data);
+  if (typeof node.width === 'number') nodeMap.set('width', node.width);
+  if (typeof node.height === 'number') nodeMap.set('height', node.height);
   nodesMap.set(node.id, nodeMap);
 }
 

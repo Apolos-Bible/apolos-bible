@@ -1,5 +1,7 @@
 import { Handle, Position, type NodeProps, type Node } from '@xyflow/react';
 import { cn } from '@/lib/cn';
+import { ResizableNode } from './ResizableNode';
+import { useNoWheelOnOverflow } from './useNoWheelOnOverflow';
 
 export type CommentNodeData = {
   authorName: string;
@@ -9,24 +11,27 @@ export type CommentNodeData = {
 
 type CommentNodeType = Node<CommentNodeData, 'comment'>;
 
-export function CommentNode({ data, selected }: NodeProps<CommentNodeType>) {
+export function CommentNode({ id, data, selected }: NodeProps<CommentNodeType>) {
+  const { ref: scrollRef, className: scrollClass } = useNoWheelOnOverflow<HTMLParagraphElement>();
   return (
-    <div
-      className={cn(
-        'bg-surface border border-border rounded-lg p-3 min-w-[220px] max-w-[320px] shadow-sm',
-        selected && 'ring-2 ring-accent',
-      )}
-    >
-      <Handle type="target" position={Position.Top} className="!bg-border" />
-      <div className="flex items-center gap-2 mb-1.5">
-        <div className="w-5 h-5 rounded-full bg-accent/20 flex items-center justify-center text-2xs font-medium text-accent shrink-0">
-          {data.authorName.charAt(0).toUpperCase()}
+    <ResizableNode id={id} selected={selected} minWidth={200} minHeight={80}>
+      <div
+        className={cn(
+          'bg-surface border border-border rounded-lg p-3 shadow-sm w-full h-full flex flex-col overflow-hidden',
+          selected && 'ring-2 ring-accent',
+        )}
+      >
+        <Handle type="target" position={Position.Top} className="!bg-border" />
+        <div className="flex items-center gap-2 mb-1.5 shrink-0">
+          <div className="w-5 h-5 rounded-full bg-accent/20 flex items-center justify-center text-2xs font-medium text-accent shrink-0">
+            {data.authorName.charAt(0).toUpperCase()}
+          </div>
+          <span className="text-xs font-medium text-text-primary">{data.authorName}</span>
+          <span className="text-2xs text-text-muted ml-auto">{data.createdAt}</span>
         </div>
-        <span className="text-xs font-medium text-text-primary">{data.authorName}</span>
-        <span className="text-2xs text-text-muted ml-auto">{data.createdAt}</span>
+        <p ref={scrollRef} className={cn('text-sm text-text-secondary overflow-auto flex-1', scrollClass)}>{data.text}</p>
+        <Handle type="source" position={Position.Bottom} className="!bg-border" />
       </div>
-      <p className="text-sm text-text-secondary">{data.text}</p>
-      <Handle type="source" position={Position.Bottom} className="!bg-border" />
-    </div>
+    </ResizableNode>
   );
 }

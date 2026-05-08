@@ -70,6 +70,8 @@ function getCanvasSnapshotSignature(nodes: Node[], edges: Edge[]) {
         id: node.id,
         type: node.type,
         position: node.position,
+        width: (node as any).width,
+        height: (node as any).height,
         data: stripEphemeralNodeData(node.data),
       }))
       .sort((a, b) => a.id.localeCompare(b.id)),
@@ -308,12 +310,12 @@ function StudyCanvasInner({
     const nodesMap = getNodesMap(doc);
     const edgesMap = getEdgesMap(doc);
     if (!isGuest) {
-      undoManagerRef.current = new Y.UndoManager([nodesMap, edgesMap]);
+      undoManagerRef.current = new Y.UndoManager([nodesMap, edgesMap], {
+        trackedOrigins: new Set([null, 'local']),
+      });
     }
 
     const syncFromYjs = (_events: any[], transaction: any) => {
-      if (transaction?.origin === 'local') return;
-
       const currentNodes: Node[] = [];
       nodesMap.forEach((nodeMap, id) => {
         const node = nodeFromYMap(id, nodeMap);
@@ -329,6 +331,15 @@ function StudyCanvasInner({
       });
 
       const signature = getCanvasSnapshotSignature(currentNodes, currentEdges);
+
+      // Local writes: React state is already up to date via onNodesChange.
+      // Just keep the signature ref fresh so a later undo (origin=UndoManager)
+      // sees a real diff and triggers applyRemoteSnapshot.
+      if (transaction?.origin === 'local') {
+        yjsSnapshotSignatureRef.current = signature;
+        return;
+      }
+
       if (signature === yjsSnapshotSignatureRef.current) return;
 
       yjsSnapshotSignatureRef.current = signature;
@@ -422,6 +433,12 @@ function StudyCanvasInner({
         for (const change of changes) {
           if (change.type === 'position' && change.position) {
             schedulePositionWrite(change.id, { x: change.position.x, y: change.position.y });
+          } else if (change.type === 'dimensions' && change.dimensions && change.resizing === false) {
+            const existing = nodesMap.get(change.id);
+            if (existing) {
+              existing.set('width', Math.round(change.dimensions.width));
+              existing.set('height', Math.round(change.dimensions.height));
+            }
           } else if (change.type === 'remove') {
             pendingPositionWritesRef.current.delete(change.id);
             nodesMap.delete(change.id);
@@ -534,11 +551,28 @@ function StudyCanvasInner({
     undoManagerRef.current?.redo();
   }, [isGuest]);
 
-  useEffect(() => {
-    (window as any).__studyCanvasActions = { addStickyNote, addVerseNode, addPassageNode, undo, redo, zoomIn, zoomOut, fitView, toggleLock };
+  const resizeNode = useCallback((id: string, width: number, height: number) => {
+    if (isGuest) return;
+    const d = docRef.current;
+    if (!d) return;
+    const w = Math.round(width);
+    const h = Math.round(height);
+    d.transact(() => {
+      const nodesMap = getNodesMap(d);
+      const existing = nodesMap.get(id);
+      if (!existing) return;
+      existing.set('width', w);
+      existing.set('height', h);
+    }, 'local');
+    setNodes((nds) => nds.map((n) => (n.id === id ? { ...n, width: w, height: h } : n)));
+    undoManagerRef.current?.stopCapturing();
+  }, [isGuest]);
+
+useEffect(() => {
+    (window as any).__studyCanvasActions = { addStickyNote, addVerseNode, addPassageNode, undo, redo, resizeNode, zoomIn, zoomOut, fitView, toggleLock };
     (window as any).__studyCanvasState = { isLocked: !isInteractive };
     return () => { delete (window as any).__studyCanvasActions; delete (window as any).__studyCanvasState; };
-  }, [addStickyNote, addVerseNode, addPassageNode, undo, redo, zoomIn, zoomOut, fitView, toggleLock, isInteractive]);
+  }, [addStickyNote, addVerseNode, addPassageNode, undo, redo, resizeNode, zoomIn, zoomOut, fitView, toggleLock, isInteractive]);
 
   // --- Cursor tracking ---
   const handleCanvasPointerMove = useCallback(
@@ -583,6 +617,7 @@ function StudyCanvasInner({
       if (isGuest) return;
       handleCanvasPointerMove(event);
       flushPendingPositionWrites();
+      undoManagerRef.current?.stopCapturing();
       setLocalDragging(false);
       setLocalSelection(getSelectedNodeIds(node.id));
     },
@@ -642,6 +677,7 @@ function StudyCanvasInner({
           selectionKeyCode="Shift"
           className="bg-bg-secondary"
           defaultEdgeOptions={{ type: 'default', animated: false }}
+          proOptions={{ hideAttribution: true }}
           panOnDrag={tool === 'hand' || isGuest ? [0, 1] : [1]}
           nodesDraggable={!isGuest && tool === 'select'}
           nodesConnectable={!isGuest && tool === 'select'}

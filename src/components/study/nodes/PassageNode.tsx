@@ -5,6 +5,8 @@ import { cn } from '@/lib/cn';
 import { bibleApi } from '@/lib/bibleApi';
 import { StudyDocContext } from '@/lib/study/StudyDocContext';
 import { getNodesMap } from '@/lib/study/yDocHelpers';
+import { ResizableNode } from './ResizableNode';
+import { useNoWheelOnOverflow } from './useNoWheelOnOverflow';
 
 export type PassageNodeData = {
   bookSlug: string;
@@ -23,6 +25,7 @@ export function PassageNode({ id, data, selected }: NodeProps<PassageNodeType>) 
   const doc = useContext(StudyDocContext);
   const [loadFailed, setLoadFailed] = useState(false);
   const verses = data.verses ?? [];
+  const { ref: scrollRef, className: scrollClass } = useNoWheelOnOverflow<HTMLDivElement>();
 
   useEffect(() => {
     if (!doc || verses.length > 0 || !data.bookSlug || !data.chapter || !data.version_id) return;
@@ -70,33 +73,35 @@ export function PassageNode({ id, data, selected }: NodeProps<PassageNodeType>) 
   }, [doc, id, data, verses.length]);
 
   return (
-    <div
-      className={cn(
-        'bg-surface border border-border rounded-lg p-3 min-w-[300px] max-w-[450px] max-h-[400px] shadow-sm flex flex-col',
-        selected && 'ring-2 ring-accent',
-      )}
-    >
-      <Handle type="target" position={Position.Top} className="!bg-border" />
-      <div className="text-2xs text-accent uppercase tracking-wide mb-2 shrink-0">
-        {data.reference}
-      </div>
-      <div className="flex-1 overflow-y-auto space-y-1.5 pr-1">
-        {verses.length > 0 ? (
-          verses.map((v) => (
-            <div key={v.verse} className="flex gap-2 text-sm leading-relaxed">
-              <span className="text-2xs text-text-muted shrink-0 mt-0.5 w-4 text-right">
-                {v.verse}
-              </span>
-              <span className="text-text-primary">{v.text}</span>
-            </div>
-          ))
-        ) : loadFailed ? (
-          <p className="text-sm text-red-400">{t('study.passage.loadFailed')}</p>
-        ) : (
-          <p className="text-sm text-text-muted">{t('study.passage.loading')}</p>
+    <ResizableNode id={id} selected={selected} minWidth={260} minHeight={140}>
+      <div
+        className={cn(
+          'bg-surface border border-border rounded-lg p-3 shadow-sm w-full h-full flex flex-col',
+          selected && 'ring-2 ring-accent',
         )}
+      >
+        <Handle type="target" position={Position.Top} className="!bg-border" />
+        <div className="text-2xs text-accent uppercase tracking-wide mb-2 shrink-0">
+          {data.reference}
+        </div>
+        <div ref={scrollRef} className={cn('flex-1 overflow-y-auto space-y-1.5 pr-1 min-h-0', scrollClass)}>
+          {verses.length > 0 ? (
+            verses.map((v) => (
+              <div key={v.verse} className="flex gap-2 text-sm leading-relaxed">
+                <span className="text-2xs text-text-muted shrink-0 mt-0.5 w-4 text-right">
+                  {v.verse}
+                </span>
+                <span className="text-text-primary">{v.text}</span>
+              </div>
+            ))
+          ) : loadFailed ? (
+            <p className="text-sm text-red-400">{t('study.passage.loadFailed')}</p>
+          ) : (
+            <p className="text-sm text-text-muted">{t('study.passage.loading')}</p>
+          )}
+        </div>
+        <Handle type="source" position={Position.Bottom} className="!bg-border" />
       </div>
-      <Handle type="source" position={Position.Bottom} className="!bg-border" />
-    </div>
+    </ResizableNode>
   );
 }
