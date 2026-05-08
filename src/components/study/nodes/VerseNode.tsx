@@ -20,6 +20,7 @@ type VerseNodeType = Node<VerseNodeData, 'verse'>;
 export function VerseNode({ id, data, selected }: NodeProps<VerseNodeType>) {
   const { t } = useTranslation();
   const versions = useVerseStore((s) => s.versions);
+  const readerVersionId = useVerseStore((s) => s.versionId);
   const versionName = versions.find((v) => v.id === data.version_id)?.abbreviation ?? '';
   const { ref: scrollRef, className: scrollClass } = useNoWheelOnOverflow<HTMLDivElement>();
   const xrefBtnRef = useRef<HTMLButtonElement>(null);
@@ -77,7 +78,7 @@ export function VerseNode({ id, data, selected }: NodeProps<VerseNodeType>) {
             verseId={data.verseId}
             reference={data.reference}
             verseText={data.text ?? ''}
-            versionId={data.version_id}
+            versionId={readerVersionId || data.version_id}
             onClose={() => setXrefOpen(false)}
           />
         )}
