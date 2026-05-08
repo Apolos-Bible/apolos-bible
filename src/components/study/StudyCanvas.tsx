@@ -638,7 +638,7 @@ function StudyCanvasInner({
         type: 'default',
         data: { kind: 'xref' },
       });
-    }, 'local');
+    });
     undoManagerRef.current?.stopCapturing();
   }, [isGuest]);
 
