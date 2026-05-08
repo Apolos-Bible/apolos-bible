@@ -1,5 +1,7 @@
 {
-  "projects": {},
+  "projects": {
+    "default": "tulia-bible"
+  },
   "targets": {
     "tulia-bible": {
       "hosting": {
