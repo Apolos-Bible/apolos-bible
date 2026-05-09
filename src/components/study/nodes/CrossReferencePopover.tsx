@@ -57,6 +57,7 @@ export function CrossReferencePopover({
 }: CrossReferencePopoverProps) {
   const { t } = useTranslation();
   const [tab, setTab] = useState<Tab>('cross');
+  const [userPickedTab, setUserPickedTab] = useState(false);
   const [pos, setPos] = useState<Position | null>(null);
   const [insertedIds, setInsertedIds] = useState<Set<number>>(new Set());
   const containerRef = useRef<HTMLDivElement>(null);
@@ -66,6 +67,11 @@ export function CrossReferencePopover({
 
   const [meaning, setMeaning] = useState<ResultRow[] | null>(null);
   const [meaningError, setMeaningError] = useState(false);
+
+  const pickTab = (next: Tab) => {
+    setTab(next);
+    setUserPickedTab(true);
+  };
 
   // Fetch cross-refs in the source verse's version so the user gets results
   // in their reading language (TSK mappings live on canonical/ASV; backend
@@ -82,6 +88,17 @@ export function CrossReferencePopover({
       cancelled = true;
     };
   }, [verseId, versionId]);
+
+  // If cross-refs come back empty and the user hasn't manually picked a tab,
+  // jump to the meaning tab — many verses lack TSK mappings, and the semantic
+  // neighbours are usually a more useful default than an empty list.
+  useEffect(() => {
+    if (userPickedTab) return;
+    if (xrefs === null) return;
+    if (xrefs.length === 0 && tab === 'cross') {
+      setTab('meaning');
+    }
+  }, [xrefs, userPickedTab, tab]);
 
   // Fetch semantic neighbours lazily on first visit to the meaning tab.
   useEffect(() => {
@@ -199,10 +216,21 @@ export function CrossReferencePopover({
       </div>
 
       <div className="flex border-b border-border shrink-0">
-        <TabButton active={tab === 'cross'} onClick={() => setTab('cross')}>
-          {t('study.crossRefs.tabs.crossRefs')}
+        <TabButton
+          active={tab === 'cross'}
+          dim={xrefs !== null && xrefs.length === 0}
+          onClick={() => pickTab('cross')}
+        >
+          <span className="inline-flex items-center gap-1.5">
+            {t('study.crossRefs.tabs.crossRefs')}
+            {xrefs !== null && (
+              <span className="text-2xs text-text-muted tabular-nums">
+                {xrefs.length}
+              </span>
+            )}
+          </span>
         </TabButton>
-        <TabButton active={tab === 'meaning'} onClick={() => setTab('meaning')}>
+        <TabButton active={tab === 'meaning'} onClick={() => pickTab('meaning')}>
           <span className="inline-flex items-center gap-1">
             <Sparkles className="w-3 h-3" />
             {t('study.crossRefs.tabs.meaning')}
@@ -253,10 +281,12 @@ export function CrossReferencePopover({
 
 function TabButton({
   active,
+  dim,
   onClick,
   children,
 }: {
   active: boolean;
+  dim?: boolean;
   onClick: () => void;
   children: React.ReactNode;
 }) {
@@ -267,6 +297,7 @@ function TabButton({
       className={cn(
         'cursor-pointer flex-1 px-2 py-2 text-xs font-medium transition-colors',
         'border-b-2',
+        dim && !active && 'opacity-50',
         active
           ? 'text-text-primary border-accent'
           : 'text-text-muted border-transparent hover:text-text-primary',
