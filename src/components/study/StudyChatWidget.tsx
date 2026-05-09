@@ -28,6 +28,9 @@ export function StudyChatWidget({ conversationId }: StudyChatWidgetProps) {
   const [conversation, setConversation] = useState<Conversation | null>(null)
   const [open, setOpen] = useState(false)
   const [unreadFromOpen, setUnreadFromOpen] = useState(0)
+  // Bumped each time a new message from someone else lands while the panel
+  // is closed; used as a key to retrigger the bounce + ring animation.
+  const [pingKey, setPingKey] = useState(0)
 
   // Track the last message id we considered "read" so we can compute unread
   // count locally without depending on the server's unread_count refresh
@@ -70,7 +73,11 @@ export function StudyChatWidget({ conversationId }: StudyChatWidgetProps) {
       return
     }
     const newer = messages.filter(m => m.id > lastRead && m.user_id !== userId)
-    setUnreadFromOpen(newer.length)
+    setUnreadFromOpen(prev => {
+      // Trigger the bounce + ring whenever a new external message arrives.
+      if (newer.length > prev) setPingKey(k => k + 1)
+      return newer.length
+    })
   }, [open, messages, userId])
 
   if (!conversation) {
@@ -82,26 +89,35 @@ export function StudyChatWidget({ conversationId }: StudyChatWidgetProps) {
   return (
     <>
       {/* Bubble */}
-      <button
-        type="button"
-        onClick={() => setOpen(o => !o)}
-        className={cn(
-          'fixed bottom-5 right-5 z-40 cursor-pointer',
-          'flex items-center justify-center w-12 h-12 rounded-full',
-          'bg-accent text-bg-primary shadow-lg hover:shadow-xl',
-          'transition-all hover:-translate-y-0.5',
-          open && 'scale-95',
+      <div className="fixed bottom-5 right-5 z-40">
+        {/* Expanding ring on new message; remounts via pingKey so the
+            keyframe replays for each ping. */}
+        {pingKey > 0 && !open && (
+          <span key={pingKey} className="study-chat-ring" aria-hidden="true" />
         )}
-        aria-label={t('study.chat.toggle', 'Toggle chat')}
-        title={t('study.chat.toggle', 'Toggle chat')}
-      >
-        <MessageSquare className="w-5 h-5" />
-        {unread > 0 && (
-          <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 rounded-full bg-red-500 text-white text-2xs font-medium flex items-center justify-center border-2 border-bg-primary">
-            {unread > 99 ? '99+' : unread}
-          </span>
-        )}
-      </button>
+        <button
+          type="button"
+          onClick={() => setOpen(o => !o)}
+          key={`bubble-${pingKey}`}
+          className={cn(
+            'relative cursor-pointer',
+            'flex items-center justify-center w-12 h-12 rounded-full',
+            'bg-accent text-bg-primary shadow-lg hover:shadow-xl',
+            'transition-all hover:-translate-y-0.5',
+            open && 'scale-95',
+            !open && pingKey > 0 && 'study-chat-bouncing',
+          )}
+          aria-label={t('study.chat.toggle', 'Toggle chat')}
+          title={t('study.chat.toggle', 'Toggle chat')}
+        >
+          <MessageSquare className="w-5 h-5" />
+          {unread > 0 && (
+            <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 rounded-full bg-red-500 text-white text-2xs font-medium flex items-center justify-center border-2 border-bg-primary">
+              {unread > 99 ? '99+' : unread}
+            </span>
+          )}
+        </button>
+      </div>
 
       {/* Panel */}
       {open && (

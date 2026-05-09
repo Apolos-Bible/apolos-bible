@@ -242,3 +242,26 @@ html[data-theme="light"] .verse-aura-pulse-block { animation-name: verse-aura-bl
   from { opacity: 0; transform: translateY(6px); }
   to   { opacity: 1; transform: translateY(0); }
 }
+
+/* ── Study chat bubble pulse on new message ──────────────────────────── */
+@keyframes study-chat-bounce {
+  0%, 100% { transform: translateY(0) scale(1); }
+  20%      { transform: translateY(-6px) scale(1.06); }
+  40%      { transform: translateY(0)    scale(0.97); }
+  60%      { transform: translateY(-3px) scale(1.03); }
+  80%      { transform: translateY(0)    scale(0.99); }
+}
+.study-chat-bouncing { animation: study-chat-bounce 0.85s ease-out; }
+
+@keyframes study-chat-ring {
+  0%   { transform: scale(0.85); opacity: 0.55; }
+  100% { transform: scale(1.55); opacity: 0;    }
+}
+.study-chat-ring {
+  position: absolute;
+  inset: 0;
+  border-radius: 9999px;
+  background: var(--color-accent);
+  animation: study-chat-ring 0.85s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+  pointer-events: none;
+}
