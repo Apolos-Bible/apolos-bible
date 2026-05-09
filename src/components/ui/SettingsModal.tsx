@@ -72,11 +72,14 @@ export function SettingsModal() {
   const user   = useAuthStore(s => s.user)
   const logout = useAuthStore(s => s.logout)
   const deleteAccount = useAuthStore(s => s.deleteAccount)
+  const resendVerification = useAuthStore(s => s.resendVerification)
+  const refreshUser = useAuthStore(s => s.refreshUser)
 
   const [deleting, setDeleting] = useState(false)
   const [deleteConfirm, setDeleteConfirm] = useState(false)
   const [deletePassword, setDeletePassword] = useState('')
   const [deleteError, setDeleteError] = useState('')
+  const [resendState, setResendState] = useState<'idle' | 'sending' | 'sent'>('idle')
 
   const handleDelete = async () => {
     if (!deletePassword) return
@@ -118,6 +121,50 @@ export function SettingsModal() {
               <div className="flex-1 min-w-0">
                 <p className="text-sm font-medium text-text-primary truncate">{user.name}</p>
                 <p className="text-xs text-text-muted truncate">{user.email}</p>
+                {user.email_verified_at ? (
+                  <p className="mt-1 inline-flex items-center gap-1 text-2xs text-emerald-500">
+                    <span className="inline-block w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                    {t('settings.emailVerified', 'Correo verificado')}
+                  </p>
+                ) : (
+                  <div className="mt-1 flex items-center gap-2">
+                    <span className="inline-flex items-center gap-1 text-2xs text-amber-500">
+                      <span className="inline-block w-1.5 h-1.5 rounded-full bg-amber-500" />
+                      {t('settings.emailUnverified', 'Correo sin verificar')}
+                    </span>
+                    <button
+                      type="button"
+                      disabled={resendState === 'sending'}
+                      onClick={async () => {
+                        if (resendState === 'sending') return
+                        setResendState('sending')
+                        try {
+                          const res = await resendVerification()
+                          if (res.verified) await refreshUser()
+                          setResendState('sent')
+                        } catch {
+                          setResendState('idle')
+                        }
+                      }}
+                      className="text-2xs text-accent hover:underline cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      {resendState === 'sending'
+                        ? t('settings.emailResending', 'Enviando…')
+                        : resendState === 'sent'
+                          ? t('settings.emailResent', 'Enviado')
+                          : t('settings.emailResend', 'Reenviar correo')}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={async () => {
+                        await refreshUser()
+                      }}
+                      className="text-2xs text-text-muted hover:text-text-primary cursor-pointer"
+                    >
+                      {t('settings.emailCheckAgain', 'Comprobar')}
+                    </button>
+                  </div>
+                )}
               </div>
               <button
                 onClick={closeSettings}

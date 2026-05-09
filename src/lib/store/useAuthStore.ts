@@ -7,6 +7,7 @@ interface AuthUser {
   id: number
   name: string
   email: string
+  email_verified_at?: string | null
 }
 
 interface AuthState {
@@ -16,6 +17,8 @@ interface AuthState {
   register: (name: string, email: string, password: string) => Promise<void>
   forgotPassword: (email: string) => Promise<void>
   resetPassword: (email: string, token: string, password: string, passwordConfirmation: string) => Promise<void>
+  resendVerification: () => Promise<{ message: string; verified: boolean }>
+  refreshUser: () => Promise<void>
   logout: () => Promise<void>
   deleteAccount: (password: string) => Promise<void>
   init: () => Promise<void>
@@ -60,6 +63,22 @@ export const useAuthStore = create<AuthState>((set) => ({
 
   forgotPassword: async (email) => {
     await api.post('/api/auth/forgot-password', { email })
+  },
+
+  resendVerification: async () => {
+    return api.post<{ message: string; verified: boolean }>(
+      '/api/auth/email/resend-verification',
+      {},
+    )
+  },
+
+  refreshUser: async () => {
+    try {
+      const user = await api.get<AuthUser>('/api/user')
+      set({ user })
+    } catch {
+      // ignore — keep current state
+    }
   },
 
   resetPassword: async (email, token, password, passwordConfirmation) => {

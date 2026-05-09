@@ -50,6 +50,30 @@ export function RootLayout() {
     void authInit()
   }, [authInit])
 
+  // Handle ?email_verified=1 / =invalid query coming back from the backend
+  // verification redirect. Show a toast, refresh the user, then strip the
+  // query so it doesn't fire again on reload.
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search)
+    const flag = params.get('email_verified')
+    if (!flag) return
+
+    if (flag === '1') {
+      addToast(t('auth.emailVerified', 'Correo verificado.'), 'success')
+      void useAuthStore.getState().refreshUser()
+    } else {
+      addToast(
+        t('auth.emailVerifyFailed', 'No pudimos verificar el correo. El enlace puede haber caducado.'),
+        'error',
+      )
+    }
+
+    params.delete('email_verified')
+    const qs = params.toString()
+    const newUrl = window.location.pathname + (qs ? `?${qs}` : '') + window.location.hash
+    window.history.replaceState({}, '', newUrl)
+  }, [addToast, t])
+
   useEffect(() => {
     if (hasLoggedStartupSettings || !selectedBook) return
 

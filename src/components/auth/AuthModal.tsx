@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useAuthStore } from '@/lib/store/useAuthStore'
+import { useUIStore } from '@/lib/store/useUIStore'
 import { cn } from '@/lib/cn'
 import { LogoStacked } from '@/components/brand/Logo'
 
@@ -28,6 +29,7 @@ export function AuthModal({ open, onClose, initialMode = 'login' }: AuthModalPro
   const register = useAuthStore(s => s.register)
   const forgotPassword = useAuthStore(s => s.forgotPassword)
   const resetPassword = useAuthStore(s => s.resetPassword)
+  const addToast = useUIStore(s => s.addToast)
 
   useEffect(() => {
     if (open) {
@@ -71,6 +73,15 @@ export function AuthModal({ open, onClose, initialMode = 'login' }: AuthModalPro
         handleClose()
       } else if (mode === 'register') {
         await register(name.trim(), email.trim(), password)
+        addToast(
+          t(
+            'auth.verifyEmailSent',
+            'Te enviamos un correo de verificación a {{email}}. Revisa tu bandeja (y la carpeta de spam).',
+            { email: email.trim() },
+          ),
+          'info',
+          { duration: 8000 },
+        )
         handleClose()
       } else if (mode === 'forgot-password') {
         await forgotPassword(email.trim())
