@@ -21,7 +21,9 @@ export function CommentNode({ id, data, selected }: NodeProps<CommentNodeType>) 
           selected && 'ring-2 ring-accent',
         )}
       >
-        <Handle type="target" position={Position.Top} className="!bg-border" />
+        <Handle id="top" type="source" position={Position.Top} className="!bg-border" />
+        <Handle id="right" type="source" position={Position.Right} className="!bg-border" />
+        <Handle id="left" type="source" position={Position.Left} className="!bg-border" />
         <div className="flex items-center gap-2 mb-1.5 shrink-0">
           <div className="w-5 h-5 rounded-full bg-accent/20 flex items-center justify-center text-2xs font-medium text-accent shrink-0">
             {data.authorName.charAt(0).toUpperCase()}
@@ -30,7 +32,7 @@ export function CommentNode({ id, data, selected }: NodeProps<CommentNodeType>) 
           <span className="text-2xs text-text-muted ml-auto">{data.createdAt}</span>
         </div>
         <p ref={scrollRef} className={cn('text-sm text-text-secondary overflow-auto flex-1', scrollClass)}>{data.text}</p>
-        <Handle type="source" position={Position.Bottom} className="!bg-border" />
+        <Handle id="bottom" type="source" position={Position.Bottom} className="!bg-border" />
       </div>
     </ResizableNode>
   );

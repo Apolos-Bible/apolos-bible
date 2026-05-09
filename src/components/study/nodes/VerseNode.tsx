@@ -34,7 +34,9 @@ export function VerseNode({ id, data, selected }: NodeProps<VerseNodeType>) {
           selected && 'ring-2 ring-accent',
         )}
       >
-        <Handle type="target" position={Position.Top} className="!bg-border" />
+        <Handle id="top" type="source" position={Position.Top} className="!bg-border" />
+        <Handle id="right" type="source" position={Position.Right} className="!bg-border" />
+        <Handle id="left" type="source" position={Position.Left} className="!bg-border" />
 
         <div className="flex items-center justify-between gap-2 mb-1 shrink-0">
           <div className="text-2xs text-accent uppercase tracking-wide truncate">
@@ -67,7 +69,7 @@ export function VerseNode({ id, data, selected }: NodeProps<VerseNodeType>) {
           {data.text || t('study.verseNode.loading')}
         </div>
 
-        <Handle type="source" position={Position.Bottom} className="!bg-border" />
+        <Handle id="bottom" type="source" position={Position.Bottom} className="!bg-border" />
 
         {xrefOpen && (
           <CrossReferencePopover

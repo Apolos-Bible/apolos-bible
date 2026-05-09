@@ -102,7 +102,9 @@ useEffect(() => {
         selected && 'ring-2 ring-accent shadow-md',
       )}
     >
-      <Handle type="target" position={Position.Top} className="!bg-border" />
+      <Handle id="top" type="source" position={Position.Top} className="!bg-border" />
+      <Handle id="right" type="source" position={Position.Right} className="!bg-border" />
+      <Handle id="left" type="source" position={Position.Left} className="!bg-border" />
 
       {/* Drag handle bar */}
       <div
@@ -185,7 +187,7 @@ useEffect(() => {
         )}
       </div>
 
-      <Handle type="source" position={Position.Bottom} className="!bg-border" />
+      <Handle id="bottom" type="source" position={Position.Bottom} className="!bg-border" />
     </div>
     </ResizableNode>
   );

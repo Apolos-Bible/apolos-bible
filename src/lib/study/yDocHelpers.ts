@@ -23,13 +23,18 @@ export function nodeFromYMap(id: string, m: Y.Map<any>) {
 }
 
 export function edgeFromYMap(id: string, m: Y.Map<any>) {
-  return {
+  const edge: any = {
     id: m.get('id') ?? id,
     source: m.get('source') ?? '',
     target: m.get('target') ?? '',
     type: m.get('type') ?? 'default',
     data: m.get('data') ?? {},
   };
+  const sourceHandle = m.get('sourceHandle');
+  const targetHandle = m.get('targetHandle');
+  if (sourceHandle != null) edge.sourceHandle = sourceHandle;
+  if (targetHandle != null) edge.targetHandle = targetHandle;
+  return edge;
 }
 
 export function writeNodeToMap(nodesMap: Y.Map<Y.Map<any>>, node: { id: string; type?: string; position?: { x: number; y: number }; data?: any; width?: number; height?: number }) {
@@ -43,11 +48,13 @@ export function writeNodeToMap(nodesMap: Y.Map<Y.Map<any>>, node: { id: string; 
   nodesMap.set(node.id, nodeMap);
 }
 
-export function writeEdgeToMap(edgesMap: Y.Map<Y.Map<any>>, edge: { id: string; source: string; target: string; type?: string; data?: any }) {
+export function writeEdgeToMap(edgesMap: Y.Map<Y.Map<any>>, edge: { id: string; source: string; target: string; sourceHandle?: string | null; targetHandle?: string | null; type?: string; data?: any }) {
   const edgeMap = edgesMap.get(edge.id) ?? new Y.Map();
   edgeMap.set('id', edge.id);
   edgeMap.set('source', edge.source);
   edgeMap.set('target', edge.target);
+  if (edge.sourceHandle != null) edgeMap.set('sourceHandle', edge.sourceHandle);
+  if (edge.targetHandle != null) edgeMap.set('targetHandle', edge.targetHandle);
   if (edge.type) edgeMap.set('type', edge.type);
   if (edge.data) edgeMap.set('data', edge.data);
   edgesMap.set(edge.id, edgeMap);

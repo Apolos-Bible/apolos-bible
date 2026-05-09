@@ -4,6 +4,7 @@ import {
   Background,
   MiniMap,
   BackgroundVariant,
+  ConnectionMode,
   applyNodeChanges,
   applyEdgeChanges,
   useReactFlow,
@@ -494,13 +495,22 @@ function StudyCanvasInner({
           id,
           source: connection.source,
           target: connection.target,
+          sourceHandle: connection.sourceHandle,
+          targetHandle: connection.targetHandle,
         });
       }, 'local');
 
       // Update React state immediately (observer filters out 'local' origin)
       setEdges((eds) => [
         ...eds,
-        { id, source: connection.source, target: connection.target, type: 'default' },
+        {
+          id,
+          source: connection.source,
+          target: connection.target,
+          sourceHandle: connection.sourceHandle ?? undefined,
+          targetHandle: connection.targetHandle ?? undefined,
+          type: 'default',
+        },
       ]);
     },
     [isGuest],
@@ -746,6 +756,7 @@ useEffect(() => {
           nodeTypes={studyNodeTypes}
           edgeTypes={studyEdgeTypes}
           fitView
+          connectionMode={ConnectionMode.Loose}
           deleteKeyCode={['Backspace', 'Delete']}
           multiSelectionKeyCode="Shift"
           selectionKeyCode="Shift"

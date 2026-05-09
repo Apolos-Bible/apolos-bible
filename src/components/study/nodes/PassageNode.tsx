@@ -80,7 +80,9 @@ export function PassageNode({ id, data, selected }: NodeProps<PassageNodeType>) 
           selected && 'ring-2 ring-accent',
         )}
       >
-        <Handle type="target" position={Position.Top} className="!bg-border" />
+        <Handle id="top" type="source" position={Position.Top} className="!bg-border" />
+        <Handle id="right" type="source" position={Position.Right} className="!bg-border" />
+        <Handle id="left" type="source" position={Position.Left} className="!bg-border" />
         <div className="text-2xs text-accent uppercase tracking-wide mb-2 shrink-0">
           {data.reference}
         </div>
@@ -100,7 +102,7 @@ export function PassageNode({ id, data, selected }: NodeProps<PassageNodeType>) 
             <p className="text-sm text-text-muted">{t('study.passage.loading')}</p>
           )}
         </div>
-        <Handle type="source" position={Position.Bottom} className="!bg-border" />
+        <Handle id="bottom" type="source" position={Position.Bottom} className="!bg-border" />
       </div>
     </ResizableNode>
   );
