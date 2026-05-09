@@ -406,10 +406,11 @@ export function VerseList() {
             `${bookName} ${v.chapter}:${v.verse} — ${v.text}`
           ).join('\n\n')
           const refs = multiVerses.map(v => `${bookName} ${v.chapter}:${v.verse}`).join(', ')
+          const shareUrl = window.location.href
           if (navigator.share) {
-            navigator.share({ title: refs, text: shareText, url: window.location.href })
+            navigator.share({ title: refs, text: shareText, url: shareUrl })
           } else {
-            navigator.clipboard.writeText(shareText)
+            navigator.clipboard.writeText(`${shareText}\n\n${shareUrl}`)
             addToast(t('toast.copied'), 'success')
           }
         },
