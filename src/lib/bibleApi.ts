@@ -118,6 +118,17 @@ export const bibleApi = {
     }
     return api.get<ApiCrossRef[]>(`/api/verses/${verseId}/cross-references?version_id=${versionId}`)
   },
+  verseInVersion: (verseId: number, versionId: number) =>
+    api.get<{
+      id: number
+      text: string
+      verse: number
+      chapter: number
+      book: string
+      slug: string
+      version_id: number
+      reference: string
+    }>(`/api/verses/${verseId}/in/${versionId}`),
   semanticSimilar: (verseId: number, limit = 30, versionId?: number) => {
     const qs = new URLSearchParams({ limit: String(limit) })
     if (versionId != null) qs.set('version_id', String(versionId))

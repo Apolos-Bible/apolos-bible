@@ -88,6 +88,34 @@ function getCanvasSnapshotSignature(nodes: Node[], edges: Edge[]) {
   });
 }
 
+type Rect = { x: number; y: number; w: number; h: number };
+
+/**
+ * Pick the handle ids for source and target so the edge takes the shortest
+ * visual path: each end exits through the side of its node that faces the
+ * other node's center.
+ */
+function pickHandlesByGeometry(source: Rect, target: Rect): {
+  sourceHandle: 'top' | 'right' | 'bottom' | 'left';
+  targetHandle: 'top' | 'right' | 'bottom' | 'left';
+} {
+  const scx = source.x + source.w / 2;
+  const scy = source.y + source.h / 2;
+  const tcx = target.x + target.w / 2;
+  const tcy = target.y + target.h / 2;
+  const dx = tcx - scx;
+  const dy = tcy - scy;
+
+  if (Math.abs(dx) >= Math.abs(dy)) {
+    return dx >= 0
+      ? { sourceHandle: 'right', targetHandle: 'left' }
+      : { sourceHandle: 'left', targetHandle: 'right' };
+  }
+  return dy >= 0
+    ? { sourceHandle: 'bottom', targetHandle: 'top' }
+    : { sourceHandle: 'top', targetHandle: 'bottom' };
+}
+
 function parseChapterAnchor(anchorRef: string) {
   const match = anchorRef.match(/^(.+)-(\d+)$/);
   if (!match) return null;
@@ -123,6 +151,15 @@ function StudyCanvasInner({
   }, [rfStore]);
   const user = useAuthStore((s) => s.user);
   const versionId = useVerseStore((s) => s.versionId);
+
+  // Ensure the Bible versions list is loaded so verse-node version switching
+  // and other version-aware UIs have something to render.
+  useEffect(() => {
+    const { versions, loadVersions } = useVerseStore.getState();
+    if (versions.length === 0) {
+      loadVersions().catch(() => {});
+    }
+  }, []);
 
   const [nodes, setNodes] = useState<Node[]>([]);
   const [edges, setEdges] = useState<Edge[]>([]);
@@ -518,43 +555,57 @@ function StudyCanvasInner({
 
   // --- Canvas actions (accessed by toolbar) ---
   // These use docRef.current so they always have the latest doc
+  // Center of the visible canvas area, in flow coordinates.
+  // Accounts for the BiblePanel overlay (left side, w-panel = 420px) so newly
+  // inserted nodes land in the part of the canvas the user can actually see.
+  const getVisibleCenterFlow = useCallback(() => {
+    const panelOffset = biblePanelOpen ? 420 : 0;
+    const screenX = panelOffset + (window.innerWidth - panelOffset) / 2;
+    const screenY = window.innerHeight / 2;
+    return screenToFlowPosition({ x: screenX, y: screenY });
+  }, [screenToFlowPosition, biblePanelOpen]);
+
   const addStickyNote = useCallback((pos?: { x: number; y: number }) => {
     if (isGuest) return;
     const d = docRef.current;
     if (!d) return;
     const id = `sticky-${Date.now()}`;
-    const position = pos ?? { x: Math.random() * 400 + 100, y: Math.random() * 300 + 100 };
+    let position = pos;
+    if (!position) {
+      const center = getVisibleCenterFlow();
+      position = { x: center.x - 100, y: center.y - 60 };
+    }
     d.transact(() => {
       const nodesMap = getNodesMap(d);
       writeNodeToMap(nodesMap, { id, type: 'sticky', position, data: { text: '', color: 'yellow' } });
     });
-  }, [isGuest]);
+  }, [isGuest, getVisibleCenterFlow]);
 
   const addVerseNode = useCallback((data: { verseId: number; reference: string; version_id: number }) => {
     if (isGuest) return;
     const d = docRef.current;
     if (!d) return;
     const id = `verse-${data.verseId}-${Date.now()}`;
-    const center = screenToFlowPosition({ x: window.innerWidth / 2, y: window.innerHeight / 2 });
+    const center = getVisibleCenterFlow();
     const position = { x: center.x - 150, y: center.y - 40 };
     d.transact(() => {
       const nodesMap = getNodesMap(d);
       writeNodeToMap(nodesMap, { id, type: 'verse', position, data });
     });
-  }, [screenToFlowPosition, isGuest]);
+  }, [getVisibleCenterFlow, isGuest]);
 
   const addPassageNode = useCallback((data: { bookSlug: string; chapter: number; reference: string; version_id: number; verses: { verseId: number; reference: string; verse: number; text: string }[] }) => {
     if (isGuest) return;
     const d = docRef.current;
     if (!d) return;
     const id = `passage-${Date.now()}`;
-    const center = screenToFlowPosition({ x: window.innerWidth / 2, y: window.innerHeight / 2 });
+    const center = getVisibleCenterFlow();
     const position = { x: center.x - 200, y: center.y - 60 };
     d.transact(() => {
       const nodesMap = getNodesMap(d);
       writeNodeToMap(nodesMap, { id, type: 'passage', position, data });
     });
-  }, [screenToFlowPosition, isGuest]);
+  }, [getVisibleCenterFlow, isGuest]);
 
   const undo = useCallback(() => {
     if (isGuest) return;
@@ -625,6 +676,11 @@ function StudyCanvasInner({
       y: cy + Math.sin(angle) * distance - nodeH / 2,
     };
 
+    const handles = pickHandlesByGeometry(
+      { x: source.position.x, y: source.position.y, w: sw, h: sh },
+      { x: position.x, y: position.y, w: nodeW, h: nodeH },
+    );
+
     d.transact(() => {
       const nodesMap = getNodesMap(d);
       const edgesMap = getEdgesMap(d);
@@ -645,6 +701,8 @@ function StudyCanvasInner({
         id: edgeId,
         source: sourceNodeId,
         target: newNodeId,
+        sourceHandle: handles.sourceHandle,
+        targetHandle: handles.targetHandle,
         type: 'default',
         data: { kind: 'xref' },
       });
@@ -652,11 +710,124 @@ function StudyCanvasInner({
     undoManagerRef.current?.stopCapturing();
   }, [isGuest]);
 
+  // Switch the Bible version of an existing verse node in place. Looks up the
+  // equivalent verse (same canonical book + chapter + verse number) and
+  // updates the node's data via Y.Doc so collaborators see the change.
+  const setVerseNodeVersion = useCallback(async (
+    nodeId: string,
+    versionId: number,
+  ) => {
+    if (isGuest) return;
+    const d = docRef.current;
+    if (!d) return;
+
+    const node = displayedNodesRef.current.find((n) => n.id === nodeId);
+    if (!node || node.type !== 'verse') return;
+    const currentVerseId = (node.data as any)?.verseId;
+    if (!currentVerseId) return;
+
+    const { bibleApi } = await import('@/lib/bibleApi');
+    const result = await bibleApi.verseInVersion(currentVerseId, versionId);
+
+    d.transact(() => {
+      const nodesMap = getNodesMap(d);
+      const m = nodesMap.get(nodeId);
+      if (!m) return;
+      m.set('data', {
+        verseId: result.id,
+        reference: result.reference,
+        version_id: result.version_id,
+        text: result.text,
+      });
+    }, 'local');
+
+    setNodes((nds) =>
+      nds.map((n) =>
+        n.id === nodeId
+          ? {
+              ...n,
+              data: {
+                verseId: result.id,
+                reference: result.reference,
+                version_id: result.version_id,
+                text: result.text,
+              },
+            }
+          : n,
+      ),
+    );
+  }, [isGuest]);
+
+  // AI notes: insert an ai-note node positioned around the source and connect
+  // it with an edge tagged 'ai'.
+  const addAiNoteNode = useCallback((
+    sourceNodeId: string,
+    payload: { question: string; answer: string; reference?: string },
+  ) => {
+    if (isGuest) return;
+    const d = docRef.current;
+    if (!d) return;
+
+    const source = displayedNodesRef.current.find((n) => n.id === sourceNodeId);
+    if (!source) return;
+
+    const newNodeId = `ai-${Date.now()}`;
+    const edgeId = `ai-${sourceNodeId}-${newNodeId}`;
+
+    const sw = (source as any).width ?? 260;
+    const sh = (source as any).height ?? 100;
+    const cx = source.position.x + sw / 2;
+    const cy = source.position.y + sh / 2;
+    const aiCount = edgesRef.current.filter(
+      (e) => e.source === sourceNodeId && e.id.startsWith('ai-'),
+    ).length;
+    const angle = Math.PI / 4 + aiCount * (Math.PI / 7);
+    const distance = 340;
+    const nodeW = 300;
+    const nodeH = 180;
+    const position = {
+      x: cx + Math.cos(angle) * distance - nodeW / 2,
+      y: cy + Math.sin(angle) * distance - nodeH / 2,
+    };
+
+    const handles = pickHandlesByGeometry(
+      { x: source.position.x, y: source.position.y, w: sw, h: sh },
+      { x: position.x, y: position.y, w: nodeW, h: nodeH },
+    );
+
+    d.transact(() => {
+      const nodesMap = getNodesMap(d);
+      const edgesMap = getEdgesMap(d);
+      writeNodeToMap(nodesMap, {
+        id: newNodeId,
+        type: 'ai-note',
+        position,
+        width: nodeW,
+        height: nodeH,
+        data: {
+          question: payload.question,
+          answer: payload.answer,
+          sourceReference: payload.reference,
+        },
+      });
+      writeEdgeToMap(edgesMap, {
+        id: edgeId,
+        source: sourceNodeId,
+        target: newNodeId,
+        sourceHandle: handles.sourceHandle,
+        targetHandle: handles.targetHandle,
+        type: 'default',
+        data: { kind: 'ai' },
+      });
+    });
+    undoManagerRef.current?.stopCapturing();
+  }, [isGuest]);
+
 useEffect(() => {
-    (window as any).__studyCanvasActions = { addStickyNote, addVerseNode, addPassageNode, addCrossRefNode, undo, redo, resizeNode, zoomIn, zoomOut, fitView, toggleLock };
+    (window as any).__studyCanvasActions = { addStickyNote, addVerseNode, addPassageNode, addCrossRefNode, addAiNoteNode, setVerseNodeVersion, undo, redo, resizeNode, zoomIn, zoomOut, fitView, toggleLock };
     (window as any).__studyCanvasState = { isLocked: !isInteractive };
     return () => { delete (window as any).__studyCanvasActions; delete (window as any).__studyCanvasState; };
-  }, [addStickyNote, addVerseNode, addPassageNode, addCrossRefNode, undo, redo, resizeNode, zoomIn, zoomOut, fitView, toggleLock, isInteractive]);
+  }, [addStickyNote, addVerseNode, addPassageNode, addCrossRefNode, addAiNoteNode, setVerseNodeVersion, undo, redo, resizeNode, zoomIn, zoomOut, fitView, toggleLock, isInteractive]);
 
   // --- Cursor tracking ---
   const handleCanvasPointerMove = useCallback(
