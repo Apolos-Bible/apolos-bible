@@ -88,12 +88,20 @@ export const bibleApi = {
     (data) => db.chapters.put({ key: chapterKey(versionId, slug, n), versionId, slug, chapter: n, data }),
   ),
   search: (versionId: number, q: string) => api.get<ApiSearchResult[]>(`/api/versions/${versionId}/search?q=${encodeURIComponent(q)}`),
-  crossRefs: (verseId: number) => cacheFirst<ApiCrossRef[]>(
-    async () => (await db.crossRefs.get(verseId))?.data,
-    () => api.get<ApiCrossRef[]>(`/api/verses/${verseId}/cross-references`),
-    (data) => db.crossRefs.put({ verseId, data }),
-    isArray,
-  ),
+  crossRefs: (verseId: number, versionId?: number) => {
+    // Cache only the canonical (no version override) result; cross-version
+    // mappings are cheap to recompute and we want fresh data when the user
+    // switches reading version.
+    if (versionId === undefined) {
+      return cacheFirst<ApiCrossRef[]>(
+        async () => (await db.crossRefs.get(verseId))?.data,
+        () => api.get<ApiCrossRef[]>(`/api/verses/${verseId}/cross-references`),
+        (data) => db.crossRefs.put({ verseId, data }),
+        isArray,
+      )
+    }
+    return api.get<ApiCrossRef[]>(`/api/verses/${verseId}/cross-references?version_id=${versionId}`)
+  },
   crossRefVerseIds: (chapterId: number) => cacheFirst<number[]>(
     async () => (await db.crossRefIds.get(chapterId))?.data,
     () => api.get<number[]>(`/api/chapters/${chapterId}/cross-ref-verse-ids`),

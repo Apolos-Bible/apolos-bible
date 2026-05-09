@@ -174,11 +174,16 @@ function StudyCanvasInner({
   const pendingPositionWritesRef = useRef(new Map<string, { x: number; y: number }>());
   const positionWriteTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const displayedNodesRef = useRef<Node[]>([]);
+  const edgesRef = useRef<Edge[]>([]);
   const remoteAnimationFrameRef = useRef<number | null>(null);
 
   useEffect(() => {
     displayedNodesRef.current = nodes;
   }, [nodes]);
+
+  useEffect(() => {
+    edgesRef.current = edges;
+  }, [edges]);
 
   // Keep the latest doc available to stable React Flow callbacks.
   const docRef = useRef(doc);
@@ -568,11 +573,80 @@ function StudyCanvasInner({
     undoManagerRef.current?.stopCapturing();
   }, [isGuest]);
 
+  // Cross references: insert a verse node positioned around the source and
+  // connect it with an edge tagged 'xref'.
+  const addCrossRefNode = useCallback((
+    sourceNodeId: string,
+    ref: { id: number; book: string; slug: string; chapter: number; verse: number; text: string },
+    version_id: number,
+  ) => {
+    if (isGuest) return;
+    const d = docRef.current;
+    if (!d) return;
+
+    const source = displayedNodesRef.current.find((n) => n.id === sourceNodeId);
+    if (!source) return;
+
+    const newNodeId = `verse-${ref.id}-${Date.now()}`;
+    const edgeId = `xref-${sourceNodeId}-${newNodeId}`;
+
+    // Avoid duplicate verse for this source.
+    const alreadyHas = displayedNodesRef.current.some((n) => {
+      const data: any = n.data;
+      return data?.verseId === ref.id && edgesRef.current.some(
+        (e) => e.source === sourceNodeId && e.target === n.id,
+      );
+    });
+    if (alreadyHas) return;
+
+    const sw = (source as any).width ?? 260;
+    const sh = (source as any).height ?? 100;
+    const cx = source.position.x + sw / 2;
+    const cy = source.position.y + sh / 2;
+    const xrefCount = edgesRef.current.filter(
+      (e) => e.source === sourceNodeId && e.id.startsWith('xref-'),
+    ).length;
+    const angle = -Math.PI / 4 + xrefCount * (Math.PI / 7);
+    const distance = 340;
+    const nodeW = 280;
+    const nodeH = 110;
+    const position = {
+      x: cx + Math.cos(angle) * distance - nodeW / 2,
+      y: cy + Math.sin(angle) * distance - nodeH / 2,
+    };
+
+    d.transact(() => {
+      const nodesMap = getNodesMap(d);
+      const edgesMap = getEdgesMap(d);
+      writeNodeToMap(nodesMap, {
+        id: newNodeId,
+        type: 'verse',
+        position,
+        width: nodeW,
+        height: nodeH,
+        data: {
+          verseId: ref.id,
+          reference: `${ref.book} ${ref.chapter}:${ref.verse}`,
+          version_id,
+          text: ref.text,
+        },
+      });
+      writeEdgeToMap(edgesMap, {
+        id: edgeId,
+        source: sourceNodeId,
+        target: newNodeId,
+        type: 'default',
+        data: { kind: 'xref' },
+      });
+    });
+    undoManagerRef.current?.stopCapturing();
+  }, [isGuest]);
+
 useEffect(() => {
-    (window as any).__studyCanvasActions = { addStickyNote, addVerseNode, addPassageNode, undo, redo, resizeNode, zoomIn, zoomOut, fitView, toggleLock };
+    (window as any).__studyCanvasActions = { addStickyNote, addVerseNode, addPassageNode, addCrossRefNode, undo, redo, resizeNode, zoomIn, zoomOut, fitView, toggleLock };
     (window as any).__studyCanvasState = { isLocked: !isInteractive };
     return () => { delete (window as any).__studyCanvasActions; delete (window as any).__studyCanvasState; };
-  }, [addStickyNote, addVerseNode, addPassageNode, undo, redo, resizeNode, zoomIn, zoomOut, fitView, toggleLock, isInteractive]);
+  }, [addStickyNote, addVerseNode, addPassageNode, addCrossRefNode, undo, redo, resizeNode, zoomIn, zoomOut, fitView, toggleLock, isInteractive]);
 
   // --- Cursor tracking ---
   const handleCanvasPointerMove = useCallback(
