@@ -59,7 +59,7 @@ export function MessageItem({ message, isMine, compact, showReceipt, conversatio
 
         <div
           className={cn(
-            'text-sm leading-snug px-3 py-1.5 rounded-2xl break-words whitespace-pre-wrap',
+            'text-sm leading-snug px-3 py-1.5 rounded-2xl break-words [overflow-wrap:anywhere] whitespace-pre-wrap',
             isMine
               ? 'bg-accent text-bg-primary rounded-br-md'
               : 'bg-bg-secondary border border-border-subtle text-text-primary rounded-bl-md',
