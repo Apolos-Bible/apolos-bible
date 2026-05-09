@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { MessageSquare, X } from 'lucide-react'
+import { MessageSquare } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { cn } from '@/lib/cn'
 import { chatApi, type ChatMessage, type Conversation } from '@/lib/chatApi'
@@ -113,21 +113,12 @@ export function StudyChatWidget({ conversationId }: StudyChatWidgetProps) {
             'flex flex-col overflow-hidden',
           )}
         >
+          {/* ChatThread's back arrow already calls onBack and the bubble
+              click toggles the panel — no extra close icon needed. */}
           <ChatThread
             conversation={conversation}
             onBack={() => setOpen(false)}
           />
-          {/* Explicit close in the top-right; ChatThread's back arrow
-              also calls onBack. */}
-          <button
-            type="button"
-            onClick={() => setOpen(false)}
-            className="absolute top-2 right-2 cursor-pointer p-1 rounded text-text-muted hover:text-text-primary hover:bg-bg-tertiary"
-            aria-label={t('study.chat.close', 'Close')}
-            title={t('study.chat.close', 'Close')}
-          >
-            <X className="w-3.5 h-3.5" />
-          </button>
         </div>
       )}
     </>

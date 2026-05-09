@@ -20,9 +20,10 @@ interface NavItemProps {
   active?: boolean
   badge?: number
   onClick?: () => void
+  dataTour?: string
 }
 
-function NavItem({ icon, label, active = false, badge, onClick, dataTour }: NavItemProps & { dataTour?: string }) {
+function NavItem({ icon, label, active = false, badge, onClick, dataTour }: NavItemProps) {
   return (
     <button
       onClick={onClick}
