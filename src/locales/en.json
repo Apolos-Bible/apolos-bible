@@ -144,6 +144,10 @@
 
   "study.sticky.placeholder": "Write a note...",
 
+  "study.chat.toggle": "Toggle study chat",
+  "study.chat.close": "Close",
+  "study.chat.minimize": "Minimize",
+
   "study.topBar.exit": "Exit",
   "study.topBar.invite": "Invite",
   "study.topBar.more": "More",

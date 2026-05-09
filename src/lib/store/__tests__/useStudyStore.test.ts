@@ -40,6 +40,7 @@ const mockSession: StudySession = {
   anchor_ref: 'john-3-16',
   title: 'Study on John 3:16',
   host_user_id: 1,
+  conversation_id: null,
   status: 'active',
   thumbnail_url: null,
   last_activity_at: '2024-01-01T00:00:00Z',

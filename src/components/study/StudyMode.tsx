@@ -9,6 +9,7 @@ import { StudyTopBar } from './StudyTopBar'
 import { StudyToolbar } from './StudyToolbar'
 import { StudyCanvas } from './StudyCanvas'
 import { BiblePanel } from './BiblePanel'
+import { StudyChatWidget } from './StudyChatWidget'
 
 export type Tool = 'select' | 'hand' | 'sticky' | 'verse'
 
@@ -153,6 +154,9 @@ export function StudyMode() {
           isGuest={isGuest}
         />
         <BiblePanel open={biblePanelOpen} onClose={() => setBiblePanelOpen(false)} />
+        {!isGuest && activeSession?.conversation_id && (
+          <StudyChatWidget conversationId={activeSession.conversation_id} />
+        )}
       </div>
     </div>
   )

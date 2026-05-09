@@ -58,6 +58,7 @@ export interface StudySession {
   anchor_ref: string | null;
   title: string;
   host_user_id: number;
+  conversation_id: number | null;
   status: 'active' | 'ended';
   thumbnail_url: string | null;
   last_activity_at: string;
