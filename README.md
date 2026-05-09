@@ -37,8 +37,9 @@ tulia.study is the app I wished existed.
 | UI | React + TypeScript + Tailwind |
 | State | Zustand |
 | Desktop | Tauri 2 (Rust + WebView2) |
-| Backend | Laravel 13 API |
-| Realtime | Laravel Reverb (WebSockets) |
+| Backend | Laravel API (separate repo) |
+| Collab | Hocuspocus (Yjs) for shared study sessions |
+| Broadcasting | Laravel Reverb |
 | Build | Vite + pnpm |
 
 ---
@@ -60,16 +61,16 @@ pnpm install
 # Web only (port 1420)
 pnpm dev
 
-# Desktop with hot reload — run in PowerShell
+# Desktop with hot reload
 pnpm tauri:dev
 
 # Build desktop binary
 pnpm tauri:build
 ```
 
-> On Windows, always run Tauri commands in PowerShell — the Rust/cargo PATH is not available in Git Bash.
+> On Windows, run Tauri commands in PowerShell — the Rust/cargo PATH isn't picked up in Git Bash.
 
-The backend (`verbum`) runs separately on port 8000. Set `VITE_API_URL` in `.env.local` to point to your local instance.
+The backend lives in a separate repo and is served locally at `https://verbum.test` via [Herd](https://herd.laravel.com/) (macOS). Set `VITE_API_URL=https://verbum.test` in `.env.local` to point at it.
 
 ---
 
