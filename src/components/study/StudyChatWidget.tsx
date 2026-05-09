@@ -24,6 +24,7 @@ export function StudyChatWidget({ conversationId }: StudyChatWidgetProps) {
 
   const conversations = useChatStore(s => s.conversations)
   const messages = useChatStore(s => s.messages[conversationId] ?? EMPTY_MESSAGES)
+  const markRead = useChatStore(s => s.markRead)
 
   const [conversation, setConversation] = useState<Conversation | null>(null)
   const [open, setOpen] = useState(false)
@@ -64,6 +65,7 @@ export function StudyChatWidget({ conversationId }: StudyChatWidgetProps) {
     if (open) {
       lastReadMessageIdRef.current = messages.length > 0 ? messages[messages.length - 1].id : null
       setUnreadFromOpen(0)
+      markRead(conversationId).catch(() => {})
       return
     }
     const lastRead = lastReadMessageIdRef.current
@@ -78,7 +80,7 @@ export function StudyChatWidget({ conversationId }: StudyChatWidgetProps) {
       if (newer.length > prev) setPingKey(k => k + 1)
       return newer.length
     })
-  }, [open, messages, userId])
+  }, [open, messages, userId, conversationId, markRead])
 
   if (!conversation) {
     // Render nothing while we resolve. The bubble will appear once we have
