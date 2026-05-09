@@ -348,6 +348,7 @@
   "chat.groupChat": "Group chat",
   "chat.members": "Members",
   "chat.addFriends": "Add friends",
+  "chat.addFriendsStudyHint": "This chat belongs to a study session. Friends you add will also join the study and can edit the canvas.",
   "chat.noFriendsToAdd": "No more friends available to add.",
   "chat.leaveGroup": "Leave group",
   "chat.addPeople": "Add people",

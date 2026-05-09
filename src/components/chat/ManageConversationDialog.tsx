@@ -117,6 +117,11 @@ export function ManageConversationDialog({ conversation, open, onClose }: Manage
 
         <div className="px-4 py-3 border-b border-border-subtle">
           <p className="text-2xs uppercase tracking-wider text-text-muted mb-2">{t('chat.addFriends')}</p>
+          {conversation.study_session_id && (
+            <p className="mb-2 text-2xs text-accent/90 bg-accent/10 border border-accent/20 rounded-md px-2.5 py-1.5 leading-snug">
+              {t('chat.addFriendsStudyHint')}
+            </p>
+          )}
           <input
             type="text"
             value={query}

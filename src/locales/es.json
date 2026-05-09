@@ -348,6 +348,7 @@
   "chat.groupChat": "Chat grupal",
   "chat.members": "Miembros",
   "chat.addFriends": "Agregar amigos",
+  "chat.addFriendsStudyHint": "Este chat pertenece a una sesión de estudio. Los amigos que agregues también serán añadidos al estudio y podrán editar el lienzo.",
   "chat.noFriendsToAdd": "No hay más amigos disponibles para agregar.",
   "chat.leaveGroup": "Salir del grupo",
   "chat.addPeople": "Agregar personas",
