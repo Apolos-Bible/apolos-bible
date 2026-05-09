@@ -2,10 +2,12 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { MessageSquare, X } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { cn } from '@/lib/cn'
-import { chatApi, type Conversation } from '@/lib/chatApi'
+import { chatApi, type ChatMessage, type Conversation } from '@/lib/chatApi'
 import { useChatStore } from '@/lib/store/useChatStore'
 import { useAuthStore } from '@/lib/store/useAuthStore'
 import { ChatThread } from '@/components/chat/ChatThread'
+
+const EMPTY_MESSAGES: ChatMessage[] = []
 
 interface StudyChatWidgetProps {
   conversationId: number
@@ -21,7 +23,7 @@ export function StudyChatWidget({ conversationId }: StudyChatWidgetProps) {
   const userId = useAuthStore(s => s.user?.id)
 
   const conversations = useChatStore(s => s.conversations)
-  const messages = useChatStore(s => s.messages[conversationId] ?? [])
+  const messages = useChatStore(s => s.messages[conversationId] ?? EMPTY_MESSAGES)
 
   const [conversation, setConversation] = useState<Conversation | null>(null)
   const [open, setOpen] = useState(false)
