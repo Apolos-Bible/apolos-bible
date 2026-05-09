@@ -40,7 +40,7 @@ export function ArrowEdge({
         id={id}
         path={edgePath}
         markerEnd={markerEnd}
-        style={{ stroke: 'var(--color-text-muted)', strokeWidth: 1.5, ...style }}
+        style={{ stroke: 'var(--text-muted)', strokeWidth: 1.5, ...style }}
       />
       <EdgeLabelRenderer>
         <div
