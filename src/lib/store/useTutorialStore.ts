@@ -1,4 +1,5 @@
 import { create } from 'zustand'
+import { saveUserSettingsSilently } from '@/lib/userSettingsApi'
 
 const COMPLETED_KEY = 'tutorial_completed_v1'
 const DISMISSED_KEY = 'tutorial_invite_dismissed_v1'
@@ -76,18 +77,21 @@ export const useTutorialStore = create<TutorialStore>((set, get) => ({
   skip: () => {
     localStorage.setItem(COMPLETED_KEY, 'true')
     localStorage.setItem(DISMISSED_KEY, 'true')
+    saveUserSettingsSilently({ tutorial_completed: true })
     set({ active: false, inviteOpen: false, step: 0 })
   },
 
   finish: () => {
     localStorage.setItem(COMPLETED_KEY, 'true')
     localStorage.setItem(DISMISSED_KEY, 'true')
+    saveUserSettingsSilently({ tutorial_completed: true })
     set({ active: false, inviteOpen: false, step: 0 })
   },
 
   reset: () => {
     localStorage.removeItem(COMPLETED_KEY)
     localStorage.removeItem(DISMISSED_KEY)
+    saveUserSettingsSilently({ tutorial_completed: false })
     set({ active: true, inviteOpen: false, step: 0 })
   },
 }))

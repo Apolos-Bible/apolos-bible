@@ -47,7 +47,12 @@ export const useAuthStore = create<AuthState>((set) => ({
     const { token, user } = await api.post<{ token: string; user: AuthUser }>('/api/auth/login', { email, password })
     setToken(token)
     resetUserSession()
-    await persistClientSettings()
+    try {
+      const settings = await fetchUserSettings()
+      await applyUserSettings(settings)
+    } catch {
+      // ignore — keep client defaults if settings fetch fails
+    }
     set({ user })
     void hydrateUserSession()
   },

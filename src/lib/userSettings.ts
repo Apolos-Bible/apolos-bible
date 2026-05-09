@@ -50,6 +50,11 @@ export async function applyUserSettings(settings: UserSettings): Promise<void> {
     useUIStore.setState({ readingMode: settings.reading_mode })
   }
 
+  if (settings.tutorial_completed) {
+    localStorage.setItem('tutorial_completed_v1', 'true')
+    localStorage.setItem('tutorial_invite_dismissed_v1', 'true')
+  }
+
   if (settings.preferred_bible_version_id && settings.preferred_bible_version_id !== verse.versionId) {
     localStorage.setItem(BIBLE_VERSION_STORAGE_KEY, String(settings.preferred_bible_version_id))
     await verse.setVersion(settings.preferred_bible_version_id, { sync: false })

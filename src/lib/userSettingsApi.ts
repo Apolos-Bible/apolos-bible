@@ -7,6 +7,7 @@ export interface UserSettings {
   theme: Theme | null
   font_size: FontSize | null
   reading_mode: ReadingMode | null
+  tutorial_completed?: boolean
 }
 
 export type UserSettingsUpdate = Partial<UserSettings>
