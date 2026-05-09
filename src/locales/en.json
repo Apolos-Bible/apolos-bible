@@ -221,7 +221,7 @@
   "study.verseNode.loading": "Loading...",
   "study.verseNode.crossRefs": "Cross references",
   "study.crossRefs.title": "References for {{ref}}",
-  "study.crossRefs.empty": "No cross references for this verse.",
+  "study.crossRefs.empty": "No cross references. Try the Meaning tab for related verses.",
   "study.crossRefs.loading": "Looking up references...",
   "study.crossRefs.error": "Couldn't load references.",
   "study.crossRefs.insert": "Insert",
