@@ -1,5 +1,5 @@
 
-import { useEffect, useState } from 'react'
+import { useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useVerseStore } from '@/lib/store/useVerseStore'
 import type { Verse } from '@/lib/store/useVerseStore'
@@ -182,9 +182,6 @@ export function VerseList() {
   const loadChapterRefs     = useCrossRefStore((s) => s.loadChapterRefs)
   const openCrossRefs       = useCrossRefStore((s) => s.openPanel)
 
-  // Tracks which verse is currently playing the burst animation
-  const [burstId, setBurstId] = useState<number | null>(null)
-
   useEffect(() => {
     if (verses.length) loadHighlightsForChapter(verses.map((v) => v.apiId))
   }, [verses])
@@ -350,12 +347,6 @@ export function VerseList() {
       onClick: () => {
         if (requireLogin()) return
         toggleBookmark(verse.apiId)
-          .then(() => {
-            if (!bookmarked) {
-              setBurstId(verse.apiId)
-              setTimeout(() => setBurstId(null), 900)
-            }
-          })
           .catch((error) => {
             if (isAuthError(error)) {
               addToast(t('study.loginRequired'), 'error', {
@@ -446,14 +437,7 @@ export function VerseList() {
         icon: <IconStar filled={allBookmarked} />,
         onClick: () => {
           if (requireLogin()) return
-          Promise.all(multiVerses.map(v =>
-            toggleBookmark(v.apiId).then(() => {
-              if (!bookmarkedIds.has(v.apiId)) {
-                setBurstId(v.apiId)
-                setTimeout(() => setBurstId(null), 900)
-              }
-            }),
-          ))
+          Promise.all(multiVerses.map(v => toggleBookmark(v.apiId)))
             .catch((error) => {
               if (isAuthError(error)) {
                 addToast(t('study.loginRequired'), 'error', {
@@ -668,7 +652,6 @@ export function VerseList() {
                   const verseHighlights = highlights[verse.apiId] ?? []
                   const hasActivity     = (notes[verse.apiId]?.length ?? 0) > 0 || verseHighlights.length > 0
                   const hasFriendActivity = (activityByVerse[verse.verse]?.length ?? 0) > 0
-                  const isBursting      = burstId === verse.apiId
                   const isBookmarked    = bookmarkedIds.has(verse.apiId)
                   const hasCrossRefs    = verseIdsWithRefs.has(verse.apiId)
                   const myNoteBodies    = getMyNoteBodies(verse.apiId)
@@ -682,10 +665,9 @@ export function VerseList() {
                       className={cn(
                         'cursor-pointer rounded-[2px] transition-[background-color] duration-150',
                         '[box-decoration-break:clone] [-webkit-box-decoration-break:clone]',
-                        isBursting ? 'verse-burst-flow' : '',
                         isSelected
                           ? 'bg-accent/[0.12]'
-                          : isBookmarked && !isBursting
+                          : isBookmarked
                             ? 'bg-[#e06c7520]'
                             : 'hover:bg-black/[0.04]',
                       )}
@@ -727,7 +709,6 @@ export function VerseList() {
                   const verseHighlights = highlights[verse.apiId] ?? []
                   const hasActivity     = (notes[verse.apiId]?.length ?? 0) > 0 || verseHighlights.length > 0
                   const hasFriendActivity = (activityByVerse[verse.verse]?.length ?? 0) > 0
-                  const isBursting      = burstId === verse.apiId
                   const isBookmarked    = bookmarkedIds.has(verse.apiId)
                   const hasCrossRefs    = verseIdsWithRefs.has(verse.apiId)
                   const myNoteBodies    = getMyNoteBodies(verse.apiId)
@@ -740,7 +721,6 @@ export function VerseList() {
                       onContextMenu={(e) => handleContextMenu(e, verse)}
                       className={cn(
                         'group flex gap-3 cursor-pointer rounded-md px-2 py-2 md:py-1 -mx-2 transition-all duration-150 border-l-2 border-l-transparent',
-                        isBursting ? 'verse-burst-block' : '',
                         isSelected ? 'bg-accent/[0.08] border-l-accent' : 'hover:bg-black/[0.03]',
                       )}
                     >
@@ -808,12 +788,6 @@ export function VerseList() {
                           e.stopPropagation()
                           if (requireLogin()) return
                           toggleBookmark(verse.apiId)
-                            .then(() => {
-                              if (!isBookmarked) {
-                                setBurstId(verse.apiId)
-                                setTimeout(() => setBurstId(null), 900)
-                              }
-                            })
                             .catch((error) => {
                               if (isAuthError(error)) {
                                 addToast(t('study.loginRequired'), 'error', {
