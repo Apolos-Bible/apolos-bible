@@ -88,10 +88,11 @@ export function PanelLayout({ sidebar, main, panel, leftPanel }: PanelLayoutProp
                           label: t('verse.shareVerse'),
                           onClick: () => {
                             const shareText = multiVerses.map(v => `${bookName} ${v.chapter}:${v.verse} — ${v.text}`).join('\n\n')
+                            const shareUrl = window.location.href
                             if (navigator.share) {
-                              navigator.share({ title: t('verse.shareVerse'), text: shareText })
+                              navigator.share({ title: t('verse.shareVerse'), text: shareText, url: shareUrl })
                             } else {
-                              navigator.clipboard.writeText(shareText)
+                              navigator.clipboard.writeText(`${shareText}\n\n${shareUrl}`)
                               addToast(t('toast.copied'), 'success')
                             }
                           },
