@@ -46,11 +46,33 @@ export default defineConfig({
         ],
       },
       workbox: {
+        // New SW takes control immediately instead of waiting for all tabs
+        // to close — prevents users from being stuck on a broken old SW
+        // after a bad deploy.
+        skipWaiting: true,
+        clientsClaim: true,
         globPatterns: ['**/*.{js,css,html,svg,png,ico,woff,woff2}'],
         globIgnores: ['**/bible/**'],
+        // Don't try to serve the SPA shell for API paths.
+        navigateFallbackDenylist: [/^\/api\//, /^\/hocuspocus\//, /^\/sanctum\//],
         runtimeCaching: [
+          // Auth endpoints must NEVER be cached — caching the response of a
+          // login (or even a 401) is a recipe for ghost-session bugs.
           {
-            urlPattern: /^https:\/\/verbum\.test\/api\/.*/i,
+            urlPattern: /\/api\/auth\//i,
+            handler: 'NetworkOnly',
+            method: 'POST',
+          },
+          {
+            urlPattern: /\/api\/auth\//i,
+            handler: 'NetworkOnly',
+            method: 'GET',
+          },
+          // All other API calls: try network first; fall back to a short
+          // cache only if the network is unreachable. Matches both the
+          // local dev backend (verbum.test) and prod (tulia.study).
+          {
+            urlPattern: /^https:\/\/(verbum\.test|tulia\.study)\/api\/.*/i,
             handler: 'NetworkFirst',
             options: {
               cacheName: 'api-cache',
