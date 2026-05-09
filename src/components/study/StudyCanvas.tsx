@@ -765,6 +765,7 @@ useEffect(() => {
             color="var(--color-text-muted)"
           />
           <MiniMap
+            position="top-right"
             className="!bg-surface !border-border !rounded-lg"
             maskColor="var(--color-bg-primary)"
             nodeColor={(n: Node) => {
