@@ -118,8 +118,11 @@ export const bibleApi = {
     }
     return api.get<ApiCrossRef[]>(`/api/verses/${verseId}/cross-references?version_id=${versionId}`)
   },
-  semanticSimilar: (verseId: number, limit = 30) =>
-    api.get<ApiSemanticResponse>(`/api/verses/${verseId}/similar?limit=${limit}`),
+  semanticSimilar: (verseId: number, limit = 30, versionId?: number) => {
+    const qs = new URLSearchParams({ limit: String(limit) })
+    if (versionId != null) qs.set('version_id', String(versionId))
+    return api.get<ApiSemanticResponse>(`/api/verses/${verseId}/similar?${qs.toString()}`)
+  },
   crossRefVerseIds: (chapterId: number) => cacheFirst<number[]>(
     async () => (await db.crossRefIds.get(chapterId))?.data,
     () => api.get<number[]>(`/api/chapters/${chapterId}/cross-ref-verse-ids`),
