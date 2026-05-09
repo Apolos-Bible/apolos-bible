@@ -3,13 +3,13 @@ import { createPortal } from 'react-dom';
 import { useTranslation } from 'react-i18next';
 import { X, Loader2, Plus, Check, Sparkles } from 'lucide-react';
 import { cn } from '@/lib/cn';
-import { bibleApi, type ApiCrossRef, type ApiSearchResult } from '@/lib/bibleApi';
+import { bibleApi, type ApiCrossRef } from '@/lib/bibleApi';
 
 const POPOVER_WIDTH = 360;
 const POPOVER_MAX_HEIGHT = 460;
 const ANCHOR_GAP = 6;
 
-type Tab = 'cross' | 'similar' | 'meaning';
+type Tab = 'cross' | 'meaning';
 
 type CrossReferencePopoverProps = {
   anchorEl: HTMLElement | null;
@@ -17,9 +17,9 @@ type CrossReferencePopoverProps = {
   verseId: number;
   reference: string;
   verseText: string;
-  /** version_id of the source verse — used for the "similar" tab so the
-   *  search runs in the user's reading language (cross-refs tab still uses
-   *  the canonical/ASV version where the TSK mappings live). */
+  /** version_id of the source verse — cross-refs run against the user's
+   *  reading version (TSK mappings live on canonical/ASV; backend handles
+   *  the cross-version mapping when version_id is passed). */
   versionId: number;
   onClose: () => void;
 };
@@ -46,62 +46,12 @@ function computePosition(rect: DOMRect): Position {
   return { left, top };
 }
 
-// Minimal stopword filter for ES + EN. Good enough for keyword extraction
-// from a single verse to feed the existing search endpoint.
-const STOPWORDS = new Set([
-  // EN
-  'the','a','an','and','or','but','of','to','in','for','with','on','at','by','from',
-  'is','are','was','were','be','been','being','have','has','had','do','does','did',
-  'will','would','shall','should','may','might','can','could','this','that','these',
-  'those','it','its','he','she','they','we','you','i','my','your','his','her','their',
-  'our','me','us','them','him','not','no','so','as','if','then','when','where','what',
-  'who','whom','which','why','how','than','also','too','very','just','like','about',
-  'into','out','up','down','off','over','under','again','more','most','some','any',
-  'all','each','every','other','same','such','only','own','here','there','because',
-  // ES
-  'el','la','los','las','un','una','unos','unas','y','o','u','pero','de','del','al','a',
-  'en','por','para','con','sin','sobre','hasta','desde','es','son','era','eran','ser',
-  'fue','fueron','fui','sera','sere','ha','han','habia','habian','tener','tiene','tuvo',
-  'hacer','hace','hizo','haber','este','esta','estos','estas','ese','esa','esos','esas',
-  'aquel','aquella','aquellos','aquellas','lo','le','les','te','me','se','su','sus',
-  'mi','mis','tu','tus','nuestro','nuestra','nuestros','nuestras','vuestro','vuestra',
-  'vuestros','vuestras','no','si','sí','tambien','también','asi','así','como','si',
-  'entonces','cuando','donde','dónde','que','qué','quien','quién','cual','cuál','por',
-  'porque','porqué','cómo','muy','mas','más','tan','ya','aun','aún','sólo','solo',
-  'todo','toda','todos','todas','otro','otra','otros','otras','mismo','misma','mismos',
-  'mismas','sólo','aquí','ahí','allí','allá','siempre','nunca','jamás','también',
-  'tampoco','o sea',
-]);
-
-function extractKeywords(text: string, max = 6): string[] {
-  if (!text) return [];
-  const tokens = text
-    .toLowerCase()
-    .normalize('NFD')
-    .replace(/[̀-ͯ]/g, '') // strip accents
-    .replace(/[^a-z0-9\s]/g, ' ')
-    .split(/\s+/)
-    .filter((w) => w.length >= 3 && !STOPWORDS.has(w));
-
-  const seen = new Set<string>();
-  const unique: string[] = [];
-  for (const t of tokens) {
-    if (!seen.has(t)) {
-      seen.add(t);
-      unique.push(t);
-    }
-  }
-  return unique
-    .sort((a, b) => b.length - a.length)
-    .slice(0, max);
-}
-
 export function CrossReferencePopover({
   anchorEl,
   sourceNodeId,
   verseId,
   reference,
-  verseText,
+  verseText: _verseText,
   versionId,
   onClose,
 }: CrossReferencePopoverProps) {
@@ -114,10 +64,8 @@ export function CrossReferencePopover({
   const [xrefs, setXrefs] = useState<ApiCrossRef[] | null>(null);
   const [xrefsError, setXrefsError] = useState(false);
 
-  const [similar, setSimilar] = useState<ApiSearchResult[] | null>(null);
-  const [similarError, setSimilarError] = useState(false);
-
-  const keywords = useMemo(() => extractKeywords(verseText), [verseText]);
+  const [meaning, setMeaning] = useState<ResultRow[] | null>(null);
+  const [meaningError, setMeaningError] = useState(false);
 
   // Fetch cross-refs in the source verse's version so the user gets results
   // in their reading language (TSK mappings live on canonical/ASV; backend
@@ -135,44 +83,30 @@ export function CrossReferencePopover({
     };
   }, [verseId, versionId]);
 
-  // Fetch similar verses lazily on first visit to that tab.
-  // The backend's /search does a `LIKE %q%` substring match, so we fan out
-  // one request per keyword and merge by how many keywords each verse hits.
+  // Fetch semantic neighbours lazily on first visit to the meaning tab.
   useEffect(() => {
-    if (tab !== 'similar') return;
-    if (similar !== null || similarError) return;
-    if (keywords.length === 0) {
-      setSimilar([]);
-      return;
-    }
+    if (tab !== 'meaning') return;
+    if (meaning !== null || meaningError) return;
     let cancelled = false;
-    Promise.all(
-      keywords.map((kw) =>
-        bibleApi.search(versionId, kw).catch(() => [] as ApiSearchResult[]),
-      ),
-    )
-      .then((batches) => {
+    bibleApi
+      .semanticSimilar(verseId, 30)
+      .then((resp) => {
         if (cancelled) return;
-        type Hit = ApiSearchResult & { _score: number };
-        const byId = new Map<number, Hit>();
-        batches.forEach((batch) => {
-          batch.forEach((r) => {
-            if (r.id === verseId) return;
-            const existing = byId.get(r.id);
-            if (existing) existing._score += 1;
-            else byId.set(r.id, { ...r, _score: 1 });
-          });
-        });
-        const merged = Array.from(byId.values())
-          .sort((a, b) => b._score - a._score || a.text.length - b.text.length)
-          .slice(0, 30);
-        setSimilar(merged);
+        const rows: ResultRow[] = (resp?.results ?? []).map((r) => ({
+          id: r.verse_id,
+          book: r.book,
+          slug: r.book_slug,
+          chapter: r.chapter,
+          verse: r.verse,
+          text: r.text,
+        }));
+        setMeaning(rows);
       })
-      .catch(() => !cancelled && setSimilarError(true));
+      .catch(() => !cancelled && setMeaningError(true));
     return () => {
       cancelled = true;
     };
-  }, [tab, keywords, similar, similarError, verseId, versionId]);
+  }, [tab, meaning, meaningError, verseId]);
 
   // Track anchor position via rAF.
   useLayoutEffect(() => {
@@ -211,27 +145,23 @@ export function CrossReferencePopover({
     };
   }, [anchorEl, onClose]);
 
-  const insertWith = (
-    ref: { id: number; book: string; slug: string; chapter: number; verse: number; text: string },
-    insertVersionId: number,
-  ) => {
+  const insert = (ref: ResultRow) => {
     (window as any).__studyCanvasActions?.addCrossRefNode?.(
       sourceNodeId,
       ref,
-      insertVersionId,
+      versionId,
     );
     setInsertedIds((prev) => new Set(prev).add(ref.id));
   };
 
-  const insertCross = (ref: ResultRow) => insertWith(ref, versionId);
-  const insertSimilar = (ref: ResultRow) => insertWith(ref, versionId);
-
-  const insertAll = (
-    list: ResultRow[],
-    insertVersionId: number,
-  ) => {
-    list.forEach((ref, i) => setTimeout(() => insertWith(ref, insertVersionId), i * 30));
+  const insertAll = (list: ResultRow[]) => {
+    list.forEach((ref, i) => setTimeout(() => insert(ref), i * 30));
   };
+
+  const activeList = useMemo(
+    () => (tab === 'cross' ? xrefs : meaning),
+    [tab, xrefs, meaning],
+  );
 
   if (!pos) return null;
 
@@ -272,9 +202,6 @@ export function CrossReferencePopover({
         <TabButton active={tab === 'cross'} onClick={() => setTab('cross')}>
           {t('study.crossRefs.tabs.crossRefs')}
         </TabButton>
-        <TabButton active={tab === 'similar'} onClick={() => setTab('similar')}>
-          {t('study.crossRefs.tabs.similar')}
-        </TabButton>
         <TabButton active={tab === 'meaning'} onClick={() => setTab('meaning')}>
           <span className="inline-flex items-center gap-1">
             <Sparkles className="w-3 h-3" />
@@ -289,63 +216,36 @@ export function CrossReferencePopover({
             items={xrefs}
             error={xrefsError}
             insertedIds={insertedIds}
-            onInsert={insertCross}
+            onInsert={insert}
             emptyText={t('study.crossRefs.empty')}
             loadingText={t('study.crossRefs.loading')}
             errorText={t('study.crossRefs.error')}
           />
         )}
-        {tab === 'similar' && (
-          <ResultsList
-            items={similar}
-            error={similarError}
-            insertedIds={insertedIds}
-            onInsert={insertSimilar}
-            emptyText={
-              keywords.length === 0
-                ? t('study.crossRefs.similar.noKeywords')
-                : t('study.crossRefs.similar.empty')
-            }
-            loadingText={t('study.crossRefs.similar.loading')}
-            errorText={t('study.crossRefs.similar.error')}
-            footerHint={
-              keywords.length > 0
-                ? keywords.join(' · ')
-                : undefined
-            }
-          />
-        )}
         {tab === 'meaning' && (
-          <div className="px-4 py-8 text-center">
-            <div className="inline-flex items-center justify-center w-10 h-10 rounded-full bg-accent/10 text-accent mb-3">
-              <Sparkles className="w-5 h-5" />
-            </div>
-            <div className="text-sm font-medium text-text-primary mb-1">
-              {t('study.crossRefs.meaning.comingSoon')}
-            </div>
-            <div className="text-xs text-text-muted leading-relaxed max-w-[260px] mx-auto">
-              {t('study.crossRefs.meaning.description')}
-            </div>
-          </div>
+          <ResultsList
+            items={meaning}
+            error={meaningError}
+            insertedIds={insertedIds}
+            onInsert={insert}
+            emptyText={t('study.crossRefs.meaning.empty')}
+            loadingText={t('study.crossRefs.meaning.loading')}
+            errorText={t('study.crossRefs.meaning.error')}
+          />
         )}
       </div>
 
-      {(() => {
-        const list = tab === 'cross' ? xrefs : tab === 'similar' ? similar : null;
-        if (!list || list.length <= 1) return null;
-        const ver = versionId;
-        return (
-          <div className="border-t border-border px-3 py-2 shrink-0">
-            <button
-              type="button"
-              onClick={() => insertAll(list, ver)}
-              className="cursor-pointer w-full text-xs text-accent hover:text-accent/80 transition-colors text-left"
-            >
-              {t('study.crossRefs.insertAll')}
-            </button>
-          </div>
-        );
-      })()}
+      {activeList && activeList.length > 1 && (
+        <div className="border-t border-border px-3 py-2 shrink-0">
+          <button
+            type="button"
+            onClick={() => insertAll(activeList)}
+            className="cursor-pointer w-full text-xs text-accent hover:text-accent/80 transition-colors text-left"
+          >
+            {t('study.crossRefs.insertAll')}
+          </button>
+        </div>
+      )}
     </div>,
     document.body,
   );
@@ -394,7 +294,6 @@ function ResultsList({
   emptyText,
   loadingText,
   errorText,
-  footerHint,
 }: {
   items: ResultRow[] | null;
   error: boolean;
@@ -403,7 +302,6 @@ function ResultsList({
   emptyText: string;
   loadingText: string;
   errorText: string;
-  footerHint?: string;
 }) {
   const { t } = useTranslation();
 
@@ -423,52 +321,45 @@ function ResultsList({
   }
 
   return (
-    <>
-      {footerHint && (
-        <div className="px-3 pt-2 pb-1 text-2xs text-text-muted truncate">
-          {footerHint}
-        </div>
-      )}
-      <ul className="divide-y divide-border/60">
-        {items.map((ref) => {
-          const inserted = insertedIds.has(ref.id);
-          return (
-            <li key={ref.id}>
-              <button
-                type="button"
-                onClick={() => onInsert(ref)}
-                disabled={inserted}
-                className={cn(
-                  'group/row w-full text-left px-3 py-2 flex items-start gap-2',
-                  'hover:bg-bg-secondary transition-colors',
-                  inserted && 'opacity-50 cursor-default',
-                  !inserted && 'cursor-pointer',
-                )}
-              >
-                <div className="flex-1 min-w-0">
-                  <div className="text-2xs font-medium text-accent uppercase tracking-wide mb-0.5">
-                    {ref.book} {ref.chapter}:{ref.verse}
-                  </div>
-                  <div className="text-xs leading-relaxed text-text-secondary line-clamp-3">
-                    {ref.text}
-                  </div>
+    <ul className="divide-y divide-border/60">
+      {items.map((ref) => {
+        const inserted = insertedIds.has(ref.id);
+        return (
+          <li key={ref.id}>
+            <button
+              type="button"
+              onClick={() => onInsert(ref)}
+              disabled={inserted}
+              className={cn(
+                'group/row w-full text-left px-3 py-2 flex items-start gap-2',
+                'hover:bg-bg-secondary transition-colors',
+                inserted && 'opacity-50 cursor-default',
+                !inserted && 'cursor-pointer',
+              )}
+            >
+              <div className="flex-1 min-w-0">
+                <div className="text-2xs font-medium text-accent uppercase tracking-wide mb-0.5">
+                  {ref.book} {ref.chapter}:{ref.verse}
                 </div>
-                <span
-                  className={cn(
-                    'shrink-0 mt-0.5 flex items-center justify-center w-5 h-5 rounded',
-                    inserted
-                      ? 'text-green-500'
-                      : 'text-text-muted opacity-0 group-hover/row:opacity-100 group-focus-visible/row:opacity-100 transition-opacity',
-                  )}
-                  aria-label={inserted ? t('study.crossRefs.inserted') : t('study.crossRefs.insert')}
-                >
-                  {inserted ? <Check className="w-3.5 h-3.5" /> : <Plus className="w-3.5 h-3.5" />}
-                </span>
-              </button>
-            </li>
-          );
-        })}
-      </ul>
-    </>
+                <div className="text-xs leading-relaxed text-text-secondary line-clamp-3">
+                  {ref.text}
+                </div>
+              </div>
+              <span
+                className={cn(
+                  'shrink-0 mt-0.5 flex items-center justify-center w-5 h-5 rounded',
+                  inserted
+                    ? 'text-green-500'
+                    : 'text-text-muted opacity-0 group-hover/row:opacity-100 group-focus-visible/row:opacity-100 transition-opacity',
+                )}
+                aria-label={inserted ? t('study.crossRefs.inserted') : t('study.crossRefs.insert')}
+              >
+                {inserted ? <Check className="w-3.5 h-3.5" /> : <Plus className="w-3.5 h-3.5" />}
+              </span>
+            </button>
+          </li>
+        );
+      })}
+    </ul>
   );
 }
