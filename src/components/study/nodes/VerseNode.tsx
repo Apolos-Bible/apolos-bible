@@ -50,10 +50,8 @@ export function VerseNode({ id, data, selected }: NodeProps<VerseNodeType>) {
             }}
             className={cn(
               'nodrag cursor-pointer flex items-center justify-center w-6 h-6 rounded-md shrink-0',
-              'text-text-muted hover:text-text-primary hover:bg-black/5 dark:hover:bg-white/10 transition-colors',
-              'opacity-0 group-hover/verse:opacity-100 focus-visible:opacity-100 transition-opacity',
-              (selected || xrefOpen) && 'opacity-100',
-              xrefOpen && 'bg-black/5 dark:bg-white/10 text-text-primary',
+              'text-text-muted hover:text-accent hover:bg-accent/10 transition-colors',
+              xrefOpen && 'bg-accent/10 text-accent',
             )}
             title={t('study.verseNode.crossRefs')}
             aria-label={t('study.verseNode.crossRefs')}
