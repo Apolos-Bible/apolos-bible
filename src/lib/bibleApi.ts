@@ -48,6 +48,22 @@ export interface ApiCrossRef {
   text: string
 }
 
+export interface ApiSemanticResult {
+  verse_id: number
+  text: string
+  book: string
+  book_slug: string
+  chapter: number
+  verse: number
+  score: number
+}
+
+export interface ApiSemanticResponse {
+  seed_verse_id: number
+  model: string
+  results: ApiSemanticResult[]
+}
+
 async function cacheFirst<T>(
   read: () => Promise<T | undefined>,
   fetcher: () => Promise<T>,
@@ -102,6 +118,8 @@ export const bibleApi = {
     }
     return api.get<ApiCrossRef[]>(`/api/verses/${verseId}/cross-references?version_id=${versionId}`)
   },
+  semanticSimilar: (verseId: number, limit = 30) =>
+    api.get<ApiSemanticResponse>(`/api/verses/${verseId}/similar?limit=${limit}`),
   crossRefVerseIds: (chapterId: number) => cacheFirst<number[]>(
     async () => (await db.crossRefIds.get(chapterId))?.data,
     () => api.get<number[]>(`/api/chapters/${chapterId}/cross-ref-verse-ids`),
