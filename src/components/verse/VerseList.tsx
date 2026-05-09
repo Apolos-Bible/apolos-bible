@@ -661,7 +661,7 @@ export function VerseList() {
 
             {/* ── Flow mode ── */}
             {readingMode === 'flow' && (
-              <p className={cn('font-reading leading-[2.2] md:leading-[2.6] tracking-wide text-text-primary select-text', textSizeClass)}>
+              <p className={cn('font-reading leading-[2.2] md:leading-[2.6] tracking-wide text-text-primary select-none md:select-text', textSizeClass)}>
                 {verses.map((verse, i) => {
                   const isSelected      = selectedVerseIds.includes(verse.id)
                   const verseHighlights = highlights[verse.apiId] ?? []
