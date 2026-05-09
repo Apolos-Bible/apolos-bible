@@ -802,6 +802,40 @@ export function VerseList() {
                       >
                         <IconMore />
                       </button>
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          if (requireLogin()) return
+                          toggleBookmark(verse.apiId)
+                            .then(() => {
+                              if (!isBookmarked) {
+                                setBurstId(verse.apiId)
+                                setTimeout(() => setBurstId(null), 900)
+                              }
+                            })
+                            .catch((error) => {
+                              if (isAuthError(error)) {
+                                addToast(t('study.loginRequired'), 'error', {
+                                  action: { label: t('auth.logIn'), onClick: openAuthModal },
+                                })
+                                return
+                              }
+                              addToast(t('toast.bookmarkFailed'), 'error')
+                            })
+                        }}
+                        className={cn(
+                          'hidden md:inline-flex shrink-0 self-start mt-0.5 h-8 w-8 items-center justify-center rounded-md transition-opacity',
+                          'hover:bg-bg-tertiary',
+                          isBookmarked
+                            ? 'text-[var(--fav)] opacity-100'
+                            : 'text-text-muted opacity-0 group-hover:opacity-100 focus-visible:opacity-100 hover:text-[var(--fav)]',
+                        )}
+                        aria-label={isBookmarked ? t('verse.removeFromFavorites') : t('verse.addToFavorites')}
+                        title={isBookmarked ? t('verse.removeFromFavorites') : t('verse.addToFavorites')}
+                      >
+                        <HeartIcon size={14} filled={isBookmarked} />
+                      </button>
                     </div>
                   )
                 })}
