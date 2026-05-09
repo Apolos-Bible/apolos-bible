@@ -55,10 +55,15 @@ function BibleView({ lang, book, chapter, verse }: BibleViewProps) {
   const commentaryOpen = useUIStore(s => s.commentaryOpen)
   const studyVerseId = useVerseStore(s => s.studyVerseId)
 
-  // URL → locale (when navigating to a localized URL)
+  // URL → locale (when navigating to a localized URL).
+  // Important: depend only on `lang` so that locale changes coming from the
+  // store (e.g. user toggling language in settings) don't cause this effect
+  // to fight back and revert to the URL's old prefix. The locale→URL effect
+  // below is responsible for rewriting the URL after store changes.
   useEffect(() => {
-    if (lang && lang !== locale) setLocale(lang)
-  }, [lang, locale, setLocale])
+    if (!lang) return
+    if (lang !== useUIStore.getState().locale) setLocale(lang)
+  }, [lang, setLocale])
 
   // URL → store sync (initial mount + back/forward + programmatic param change)
   const lastSyncedKey = useRef<string>('')

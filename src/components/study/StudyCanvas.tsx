@@ -126,6 +126,20 @@ function parseChapterAnchor(anchorRef: string) {
   };
 }
 
+function parseVerseAnchor(anchorRef: string) {
+  // bookSlug-chapter-verseStart[:verseEnd]
+  const match = anchorRef.match(/^(.+)-(\d+)-(\d+)(?::(\d+))?$/);
+  if (!match) return null;
+  const verseStart = Number(match[3]);
+  const verseEnd = match[4] ? Number(match[4]) : verseStart;
+  return {
+    bookSlug: match[1],
+    chapter: Number(match[2]),
+    verseStart,
+    verseEnd,
+  };
+}
+
 function StudyCanvasInner({
   tool,
   biblePanelOpen,
@@ -414,46 +428,117 @@ function StudyCanvasInner({
     if (!isHost) return;
 
     const nodesMap = getNodesMap(doc);
+    const edgesMap = getEdgesMap(doc);
     if (nodesMap.size > 0) return; // already has content
 
-    const center = screenToFlowPosition({ x: window.innerWidth / 2, y: window.innerHeight / 2 });
+    let cancelled = false;
 
-    if (activeSession.type === 'verse') {
-      const id = `verse-auto-${Date.now()}`;
-      doc.transact(() => {
-        writeNodeToMap(nodesMap, {
-          id,
-          type: 'verse',
-          position: { x: center.x - 150, y: center.y - 40 },
-          data: {
-            verseId: 0, // will be resolved on the node
-            reference: activeSession.anchor_ref,
-            version_id: 0,
-          },
-        });
-      });
-    } else if (activeSession.type === 'chapter') {
-      const anchor = parseChapterAnchor(activeSession.anchor_ref);
-      if (!anchor) return;
+    const seed = async () => {
+      const { bibleApi } = await import('@/lib/bibleApi');
+      const center = screenToFlowPosition({ x: window.innerWidth / 2, y: window.innerHeight / 2 });
 
-      const id = `passage-auto-${Date.now()}`;
-      doc.transact(() => {
-        writeNodeToMap(nodesMap, {
-          id,
-          type: 'passage',
-          position: { x: center.x - 180, y: center.y - 60 },
-          data: {
-            bookSlug: anchor.bookSlug,
-            chapter: anchor.chapter,
-            startVerse: 1,
-            endVerse: 999,
-            reference: activeSession.anchor_ref,
+      let verseList: { verseId: number; reference: string; version_id: number; text: string }[] = [];
+      let bookName = '';
+
+      if (activeSession.type === 'chapter') {
+        const anchor = parseChapterAnchor(activeSession.anchor_ref!);
+        if (!anchor) return;
+        try {
+          const data = await bibleApi.chapter(versionId, anchor.bookSlug, anchor.chapter);
+          if (cancelled) return;
+          bookName = data.book.name;
+          verseList = data.verses.map(v => ({
+            verseId: v.id,
+            reference: `${bookName} ${anchor.chapter}:${v.number}`,
             version_id: versionId,
-          },
+            text: v.text,
+          }));
+        } catch (e) {
+          console.error('[seed] chapter fetch failed', e);
+          return;
+        }
+      } else if (activeSession.type === 'verse') {
+        const anchor = parseVerseAnchor(activeSession.anchor_ref!);
+        if (!anchor) return;
+        try {
+          const data = await bibleApi.chapter(versionId, anchor.bookSlug, anchor.chapter);
+          if (cancelled) return;
+          bookName = data.book.name;
+          const start = Math.max(1, anchor.verseStart);
+          const end = Math.min(data.verses.length, Math.max(start, anchor.verseEnd));
+          verseList = data.verses
+            .filter(v => v.number >= start && v.number <= end)
+            .map(v => ({
+              verseId: v.id,
+              reference: `${bookName} ${anchor.chapter}:${v.number}`,
+              version_id: versionId,
+              text: v.text,
+            }));
+        } catch (e) {
+          console.error('[seed] verse fetch failed', e);
+          return;
+        }
+      }
+
+      if (cancelled || verseList.length === 0) return;
+      // Race guard: another client may have seeded between dispatch and now.
+      if (nodesMap.size > 0) return;
+
+      const nodeW = 320;
+      const nodeH = 100;
+      const gap = 40;
+      const baseTs = Date.now();
+
+      if (verseList.length === 1) {
+        const v = verseList[0];
+        const id = `verse-auto-${baseTs}`;
+        doc.transact(() => {
+          writeNodeToMap(nodesMap, {
+            id,
+            type: 'verse',
+            position: { x: center.x - nodeW / 2, y: center.y - nodeH / 2 },
+            width: nodeW,
+            height: nodeH,
+            data: v,
+          });
         });
-      });
-    }
-  }, [doc, activeSession, user, versionId, screenToFlowPosition]);
+      } else {
+        const startX = center.x - nodeW / 2;
+        const totalH = verseList.length * nodeH + (verseList.length - 1) * gap;
+        const startY = center.y - totalH / 2;
+        const ids: string[] = [];
+        doc.transact(() => {
+          verseList.forEach((v, i) => {
+            const id = `verse-auto-${baseTs}-${i}`;
+            ids.push(id);
+            writeNodeToMap(nodesMap, {
+              id,
+              type: 'verse',
+              position: { x: startX, y: startY + i * (nodeH + gap) },
+              width: nodeW,
+              height: nodeH,
+              data: v,
+            });
+            if (i > 0) {
+              const prev = ids[i - 1];
+              writeEdgeToMap(edgesMap, {
+                id: `chain-${prev}-${id}`,
+                source: prev,
+                target: id,
+                sourceHandle: 'bottom',
+                targetHandle: 'top',
+                type: 'default',
+                data: { kind: 'chain' },
+              });
+            }
+          });
+        });
+      }
+    };
+
+    void seed();
+    return () => { cancelled = true; };
+  }, [doc, activeSession, user, versionId, screenToFlowPosition, isGuest]);
 
   // --- React Flow changes → Yjs ---
   const handleNodesChange: OnNodesChange = useCallback(
@@ -605,6 +690,48 @@ function StudyCanvasInner({
       const nodesMap = getNodesMap(d);
       writeNodeToMap(nodesMap, { id, type: 'passage', position, data });
     });
+  }, [getVisibleCenterFlow, isGuest]);
+
+  // Insert a sequence of verses as individual verse nodes stacked vertically
+  // and connected bottom→top, so multi-verse selections become a chain rather
+  // than a single passage block.
+  const addVerseChain = useCallback((verses: { verseId: number; reference: string; version_id: number; text: string }[]) => {
+    if (isGuest) return;
+    if (!verses || verses.length === 0) return;
+    const d = docRef.current;
+    if (!d) return;
+    const center = getVisibleCenterFlow();
+    const nodeW = 320;
+    const nodeH = 100;
+    const gap = 40;
+    const baseTs = Date.now();
+    const startX = center.x - nodeW / 2;
+    const totalH = verses.length * nodeH + (verses.length - 1) * gap;
+    const startY = center.y - totalH / 2;
+    d.transact(() => {
+      const nodesMap = getNodesMap(d);
+      const edgesMap = getEdgesMap(d);
+      const ids: string[] = [];
+      verses.forEach((v, i) => {
+        const id = `verse-${v.verseId}-${baseTs}-${i}`;
+        ids.push(id);
+        const position = { x: startX, y: startY + i * (nodeH + gap) };
+        writeNodeToMap(nodesMap, { id, type: 'verse', position, width: nodeW, height: nodeH, data: v });
+        if (i > 0) {
+          const prev = ids[i - 1];
+          writeEdgeToMap(edgesMap, {
+            id: `chain-${prev}-${id}`,
+            source: prev,
+            target: id,
+            sourceHandle: 'bottom',
+            targetHandle: 'top',
+            type: 'default',
+            data: { kind: 'chain' },
+          });
+        }
+      });
+    });
+    undoManagerRef.current?.stopCapturing();
   }, [getVisibleCenterFlow, isGuest]);
 
   const undo = useCallback(() => {
@@ -824,10 +951,10 @@ function StudyCanvasInner({
   }, [isGuest]);
 
 useEffect(() => {
-    (window as any).__studyCanvasActions = { addStickyNote, addVerseNode, addPassageNode, addCrossRefNode, addAiNoteNode, setVerseNodeVersion, undo, redo, resizeNode, zoomIn, zoomOut, fitView, toggleLock };
+    (window as any).__studyCanvasActions = { addStickyNote, addVerseNode, addPassageNode, addVerseChain, addCrossRefNode, addAiNoteNode, setVerseNodeVersion, undo, redo, resizeNode, zoomIn, zoomOut, fitView, toggleLock };
     (window as any).__studyCanvasState = { isLocked: !isInteractive };
     return () => { delete (window as any).__studyCanvasActions; delete (window as any).__studyCanvasState; };
-  }, [addStickyNote, addVerseNode, addPassageNode, addCrossRefNode, addAiNoteNode, setVerseNodeVersion, undo, redo, resizeNode, zoomIn, zoomOut, fitView, toggleLock, isInteractive]);
+  }, [addStickyNote, addVerseNode, addPassageNode, addVerseChain, addCrossRefNode, addAiNoteNode, setVerseNodeVersion, undo, redo, resizeNode, zoomIn, zoomOut, fitView, toggleLock, isInteractive]);
 
   // --- Cursor tracking ---
   const handleCanvasPointerMove = useCallback(

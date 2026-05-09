@@ -36,22 +36,27 @@ export function BiblePanel({ open, onClose }: BiblePanelProps) {
 
   const handleAddToCanvas = useCallback(() => {
     if (selectedCount === 0) return
-    const data = selectedVerses.map(v => ({
-      verseId: v.apiId,
-      reference: `${bookName} ${chapter}:${v.verse}`,
-      version_id: useVerseStore.getState().versionId,
-      verse: v.verse,
-      text: v.text,
-    }))
-    ;(window as any).__studyCanvasActions?.addPassageNode?.({
-      bookSlug: bookSlug!,
-      chapter,
-      reference: bookSlug ? `${bookName} ${chapter}:${selectedVerses[0].verse}-${selectedVerses[selectedVerses.length - 1].verse}` : '',
-      version_id: useVerseStore.getState().versionId,
-      verses: data,
-    })
+    const versionId = useVerseStore.getState().versionId
+    const actions = (window as any).__studyCanvasActions
+    if (selectedVerses.length === 1) {
+      const v = selectedVerses[0]
+      actions?.addVerseNode?.({
+        verseId: v.apiId,
+        reference: `${bookName} ${chapter}:${v.verse}`,
+        version_id: versionId,
+        text: v.text,
+      })
+    } else {
+      const chain = selectedVerses.map(v => ({
+        verseId: v.apiId,
+        reference: `${bookName} ${chapter}:${v.verse}`,
+        version_id: versionId,
+        text: v.text,
+      }))
+      actions?.addVerseChain?.(chain)
+    }
     clearSelection()
-  }, [selectedCount, selectedVerses, bookName, chapter, bookSlug, clearSelection])
+  }, [selectedCount, selectedVerses, bookName, chapter, clearSelection])
 
   const handleBookSelect = useCallback((book: Book) => {
     setBookSelectorOpen(false)

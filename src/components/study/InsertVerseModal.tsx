@@ -95,14 +95,13 @@ export function InsertVerseModal({ open, onClose }: InsertVerseModalProps) {
 
   const handleChapterInsert = useCallback(
     (groupResults: ApiSearchResult[]) => {
-      groupResults.forEach((r) => {
-        (window as any).__studyCanvasActions?.addVerseNode?.({
-          verseId: r.id,
-          reference: `${r.book} ${r.chapter}:${r.verse}`,
-          version_id: versionId,
-          text: r.text,
-        });
-      });
+      const chain = groupResults.map((r) => ({
+        verseId: r.id,
+        reference: `${r.book} ${r.chapter}:${r.verse}`,
+        version_id: versionId,
+        text: r.text,
+      }));
+      (window as any).__studyCanvasActions?.addVerseChain?.(chain);
       onClose();
     },
     [versionId, onClose],

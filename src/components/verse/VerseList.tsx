@@ -222,9 +222,9 @@ export function VerseList() {
   const nextDisabled = loadingVerses || (!!currentBook && selectedChapter === currentBook.chapters && bookIdx === books.length - 1)
 
   const textSizeClass =
-    fontSize === 'sm' ? 'text-sm' :
-    fontSize === 'lg' ? 'text-lg' :
-    'text-[15px]'
+    fontSize === 'sm' ? 'text-[13px] leading-[20px]' :
+    fontSize === 'lg' ? 'text-[18px] leading-[26px]' :
+    'text-[15px] leading-[22px]'
 
   // ── Context menu builder ─────────────────────────────────────────────────
 
