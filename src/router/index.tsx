@@ -4,6 +4,7 @@ import { RootRedirect } from './routes/RootRedirect'
 import { BibleRoute } from './routes/BibleRoute'
 import { StudyRoute } from './routes/StudyRoute'
 import { ResetPasswordRoute } from './routes/ResetPasswordRoute'
+import { GoogleFinishRoute } from './routes/GoogleFinishRoute'
 import { NotFound } from './routes/NotFound'
 
 export const router = createBrowserRouter([
@@ -29,6 +30,9 @@ export const router = createBrowserRouter([
 
       // Email reset-password deep link (legacy params supported in handler)
       { path: 'auth/reset-password', element: <ResetPasswordRoute /> },
+
+      // Google OAuth callback landing — backend redirects here with #token=...
+      { path: 'auth/google/finish', element: <GoogleFinishRoute /> },
 
       // Catch-all
       { path: '*', element: <NotFound /> },
