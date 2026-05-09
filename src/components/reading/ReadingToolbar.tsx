@@ -96,7 +96,7 @@ export function ReadingToolbar({ showCommentary = true, showVerseActions = true 
   )
 
   return (
-    <div className="flex gap-0.5 bg-bg-tertiary border border-border-subtle rounded-md p-0.5 pointer-events-auto shadow-sm">
+    <div className="flex gap-0.5 bg-bg-tertiary border border-border-subtle rounded-md p-0.5 pointer-events-auto shadow-sm" data-tour="toolbar">
       {showCommentary && (
         <Tooltip label={t('toolbar.commentary')} side="bottom">
           <button onClick={toggleCommentary} className={btnClass(commentaryOpen)}>

@@ -22,10 +22,11 @@ interface NavItemProps {
   onClick?: () => void
 }
 
-function NavItem({ icon, label, active = false, badge, onClick }: NavItemProps) {
+function NavItem({ icon, label, active = false, badge, onClick, dataTour }: NavItemProps & { dataTour?: string }) {
   return (
     <button
       onClick={onClick}
+      data-tour={dataTour}
       aria-pressed={active}
       className={cn(
         'relative flex items-center gap-2 w-full text-sm',
@@ -144,11 +145,11 @@ export function Sidebar() {
   return (
     <div className="w-full h-full bg-bg-secondary border-r border-border-subtle flex flex-col overflow-hidden">
       {/* App name */}
-      <div className="px-4 pt-3 pb-2 shrink-0">
+      <div className="px-4 pt-3 pb-2 shrink-0" data-tour="logo">
         <Logo symbolSize={20} textSize={14} />
       </div>
 
-      <div className="px-2 pb-2">
+      <div className="px-2 pb-2" data-tour="search">
         <button
           onClick={openCommandPalette}
           className="flex w-full items-center gap-2 rounded-md border border-border-subtle bg-bg-primary px-3 py-2 text-left text-sm text-text-muted transition-colors hover:text-text-secondary hover:bg-bg-tertiary"
@@ -165,21 +166,23 @@ export function Sidebar() {
 
       <SectionLabel>{t('nav.library')}</SectionLabel>
 
-      <BookSelector />
+      <div data-tour="library" className="flex-1 min-h-0 flex flex-col">
+        <BookSelector />
+      </div>
 
       <div className="shrink-0 border-t border-border-subtle px-2 pb-2">
         <SectionLabel>{t('nav.personal')}</SectionLabel>
-        <NavItem icon={<StarIcon />}    label={t('nav.favorites')} active={activePanel === 'favorites'} onClick={() => user ? toggleSidebarPanel('favorites') : openAuthModal()} />
-        <NavItem icon={<NoteIcon />}    label={t('nav.myNotes')}  active={activePanel === 'my-notes'} onClick={() => user ? toggleSidebarPanel('my-notes')  : openAuthModal()} />
-        <NavItem icon={<BookOpen className="w-3.5 h-3.5" />} label={t('nav.myStudies')} active={activePanel === 'my-studies'} badge={pendingInvitations} onClick={() => user ? toggleSidebarPanel('my-studies') : openAuthModal()} />
-        <NavItem icon={<BookOpen className="w-3.5 h-3.5" />} label={t('nav.newStudy')} active={false} onClick={() => user ? setShowStartStudy(true) : openAuthModal()} />
+        <NavItem dataTour="favorites" icon={<StarIcon />}    label={t('nav.favorites')} active={activePanel === 'favorites'} onClick={() => user ? toggleSidebarPanel('favorites') : openAuthModal()} />
+        <NavItem dataTour="my-notes" icon={<NoteIcon />}    label={t('nav.myNotes')}  active={activePanel === 'my-notes'} onClick={() => user ? toggleSidebarPanel('my-notes')  : openAuthModal()} />
+        <NavItem dataTour="my-studies" icon={<BookOpen className="w-3.5 h-3.5" />} label={t('nav.myStudies')} active={activePanel === 'my-studies'} badge={pendingInvitations} onClick={() => user ? toggleSidebarPanel('my-studies') : openAuthModal()} />
+        <NavItem dataTour="new-study" icon={<BookOpen className="w-3.5 h-3.5" />} label={t('nav.newStudy')} active={false} onClick={() => user ? setShowStartStudy(true) : openAuthModal()} />
         <SectionLabel>{t('nav.social')}</SectionLabel>
-        <NavItem icon={<PeopleIcon />} label={t('nav.friends')} active={activePanel === 'friends'} badge={unreadCount} onClick={() => user ? toggleSidebarPanel('friends') : openAuthModal()} />
-        <NavItem icon={<ChatIcon />} label={t('nav.chat')} active={activePanel === 'chat'} badge={chatUnread} onClick={() => user ? toggleSidebarPanel('chat') : openAuthModal()} />
+        <NavItem dataTour="friends" icon={<PeopleIcon />} label={t('nav.friends')} active={activePanel === 'friends'} badge={unreadCount} onClick={() => user ? toggleSidebarPanel('friends') : openAuthModal()} />
+        <NavItem dataTour="chat" icon={<ChatIcon />} label={t('nav.chat')} active={activePanel === 'chat'} badge={chatUnread} onClick={() => user ? toggleSidebarPanel('chat') : openAuthModal()} />
       </div>
 
       {/* Footer */}
-      <div className="shrink-0 border-t border-border-subtle">
+      <div className="shrink-0 border-t border-border-subtle" data-tour="profile">
         {/* Profile row — opens settings */}
         {user ? (
           <button

@@ -141,6 +141,8 @@ export function RootLayout() {
       <ContextMenu />
       <CompareVersionsModal />
       <CrossReferencesPanel />
+      <TutorialInvite />
+      <TutorialOverlay />
     </>
   )
 }

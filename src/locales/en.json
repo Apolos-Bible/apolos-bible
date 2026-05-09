@@ -450,5 +450,61 @@
   "updater.failed": "Could not install update",
 
   "sw.updateAvailable": "A new version is available.",
-  "sw.update": "Update"
+  "sw.update": "Update",
+
+  "tutorial.invite.title": "Quick tour?",
+  "tutorial.invite.body": "We'll walk you through Tulia's main features in under a minute.",
+  "tutorial.invite.start": "Start",
+  "tutorial.invite.skip": "Not now",
+
+  "tutorial.next": "Next",
+  "tutorial.back": "Back",
+  "tutorial.skip": "Skip",
+  "tutorial.done": "Done",
+  "tutorial.stepCount": "Step {{current}} of {{total}}",
+
+  "tutorial.welcome.title": "Welcome to Tulia",
+  "tutorial.welcome.body": "A social, minimalist way to read the Bible with friends. We'll show you the essentials — you can skip anytime (Esc).",
+
+  "tutorial.logo.title": "Your home",
+  "tutorial.logo.body": "Click the logo any time to go back to reading.",
+
+  "tutorial.search.title": "Search the Bible",
+  "tutorial.search.body": "Open the command palette with {{modKey}}K to jump to any book, chapter or verse.",
+
+  "tutorial.library.title": "Library",
+  "tutorial.library.body": "Every book of the Old and New Testament. Click one to open its chapters.",
+
+  "tutorial.favorites.title": "Favorites",
+  "tutorial.favorites.body": "Star verses you love and return to them from here.",
+
+  "tutorial.notes.title": "My Notes",
+  "tutorial.notes.body": "Write private or public notes on any verse. Find all your notes here.",
+
+  "tutorial.studies.title": "My Studies",
+  "tutorial.studies.body": "Your shared study sessions with friends — active and past — show up here.",
+
+  "tutorial.newStudy.title": "New Study",
+  "tutorial.newStudy.body": "Start a collaborative study session: shared canvas, sticky notes, verses, and live chat.",
+
+  "tutorial.friends.title": "Friends",
+  "tutorial.friends.body": "Add friends to invite them to studies, see their presence, and share notes.",
+
+  "tutorial.chat.title": "Chat",
+  "tutorial.chat.body": "Direct and group conversations. Drop verses into messages with a quick command.",
+
+  "tutorial.profile.title": "Profile & settings",
+  "tutorial.profile.body": "Change theme, language, Bible version, or sign out from here.",
+
+  "tutorial.reading.title": "Your reading",
+  "tutorial.reading.body": "Select verses to highlight, copy, bookmark or annotate. Right-click for more actions.",
+
+  "tutorial.toolbar.title": "Reading tools",
+  "tutorial.toolbar.body": "Chapter commentary, version comparison, and cross-references — all from this bar.",
+
+  "tutorial.shortcuts.title": "Keyboard shortcuts",
+  "tutorial.shortcuts.body": "Tulia is keyboard-first: J/K for verses, ←/→ for chapters, {{modKey}}K to search, ? to see all shortcuts.",
+
+  "tutorial.done.title": "You're set",
+  "tutorial.done.body": "That's the gist. Press ? any time to see shortcuts. Enjoy your reading."
 }
