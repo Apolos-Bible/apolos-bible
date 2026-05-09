@@ -106,7 +106,7 @@ export function CrossReferencePopover({
     if (meaning !== null || meaningError) return;
     let cancelled = false;
     bibleApi
-      .semanticSimilar(verseId, 30)
+      .semanticSimilar(verseId, 30, versionId)
       .then((resp) => {
         if (cancelled) return;
         const rows: ResultRow[] = (resp?.results ?? []).map((r) => ({
@@ -123,7 +123,7 @@ export function CrossReferencePopover({
     return () => {
       cancelled = true;
     };
-  }, [tab, meaning, meaningError, verseId]);
+  }, [tab, meaning, meaningError, verseId, versionId]);
 
   // Track anchor position via rAF.
   useLayoutEffect(() => {
