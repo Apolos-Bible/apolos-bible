@@ -17,6 +17,9 @@ export const usePresenceStore = create<PresenceStore>((set) => ({
   others: [],
 
   joinChapter: (bookNumber, chapterNumber, selfId) => {
+    // Presence channels require an authenticated user; skip silently for guests.
+    if (!localStorage.getItem('verbum_token')) return
+
     const echo = initEcho()
     if (!echo) return
 
@@ -29,7 +32,7 @@ export const usePresenceStore = create<PresenceStore>((set) => ({
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     ;(echo.join(_channelName) as any)
       .error((error: unknown) => {
-        void error
+        console.error('[presence] subscription error', error)
         useUIStore.getState().addToast('Realtime presence subscription failed', 'error')
       })
       .here((users: PresenceUser[]) => {
