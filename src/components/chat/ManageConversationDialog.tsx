@@ -117,6 +117,11 @@ export function ManageConversationDialog({ conversation, open, onClose }: Manage
 
         <div className="px-4 py-3 border-b border-border-subtle">
           <p className="text-2xs uppercase tracking-wider text-text-muted mb-2">{t('chat.addFriends')}</p>
+          {conversation.study_session_id && (
+            <p className="mb-2 text-2xs text-accent/90 bg-accent/10 border border-accent/20 rounded-md px-2.5 py-1.5 leading-snug">
+              {t('chat.addFriendsStudyHint')}
+            </p>
+          )}
           <input
             type="text"
             value={query}
@@ -163,13 +168,17 @@ export function ManageConversationDialog({ conversation, open, onClose }: Manage
         </div>
 
         <div className="flex items-center justify-between gap-2 px-4 py-3 border-t border-border-subtle">
-          <button
-            onClick={() => { void handleLeave() }}
-            disabled={busy}
-            className="text-xs text-red-400 hover:text-red-300 px-3 py-1.5"
-          >
-            {t('chat.leaveGroup')}
-          </button>
+          {conversation.study_session_id ? (
+            <span className="text-2xs text-text-muted">{t('chat.studyLeaveHint')}</span>
+          ) : (
+            <button
+              onClick={() => { void handleLeave() }}
+              disabled={busy}
+              className="text-xs text-red-400 hover:text-red-300 px-3 py-1.5"
+            >
+              {t('chat.leaveGroup')}
+            </button>
+          )}
           <div className="flex items-center gap-2">
             <button
               onClick={onClose}

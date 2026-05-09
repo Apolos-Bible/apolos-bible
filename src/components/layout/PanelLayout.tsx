@@ -221,7 +221,7 @@ export function PanelLayout({ sidebar, main, panel, leftPanel }: PanelLayoutProp
           </div>
         </aside>
 
-        <main className="flex-1 min-w-0 h-full overflow-hidden">
+        <main className="flex-1 min-w-0 h-full overflow-hidden" data-tour="reading">
           {main}
         </main>
 

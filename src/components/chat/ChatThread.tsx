@@ -138,7 +138,7 @@ export function ChatThread({ conversation, onBack }: ChatThreadProps) {
             </p>
           )}
         </div>
-        {conversation.type === 'group' && (
+        {conversation.type === 'group' && !conversation.study_session_id && (
           <button
             onClick={() => setManageOpen(true)}
             className="p-1 rounded text-text-muted hover:text-text-primary hover:bg-bg-tertiary"

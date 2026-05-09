@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
+import { Plus, X } from 'lucide-react'
 import { useChatStore } from '@/lib/store/useChatStore'
 import { useUIStore } from '@/lib/store/useUIStore'
 import { ConversationList } from './ConversationList'
@@ -33,20 +34,17 @@ export function ChatPanel() {
                 onClick={() => setComposerOpen(true)}
                 aria-label={t('common.newChat')}
                 title={t('common.newChat')}
-                className="text-text-muted hover:text-text-primary transition-colors p-1 rounded hover:bg-bg-tertiary"
+                className="cursor-pointer text-text-muted hover:text-text-primary transition-colors p-1 rounded hover:bg-bg-tertiary"
               >
-                <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" className="w-4 h-4">
-                  <path d="M8 3.5v9M3.5 8h9" strokeLinecap="round" />
-                </svg>
+                <Plus className="w-4 h-4" strokeWidth={1.75} />
               </button>
               <button
                 onClick={closePanel}
                 aria-label={t('chat.closeChat')}
-                className="text-text-muted hover:text-text-primary transition-colors p-1 rounded hover:bg-bg-tertiary"
+                title={t('chat.closeChat')}
+                className="cursor-pointer text-text-muted hover:text-text-primary transition-colors p-1 rounded hover:bg-bg-tertiary"
               >
-                <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" className="w-4 h-4">
-                  <path d="M3 3l10 10M13 3L3 13" strokeLinecap="round" />
-                </svg>
+                <X className="w-4 h-4" strokeWidth={1.75} />
               </button>
             </div>
           </div>

@@ -19,15 +19,18 @@ export interface ChatLastMessagePreview {
 }
 
 export interface Conversation {
-  id:              number
-  type:            'dm' | 'group'
-  name:            string | null
-  created_by:      number
-  last_message_at: string | null
-  unread_count:    number
-  last_read_at:    string | null
-  participants:    ChatParticipant[]
-  last_message:    ChatLastMessagePreview | null
+  id:                number
+  type:              'dm' | 'group'
+  name:              string | null
+  created_by:        number
+  /** UUID of the study session this conversation belongs to, if any.
+   *  When set, adding members to this chat also adds them to the study. */
+  study_session_id:  string | null
+  last_message_at:   string | null
+  unread_count:      number
+  last_read_at:      string | null
+  participants:      ChatParticipant[]
+  last_message:      ChatLastMessagePreview | null
 }
 
 export interface ChatMessage {

@@ -144,6 +144,10 @@
 
   "study.sticky.placeholder": "Escribe una nota...",
 
+  "study.chat.toggle": "Mostrar chat del estudio",
+  "study.chat.close": "Cerrar",
+  "study.chat.minimize": "Minimizar",
+
   "study.topBar.exit": "Salir",
   "study.topBar.invite": "Invitar",
   "study.topBar.more": "Más",
@@ -344,6 +348,8 @@
   "chat.groupChat": "Chat grupal",
   "chat.members": "Miembros",
   "chat.addFriends": "Agregar amigos",
+  "chat.addFriendsStudyHint": "Este chat pertenece a una sesión de estudio. Los amigos que agregues también serán añadidos al estudio y podrán editar el lienzo.",
+  "chat.studyLeaveHint": "Para salir, abandona la sesión de estudio.",
   "chat.noFriendsToAdd": "No hay más amigos disponibles para agregar.",
   "chat.leaveGroup": "Salir del grupo",
   "chat.addPeople": "Agregar personas",
@@ -446,5 +452,61 @@
   "updater.failed": "No se pudo instalar la actualización",
 
   "sw.updateAvailable": "Hay una nueva versión disponible.",
-  "sw.update": "Actualizar"
+  "sw.update": "Actualizar",
+
+  "tutorial.invite.title": "¿Tour rápido?",
+  "tutorial.invite.body": "Te mostramos las funciones principales de Tulia en menos de un minuto.",
+  "tutorial.invite.start": "Empezar",
+  "tutorial.invite.skip": "Ahora no",
+
+  "tutorial.next": "Siguiente",
+  "tutorial.back": "Atrás",
+  "tutorial.skip": "Saltar",
+  "tutorial.done": "Listo",
+  "tutorial.stepCount": "Paso {{current}} de {{total}}",
+
+  "tutorial.welcome.title": "Bienvenido a Tulia",
+  "tutorial.welcome.body": "Una forma social y minimalista de leer la Biblia con amigos. Te mostraremos lo esencial — puedes saltar en cualquier momento (Esc).",
+
+  "tutorial.logo.title": "Tu inicio",
+  "tutorial.logo.body": "Haz clic en el logo en cualquier momento para volver a la lectura.",
+
+  "tutorial.search.title": "Buscar en la Biblia",
+  "tutorial.search.body": "Abre la paleta de comandos con {{modKey}}K para saltar a cualquier libro, capítulo o versículo.",
+
+  "tutorial.library.title": "Biblioteca",
+  "tutorial.library.body": "Todos los libros del Antiguo y Nuevo Testamento. Haz clic en uno para abrir sus capítulos.",
+
+  "tutorial.favorites.title": "Favoritos",
+  "tutorial.favorites.body": "Marca versículos importantes con la estrella y vuelve a ellos desde aquí.",
+
+  "tutorial.notes.title": "Mis notas",
+  "tutorial.notes.body": "Escribe notas privadas o públicas en cualquier versículo. Encuentra todas tus notas aquí.",
+
+  "tutorial.studies.title": "Mis estudios",
+  "tutorial.studies.body": "Tus sesiones de estudio compartidas con amigos — activas y pasadas — aparecen aquí.",
+
+  "tutorial.newStudy.title": "Nuevo estudio",
+  "tutorial.newStudy.body": "Crea una sesión de estudio colaborativa: lienzo compartido, notas adhesivas, versículos y chat en tiempo real.",
+
+  "tutorial.friends.title": "Amigos",
+  "tutorial.friends.body": "Agrega amigos para invitarlos a estudiar, ver su presencia y compartir notas.",
+
+  "tutorial.chat.title": "Chat",
+  "tutorial.chat.body": "Conversaciones directas y grupales. Inserta versículos en los mensajes con un comando rápido.",
+
+  "tutorial.profile.title": "Perfil y ajustes",
+  "tutorial.profile.body": "Cambia tema, idioma, versión bíblica o cierra sesión desde aquí.",
+
+  "tutorial.reading.title": "Tu lectura",
+  "tutorial.reading.body": "Selecciona versículos para resaltar, copiar, marcar o anotar. Haz clic derecho para más acciones.",
+
+  "tutorial.toolbar.title": "Herramientas de lectura",
+  "tutorial.toolbar.body": "Comentario del capítulo, comparar versiones y referencias cruzadas — todo desde esta barra.",
+
+  "tutorial.shortcuts.title": "Atajos de teclado",
+  "tutorial.shortcuts.body": "Tulia es primero teclado: J/K para versículos, ←/→ para capítulos, {{modKey}}K para buscar, ? para ver todos los atajos.",
+
+  "tutorial.done.title": "¡Todo listo!",
+  "tutorial.done.body": "Eso es lo esencial. Pulsa ? cuando quieras ver los atajos. Disfruta tu lectura."
 }
