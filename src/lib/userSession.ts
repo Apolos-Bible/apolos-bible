@@ -6,6 +6,7 @@ import { useChatStore } from '@/lib/store/useChatStore'
 import { useNoteStore } from '@/lib/store/useNoteStore'
 import { useHighlightStore } from '@/lib/store/useHighlightStore'
 import { useActivityStore } from '@/lib/store/useActivityStore'
+import { destroyEcho } from '@/lib/echo'
 
 // Pre-loads everything tied to the current account so the app feels populated
 // the moment a user logs in instead of trickling data in per-screen.
@@ -42,4 +43,7 @@ export function resetUserSession(): void {
   useNoteStore.setState({ notes: {}, loading: {} })
   useHighlightStore.setState({ highlights: {}, loading: {} })
   useActivityStore.getState().clearAll()
+  // Echo's auth headers are baked in at construction; tear it down so the
+  // next presence/private subscription rebuilds with the fresh bearer token.
+  destroyEcho()
 }
