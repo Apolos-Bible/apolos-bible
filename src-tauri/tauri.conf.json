@@ -54,7 +54,7 @@
         "schemes": ["tulia"]
       },
       "mobile": [
-        { "scheme": "tulia", "host": "auth" }
+        { "host": "auth", "scheme": ["tulia"] }
       ]
     },
     "updater": {
