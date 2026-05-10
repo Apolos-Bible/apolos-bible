@@ -18,7 +18,6 @@ import { useBookmarkStore } from '@/lib/store/useBookmarkStore'
 import { useFriendStore } from '@/lib/store/useFriendStore'
 import { useChatStore } from '@/lib/store/useChatStore'
 import { checkForAppUpdates } from '@/lib/updater'
-import { registerServiceWorker } from '@/lib/registerServiceWorker'
 
 const VISITED_STORAGE_KEY = 'verbum_has_visited'
 let hasLoggedStartupSettings = false
@@ -102,15 +101,6 @@ export function RootLayout() {
       installing: (version) => t('updater.installing', { version }),
       installed: t('updater.installed'),
       failed: t('updater.failed'),
-    })
-  }, [addToast, t])
-
-  useEffect(() => {
-    registerServiceWorker((reload) => {
-      addToast(t('sw.updateAvailable'), 'info', {
-        action: { label: t('sw.update'), onClick: reload },
-        duration: 0,
-      })
     })
   }, [addToast, t])
 

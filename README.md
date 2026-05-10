@@ -2,9 +2,11 @@
 
 A desktop Bible study app built for focus, depth, and collaboration.
 
-<img width="1680" height="960" alt="Screenshot 2026-05-04 at 17 10 29" src="https://github.com/user-attachments/assets/7c0a9ca9-33ea-47bc-9cb8-3067a0514508" />
-<img width="3360" height="1918" alt="image" src="https://github.com/user-attachments/assets/90be971d-51f7-449a-bb77-8ede0ae4b918" />
-<img width="1680" height="954" alt="Screenshot 2026-05-04 at 17 08 30" src="https://github.com/user-attachments/assets/c7799d54-dc25-486a-8db0-02d4e04a9565" />
+> **Landing:** [tulia.study](https://tulia.study) · **Privacy:** [tulia.study/privacy](https://tulia.study/privacy) · **Terms:** [tulia.study/terms](https://tulia.study/terms) · **GitHub:** [freddysae0/bible-tauri](https://github.com/freddysae0/bible-tauri)
+
+<img width="1680" height="960" alt="Reading view with friends panel open — Genesis 1 with accepted friends visible in the sidebar" src="https://github.com/user-attachments/assets/7c0a9ca9-33ea-47bc-9cb8-3067a0514508" />
+<img width="3360" height="1918" alt="Command palette — search and jump to any book, chapter, or verse in a keystroke" src="https://github.com/user-attachments/assets/90be971d-51f7-449a-bb77-8ede0ae4b918" />
+<img width="1680" height="954" alt="Note editor with cross-references — write notes on any verse with related passages shown" src="https://github.com/user-attachments/assets/c7799d54-dc25-486a-8db0-02d4e04a9565" />
 
 ---
 
@@ -37,7 +39,7 @@ tulia.study is the app I wished existed.
 | UI | React + TypeScript + Tailwind |
 | State | Zustand |
 | Desktop | Tauri 2 (Rust + WebView2) |
-| Backend | Laravel API (separate repo) |
+| Backend | Laravel API (../backend/ — same monorepo) |
 | Collab | Hocuspocus (Yjs) for shared study sessions |
 | Broadcasting | Laravel Reverb |
 | Build | Vite + pnpm |
@@ -54,11 +56,9 @@ Heavily inspired by the design philosophy of [Linear](https://linear.app): fast,
 
 ## Pricing
 
-tulia.study is free. We generously offer features that cost us money to run — like AI-powered search, real-time collaboration, and synced highlights — because we believe everyone deserves access to good Bible study tools, especially those who can't afford them.
+Reading the Bible, taking notes, highlighting, bookmarking, commenting, and reading with friends in real time is and will remain free.
 
-In the future, we may offer a simple monthly subscription for extensive use of those features. Our goal isn't profit — it's sustainability. We want to keep building the best Bible study app out there, for years to come.
-
-Our purpose: to give you the tools you need to understand what God has for you, through His Word.
+In the future, some features that cost money to run — AI-powered search, extended collaborative study sessions, unlimited sync — may require a simple subscription for intensive use. The goal isn't profit — it's sustainability.
 
 ---
 
@@ -72,6 +72,22 @@ The macOS builds aren't signed with an Apple Developer certificate yet (it's $99
 - **macOS 15 (Sequoia) and later**: open **System Settings → Privacy & Security**, scroll down, you'll see *"Tulia Study was blocked..."* → click **Open Anyway**.
 
 After that first launch, double-clicking works normally.
+
+### Windows — SmartScreen warning
+
+Windows may show *"Windows protected your PC"* when you first run the installer. This is because the app is not code-signed with an EV certificate yet. The code is open source — click **More info** → **Run anyway** to proceed.
+
+### Linux
+
+Download the AppImage or .deb from [GitHub Releases](https://github.com/freddysae0/bible-tauri/releases/latest). Make the AppImage executable with `chmod +x` before running.
+
+### Android
+
+Download the .apk from [GitHub Releases](https://github.com/freddysae0/bible-tauri/releases/latest). You may need to allow installation from unknown sources in your device settings.
+
+### Web (offline / PWA)
+
+The web version at [bible.tulia.study](https://bible.tulia.study) requires an internet connection. There is no offline/PWA support for the web client at this time — use the desktop app for the best offline experience.
 
 ---
 
@@ -93,7 +109,7 @@ pnpm tauri:build
 
 > On Windows, run Tauri commands in PowerShell — the Rust/cargo PATH isn't picked up in Git Bash.
 
-The backend lives in a separate repo and is served locally at `https://verbum.test` via [Herd](https://herd.laravel.com/) (macOS). Set `VITE_API_URL=https://verbum.test` in `.env.local` to point at it.
+The backend lives in `../backend/` of this monorepo and is served locally at `https://verbum.test` via [Herd](https://herd.laravel.com/) (macOS). Set `VITE_API_URL=https://verbum.test` in `.env.local` to point at it.
 
 ---
 

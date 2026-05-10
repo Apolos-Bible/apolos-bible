@@ -450,9 +450,6 @@
   "updater.installed": "Update installed. Restarting…",
   "updater.failed": "Could not install update",
 
-  "sw.updateAvailable": "A new version is available.",
-  "sw.update": "Update",
-
   "tutorial.invite.title": "Quick tour?",
   "tutorial.invite.body": "We'll walk you through Tulia's main features in under a minute.",
   "tutorial.invite.start": "Start",
