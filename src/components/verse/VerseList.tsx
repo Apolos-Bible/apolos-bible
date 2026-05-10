@@ -565,7 +565,7 @@ export function VerseList() {
         <div className="flex-1 overflow-y-auto no-scrollbar relative">
 
           {/* Mobile keeps navigation/display primary; study tools appear after selecting a verse. */}
-          <div className="sticky top-0 z-10 bg-bg-secondary pointer-events-none">
+          <div className="sticky top-0 z-10 bg-bg-secondary pointer-events-none pt-[env(safe-area-inset-top)]">
             <div className="flex flex-wrap items-center justify-between gap-2 border-b border-border-subtle px-3 py-2 md:border-b-0 md:bg-transparent md:px-4 md:py-2">
               <div className="hidden md:block pointer-events-auto">
                 <PresenceAvatars users={others} />
