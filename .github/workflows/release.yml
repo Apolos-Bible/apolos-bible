@@ -9,7 +9,56 @@ permissions:
   contents: write
 
 jobs:
+  bump-version:
+    if: github.event_name == 'release'
+    runs-on: ubuntu-latest
+    outputs:
+      sha: ${{ steps.commit.outputs.sha }}
+      version: ${{ steps.commit.outputs.version }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          token: ${{ secrets.GITHUB_TOKEN }}
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Bump package.json + Cargo.toml and push
+        id: commit
+        run: |
+          set -e
+          TAG="${{ github.event.release.tag_name }}"
+          VERSION="${TAG#v}"
+          CURRENT=$(node -p "require('./package.json').version")
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+
+          if [ "$CURRENT" = "$VERSION" ]; then
+            echo "Already at $VERSION, skipping commit"
+            echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          node -e "const fs=require('fs');const p=JSON.parse(fs.readFileSync('package.json','utf8'));p.version='$VERSION';fs.writeFileSync('package.json',JSON.stringify(p,null,2)+'\n')"
+          node scripts/sync-version.mjs
+
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add package.json src-tauri/Cargo.toml
+          git commit -m "Release v$VERSION"
+          git push origin main
+
+          # Move the release tag to the new commit so artifacts attach to the
+          # right ref and end users cloning the tag get the bumped versions.
+          git tag -f "$TAG"
+          git push origin "$TAG" --force
+
+          echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+
   desktop:
+    needs: bump-version
     strategy:
       fail-fast: false
       matrix:
@@ -23,15 +72,8 @@ jobs:
     runs-on: ${{ matrix.platform }}
     steps:
       - uses: actions/checkout@v4
-
-      - name: Set version from release tag
-        if: github.event_name == 'release'
-        shell: bash
-        run: |
-          TAG="${{ github.event.release.tag_name }}"
-          VERSION="${TAG#v}"
-          node -e "const fs=require('fs');const p=JSON.parse(fs.readFileSync('package.json','utf8'));p.version='$VERSION';fs.writeFileSync('package.json',JSON.stringify(p,null,2)+'\n')"
-          echo "package.json → $VERSION"
+        with:
+          ref: ${{ needs.bump-version.outputs.sha }}
 
       - name: Install Linux dependencies
         if: matrix.platform == 'ubuntu-22.04'
@@ -73,21 +115,17 @@ jobs:
           # keeps the macOS/Windows bundlers in unsigned mode until real certs exist.
         with:
           releaseId: ${{ github.event.release.id }}
-          tagName: ${{ github.event.release.tag_name || format('v{0}', github.run_number) }}
-          releaseName: ${{ github.event.release.name || format('Tulia Study v{0}', github.run_number) }}
+          tagName: ${{ github.event.release.tag_name }}
+          releaseName: ${{ github.event.release.name || github.event.release.tag_name }}
           args: ${{ matrix.args }}
 
   android:
+    needs: bump-version
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-
-      - name: Set version from release tag
-        if: github.event_name == 'release'
-        run: |
-          TAG="${{ github.event.release.tag_name }}"
-          VERSION="${TAG#v}"
-          node -e "const fs=require('fs');const p=JSON.parse(fs.readFileSync('package.json','utf8'));p.version='$VERSION';fs.writeFileSync('package.json',JSON.stringify(p,null,2)+'\n')"
+        with:
+          ref: ${{ needs.bump-version.outputs.sha }}
 
       - uses: pnpm/action-setup@v4
         with:
@@ -150,30 +188,18 @@ jobs:
           ls -la android-out
 
       - name: Upload to GitHub Release
-        if: github.event_name == 'release'
         uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ github.event.release.tag_name }}
           files: android-out/*
 
-      - name: Upload artifact (manual runs)
-        if: github.event_name != 'release'
-        uses: actions/upload-artifact@v4
-        with:
-          name: android
-          path: android-out/*
-
   web:
-    if: github.event_name == 'release'
+    needs: bump-version
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-
-      - name: Set version from release tag
-        run: |
-          TAG="${{ github.event.release.tag_name }}"
-          VERSION="${TAG#v}"
-          node -e "const fs=require('fs');const p=JSON.parse(fs.readFileSync('package.json','utf8'));p.version='$VERSION';fs.writeFileSync('package.json',JSON.stringify(p,null,2)+'\n')"
+        with:
+          ref: ${{ needs.bump-version.outputs.sha }}
 
       - uses: pnpm/action-setup@v4
         with:
