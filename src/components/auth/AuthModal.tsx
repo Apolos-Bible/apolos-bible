@@ -1,5 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
+import { isTauri } from '@tauri-apps/api/core'
+import { openUrl } from '@tauri-apps/plugin-opener'
 import { useAuthStore } from '@/lib/store/useAuthStore'
 import { useUIStore } from '@/lib/store/useUIStore'
 import { cn } from '@/lib/cn'
@@ -188,7 +190,19 @@ export function AuthModal({ open, onClose, initialMode = 'login' }: AuthModalPro
 
           <button
             type="button"
-            onClick={() => { window.location.href = `${API_BASE}/api/auth/google/redirect` }}
+            onClick={() => {
+              // In Tauri we open the system browser instead of navigating
+              // the webview. That way Google can use the user's existing
+              // session and they don't have to re-type credentials. The
+              // backend honors `?client=desktop` and redirects to the
+              // `tulia://auth/finish` deep link, which the app receives
+              // via tauri-plugin-deep-link.
+              if (isTauri()) {
+                void openUrl(`${API_BASE}/api/auth/google/redirect?client=desktop`)
+              } else {
+                window.location.href = `${API_BASE}/api/auth/google/redirect`
+              }
+            }}
             className="flex w-full items-center justify-center gap-2.5 bg-bg-tertiary border border-border-subtle rounded-lg py-2.5 text-sm font-medium text-text-primary hover:border-accent/40 transition-colors duration-150 mb-3"
           >
             <svg width="16" height="16" viewBox="0 0 18 18" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">

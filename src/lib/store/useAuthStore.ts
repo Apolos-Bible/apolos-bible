@@ -37,8 +37,15 @@ export const useAuthStore = create<AuthState>((set) => ({
       await applyUserSettings(settings)
       set({ user, loading: false })
       void hydrateUserSession()
-    } catch {
-      clearToken()
+    } catch (e) {
+      // Only nuke the token when the server explicitly rejects it.
+      // Network errors, 5xx, or backend-down on cold start used to
+      // log the user out — particularly visible on Windows/WebView2
+      // where the network can be slow to come up after launch.
+      const status = (e as { status?: number })?.status
+      if (status === 401) {
+        clearToken()
+      }
       set({ loading: false })
     }
   },

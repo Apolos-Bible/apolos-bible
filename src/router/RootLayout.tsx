@@ -1,5 +1,5 @@
 import { useEffect } from 'react'
-import { Outlet } from 'react-router-dom'
+import { Outlet, useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { CommandPalette } from '@/components/ui/CommandPalette'
 import { Toast } from '@/components/ui/Toast'
@@ -18,12 +18,14 @@ import { useBookmarkStore } from '@/lib/store/useBookmarkStore'
 import { useFriendStore } from '@/lib/store/useFriendStore'
 import { useChatStore } from '@/lib/store/useChatStore'
 import { checkForAppUpdates } from '@/lib/updater'
+import { registerAuthDeepLink } from '@/lib/deepLink'
 
 const VISITED_STORAGE_KEY = 'verbum_has_visited'
 let hasLoggedStartupSettings = false
 
 export function RootLayout() {
   const { t } = useTranslation()
+  const navigate = useNavigate()
   const openCommandPalette = useUIStore(s => s.openCommandPalette)
   const authModalOpen      = useUIStore(s => s.authModalOpen)
   const closeAuthModal     = useUIStore(s => s.closeAuthModal)
@@ -103,6 +105,10 @@ export function RootLayout() {
       failed: t('updater.failed'),
     })
   }, [addToast, t])
+
+  useEffect(() => {
+    return registerAuthDeepLink((to, opts) => navigate(to, opts))
+  }, [navigate])
 
   useEffect(() => {
     if (!user) {

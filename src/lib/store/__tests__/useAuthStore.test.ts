@@ -52,12 +52,21 @@ describe('useAuthStore', () => {
     expect(useAuthStore.getState().loading).toBe(false)
   })
 
-  it('init clears token and sets loading=false on error', async () => {
+  it('init clears token on 401 (token rejected by server)', async () => {
     localStorage.setItem('verbum_token', 'bad-token')
-    mockApi.get.mockRejectedValueOnce(new Error('Unauthorized'))
+    const err = Object.assign(new Error('Unauthorized'), { status: 401 })
+    mockApi.get.mockRejectedValueOnce(err)
     await useAuthStore.getState().init()
     expect(useAuthStore.getState().loading).toBe(false)
     expect(localStorage.getItem('verbum_token')).toBeNull()
+  })
+
+  it('init keeps token on network/transient error', async () => {
+    localStorage.setItem('verbum_token', 'good-token')
+    mockApi.get.mockRejectedValueOnce(new Error('Network down'))
+    await useAuthStore.getState().init()
+    expect(useAuthStore.getState().loading).toBe(false)
+    expect(localStorage.getItem('verbum_token')).toBe('good-token')
   })
 
   it('login sets token and user', async () => {

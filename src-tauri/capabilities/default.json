@@ -8,6 +8,7 @@
   "permissions": [
     "core:default",
     "opener:default",
-    "process:default"
+    "process:default",
+    "deep-link:default"
   ]
 }
