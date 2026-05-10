@@ -8,6 +8,7 @@ export function getEdgesMap(doc: Y.Doc): Y.Map<Y.Map<any>> {
   return doc.getMap('edges');
 }
 
+
 export function nodeFromYMap(id: string, m: Y.Map<any>) {
   const node: any = {
     id: m.get('id') ?? id,

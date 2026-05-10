@@ -34,10 +34,12 @@ import {
   writeNodeToMap,
   writeEdgeToMap,
 } from '@/lib/study/yDocHelpers';
+import { pointsBounds, strokeHit, type StrokeData, type StrokeKind } from '@/lib/study/strokes';
 import { StudyDocContext } from '@/lib/study/StudyDocContext';
 import { studyNodeTypes } from './nodes';
 import { studyEdgeTypes } from './edges';
 import { RemoteCursors } from './cursor/RemoteCursors';
+import { DrawingLayer, type DrawSettings } from './DrawingLayer';
 import type { Tool } from './StudyMode';
 import type { AwarenessUser } from '@/hooks/useStudySession';
 
@@ -56,6 +58,8 @@ interface StudyCanvasProps {
   setLocalSelection: (nodeIds: string[]) => void;
   setLocalDragging: (dragging: boolean) => void;
   isGuest: boolean;
+  drawSettings: DrawSettings;
+  spaceHeld: boolean;
 }
 
 function stripEphemeralNodeData(data: any) {
@@ -153,6 +157,8 @@ function StudyCanvasInner({
   setLocalSelection,
   setLocalDragging,
   isGuest,
+  drawSettings,
+  spaceHeld,
 }: StudyCanvasProps) {
   const activeSession = useStudyStore((s) => s.activeSession);
   const { screenToFlowPosition, zoomIn, zoomOut, fitView } = useReactFlow();
@@ -956,6 +962,119 @@ function StudyCanvasInner({
     undoManagerRef.current?.stopCapturing();
   }, [isGuest]);
 
+  // --- Drawing strokes (as 'drawing' nodes for native selection/move/resize) ---
+  const beginStroke = useCallback(
+    (s: DrawSettings, point: { x: number; y: number }): string | null => {
+      if (isGuest) return null;
+      const d = docRef.current;
+      if (!d) return null;
+      const id = `draw-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+      const data: StrokeData = {
+        kind: s.kind,
+        color: s.color,
+        size: s.size,
+        filled: s.filled,
+        points: [point.x, point.y],
+        viewBox: { x: point.x, y: point.y, w: 1, h: 1 },
+        authorId: user?.id,
+      };
+      const position = { x: point.x, y: point.y };
+      d.transact(() => {
+        const nodesMap = getNodesMap(d);
+        writeNodeToMap(nodesMap, { id, type: 'drawing', position, width: 1, height: 1, data });
+      }, 'local');
+      setNodes((nds) => [
+        ...nds,
+        { id, type: 'drawing', position, width: 1, height: 1, data } as unknown as Node,
+      ]);
+      return id;
+    },
+    [isGuest, user?.id],
+  );
+
+  const extendStroke = useCallback(
+    (id: string, kind: StrokeKind, point: { x: number; y: number }) => {
+      if (isGuest) return;
+      const d = docRef.current;
+      if (!d) return;
+      const current = displayedNodesRef.current.find((n) => n.id === id);
+      if (!current) return;
+      const prev = current.data as unknown as StrokeData;
+      const newPoints =
+        kind === 'pen'
+          ? [...prev.points, point.x, point.y]
+          : prev.points.length >= 2
+          ? [prev.points[0], prev.points[1], point.x, point.y]
+          : [point.x, point.y];
+      const bounds = pointsBounds(newPoints);
+      const newData: StrokeData = { ...prev, points: newPoints, viewBox: bounds };
+      const position = { x: bounds.x, y: bounds.y };
+      d.transact(() => {
+        const nodesMap = getNodesMap(d);
+        const m = nodesMap.get(id);
+        if (!m) return;
+        m.set('data', newData);
+        m.set('position', position);
+        m.set('width', bounds.w);
+        m.set('height', bounds.h);
+      }, 'local');
+      setNodes((nds) =>
+        nds.map((n) =>
+          n.id === id
+            ? ({ ...n, position, width: bounds.w, height: bounds.h, data: newData } as unknown as Node)
+            : n,
+        ),
+      );
+    },
+    [isGuest],
+  );
+
+  const finishStroke = useCallback(
+    (_id: string) => {
+      undoManagerRef.current?.stopCapturing();
+    },
+    [],
+  );
+
+  const eraseAtFlow = useCallback(
+    (p: { x: number; y: number }) => {
+      if (isGuest) return;
+      const d = docRef.current;
+      if (!d) return;
+      const zoom = rfStore.getState().transform[2] || 1;
+      const flowThreshold = 4 / zoom;
+      const toDelete: string[] = [];
+      for (const n of displayedNodesRef.current) {
+        if (n.type !== 'drawing') continue;
+        const data = n.data as unknown as StrokeData;
+        if (!data?.viewBox) continue;
+        const w = (n as any).width ?? data.viewBox.w;
+        const h = (n as any).height ?? data.viewBox.h;
+        const sx = w / data.viewBox.w;
+        const sy = h / data.viewBox.h;
+        const scale = Math.min(sx, sy); // 'meet'
+        if (scale <= 0) continue;
+        const offsetX = (w - data.viewBox.w * scale) / 2;
+        const offsetY = (h - data.viewBox.h * scale) / 2;
+        const localX = p.x - n.position.x;
+        const localY = p.y - n.position.y;
+        const sxg = data.viewBox.x + (localX - offsetX) / scale;
+        const syg = data.viewBox.y + (localY - offsetY) / scale;
+        if (strokeHit(data, sxg, syg, flowThreshold / scale)) {
+          toDelete.push(n.id);
+        }
+      }
+      if (toDelete.length === 0) return;
+      d.transact(() => {
+        const nodesMap = getNodesMap(d);
+        toDelete.forEach((id) => nodesMap.delete(id));
+      }, 'local');
+      const dropped = new Set(toDelete);
+      setNodes((nds) => nds.filter((n) => !dropped.has(n.id)));
+    },
+    [isGuest, rfStore],
+  );
+
 useEffect(() => {
     (window as any).__studyCanvasActions = { addStickyNote, addVerseNode, addPassageNode, addVerseChain, addCrossRefNode, addAiNoteNode, setVerseNodeVersion, undo, redo, resizeNode, zoomIn, zoomOut, fitView, toggleLock };
     (window as any).__studyCanvasState = { isLocked: !isInteractive };
@@ -1064,10 +1183,22 @@ useEffect(() => {
           deleteKeyCode={['Backspace', 'Delete']}
           multiSelectionKeyCode="Shift"
           selectionKeyCode="Shift"
-          className="bg-bg-secondary"
+          className={`bg-bg-secondary${
+            tool === 'draw' || tool === 'erase'
+              ? spaceHeld
+                ? ' cursor-grab'
+                : tool === 'erase'
+                ? ' [&_.react-flow__pane]:cursor-cell'
+                : ' [&_.react-flow__pane]:cursor-crosshair'
+              : ''
+          }`}
           defaultEdgeOptions={{ type: 'default', animated: false }}
           proOptions={{ hideAttribution: true }}
-          panOnDrag={tool === 'hand' || isGuest ? [0, 1] : [1]}
+          panOnDrag={
+            tool === 'draw' || tool === 'erase'
+              ? (spaceHeld ? [0, 1] : [1])
+              : (tool === 'hand' || isGuest ? [0, 1] : [1])
+          }
           nodesDraggable={!isGuest && tool === 'select'}
           nodesConnectable={!isGuest && tool === 'select'}
           elementsSelectable={!isGuest || tool === 'select'}
@@ -1090,6 +1221,16 @@ useEffect(() => {
             }}
           />
           <RemoteCursors users={users} currentUserId={user?.id} />
+          <DrawingLayer
+            active={!isGuest && (tool === 'draw' || tool === 'erase')}
+            paused={spaceHeld}
+            erasing={tool === 'erase'}
+            settings={drawSettings}
+            beginStroke={beginStroke}
+            extendStroke={extendStroke}
+            finishStroke={finishStroke}
+            eraseAtFlow={eraseAtFlow}
+          />
         </ReactFlow>
       </div>
     </StudyDocContext.Provider>

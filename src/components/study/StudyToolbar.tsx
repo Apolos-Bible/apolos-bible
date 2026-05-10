@@ -1,12 +1,14 @@
 import { useCallback, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { MousePointer2, Hand, StickyNote, BookOpen, Undo, Redo, ZoomIn, ZoomOut, Maximize2, Lock, Unlock } from 'lucide-react';
+import { MousePointer2, Hand, StickyNote, BookOpen, Undo, Redo, ZoomIn, ZoomOut, Maximize2, Lock, Unlock, Pencil, Eraser, Minus, ArrowRight, Square, Circle } from 'lucide-react';
 import { cn } from '@/lib/cn';
 import { modKey } from '@/lib/platform';
 import { Tooltip } from '@/components/ui/Tooltip';
 import { InsertVerseModal } from './InsertVerseModal';
 import { useUIStore } from '@/lib/store/useUIStore';
-import type { Tool } from './StudyMode';
+import { DRAW_COLORS, DRAW_SIZES, type Tool } from './StudyMode';
+import type { DrawSettings } from './DrawingLayer';
+import type { StrokeKind } from '@/lib/study/strokes';
 
 function ToolbarButton({
   icon, active, onClick, disabled,
@@ -36,9 +38,19 @@ interface StudyToolbarProps {
   biblePanelOpen: boolean;
   onToggleBiblePanel: () => void;
   isGuest: boolean;
+  drawSettings: DrawSettings;
+  onDrawSettingsChange: (next: DrawSettings) => void;
 }
 
-export function StudyToolbar({ tool, onToolChange, showInsertVerse, onOpenInsertVerse, onCloseInsertVerse, biblePanelOpen, onToggleBiblePanel, isGuest }: StudyToolbarProps) {
+const STROKE_KINDS: { kind: StrokeKind; icon: React.ReactNode; label: string }[] = [
+  { kind: 'pen', icon: <Pencil className="w-3.5 h-3.5" />, label: 'Pen' },
+  { kind: 'line', icon: <Minus className="w-3.5 h-3.5" />, label: 'Line' },
+  { kind: 'arrow', icon: <ArrowRight className="w-3.5 h-3.5" />, label: 'Arrow' },
+  { kind: 'rect', icon: <Square className="w-3.5 h-3.5" />, label: 'Rectangle' },
+  { kind: 'ellipse', icon: <Circle className="w-3.5 h-3.5" />, label: 'Ellipse' },
+];
+
+export function StudyToolbar({ tool, onToolChange, showInsertVerse, onOpenInsertVerse, onCloseInsertVerse, biblePanelOpen, onToggleBiblePanel, isGuest, drawSettings, onDrawSettingsChange }: StudyToolbarProps) {
   const { t } = useTranslation();
   const getActions = useCallback(() => (window as any).__studyCanvasActions, []);
   const openAuthModal = useUIStore(s => s.openAuthModal);
@@ -63,6 +75,18 @@ export function StudyToolbar({ tool, onToolChange, showInsertVerse, onOpenInsert
     setLocked(v => !v);
     getActions()?.toggleLock?.();
   }, [getActions]);
+
+  const handleDraw = useCallback(() => {
+    if (isGuest) { openAuthModal('login'); return; }
+    onToolChange('draw');
+  }, [isGuest, openAuthModal, onToolChange]);
+
+  const handleErase = useCallback(() => {
+    if (isGuest) { openAuthModal('login'); return; }
+    onToolChange('erase');
+  }, [isGuest, openAuthModal, onToolChange]);
+
+  const drawPopoverOpen = tool === 'draw';
 
   return (
     <>
@@ -98,6 +122,16 @@ export function StudyToolbar({ tool, onToolChange, showInsertVerse, onOpenInsert
               onClick={handleVerse}
               disabled={isGuest}
             />
+          </Tooltip>
+
+          <div className="h-px bg-border mx-1" />
+
+          {/* Draw */}
+          <Tooltip label={isGuest ? 'Log in to edit' : 'Draw (D)'} side="right">
+            <ToolbarButton icon={<Pencil className="w-4 h-4" />} active={tool === 'draw'} onClick={handleDraw} disabled={isGuest} />
+          </Tooltip>
+          <Tooltip label={isGuest ? 'Log in to edit' : 'Eraser (E)'} side="right">
+            <ToolbarButton icon={<Eraser className="w-4 h-4" />} active={tool === 'erase'} onClick={handleErase} disabled={isGuest} />
           </Tooltip>
 
           <div className="h-px bg-border mx-1" />
@@ -142,6 +176,90 @@ export function StudyToolbar({ tool, onToolChange, showInsertVerse, onOpenInsert
           </Tooltip>
         </div>
       </div>
+
+      {drawPopoverOpen && (
+        <div
+          className={cn(
+            'absolute top-1/2 -translate-y-1/2 z-10 transition-all duration-300',
+            biblePanelOpen ? 'left-[492px]' : 'left-[60px]',
+          )}
+        >
+          <div className="rounded-2xl bg-surface/95 backdrop-blur shadow-lg border border-border p-2 flex flex-col gap-2 min-w-[160px]">
+            <div className="text-2xs uppercase tracking-wide text-text-muted px-1">Brush</div>
+            <div className="flex gap-1">
+              {STROKE_KINDS.map(({ kind, icon, label }) => (
+                <Tooltip key={kind} label={label} side="bottom">
+                  <button
+                    onClick={() => onDrawSettingsChange({ ...drawSettings, kind })}
+                    className={cn(
+                      'w-7 h-7 flex items-center justify-center rounded-md text-text-secondary hover:text-text-primary hover:bg-bg-tertiary transition-colors',
+                      drawSettings.kind === kind && 'text-accent bg-bg-tertiary',
+                    )}
+                  >
+                    {icon}
+                  </button>
+                </Tooltip>
+              ))}
+            </div>
+
+            <div className="text-2xs uppercase tracking-wide text-text-muted px-1 mt-1">Color</div>
+            <div className="flex gap-1.5 px-1">
+              {DRAW_COLORS.map((c, i) => (
+                <Tooltip key={c} label={`${i + 1}`} side="bottom">
+                  <button
+                    onClick={() => onDrawSettingsChange({ ...drawSettings, color: c })}
+                    className={cn(
+                      'w-5 h-5 rounded-full border transition-transform',
+                      drawSettings.color === c ? 'border-text-primary scale-110' : 'border-border',
+                    )}
+                    style={{ backgroundColor: c }}
+                    aria-label={`Color ${i + 1}`}
+                  />
+                </Tooltip>
+              ))}
+            </div>
+
+            <div className="text-2xs uppercase tracking-wide text-text-muted px-1 mt-1">Size</div>
+            <div className="flex gap-1.5 items-center px-1">
+              {DRAW_SIZES.map((sz, i) => (
+                <Tooltip key={sz} label={`${i === 0 ? 'Small' : i === 1 ? 'Medium' : 'Large'} ([ ])`} side="bottom">
+                  <button
+                    onClick={() => onDrawSettingsChange({ ...drawSettings, size: sz })}
+                    className={cn(
+                      'h-7 px-2 rounded-md flex items-center justify-center hover:bg-bg-tertiary transition-colors',
+                      drawSettings.size === sz && 'bg-bg-tertiary',
+                    )}
+                  >
+                    <span
+                      className="rounded-full"
+                      style={{
+                        width: sz * 1.6,
+                        height: sz * 1.6,
+                        backgroundColor: drawSettings.color,
+                      }}
+                    />
+                  </button>
+                </Tooltip>
+              ))}
+            </div>
+
+            {(drawSettings.kind === 'rect' || drawSettings.kind === 'ellipse') && (
+              <>
+                <div className="h-px bg-border" />
+                <label className="flex items-center gap-2 px-1 text-xs text-text-secondary cursor-pointer select-none">
+                  <input
+                    type="checkbox"
+                    checked={drawSettings.filled}
+                    onChange={(e) => onDrawSettingsChange({ ...drawSettings, filled: e.target.checked })}
+                    className="accent-accent"
+                  />
+                  Filled
+                </label>
+              </>
+            )}
+          </div>
+        </div>
+      )}
 
       <InsertVerseModal open={showInsertVerse} onClose={onCloseInsertVerse} />
     </>

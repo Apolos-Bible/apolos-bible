@@ -3,6 +3,7 @@ import { VerseNode } from './VerseNode';
 import { PassageNode } from './PassageNode';
 import { CommentNode } from './CommentNode';
 import { AiNoteNode } from './AiNoteNode';
+import { DrawingNode } from './DrawingNode';
 
 export const studyNodeTypes = {
   sticky: StickyNode,
@@ -10,4 +11,5 @@ export const studyNodeTypes = {
   passage: PassageNode,
   comment: CommentNode,
   'ai-note': AiNoteNode,
+  drawing: DrawingNode,
 };

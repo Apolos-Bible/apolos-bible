@@ -10,8 +10,12 @@ import { StudyToolbar } from './StudyToolbar'
 import { StudyCanvas } from './StudyCanvas'
 import { BiblePanel } from './BiblePanel'
 import { StudyChatWidget } from './StudyChatWidget'
+import type { DrawSettings } from './DrawingLayer'
 
-export type Tool = 'select' | 'hand' | 'sticky' | 'verse'
+export type Tool = 'select' | 'hand' | 'sticky' | 'verse' | 'draw' | 'erase'
+
+export const DRAW_COLORS = ['#e5e7eb', '#ef4444', '#f59e0b', '#10b981', '#3b82f6', '#a855f7'] as const
+export const DRAW_SIZES = [2, 4, 8] as const
 
 export function StudyMode() {
   const navigate = useNavigate()
@@ -23,6 +27,13 @@ export function StudyMode() {
   const [tool, setTool] = useState<Tool>('select')
   const [showInsertVerse, setShowInsertVerse] = useState(false)
   const [biblePanelOpen, setBiblePanelOpen] = useState(false)
+  const [drawSettings, setDrawSettings] = useState<DrawSettings>({
+    kind: 'pen',
+    color: DRAW_COLORS[0],
+    size: DRAW_SIZES[1],
+    filled: false,
+  })
+  const [spaceHeld, setSpaceHeld] = useState(false)
 
   const sessionId = activeSession?.id ?? null
   const {
@@ -106,10 +117,65 @@ export function StudyMode() {
         setBiblePanelOpen(v => !v)
         return
       }
+      if (e.key === 'd' || e.key === 'D') { setTool('draw'); return }
+      if (e.key === 'e' || e.key === 'E') { setTool('erase'); return }
+
+      if (tool === 'draw') {
+        if (e.key === '[') {
+          setDrawSettings(s => {
+            const idx = Math.max(0, DRAW_SIZES.indexOf(s.size as typeof DRAW_SIZES[number]) - 1)
+            return { ...s, size: DRAW_SIZES[idx] }
+          })
+          return
+        }
+        if (e.key === ']') {
+          setDrawSettings(s => {
+            const i = DRAW_SIZES.indexOf(s.size as typeof DRAW_SIZES[number])
+            const idx = Math.min(DRAW_SIZES.length - 1, (i < 0 ? 0 : i) + 1)
+            return { ...s, size: DRAW_SIZES[idx] }
+          })
+          return
+        }
+        const colorIdx = ['1', '2', '3', '4', '5', '6'].indexOf(e.key)
+        if (colorIdx >= 0 && colorIdx < DRAW_COLORS.length) {
+          setDrawSettings(s => ({ ...s, color: DRAW_COLORS[colorIdx] }))
+          return
+        }
+      }
     }
     window.addEventListener('keydown', handleKey)
     return () => window.removeEventListener('keydown', handleKey)
-  }, [showInsertVerse, getActions, isGuest, openAuthModal])
+  }, [showInsertVerse, getActions, isGuest, openAuthModal, tool])
+
+  useEffect(() => {
+    if (tool !== 'draw' && tool !== 'erase') {
+      if (spaceHeld) setSpaceHeld(false)
+      return
+    }
+    const isInputTarget = (t: EventTarget | null) => {
+      const tag = (t as HTMLElement | null)?.tagName
+      return tag === 'INPUT' || tag === 'TEXTAREA' || (t as HTMLElement | null)?.isContentEditable
+    }
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.code !== 'Space' || e.repeat) return
+      if (isInputTarget(e.target)) return
+      e.preventDefault()
+      setSpaceHeld(true)
+    }
+    const onKeyUp = (e: KeyboardEvent) => {
+      if (e.code !== 'Space') return
+      setSpaceHeld(false)
+    }
+    const onBlur = () => setSpaceHeld(false)
+    window.addEventListener('keydown', onKeyDown)
+    window.addEventListener('keyup', onKeyUp)
+    window.addEventListener('blur', onBlur)
+    return () => {
+      window.removeEventListener('keydown', onKeyDown)
+      window.removeEventListener('keyup', onKeyUp)
+      window.removeEventListener('blur', onBlur)
+    }
+  }, [tool, spaceHeld])
 
   return (
     <div className="fixed inset-0 z-50 bg-bg-primary flex flex-col">
@@ -141,6 +207,8 @@ export function StudyMode() {
           biblePanelOpen={biblePanelOpen}
           onToggleBiblePanel={() => setBiblePanelOpen(v => !v)}
           isGuest={isGuest}
+          drawSettings={drawSettings}
+          onDrawSettingsChange={setDrawSettings}
         />
         <StudyCanvas
           tool={tool}
@@ -154,6 +222,8 @@ export function StudyMode() {
           setLocalSelection={setLocalSelection}
           setLocalDragging={setLocalDragging}
           isGuest={isGuest}
+          drawSettings={drawSettings}
+          spaceHeld={spaceHeld}
         />
         <BiblePanel open={biblePanelOpen} onClose={() => setBiblePanelOpen(false)} />
         {!isGuest && activeSession?.conversation_id && (
