@@ -2,7 +2,7 @@
 
 A desktop Bible study app built for focus, depth, and collaboration.
 
-> **Landing:** [tulia.study](https://tulia.study) · **Privacy:** [tulia.study/privacy](https://tulia.study/privacy) · **Terms:** [tulia.study/terms](https://tulia.study/terms) · **GitHub:** [freddysae0/bible-tauri](https://github.com/freddysae0/bible-tauri)
+> **Landing:** [tulia.study](https://tulia.study) · **Privacy:** [tulia.study/privacy](https://tulia.study/privacy) · **Terms:** [tulia.study/terms](https://tulia.study/terms) · **GitHub:** [tulia-study/tulia-bible](https://github.com/tulia-study/tulia-bible)
 
 <img width="1680" height="960" alt="Reading view with friends panel open — Genesis 1 with accepted friends visible in the sidebar" src="https://github.com/user-attachments/assets/7c0a9ca9-33ea-47bc-9cb8-3067a0514508" />
 <img width="3360" height="1918" alt="Command palette — search and jump to any book, chapter, or verse in a keystroke" src="https://github.com/user-attachments/assets/90be971d-51f7-449a-bb77-8ede0ae4b918" />
