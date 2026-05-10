@@ -52,6 +52,16 @@ Heavily inspired by the design philosophy of [Linear](https://linear.app): fast,
 
 ---
 
+## Pricing
+
+tulia.study is free. We generously offer features that cost us money to run — like AI-powered search, real-time collaboration, and synced highlights — because we believe everyone deserves access to good Bible study tools, especially those who can't afford them.
+
+In the future, we may offer a simple monthly subscription for extensive use of those features. Our goal isn't profit — it's sustainability. We want to keep building the best Bible study app out there, for years to come.
+
+Our purpose: to give you the tools you need to understand what God has for you, through His Word.
+
+---
+
 ## Installation
 
 ### macOS — first-time open
