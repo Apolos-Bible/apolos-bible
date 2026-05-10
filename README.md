@@ -2,7 +2,7 @@
 
 A desktop Bible study app built for focus, depth, and collaboration.
 
-> **Landing:** [tulia.study](https://tulia.study) · **Privacy:** [tulia.study/privacy](https://tulia.study/privacy) · **Terms:** [tulia.study/terms](https://tulia.study/terms) · **GitHub:** [tulia-study/tulia-bible](https://github.com/tulia-study/tulia-bible)
+> **Landing:** [tulia.study](https://tulia.study) · **Privacy:** [tulia.study/privacy](https://tulia.study/privacy) · **Terms:** [tulia.study/terms](https://tulia.study/terms) · **GitHub:** [Tulia-Study/tulia-bible](https://github.com/Tulia-Study/tulia-bible)
 
 <img width="1680" height="960" alt="Reading view with friends panel open — Genesis 1 with accepted friends visible in the sidebar" src="https://github.com/user-attachments/assets/7c0a9ca9-33ea-47bc-9cb8-3067a0514508" />
 <img width="3360" height="1918" alt="Command palette — search and jump to any book, chapter, or verse in a keystroke" src="https://github.com/user-attachments/assets/90be971d-51f7-449a-bb77-8ede0ae4b918" />
@@ -79,11 +79,11 @@ Windows may show *"Windows protected your PC"* when you first run the installer.
 
 ### Linux
 
-Download the AppImage or .deb from [GitHub Releases](https://github.com/freddysae0/bible-tauri/releases/latest). Make the AppImage executable with `chmod +x` before running.
+Download the AppImage or .deb from [GitHub Releases](https://github.com/Tulia-Study/tulia-bible/releases/latest). Make the AppImage executable with `chmod +x` before running.
 
 ### Android
 
-Download the .apk from [GitHub Releases](https://github.com/freddysae0/bible-tauri/releases/latest). You may need to allow installation from unknown sources in your device settings.
+Download the .apk from [GitHub Releases](https://github.com/Tulia-Study/tulia-bible/releases/latest). You may need to allow installation from unknown sources in your device settings.
 
 ### Web (offline / PWA)
 
