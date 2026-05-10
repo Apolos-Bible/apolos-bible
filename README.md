@@ -52,6 +52,19 @@ Heavily inspired by the design philosophy of [Linear](https://linear.app): fast,
 
 ---
 
+## Installation
+
+### macOS — first-time open
+
+The macOS builds aren't signed with an Apple Developer certificate yet (it's $99/year and the app is still early). Gatekeeper will say *"Apple could not verify Tulia Study is free of malware..."*. The code is open source — you can read every line in this repo. To open it the first time:
+
+- **macOS 14 and earlier**: in Finder, right-click `Tulia Study.app` → **Open**. The same warning appears, but now with an **Open** button. Only needed once.
+- **macOS 15 (Sequoia) and later**: open **System Settings → Privacy & Security**, scroll down, you'll see *"Tulia Study was blocked..."* → click **Open Anyway**.
+
+After that first launch, double-clicking works normally.
+
+---
+
 ## Development
 
 ```bash
