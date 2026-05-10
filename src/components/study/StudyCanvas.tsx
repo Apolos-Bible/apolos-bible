@@ -49,6 +49,7 @@ interface StudyCanvasProps {
   biblePanelOpen: boolean;
   doc: Y.Doc | null;
   connected: boolean;
+  synced: boolean;
   reconnectKey: number;
   users: AwarenessUser[];
   setLocalCursor: (x: number, y: number) => void;
@@ -145,6 +146,7 @@ function StudyCanvasInner({
   biblePanelOpen,
   doc,
   connected,
+  synced,
   reconnectKey,
   users,
   setLocalCursor,
@@ -423,6 +425,10 @@ function StudyCanvasInner({
     if (!doc || !activeSession || !user || isGuest) return;
     if (activeSession.type === 'free') return;
     if (!activeSession.anchor_ref) return;
+    // Wait for the Y.Doc to finish syncing from the server before deciding the
+    // canvas is empty — otherwise we re-seed the verses every visit because
+    // the local map starts empty until the snapshot arrives.
+    if (!synced) return;
 
     const isHost = activeSession.host_user_id === Number(user.id);
     if (!isHost) return;
@@ -538,7 +544,7 @@ function StudyCanvasInner({
 
     void seed();
     return () => { cancelled = true; };
-  }, [doc, activeSession, user, versionId, screenToFlowPosition, isGuest]);
+  }, [doc, synced, activeSession, user, versionId, screenToFlowPosition, isGuest]);
 
   // --- React Flow changes → Yjs ---
   const handleNodesChange: OnNodesChange = useCallback(

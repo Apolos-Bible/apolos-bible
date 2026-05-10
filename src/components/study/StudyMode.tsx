@@ -28,6 +28,7 @@ export function StudyMode() {
   const {
     doc,
     connected,
+    synced,
     reconnectKey,
     users,
     setLocalCursor,
@@ -146,6 +147,7 @@ export function StudyMode() {
           biblePanelOpen={biblePanelOpen}
           doc={doc}
           connected={connected}
+          synced={synced}
           reconnectKey={reconnectKey}
           users={users}
           setLocalCursor={setLocalCursor}

@@ -17,6 +17,7 @@ export function useStudySession(sessionId: string | null, wsToken: string | null
   const providerRef = useRef<HocuspocusProvider | null>(null);
   const [doc, setDoc] = useState<Y.Doc | null>(null);
   const [connected, setConnected] = useState(false);
+  const [synced, setSynced] = useState(false);
   const [reconnectKey, setReconnectKey] = useState(0);
   const [users, setUsers] = useState<AwarenessUser[]>([]);
 
@@ -25,6 +26,7 @@ export function useStudySession(sessionId: string | null, wsToken: string | null
     if (!sessionId || !wsToken) {
       setDoc(null);
       setConnected(false);
+      setSynced(false);
       return;
     }
 
@@ -71,9 +73,15 @@ export function useStudySession(sessionId: string | null, wsToken: string | null
       }
     };
 
+    const onSynced = (e: { state: boolean }) => {
+      setSynced(Boolean(e?.state));
+    };
+
     provider.awareness.on('change', onAwareness);
     provider.on('status', onStatus);
+    provider.on('synced', onSynced);
     setConnected(provider.status === 'connected');
+    setSynced(Boolean((provider as { synced?: boolean }).synced));
     onAwareness();
 
     if (provider.document) {
@@ -82,11 +90,13 @@ export function useStudySession(sessionId: string | null, wsToken: string | null
 
     return () => {
       provider.off('status', onStatus);
+      provider.off('synced', onSynced);
       provider.awareness.off('change', onAwareness);
       destroyProvider(sessionId);
       providerRef.current = null;
       setDoc(null);
       setConnected(false);
+      setSynced(false);
       setUsers([]);
     };
   }, [sessionId, wsToken]);
@@ -111,6 +121,7 @@ export function useStudySession(sessionId: string | null, wsToken: string | null
     provider: providerRef.current,
     doc,
     connected,
+    synced,
     reconnectKey,
     users,
     setLocalCursor,
