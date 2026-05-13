@@ -45,7 +45,7 @@ export function FriendSearch() {
       <div className="relative">
         <svg
           viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5"
-          className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3 h-3 text-text-muted pointer-events-none"
+          className="absolute left-3 md:left-2.5 top-1/2 -translate-y-1/2 w-4 h-4 md:w-3 md:h-3 text-text-muted pointer-events-none"
           aria-hidden="true"
         >
           <circle cx="6.5" cy="6.5" r="4" />
@@ -56,12 +56,12 @@ export function FriendSearch() {
           onChange={(e) => setQuery(e.target.value)}
           placeholder={t('friends.searchPlaceholder')}
           aria-label={t('friends.searchAria')}
-          className="w-full bg-bg-tertiary border border-border-subtle rounded px-3 py-1.5 pl-7 text-xs text-text-primary placeholder:text-text-muted focus:outline-none focus:border-accent transition-colors"
+          className="w-full h-11 md:h-auto bg-bg-tertiary border border-border-subtle rounded px-3 md:py-1.5 pl-10 md:pl-7 text-[15px] md:text-xs text-text-primary placeholder:text-text-muted focus:outline-none focus:border-accent transition-colors"
         />
       </div>
 
       {isSearching && (
-        <p className="text-2xs text-text-muted mt-2 px-1">{t('friends.searching')}</p>
+        <p className="text-xs md:text-2xs text-text-muted mt-2 px-1">{t('friends.searching')}</p>
       )}
 
       {results.length > 0 && (
@@ -70,23 +70,23 @@ export function FriendSearch() {
             const isFriend  = friendIds.has(user.id)
             const isPending = sentIds.has(user.id)
             return (
-              <div key={user.id} className="flex items-center gap-2.5 px-2 py-1.5 rounded hover:bg-bg-tertiary transition-colors">
-                <div className="w-6 h-6 rounded-full bg-bg-tertiary border border-border-subtle flex items-center justify-center text-2xs text-text-secondary font-medium shrink-0 select-none">
+              <div key={user.id} className="flex items-center gap-3 md:gap-2.5 px-2 py-3 md:py-1.5 rounded hover:bg-bg-tertiary transition-colors">
+                <div className="w-10 h-10 md:w-6 md:h-6 rounded-full bg-bg-tertiary border border-border-subtle flex items-center justify-center text-sm md:text-2xs text-text-secondary font-medium shrink-0 select-none">
                   {(user.name.charAt(0) || '?').toUpperCase()}
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="text-xs text-text-primary truncate">{user.name}</p>
-                  <p className="text-2xs text-text-muted truncate">{user.email}</p>
+                  <p className="text-[15px] md:text-xs text-text-primary truncate">{user.name}</p>
+                  <p className="text-xs md:text-2xs text-text-muted truncate">{user.email}</p>
                 </div>
                 {isFriend ? (
-                  <span className="text-2xs text-text-muted shrink-0">{t('friends.alreadyFriends')}</span>
+                  <span className="text-xs md:text-2xs text-text-muted shrink-0">{t('friends.alreadyFriends')}</span>
                 ) : isPending ? (
-                  <span className="text-2xs text-text-muted italic shrink-0">{t('friends.requestSent')}</span>
+                  <span className="text-xs md:text-2xs text-text-muted italic shrink-0">{t('friends.requestSent')}</span>
                 ) : (
                   <button
                     onClick={() => handleSend(user.id, user.name)}
                     aria-label={t('friends.sendRequestTo', { name: user.name })}
-                    className="text-2xs px-2 py-0.5 rounded border border-border-subtle text-text-secondary hover:text-accent hover:border-accent transition-colors shrink-0"
+                    className="text-sm md:text-2xs h-9 md:h-auto px-3 md:px-2 md:py-0.5 rounded border border-border-subtle text-text-secondary hover:text-accent hover:border-accent transition-colors shrink-0"
                   >
                     {t('friends.add')}
                   </button>
@@ -98,7 +98,7 @@ export function FriendSearch() {
       )}
 
       {query.trim().length >= 2 && !isSearching && results.length === 0 && (
-        <p className="text-2xs text-text-muted mt-2 px-1">{t('friends.noUsersFound')}</p>
+        <p className="text-xs md:text-2xs text-text-muted mt-2 px-1">{t('friends.noUsersFound')}</p>
       )}
     </div>
   )

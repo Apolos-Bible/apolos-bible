@@ -1,11 +1,14 @@
 import { useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
+import { UsersRound } from 'lucide-react'
 import { useChatStore } from '@/lib/store/useChatStore'
 import { useAuthStore } from '@/lib/store/useAuthStore'
+import { UserAvatar } from '@/components/auth/UserAvatar'
 import { MessageItem } from './MessageItem'
 import { MessageInput } from './MessageInput'
 import { TypingDots } from './TypingDots'
 import { ManageConversationDialog } from './ManageConversationDialog'
+import { PanelHeader, PanelHeaderButton } from '@/components/layout/PanelHeader'
 import type { Conversation, ChatMessage } from '@/lib/chatApi'
 
 const EMPTY_MESSAGES: ChatMessage[] = []
@@ -80,10 +83,17 @@ export function ChatThread({ conversation, onBack }: ChatThreadProps) {
       rendered.push({
         key: `day-${day}`,
         node: (
-          <div className="flex items-center gap-2 px-2 my-3" key={`day-${day}-${idx}`}>
-            <div className="flex-1 h-px bg-border-subtle" />
-            <span className="text-2xs uppercase tracking-wider text-text-muted">{dayLabel(m.created_at)}</span>
-            <div className="flex-1 h-px bg-border-subtle" />
+          <div className="flex items-center justify-center my-4 md:my-3" key={`day-${day}-${idx}`}>
+            {/* Mobile: centered pill, more editorial */}
+            <span className="md:hidden inline-flex items-center px-3 h-6 rounded-full bg-bg-tertiary text-[11px] font-medium tracking-wide text-text-muted">
+              {dayLabel(m.created_at)}
+            </span>
+            {/* Desktop: original separator unchanged */}
+            <div className="hidden md:flex items-center gap-2 px-2 w-full">
+              <div className="flex-1 h-px bg-border-subtle" />
+              <span className="text-2xs uppercase tracking-wider text-text-muted">{dayLabel(m.created_at)}</span>
+              <div className="flex-1 h-px bg-border-subtle" />
+            </div>
           </div>
         ),
       })
@@ -115,54 +125,71 @@ export function ChatThread({ conversation, onBack }: ChatThreadProps) {
     prev = m
   })
 
+  const isGroup = conversation.type === 'group'
+  const otherEmail = conversation.participants.find(p => p.id !== selfId)?.email
+    ?? conversation.participants[0]?.email
+    ?? '?'
+  const headerTitle = conversationTitle(conversation, selfId, t('chat.directMessage'))
+
   return (
     <>
-      {/* Header */}
-      <div className="flex items-center gap-2 px-4 py-3 border-b border-border-subtle shrink-0">
-        <button
-          onClick={onBack}
-          className="p-1 rounded text-text-muted hover:text-text-primary hover:bg-bg-tertiary"
-          aria-label={t('chat.backToConversations')}
-        >
-          <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" className="w-4 h-4">
-            <path d="M10 3l-5 5 5 5" strokeLinecap="round" strokeLinejoin="round" />
-          </svg>
-        </button>
-        <div className="flex-1 min-w-0">
-          <p className="text-sm font-medium text-text-primary truncate">
-            {conversationTitle(conversation, selfId, t('chat.directMessage'))}
-          </p>
-          {conversation.type === 'group' && (
-            <p className="text-2xs text-text-muted truncate">
-              {t('chat.member', { count: conversation.participants.length })}
-            </p>
-          )}
-        </div>
-        {conversation.type === 'group' && !conversation.study_session_id && (
-          <button
-            onClick={() => setManageOpen(true)}
-            className="p-1 rounded text-text-muted hover:text-text-primary hover:bg-bg-tertiary"
-            aria-label={t('chat.manageGroup')}
-            title={t('chat.manageGroup')}
-          >
-            <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" className="w-4 h-4">
-              <path d="M8 3.5v9M3.5 8h9" strokeLinecap="round" />
-            </svg>
-          </button>
-        )}
-      </div>
+      <PanelHeader
+        leading={
+          <div className="flex items-center gap-1.5">
+            <PanelHeaderButton onClick={onBack} aria-label={t('chat.backToConversations')}>
+              <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.75" className="h-5 w-5 md:h-4 md:w-4">
+                <path d="M10 3l-5 5 5 5" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
+            </PanelHeaderButton>
+            {/* Mobile-only: avatar anchors the header so you feel inside a conversation */}
+            <span className="md:hidden ml-1 shrink-0">
+              {isGroup ? (
+                <span className="w-9 h-9 rounded-full bg-accent/15 text-accent flex items-center justify-center">
+                  <UsersRound className="w-4 h-4" strokeWidth={1.75} />
+                </span>
+              ) : (
+                <UserAvatar email={otherEmail} size="md" className="w-9 h-9 text-sm" />
+              )}
+            </span>
+          </div>
+        }
+        title={headerTitle}
+        description={isGroup ? t('chat.member', { count: conversation.participants.length }) : undefined}
+        actions={
+          isGroup && !conversation.study_session_id ? (
+            <PanelHeaderButton onClick={() => setManageOpen(true)} aria-label={t('chat.manageGroup')} title={t('chat.manageGroup')}>
+              <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.75" className="h-5 w-5 md:h-4 md:w-4">
+                <path d="M8 3.5v9M3.5 8h9" strokeLinecap="round" />
+              </svg>
+            </PanelHeaderButton>
+          ) : undefined
+        }
+      />
 
       {/* Messages */}
       <div
         ref={scrollRef}
         onScroll={handleScroll}
-        className="flex-1 overflow-y-auto px-3 py-3 flex flex-col"
+        className="flex-1 overflow-y-auto px-4 md:px-3 py-3 flex flex-col"
       >
         {loading && messages.length === 0 && (
           <p className="text-xs text-text-muted text-center py-6">{t('chat.loadingMessages')}</p>
         )}
         {!loading && messages.length === 0 && (
-          <p className="text-xs text-text-muted text-center py-6">{t('chat.noMessagesYet')}</p>
+          <>
+            {/* Mobile: editorial empty thread */}
+            <div className="md:hidden flex-1 flex flex-col items-center justify-center text-center px-6">
+              <h2 className="font-reading italic text-xl text-text-primary mb-2">
+                {t('chat.thread.empty.headline')}
+              </h2>
+              <p className="text-[15px] leading-relaxed text-text-muted max-w-[16rem]">
+                {t('chat.thread.empty.body')}
+              </p>
+            </div>
+            <p className="hidden md:block text-xs text-text-muted text-center py-6">
+              {t('chat.noMessagesYet')}
+            </p>
+          </>
         )}
         {rendered.map(r => r.node)}
 

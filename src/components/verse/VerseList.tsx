@@ -1,5 +1,5 @@
 
-import { useEffect } from 'react'
+import { useEffect, useRef } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useVerseStore } from '@/lib/store/useVerseStore'
 import type { Verse } from '@/lib/store/useVerseStore'
@@ -157,6 +157,8 @@ export function VerseList() {
   const setReadingMode = useUIStore((s) => s.setReadingMode)
   const addToast       = useUIStore((s) => s.addToast)
   const openAuthModal  = useUIStore((s) => s.openAuthModal)
+  const mobileChromeCollapsed = useUIStore((s) => s.mobileChromeCollapsed)
+  const setMobileChromeCollapsed = useUIStore((s) => s.setMobileChromeCollapsed)
 
   const notes      = useNoteStore((s) => s.notes)
   const notesLoading = useNoteStore((s) => s.loading)
@@ -181,6 +183,56 @@ export function VerseList() {
   const verseIdsWithRefs    = useCrossRefStore((s) => s.verseIdsWithRefs)
   const loadChapterRefs     = useCrossRefStore((s) => s.loadChapterRefs)
   const openCrossRefs       = useCrossRefStore((s) => s.openPanel)
+
+  const scrollRef = useRef<HTMLDivElement>(null)
+  const lastScrollTop = useRef(0)
+  const scrollAcc = useRef(0)
+
+  useEffect(() => {
+    setMobileChromeCollapsed(false)
+    lastScrollTop.current = 0
+    scrollAcc.current = 0
+  }, [selectedBook, selectedChapter, setMobileChromeCollapsed])
+
+  const handleScroll = () => {
+    if (typeof window !== 'undefined' && window.innerWidth >= 768) return
+    const el = scrollRef.current
+    if (!el) return
+    const st = el.scrollTop
+    const delta = st - lastScrollTop.current
+    lastScrollTop.current = st
+
+    const atTop = st <= 8
+    // Wide near-bottom zone so chrome reappearing (which shifts layout)
+    // doesn't immediately flip atBottom back to false and ping-pong.
+    const nearBottom = st + el.clientHeight >= el.scrollHeight - 160
+
+    if (atTop || nearBottom) {
+      scrollAcc.current = 0
+      if (mobileChromeCollapsed) setMobileChromeCollapsed(false)
+      return
+    }
+
+    // Accumulate small deltas (touch scroll often fires <6px per event)
+    // and reset when direction flips so a real reversal triggers quickly.
+    if ((delta > 0 && scrollAcc.current < 0) || (delta < 0 && scrollAcc.current > 0)) {
+      scrollAcc.current = 0
+    }
+    scrollAcc.current += delta
+
+    const THRESHOLD = 24
+    if (scrollAcc.current > THRESHOLD && !mobileChromeCollapsed) {
+      setMobileChromeCollapsed(true)
+      scrollAcc.current = 0
+    } else if (scrollAcc.current < -THRESHOLD && mobileChromeCollapsed) {
+      setMobileChromeCollapsed(false)
+      scrollAcc.current = 0
+    }
+  }
+
+  useEffect(() => {
+    return () => setMobileChromeCollapsed(false)
+  }, [setMobileChromeCollapsed])
 
   useEffect(() => {
     if (verses.length) loadHighlightsForChapter(verses.map((v) => v.apiId))
@@ -562,55 +614,32 @@ export function VerseList() {
       {verses.length === 0 ? (
         <EmptyState message={t('verse.empty')} />
       ) : (
-        <div className="flex-1 overflow-y-auto no-scrollbar relative">
+        <div ref={scrollRef} onScroll={handleScroll} className="flex-1 overflow-y-auto no-scrollbar relative">
 
           {/* Mobile keeps navigation/display primary; study tools appear after selecting a verse. */}
-          <div className="sticky top-0 z-10 bg-bg-secondary pointer-events-none pt-[env(safe-area-inset-top)]">
+          <div
+            className={cn(
+              'sticky top-0 z-10 bg-bg-secondary pointer-events-none pt-[env(safe-area-inset-top)] transition-[transform,opacity,max-height] duration-300 ease-out origin-top md:!translate-y-0 md:!opacity-100 md:!max-h-[unset]',
+              mobileChromeCollapsed && 'max-h-0 -translate-y-full opacity-0 overflow-hidden',
+            )}
+          >
             <div className="flex flex-wrap items-center justify-between gap-2 border-b border-border-subtle px-3 py-2 md:border-b-0 md:bg-transparent md:px-4 md:py-2">
               <div className="hidden md:block pointer-events-auto">
                 <PresenceAvatars users={others} />
               </div>
-              <div className="flex items-center gap-2 pointer-events-auto md:hidden">
-                <button
-                  onClick={() => navigateChapter('prev')}
-                  disabled={prevDisabled}
-                  aria-label={t('verse.previousChapter')}
-                  className={cn(
-                    'h-9 min-w-9 rounded-md border px-2 text-xs transition-colors',
-                    prevDisabled
-                      ? 'opacity-40 border-border-subtle text-text-muted'
-                      : 'border-border-subtle bg-bg-tertiary text-text-secondary',
-                  )}
-                >
-                  {t('verse.prev')}
-                </button>
-                <button
-                  onClick={() => navigateChapter('next')}
-                  disabled={nextDisabled}
-                  aria-label={t('verse.nextChapter')}
-                  className={cn(
-                    'h-9 min-w-9 rounded-md border px-2 text-xs transition-colors',
-                    nextDisabled
-                      ? 'opacity-40 border-border-subtle text-text-muted'
-                      : 'border-border-subtle bg-bg-tertiary text-text-secondary',
-                  )}
-                >
-                  {t('verse.next')}
-                </button>
-              </div>
-              <div className="flex gap-2 items-center">
+              <div className="flex gap-2 items-center ml-auto">
                 <div className="hidden md:block">
                   <ReadingToolbar />
                 </div>
                 <div className="md:hidden">
                   <ReadingToolbar showVerseActions={false} />
                 </div>
-                <div className="flex gap-0.5 bg-bg-tertiary border border-border-subtle rounded-md p-0.5 pointer-events-auto shadow-sm">
+                <div className="flex gap-0.5 bg-bg-tertiary border border-border-subtle rounded-md p-0.5 md:p-0.5 pointer-events-auto shadow-sm">
                   <Tooltip label={t('verse.verseMode')} side="bottom">
                     <button
                       onClick={() => setReadingMode('verse')}
                       className={cn(
-                        'p-1.5 rounded transition-colors duration-100',
+                        'p-2.5 md:p-1.5 rounded transition-colors duration-100',
                         readingMode === 'verse' ? 'bg-bg-secondary text-accent shadow-sm' : 'text-text-muted hover:text-text-secondary',
                       )}
                     >
@@ -621,7 +650,7 @@ export function VerseList() {
                     <button
                       onClick={() => setReadingMode('flow')}
                       className={cn(
-                        'p-1.5 rounded transition-colors duration-100',
+                        'p-2.5 md:p-1.5 rounded transition-colors duration-100',
                         readingMode === 'flow' ? 'bg-bg-secondary text-accent shadow-sm' : 'text-text-muted hover:text-text-secondary',
                       )}
                     >
@@ -761,7 +790,7 @@ export function VerseList() {
                             selectVerse(verse.id)
                             openStudyPanel(verse.id)
                           }}
-                          className="shrink-0 self-start mt-1 inline-flex h-6 w-6 items-center justify-center rounded-md text-accent/70 hover:text-accent hover:bg-bg-tertiary"
+                          className="shrink-0 self-start mt-0.5 inline-flex h-9 w-9 md:h-6 md:w-6 items-center justify-center rounded-md text-accent/70 hover:text-accent hover:bg-bg-tertiary"
                           aria-label={t('verse.openNotes')}
                           title={t('verse.openNotes')}
                         >
@@ -775,7 +804,7 @@ export function VerseList() {
                           openVerseMenuFromButton(e.currentTarget, verse)
                         }}
                         className={cn(
-                          'shrink-0 self-start mt-0.5 inline-flex h-8 w-8 items-center justify-center rounded-md text-text-muted hover:text-text-primary hover:bg-bg-tertiary',
+                          'shrink-0 self-start mt-0.5 inline-flex h-10 w-10 md:h-8 md:w-8 items-center justify-center rounded-md text-text-muted hover:text-text-primary hover:bg-bg-tertiary',
                           selectedVerseIds.length > 1 ? 'hidden' : 'md:hidden',
                         )}
                         aria-label={t('verse.openActions', { verse: verse.verse })}

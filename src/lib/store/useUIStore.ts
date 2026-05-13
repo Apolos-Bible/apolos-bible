@@ -36,6 +36,10 @@ type UIStore = {
   studyMode: boolean
   commentaryOpen: boolean
   mobileSidebarOpen: boolean
+  mobileBookPickerOpen: boolean
+  mobileSearchOpen: boolean
+  mobileChromeCollapsed: boolean
+  setMobileChromeCollapsed: (v: boolean) => void
   showOthersNotes: boolean
   toggleCommentary: () => void
   toggleShowOthersNotes: () => void
@@ -55,6 +59,10 @@ type UIStore = {
   openMobileSidebar: () => void
   closeMobileSidebar: () => void
   toggleMobileSidebar: () => void
+  openMobileBookPicker: () => void
+  closeMobileBookPicker: () => void
+  openMobileSearch: () => void
+  closeMobileSearch: () => void
   addToast: (message: string, type?: Toast['type'], options?: { action?: Toast['action']; duration?: number }) => string
   removeToast: (id: string) => void
   openPanel: (panel: Panel) => void
@@ -87,6 +95,10 @@ export const useUIStore = create<UIStore>((set) => ({
   studyMode: false,
   commentaryOpen: false,
   mobileSidebarOpen: false,
+  mobileBookPickerOpen: false,
+  mobileSearchOpen: false,
+  mobileChromeCollapsed: false,
+  setMobileChromeCollapsed: (v) => set({ mobileChromeCollapsed: v }),
   showOthersNotes: savedShowOthers,
   toggleCommentary: () => set((s) => ({ commentaryOpen: !s.commentaryOpen })),
   toggleShowOthersNotes: () =>
@@ -118,6 +130,10 @@ export const useUIStore = create<UIStore>((set) => ({
   openMobileSidebar: () => set({ mobileSidebarOpen: true }),
   closeMobileSidebar: () => set({ mobileSidebarOpen: false }),
   toggleMobileSidebar: () => set((s) => ({ mobileSidebarOpen: !s.mobileSidebarOpen })),
+  openMobileBookPicker: () => set({ mobileBookPickerOpen: true }),
+  closeMobileBookPicker: () => set({ mobileBookPickerOpen: false }),
+  openMobileSearch: () => set({ mobileSearchOpen: true }),
+  closeMobileSearch: () => set({ mobileSearchOpen: false }),
 
   addToast: (message, type = 'info', options) => {
     const id = `toast-${++_toastSeq}-${Date.now()}`

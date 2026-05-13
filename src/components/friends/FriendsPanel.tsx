@@ -6,6 +6,7 @@ import { useUIStore } from '@/lib/store/useUIStore'
 import { FriendCard } from './FriendCard'
 import { FriendRequestCard } from './FriendRequestCard'
 import { FriendSearch } from './FriendSearch'
+import { PanelHeader } from '@/components/layout/PanelHeader'
 import type { Friend } from '@/types'
 
 const UNDO_DURATION = 4000
@@ -81,31 +82,23 @@ export function FriendsPanel() {
 
   return (
     <div className="w-full md:w-panel h-full bg-bg-primary border-r border-border-subtle flex flex-col overflow-hidden">
-      {/* Header */}
-      <div className="flex items-center justify-between px-4 py-3 border-b border-border-subtle shrink-0">
-        <span className="text-sm font-medium text-text-primary">{t('friends.title')}</span>
-        <button
-          onClick={closePanel}
-          aria-label={t('friends.closePanel')}
-          className="text-text-muted hover:text-text-primary transition-colors"
-        >
-          <svg aria-hidden="true" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" className="w-4 h-4">
-            <path d="M3 3l10 10M13 3L3 13" strokeLinecap="round" />
-          </svg>
-        </button>
-      </div>
+      <PanelHeader
+        title={t('friends.title')}
+        onClose={closePanel}
+        closeLabel={t('friends.closePanel')}
+      />
 
       <div className="flex-1 overflow-y-auto">
         {/* Search */}
         <div className="pt-3 pb-2">
-          <p className="text-2xs uppercase tracking-wider text-text-muted px-4 pb-2 select-none">{t('friends.addPeople')}</p>
+          <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-text-muted px-4 pb-2 select-none">{t('friends.addPeople')}</p>
           <FriendSearch />
         </div>
 
         {/* Received requests */}
         {received.length > 0 && (
           <div className="border-t border-border-subtle pt-3 pb-2">
-            <p className="text-2xs uppercase tracking-wider text-text-muted px-4 pb-2 select-none">
+            <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-text-muted px-4 pb-2 select-none">
               {t('friends.requests', { count: received.length })}
             </p>
             <div className="flex flex-col gap-1 px-2">
@@ -125,7 +118,7 @@ export function FriendsPanel() {
         {/* Sent requests */}
         {sent.length > 0 && (
           <div className="border-t border-border-subtle pt-3 pb-2">
-            <p className="text-2xs uppercase tracking-wider text-text-muted px-4 pb-2 select-none">{t('friends.sent')}</p>
+            <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-text-muted px-4 pb-2 select-none">{t('friends.sent')}</p>
             <div className="flex flex-col gap-1 px-2">
               {sent.map((req) => (
                 <FriendRequestCard
@@ -141,7 +134,7 @@ export function FriendsPanel() {
 
         {/* Friends list */}
         <div className="border-t border-border-subtle pt-3 pb-4">
-          <p className="text-2xs uppercase tracking-wider text-text-muted px-4 pb-2 select-none">
+          <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-text-muted px-4 pb-2 select-none">
             {friends.length > 0 ? t('friends.friendsCount', { count: friends.length }) : t('friends.title')}
           </p>
           {friends.length === 0 ? (

@@ -26,6 +26,7 @@ import { useStudyStore } from '@/lib/store/useStudyStore';
 import { useAuthStore } from '@/lib/store/useAuthStore';
 import { useUIStore } from '@/lib/store/useUIStore';
 import { useVerseStore } from '@/lib/store/useVerseStore';
+import { useIsMobile } from '@/lib/useIsMobile';
 import {
   getNodesMap,
   getEdgesMap,
@@ -161,6 +162,7 @@ function StudyCanvasInner({
   spaceHeld,
 }: StudyCanvasProps) {
   const activeSession = useStudyStore((s) => s.activeSession);
+  const isMobile = useIsMobile();
   const { screenToFlowPosition, zoomIn, zoomOut, fitView } = useReactFlow();
   const isInteractive = useStore((s) => s.nodesDraggable || s.nodesConnectable || s.elementsSelectable);
   const rfStore = useStoreApi();
@@ -1210,16 +1212,18 @@ useEffect(() => {
             size={1}
             color="var(--color-text-muted)"
           />
-          <MiniMap
-            position="top-right"
-            className="!bg-surface !border-border !rounded-lg"
-            maskColor="var(--color-bg-primary)"
-            nodeColor={(n: Node) => {
-              if (n.type === 'sticky') return '#eab308';
-              if (n.type === 'verse') return '#c8a96a';
-              return '#6b7280';
-            }}
-          />
+          {!isMobile && (
+            <MiniMap
+              position="top-right"
+              className="!bg-surface !border-border !rounded-lg"
+              maskColor="var(--color-bg-primary)"
+              nodeColor={(n: Node) => {
+                if (n.type === 'sticky') return '#eab308';
+                if (n.type === 'verse') return '#c8a96a';
+                return '#6b7280';
+              }}
+            />
+          )}
           <RemoteCursors users={users} currentUserId={user?.id} />
           <DrawingLayer
             active={!isGuest && (tool === 'draw' || tool === 'erase')}

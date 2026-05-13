@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next'
 import { useVerseStore } from '@/lib/store/useVerseStore'
 import type { Book } from '@/lib/store/useVerseStore'
 import { useUIStore } from '@/lib/store/useUIStore'
+import { useIsMobile } from '@/lib/useIsMobile'
 import { cn } from '@/lib/cn'
 
 interface BookGroupProps {
@@ -14,9 +15,10 @@ interface BookGroupProps {
   selectedChapter: number
   onOpenBook: (id: string) => void
   onSelectChapter: (bookId: string, chapter: number) => void
+  isMobile?: boolean
 }
 
-function BookGroup({ label, books, selectedBook, openBook, selectedChapter, onOpenBook, onSelectChapter }: BookGroupProps) {
+function BookGroup({ label, books, selectedBook, openBook, selectedChapter, onOpenBook, onSelectChapter, isMobile = false }: BookGroupProps) {
   return (
     <div>
       <p className="text-2xs uppercase tracking-wider text-text-muted px-4 py-1 select-none">
@@ -34,7 +36,8 @@ function BookGroup({ label, books, selectedBook, openBook, selectedChapter, onOp
               onClick={() => onOpenBook(book.id)}
               aria-expanded={isOpen}
               className={cn(
-                'flex w-full items-center gap-2 px-4 py-1.5 text-left text-sm transition-colors duration-100',
+                'flex w-full items-center gap-2 px-4 text-left transition-colors duration-100',
+                isMobile ? 'py-3 text-[15px]' : 'py-1.5 text-sm',
                 isActiveBook
                   ? 'text-accent bg-bg-tertiary font-medium'
                   : 'text-text-secondary hover:text-text-primary hover:bg-bg-tertiary',
@@ -65,7 +68,7 @@ function BookGroup({ label, books, selectedBook, openBook, selectedChapter, onOp
               aria-hidden={!isOpen}
             >
               <div className="min-h-0 overflow-hidden">
-                <div className="grid grid-cols-6 gap-1 px-4 py-2">
+                <div className={cn('grid gap-1 px-4 py-2', isMobile ? 'grid-cols-5' : 'grid-cols-6')}>
                   {chapters.map((chapter) => {
                     const isCurrent = isActiveBook && selectedChapter === chapter
 
@@ -76,7 +79,8 @@ function BookGroup({ label, books, selectedBook, openBook, selectedChapter, onOp
                         onClick={() => onSelectChapter(book.id, chapter)}
                         tabIndex={isOpen ? 0 : -1}
                         className={cn(
-                          'h-7 rounded text-xs transition-colors duration-100',
+                          'rounded transition-colors duration-100',
+                          isMobile ? 'h-11 text-sm' : 'h-7 text-xs',
                           isCurrent
                             ? 'bg-accent text-bg-primary font-medium'
                             : 'text-text-muted hover:bg-bg-tertiary hover:text-text-primary',
@@ -103,12 +107,15 @@ export function BookSelector() {
   const selectedChapter = useVerseStore((s) => s.selectedChapter)
   const loadChapter = useVerseStore((s) => s.loadChapter)
   const closeMobileSidebar = useUIStore((s) => s.closeMobileSidebar)
+  const closeMobileBookPicker = useUIStore((s) => s.closeMobileBookPicker)
+  const isMobile = useIsMobile()
   const [openBook, setOpenBook] = useState(selectedBook)
   const scrollRef = useRef<HTMLDivElement>(null)
 
   const handleSelectChapter = (bookId: string, chapter: number) => {
     loadChapter(bookId, chapter)
     closeMobileSidebar()
+    closeMobileBookPicker()
   }
 
   useEffect(() => {
@@ -146,6 +153,7 @@ export function BookSelector() {
         selectedChapter={selectedChapter}
         onOpenBook={setOpenBook}
         onSelectChapter={handleSelectChapter}
+        isMobile={isMobile}
       />
       <div className="mt-2">
         <BookGroup
@@ -156,6 +164,7 @@ export function BookSelector() {
           selectedChapter={selectedChapter}
           onOpenBook={setOpenBook}
           onSelectChapter={handleSelectChapter}
+          isMobile={isMobile}
         />
       </div>
     </div>

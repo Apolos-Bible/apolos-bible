@@ -4,6 +4,7 @@ import { useAuthStore } from '@/lib/store/useAuthStore'
 import { useVerseStore } from '@/lib/store/useVerseStore'
 import { useUIStore } from '@/lib/store/useUIStore'
 import { api } from '@/lib/api'
+import { PanelHeader } from '@/components/layout/PanelHeader'
 
 interface UserNote {
   id: number
@@ -48,28 +49,29 @@ export function MyNotesPanel() {
   }
 
   return (
-    <div className="flex flex-col h-full">
-      <div className="px-4 py-3 border-b border-border-subtle flex items-center justify-between shrink-0">
-        <span className="text-sm font-medium text-text-primary">{t('nav.myNotes')}</span>
-        <button onClick={closePanel} className="text-text-muted hover:text-text-primary text-lg leading-none">×</button>
-      </div>
+    <div className="flex flex-col h-full bg-bg-secondary md:bg-transparent">
+      <PanelHeader
+        title={t('nav.myNotes')}
+        onClose={closePanel}
+        closeLabel={t('common.close')}
+      />
       <div className="flex-1 overflow-y-auto">
         {loading ? (
-          <p className="text-xs text-text-muted text-center py-8">{t('common.loading')}</p>
+          <p className="text-sm md:text-xs text-text-muted text-center py-8">{t('common.loading')}</p>
         ) : notes.length === 0 ? (
-          <p className="text-xs text-text-muted text-center py-8">{t('notes.empty')}</p>
+          <p className="text-sm md:text-xs text-text-muted text-center py-8">{t('notes.empty')}</p>
         ) : (
           notes.map(n => (
             <button
               key={n.id}
               onClick={() => handleNoteClick(n)}
-              className="w-full text-left px-4 py-3 border-b border-border-subtle hover:bg-bg-secondary transition-colors"
+              className="w-full text-left px-4 py-3.5 md:py-3 border-b border-border-subtle hover:bg-bg-secondary transition-colors"
             >
-              <p className="text-xs text-accent font-medium mb-1">
+              <p className="text-sm md:text-xs text-accent font-medium mb-1">
                 {n.verse.book} {n.verse.chapter}:{n.verse.number}
               </p>
-              <p className="text-sm text-text-primary line-clamp-2">{n.body}</p>
-              <p className="text-2xs text-text-muted mt-1 line-clamp-1">{n.verse.text}</p>
+              <p className="text-[15px] md:text-sm text-text-primary line-clamp-2">{n.body}</p>
+              <p className="text-xs md:text-2xs text-text-muted mt-1 line-clamp-1">{n.verse.text}</p>
             </button>
           ))
         )}

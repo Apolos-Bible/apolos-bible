@@ -4,6 +4,7 @@ import { openUrl } from '@tauri-apps/plugin-opener'
 import { useVerseStore } from '@/lib/store/useVerseStore'
 import { useUIStore } from '@/lib/store/useUIStore'
 import { commentaryApi, type Commentary } from '@/lib/commentaryApi'
+import { PanelHeader } from '@/components/layout/PanelHeader'
 
 export function CommentaryPanel() {
   const selectedBook    = useVerseStore((s) => s.selectedBook)
@@ -55,37 +56,23 @@ export function CommentaryPanel() {
 
   return (
     <div className="flex flex-col h-full bg-bg-secondary border-l border-border-subtle">
-      {/* Header */}
-      <div className="flex items-center justify-between px-4 py-3 border-b border-border-subtle flex-shrink-0">
-        <div>
-          <p className="text-[11px] font-sans font-semibold uppercase tracking-[0.15em] text-accent/70">
-            {t('commentary.title')}
-          </p>
-          <p className="text-[13px] font-medium text-text-primary mt-0.5">
-            {bookName} {selectedChapter}
-          </p>
-        </div>
-        <button
-          onClick={toggleCommentary}
-          className="text-text-muted hover:text-text-primary transition-colors p-1 rounded"
-          aria-label={t('common.close')}
-        >
-          <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round">
-            <path d="M2 2l10 10M12 2L2 12" />
-          </svg>
-        </button>
-      </div>
+      <PanelHeader
+        subtitle={t('commentary.title')}
+        title={`${bookName} ${selectedChapter}`}
+        onClose={toggleCommentary}
+        closeLabel={t('common.close')}
+      />
 
       {/* Content */}
-      <div className="flex-1 overflow-y-auto px-5 py-4">
+      <div className="flex-1 overflow-y-auto px-5 py-4 md:py-4">
         {loading && (
-          <div className="flex items-center justify-center h-32 text-text-muted text-sm">
+          <div className="flex items-center justify-center h-32 text-text-muted text-[15px] md:text-sm">
             {t('commentary.loading')}
           </div>
         )}
 
         {error && (
-          <div className="flex items-center justify-center h-32 text-text-muted text-sm text-center px-4">
+          <div className="flex items-center justify-center h-32 text-text-muted text-[15px] md:text-sm text-center px-4">
             {t('commentary.empty')}
           </div>
         )}
@@ -93,7 +80,7 @@ export function CommentaryPanel() {
         {commentary && (
           <div
             ref={contentRef}
-            className="commentary-content font-reading text-[14px] leading-[1.8] text-text-primary"
+            className="commentary-content font-reading text-[16px] md:text-[14px] leading-[1.8] text-text-primary"
             dangerouslySetInnerHTML={{ __html: commentary.content }}
           />
         )}

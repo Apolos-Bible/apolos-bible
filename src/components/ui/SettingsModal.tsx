@@ -4,6 +4,7 @@ import { useUIStore, type FontSize, type Theme, type Locale } from '@/lib/store/
 import { useVerseStore } from '@/lib/store/useVerseStore'
 import { useAuthStore } from '@/lib/store/useAuthStore'
 import { UserAvatar } from '@/components/auth/UserAvatar'
+import { NotificationsSection } from '@/components/ui/NotificationsSection'
 import { cn } from '@/lib/cn'
 
 const FONT_OPTIONS: { value: FontSize; label: string }[] = [
@@ -270,6 +271,9 @@ export function SettingsModal() {
               </select>
             </Row>
           </Section>
+
+          {/* Notifications */}
+          {user && <NotificationsSection />}
 
           {/* Account actions */}
           {user && (

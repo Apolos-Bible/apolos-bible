@@ -89,7 +89,7 @@ export function ReadingToolbar({ showCommentary = true, showVerseActions = true 
   }
 
   const btnClass = (active: boolean) => cn(
-    'p-1.5 rounded transition-colors duration-100',
+    'p-2.5 md:p-1.5 rounded transition-colors duration-100',
     active
       ? 'bg-bg-secondary text-accent shadow-sm'
       : 'text-text-muted hover:text-text-secondary',

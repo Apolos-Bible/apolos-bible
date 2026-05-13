@@ -129,20 +129,8 @@ export function StudyPanel() {
               : `${verse.book.charAt(0).toUpperCase()}${verse.book.slice(1)} ${verse.chapter}:${verse.verse}`
             : t('study.title')
         }
-        actions={
-          verse ? (
-            <button
-              type="button"
-              onClick={closeStudyPanel}
-              aria-label={t('study.closePanel')}
-              className="p-1 rounded text-text-muted hover:text-text-primary hover:bg-bg-tertiary transition-colors duration-100"
-            >
-              <svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true">
-                <path d="M2 2l10 10M12 2L2 12" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
-              </svg>
-            </button>
-          ) : undefined
-        }
+        onClose={verse ? closeStudyPanel : undefined}
+        closeLabel={t('study.closePanel')}
       />
 
       {/* Body */}

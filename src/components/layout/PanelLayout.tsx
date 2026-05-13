@@ -4,6 +4,11 @@ import { cn } from '@/lib/cn'
 import { useVerseStore } from '@/lib/store/useVerseStore'
 import { useUIStore } from '@/lib/store/useUIStore'
 import { useContextMenuStore } from '@/lib/store/useContextMenuStore'
+import { MobileTopBar } from './MobileTopBar'
+import { MobileBottomNav } from './MobileBottomNav'
+import { MobileProfileSheet } from './MobileProfileSheet'
+import { MobileSearchView } from './MobileSearchView'
+import { BookSelector } from '@/components/sidebar/BookSelector'
 
 interface PanelLayoutProps {
   sidebar: ReactNode
@@ -18,11 +23,10 @@ export function PanelLayout({ sidebar, main, panel, leftPanel }: PanelLayoutProp
   const closeStudyPanel = useVerseStore((s) => s.closeStudyPanel)
   const commentaryOpen = useUIStore((s) => s.commentaryOpen)
   const toggleCommentary = useUIStore((s) => s.toggleCommentary)
-  const closePanel = useUIStore((s) => s.closePanel)
-  const openCommandPalette = useUIStore((s) => s.openCommandPalette)
+  const mobileBookPickerOpen = useUIStore((s) => s.mobileBookPickerOpen)
+  const closeMobileBookPicker = useUIStore((s) => s.closeMobileBookPicker)
+  const mobileSearchOpen = useUIStore((s) => s.mobileSearchOpen)
   const mobileSidebarOpen = useUIStore((s) => s.mobileSidebarOpen)
-  const openMobileSidebar = useUIStore((s) => s.openMobileSidebar)
-  const closeMobileSidebar = useUIStore((s) => s.closeMobileSidebar)
 
   const closeMobileStudyPanel = () => {
     if (commentaryOpen) {
@@ -42,22 +46,29 @@ export function PanelLayout({ sidebar, main, panel, leftPanel }: PanelLayoutProp
   return (
     <div className="app-viewport w-full overflow-hidden bg-bg-primary">
       <div className="md:hidden flex h-full flex-col">
-        <div className="pointer-events-none absolute inset-x-0 bottom-4 z-20 flex items-center px-4 md:hidden">
-          <button
-            type="button"
-            onClick={openMobileSidebar}
-            className="pointer-events-auto inline-flex h-10 w-10 items-center justify-center rounded-full border border-border-subtle bg-bg-secondary text-text-secondary shadow-sm"
-            aria-label={t('layout.openLibrary')}
-          >
-            <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" className="h-4 w-4">
-              <path d="M2.5 4h11M2.5 8h11M2.5 12h11" strokeLinecap="round" />
-            </svg>
-          </button>
+        {mobileSearchOpen ? (
+          <div className="min-h-0 flex-1 overflow-hidden">
+            <MobileSearchView />
+          </div>
+        ) : mobileSidebarOpen ? (
+          <div className="min-h-0 flex-1 overflow-hidden">
+            <MobileProfileSheet />
+          </div>
+        ) : leftPanel ? (
+          <div className="min-h-0 flex-1 overflow-hidden">
+            {leftPanel}
+          </div>
+        ) : (
+          <>
+        <MobileTopBar />
+
+        <main className="min-h-0 flex-1 overflow-hidden relative">
+          {main}
 
           {selectedVerseIds.length > 0 && (
-            <div className="pointer-events-auto absolute left-1/2 -translate-x-1/2 flex items-center gap-1.5">
-              <div className="relative inline-flex h-10 px-3 items-center justify-center rounded-full border border-border-subtle bg-bg-secondary text-text-secondary shadow-sm gap-1.5">
-                <span className="text-xs font-medium tabular-nums">{selectedVerseIds.length}</span>
+            <div className="pointer-events-none absolute inset-x-0 bottom-3 z-20 flex justify-center px-4">
+              <div className="pointer-events-auto relative inline-flex h-12 px-4 items-center justify-center rounded-full border border-border-subtle bg-bg-secondary text-text-secondary shadow-lg gap-2">
+                <span className="text-sm font-medium tabular-nums">{selectedVerseIds.length}</span>
                 {selectedVerseIds.length > 1 && (
                   <button
                     type="button"
@@ -122,71 +133,40 @@ export function PanelLayout({ sidebar, main, panel, leftPanel }: PanelLayoutProp
               </div>
             </div>
           )}
-
-          <button
-            type="button"
-            onClick={openCommandPalette}
-            className="pointer-events-auto ml-auto inline-flex h-10 w-10 items-center justify-center rounded-full border border-border-subtle bg-bg-secondary text-text-secondary shadow-sm"
-            aria-label={t('layout.search')}
-          >
-            <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" className="h-4 w-4">
-              <circle cx="7" cy="7" r="4.25" />
-              <path d="M10.5 10.5L13.5 13.5" strokeLinecap="round" />
-            </svg>
-          </button>
-        </div>
-
-        <main className="min-h-0 flex-1 overflow-hidden">
-          {main}
         </main>
+          </>
+        )}
+
+        <MobileBottomNav />
 
         <div
           className={cn(
-            'absolute inset-0 z-40 transition-opacity duration-200 md:hidden',
-            mobileSidebarOpen ? 'pointer-events-auto opacity-100' : 'pointer-events-none opacity-0',
+            'fixed inset-0 z-40 transition-opacity duration-200 md:hidden',
+            mobileBookPickerOpen ? 'pointer-events-auto opacity-100' : 'pointer-events-none opacity-0',
           )}
         >
+          <div className="absolute inset-0 bg-black/60" onClick={closeMobileBookPicker} />
           <div
-            className="absolute inset-0 bg-black/60"
-            onClick={closeMobileSidebar}
-          />
-          <aside
             className={cn(
-              'absolute inset-y-0 left-0 w-[min(88vw,24rem)] bg-bg-secondary shadow-2xl transition-transform duration-300',
-              mobileSidebarOpen ? 'translate-x-0' : '-translate-x-full',
+              'absolute inset-x-0 bottom-0 top-12 rounded-t-2xl bg-bg-secondary shadow-2xl flex flex-col transition-transform duration-300',
+              mobileBookPickerOpen ? 'translate-y-0' : 'translate-y-full',
             )}
           >
-            <div className="flex h-full flex-col">
-              <div className="flex items-center justify-between border-b border-border-subtle px-4 py-3">
-                <span className="text-sm font-medium text-text-primary">{t('layout.library')}</span>
-                <button
-                  type="button"
-                  onClick={closeMobileSidebar}
-                  className="inline-flex h-8 w-8 items-center justify-center rounded-md text-text-muted"
-                  aria-label={t('layout.closeLibrary')}
-                >
-                  <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" className="h-4 w-4">
-                    <path d="M3 3l10 10M13 3L3 13" strokeLinecap="round" />
-                  </svg>
-                </button>
-              </div>
-              <div className="min-h-0 flex-1 overflow-hidden">
-                {sidebar}
-              </div>
+            <div className="flex items-center justify-between border-b border-border-subtle px-4 py-3 shrink-0">
+              <span className="text-sm font-medium text-text-primary">{t('layout.changeChapter')}</span>
+              <button
+                type="button"
+                onClick={closeMobileBookPicker}
+                className="inline-flex h-8 w-8 items-center justify-center rounded-md text-text-muted hover:text-text-primary hover:bg-bg-tertiary transition-colors"
+                aria-label={t('layout.closeChapterPicker')}
+              >
+                <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" className="h-4 w-4">
+                  <path d="M3 3l10 10M13 3L3 13" strokeLinecap="round" />
+                </svg>
+              </button>
             </div>
-          </aside>
-        </div>
-
-        <div
-          className={cn(
-            'absolute inset-0 z-30 transition-opacity duration-200 md:hidden',
-            leftPanel ? 'pointer-events-auto opacity-100' : 'pointer-events-none opacity-0',
-          )}
-        >
-          <div className="absolute inset-0 bg-black/60" onClick={closePanel} />
-          <div className="absolute inset-x-0 bottom-0 top-4 rounded-t-2xl bg-bg-primary shadow-2xl">
-            <div className="h-full overflow-hidden">
-              {leftPanel}
+            <div className="min-h-0 flex-1 overflow-hidden flex flex-col">
+              <BookSelector />
             </div>
           </div>
         </div>

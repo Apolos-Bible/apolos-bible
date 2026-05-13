@@ -138,8 +138,14 @@ export function MessageInput({ conversationId }: MessageInputProps) {
     if (value.trim().length > 0) notifyTyping(conversationId)
   }
 
+  const hasText = body.trim().length > 0
+  const sendDisabled = sending || !hasText
+
   return (
-    <div className="relative border-t border-border-subtle px-3 py-2.5 shrink-0">
+    <div
+      className="relative border-t border-border-subtle px-3 md:px-3 py-3 md:py-2.5 shrink-0"
+      style={{ paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 0.75rem)' }}
+    >
       {isCmdMode && (
         <CommandPicker
           commands={filteredCmds}
@@ -169,19 +175,37 @@ export function MessageInput({ conversationId }: MessageInputProps) {
           rows={1}
           placeholder={t('chat.messagePlaceholder')}
           className={cn(
-            'flex-1 resize-none bg-bg-secondary rounded-md border border-border-subtle',
-            'text-sm text-text-primary placeholder:text-text-muted',
-            'px-3 py-2 outline-none focus:border-border-hover',
+            'flex-1 resize-none bg-bg-tertiary md:bg-bg-secondary rounded-2xl md:rounded-md border border-border-subtle focus:border-border-hover',
+            'text-[15px] md:text-sm text-text-primary placeholder:text-text-muted',
+            'px-4 md:px-3 py-2.5 md:py-2 outline-none',
             'max-h-40',
           )}
         />
+        {/* Mobile: circular accent send button, only when there's text */}
         <button
+          type="button"
           onClick={submit}
-          disabled={sending || body.trim().length === 0}
+          disabled={sendDisabled}
+          aria-label={t('chat.send')}
           className={cn(
-            'shrink-0 h-8 px-3 rounded-md text-xs font-medium transition-colors',
-            'flex items-center gap-1.5',
-            body.trim().length === 0 || sending
+            'md:hidden shrink-0 h-11 w-11 rounded-full flex items-center justify-center transition-all duration-150',
+            hasText
+              ? 'bg-accent text-bg-primary hover:brightness-110 scale-100 opacity-100'
+              : 'bg-bg-tertiary text-text-muted scale-90 opacity-0 pointer-events-none',
+          )}
+        >
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5">
+            <path d="M5 12l7-7 7 7M12 5v14" />
+          </svg>
+        </button>
+        {/* Desktop: original labelled button unchanged */}
+        <button
+          type="button"
+          onClick={submit}
+          disabled={sendDisabled}
+          className={cn(
+            'hidden md:flex shrink-0 h-8 px-3 rounded-md text-xs font-medium transition-colors items-center gap-1.5',
+            sendDisabled
               ? 'bg-bg-tertiary text-text-muted cursor-not-allowed'
               : 'bg-accent text-bg-primary hover:brightness-110',
           )}
