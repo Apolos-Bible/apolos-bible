@@ -7,6 +7,8 @@ import { useNoteStore } from '@/lib/store/useNoteStore'
 import { useHighlightStore } from '@/lib/store/useHighlightStore'
 import { useActivityStore } from '@/lib/store/useActivityStore'
 import { destroyEcho } from '@/lib/echo'
+import { enablePush } from '@/lib/push'
+import { ensureAutostart } from '@/lib/desktopAutostart'
 
 // Pre-loads everything tied to the current account so the app feels populated
 // the moment a user logs in instead of trickling data in per-screen.
@@ -19,6 +21,12 @@ export async function hydrateUserSession(): Promise<void> {
     useStudyStore.getState().loadInvitations(),
     useChatStore.getState().load(),
   ])
+
+  // Fire and forget — never block hydration on a permission prompt or a
+  // network round-trip to FCM. enablePush is a no-op if the user has
+  // previously declined or the platform doesn't support web push.
+  void enablePush().catch(() => {})
+  void ensureAutostart().catch(() => {})
 }
 
 // Wipes every account-scoped store so a previous user's data never leaks

@@ -4,6 +4,7 @@ import { initEcho, getEcho } from '@/lib/echo'
 import i18n from '@/lib/i18n'
 import { useAuthStore } from './useAuthStore'
 import { useUIStore } from './useUIStore'
+import { notifyChatMessage, clearChatNotifications } from '@/lib/desktopNotify'
 
 interface TypingEntry {
   userId:   number
@@ -104,6 +105,12 @@ function subscribeToConversation(id: number, set: (fn: (s: ChatState) => Partial
 
       if (isSelected) {
         chatApi.markRead(id).catch(() => {})
+      } else if (authId !== undefined && message.user_id !== authId) {
+        // Desktop tray: render an OS banner via tauri-plugin-notification.
+        // Web/SW path is handled by FCM data-only pushes; backend skips
+        // FCM when the user is online so this won't double up.
+        const senderName = message.user?.name || 'Tulia'
+        void notifyChatMessage(id, senderName, message.body)
       }
     })
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -167,6 +174,7 @@ export const useChatStore = create<ChatState>((set, get) => ({
   select: async (id) => {
     set({ selectedId: id })
     if (id === null) return
+    clearChatNotifications(id)
     if (get().messages[id] === undefined) await get().loadMessages(id)
     await get().markRead(id)
   },

@@ -17,3 +17,6 @@ key.properties
 
 /.tauri
 /tauri.settings.gradle
+
+# Firebase Cloud Messaging credentials — never commit
+/app/google-services.json
