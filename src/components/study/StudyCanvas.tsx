@@ -1199,12 +1199,12 @@ useEffect(() => {
           panOnDrag={
             tool === 'draw' || tool === 'erase'
               ? (spaceHeld ? [0, 1] : [1])
-              : (tool === 'hand' || isGuest ? [0, 1] : [1])
+              : (tool === 'hand' || isGuest || isMobile ? [0, 1] : [1])
           }
           nodesDraggable={!isGuest && tool === 'select'}
           nodesConnectable={!isGuest && tool === 'select'}
           elementsSelectable={!isGuest || tool === 'select'}
-          selectionOnDrag={!isGuest && tool === 'select'}
+          selectionOnDrag={!isMobile && !isGuest && tool === 'select'}
         >
           <Background
             variant={BackgroundVariant.Dots}
