@@ -6,6 +6,9 @@ import { useAuthStore } from '@/lib/store/useAuthStore'
 import { useFriendStore } from '@/lib/store/useFriendStore'
 import { bibleApi, ApiSearchResult } from '@/lib/bibleApi'
 import { normalizeText } from '@/lib/normalizeText'
+import { parseReferenceQuery, findBookMatches } from '@/lib/verseSearch'
+import { BOOK_ALIASES } from '@/lib/bibleRefs'
+import type { Book } from '@/lib/store/useVerseStore'
 import { api } from '@/lib/api'
 import { cn } from '@/lib/cn'
 
@@ -29,6 +32,7 @@ export function MobileSearchView() {
   const addToast = useUIStore((s) => s.addToast)
   const versionId = useVerseStore((s) => s.versionId)
   const openVerse = useVerseStore((s) => s.openVerse)
+  const books = useVerseStore((s) => s.books)
   const user = useAuthStore((s) => s.user)
   const searchUsers = useFriendStore((s) => s.searchUsers)
   const clearSearch = useFriendStore((s) => s.clearSearch)
@@ -90,6 +94,49 @@ export function MobileSearchView() {
     return () => clearTimeout(id)
   }, [query, needsPeople, searchUsers, clearSearch])
 
+  // Parsed reference ("john 3:16", "juan 3", "gen 1:1") — synchronous, no
+  // network. Rendered as the top "Go to" hit when the query parses AND the
+  // numeric bounds are plausible: chapter must exist in the book, verse must
+  // fit within the longest chapter in the Bible (Psalm 119, 176 verses).
+  const parsedRef = useMemo(() => {
+    if (!needsBible) return null
+    const ref = parseReferenceQuery(query.trim())
+    if (!ref) return null
+
+    const book =
+      books.find((b) => b.slug === ref.slug) ??
+      books.find(
+        (b) => BOOK_ALIASES[normalizeText(b.name).trim()] === ref.slug,
+      )
+    if (ref.chapter < 1) return null
+    if (book && ref.chapter > book.chapters) return null
+    if (ref.verse !== null && (ref.verse < 1 || ref.verse > 176)) return null
+    return ref
+  }, [query, needsBible, books])
+
+  // Book-name matches (multilingual via BOOK_ALIASES). Suppressed when
+  // the query already parses as a chapter/verse reference, since the
+  // parsed-ref result is more specific.
+  const bookMatches = useMemo<Book[]>(() => {
+    if (!needsBible || parsedRef || books.length === 0) return []
+    return findBookMatches(query, books, scope === 'all' ? 4 : 8)
+  }, [needsBible, parsedRef, query, books, scope])
+
+  // Resolve the parsed-ref slug (canonical English) back to the user's
+  // version-specific book so we can display its localized name. Spanish
+  // RVR uses 'juan' as the slug, English uses 'john' — match by name
+  // alias if slug doesn't match directly.
+  const parsedRefBook = useMemo<Book | null>(() => {
+    if (!parsedRef) return null
+    const direct = books.find((b) => b.slug === parsedRef.slug)
+    if (direct) return direct
+    return (
+      books.find(
+        (b) => BOOK_ALIASES[normalizeText(b.name).trim()] === parsedRef.slug,
+      ) ?? null
+    )
+  }, [parsedRef, books])
+
   const noteResults = useMemo(() => {
     if (scope !== 'notes' && scope !== 'all') return []
     const q = normalizeText(query.trim())
@@ -104,6 +151,17 @@ export function MobileSearchView() {
 
   const handleVerseClick = (v: ApiSearchResult) => {
     void openVerse(v.slug, v.chapter, v.verse)
+    closeMobileSearch()
+  }
+
+  const handleBookClick = (b: Book) => {
+    void openVerse(b.slug, 1, 1)
+    closeMobileSearch()
+  }
+
+  const handleParsedRefClick = () => {
+    if (!parsedRef) return
+    void openVerse(parsedRef.slug, parsedRef.chapter, parsedRef.verse ?? 1)
     closeMobileSearch()
   }
 
@@ -126,7 +184,12 @@ export function MobileSearchView() {
   const showingPeople = scope === 'people' || scope === 'all'
   const isSearching = (needsBible && verseSearching) || (showingPeople && peopleSearching)
   const peopleToShow = showingPeople ? (scope === 'all' ? peopleResults.slice(0, 5) : peopleResults) : []
-  const totalResults = verseResults.length + noteResults.length + peopleToShow.length
+  const totalResults =
+    verseResults.length +
+    noteResults.length +
+    peopleToShow.length +
+    (parsedRef ? 1 : 0) +
+    bookMatches.length
 
   if (!mobileSearchOpen) return null
 
@@ -196,6 +259,59 @@ export function MobileSearchView() {
 
         {queryActive && !isSearching && totalResults === 0 && (
           <p className="px-6 pt-10 text-center text-sm text-text-muted">{t('search.noResults')}</p>
+        )}
+
+        {needsBible && parsedRef && (
+          <section>
+            <ul className="divide-y divide-border-subtle">
+              <li>
+                <button
+                  type="button"
+                  onClick={handleParsedRefClick}
+                  className="w-full px-4 py-3 text-left hover:bg-bg-tertiary transition-colors flex items-center gap-3"
+                >
+                  <span className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-accent/10 text-accent">
+                    <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" className="h-4 w-4">
+                      <path d="M3 8h10M9 4l4 4-4 4" strokeLinecap="round" strokeLinejoin="round" />
+                    </svg>
+                  </span>
+                  <div className="min-w-0 flex-1">
+                    <p className="text-[15px] text-text-primary truncate capitalize">
+                      {(parsedRefBook?.name ?? parsedRef.slug.replace(/-/g, ' '))} {parsedRef.chapter}
+                      {parsedRef.verse !== null ? `:${parsedRef.verse}` : ''}
+                    </p>
+                    <p className="text-xs text-text-muted">{t('search.goTo', 'Ir a referencia')}</p>
+                  </div>
+                </button>
+              </li>
+            </ul>
+          </section>
+        )}
+
+        {needsBible && bookMatches.length > 0 && (
+          <section>
+            {scope === 'all' && (
+              <h2 className="px-4 pt-5 pb-2 text-[11px] font-semibold uppercase tracking-[0.12em] text-text-muted">
+                {t('search.scope.books', 'Libros')}
+              </h2>
+            )}
+            <ul className="divide-y divide-border-subtle">
+              {bookMatches.map((b) => (
+                <li key={b.slug}>
+                  <button
+                    type="button"
+                    onClick={() => handleBookClick(b)}
+                    className="w-full px-4 py-3 text-left hover:bg-bg-tertiary transition-colors"
+                  >
+                    <p className="text-[15px] text-text-primary capitalize">{b.name}</p>
+                    <p className="text-xs text-text-muted">
+                      {t('search.chapters', { count: b.chapters, defaultValue: '{{count}} capítulos' })}
+                    </p>
+                  </button>
+                </li>
+              ))}
+            </ul>
+          </section>
         )}
 
         {needsBible && verseResults.length > 0 && (

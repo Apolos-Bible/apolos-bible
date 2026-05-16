@@ -1,6 +1,5 @@
 import { Helmet } from 'react-helmet-async'
 import { useSEOMeta } from '@/lib/hooks/useSEOMeta'
-import type { Book } from '@/lib/store/useVerseStore'
 
 export function SEOMeta() {
   const meta = useSEOMeta()

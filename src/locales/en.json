@@ -467,6 +467,10 @@
   "search.empty": "Type to search",
   "search.noResults": "No results",
   "search.searching": "Searching…",
+  "search.scope.books": "Books",
+  "search.goTo": "Go to reference",
+  "search.chapters_one": "{{count}} chapter",
+  "search.chapters_other": "{{count}} chapters",
 
   "auth.emailPlaceholder": "you@example.com",
   "auth.passwordPlaceholder": "••••••••",

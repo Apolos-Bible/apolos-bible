@@ -1,5 +1,74 @@
 import { bibleApi, type ApiSearchResult } from './bibleApi';
 import { BOOK_ALIASES } from './bibleRefs';
+import { normalizeText } from './normalizeText';
+
+interface BookLike {
+  slug: string;
+  name: string;
+}
+
+// Group BOOK_ALIASES by canonical slug — each canonical slug (e.g. 'john')
+// gets the list of normalized aliases that map to it ('john', 'juan', 'jn',
+// 'gospel of john', etc.). Note: BOOK_ALIASES values are canonical English
+// slugs, but the user's API books may use localized slugs (Spanish RVR uses
+// slug 'juan' for book 43). We therefore associate a book with its canonical
+// slug by looking up its display name in BOOK_ALIASES, not by comparing
+// b.slug — that's the multilingual bridge.
+const ALIASES_BY_SLUG: Record<string, string[]> = (() => {
+  const out: Record<string, string[]> = {};
+  for (const [alias, slug] of Object.entries(BOOK_ALIASES)) {
+    const norm = normalizeText(alias);
+    const list = out[slug] ?? (out[slug] = []);
+    if (!list.includes(norm)) list.push(norm);
+  }
+  return out;
+})();
+
+/** Lookup the canonical English slug for a book, given its display name in
+ *  any supported language. Returns null when the name has no known alias. */
+function canonicalSlugForName(name: string): string | null {
+  const norm = normalizeText(name).trim();
+  return BOOK_ALIASES[norm] ?? null;
+}
+
+/**
+ * Match a free-text query against book aliases (multilingual via
+ * BOOK_ALIASES) and the user's loaded book display names. Returns a
+ * deduped list of Book-like entries preserving the order from `books`.
+ *
+ * Matching rules:
+ *  - normalize accents/case
+ *  - prefix match on the book's display name, OR
+ *  - prefix match on any alias that resolves to the same canonical slug
+ *    as the book (so "john" finds the Spanish "Juan" entry, "juan" finds
+ *    the English "John" entry, etc.)
+ *  - skip queries shorter than 2 chars (too noisy)
+ */
+export function findBookMatches<B extends BookLike>(
+  query: string,
+  books: readonly B[],
+  limit = 8,
+): B[] {
+  const q = normalizeText(query.trim());
+  if (q.length < 2) return [];
+
+  const out: B[] = [];
+  for (const b of books) {
+    if (normalizeText(b.name).startsWith(q)) {
+      out.push(b);
+      if (out.length >= limit) break;
+      continue;
+    }
+
+    const canonical = canonicalSlugForName(b.name) ?? b.slug;
+    const aliases = ALIASES_BY_SLUG[canonical];
+    if (aliases?.some((a) => a.startsWith(q))) {
+      out.push(b);
+      if (out.length >= limit) break;
+    }
+  }
+  return out;
+}
 
 // Build regex from BOOK_ALIASES (sorted longest-first to avoid partial matches)
 const PATTERN = (() => {
