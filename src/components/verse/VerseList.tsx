@@ -619,7 +619,7 @@ export function VerseList() {
           {/* Mobile keeps navigation/display primary; study tools appear after selecting a verse. */}
           <div
             className={cn(
-              'sticky top-0 z-10 bg-bg-secondary pointer-events-none pt-[env(safe-area-inset-top)] transition-[transform,opacity,max-height] duration-300 ease-out origin-top md:!translate-y-0 md:!opacity-100 md:!max-h-[unset]',
+              'sticky top-0 z-10 bg-bg-secondary pointer-events-none transition-[transform,opacity,max-height] duration-300 ease-out origin-top md:!translate-y-0 md:!opacity-100 md:!max-h-[unset]',
               mobileChromeCollapsed && 'max-h-0 -translate-y-full opacity-0 overflow-hidden',
             )}
           >

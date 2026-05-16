@@ -142,10 +142,7 @@ export function MessageInput({ conversationId }: MessageInputProps) {
   const sendDisabled = sending || !hasText
 
   return (
-    <div
-      className="relative border-t border-border-subtle px-3 md:px-3 py-3 md:py-2.5 shrink-0"
-      style={{ paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 0.75rem)' }}
-    >
+    <div className="relative border-t border-border-subtle px-3 md:px-3 py-3 md:py-2.5 shrink-0">
       {isCmdMode && (
         <CommandPicker
           commands={filteredCmds}

@@ -171,7 +171,6 @@ export function MobileBottomNav() {
         'flex shrink-0 items-stretch border-t border-border-subtle bg-bg-secondary overflow-hidden transition-[height,border-width] duration-300 ease-out',
         hidden ? 'h-0 border-t-0' : 'h-[68px]',
       )}
-      style={{ paddingBottom: hidden ? '0px' : 'env(safe-area-inset-bottom, 0px)' }}
       aria-label={t('layout.library')}
       aria-hidden={hidden}
     >
