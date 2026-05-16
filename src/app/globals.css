@@ -48,8 +48,7 @@ html[data-theme="light"] {
 }
 
 html,
-body,
-#root {
+body {
   width: 100%;
   height: 100%;
   overflow: hidden;
@@ -57,30 +56,49 @@ body,
 
 @supports (height: 100svh) {
   html,
-  body,
-  #root {
+  body {
     height: 100svh;
   }
 }
 
 @supports (height: 100dvh) {
   html,
-  body,
-  #root {
+  body {
     height: 100dvh;
   }
 }
 
+/* #root respects mobile safe areas (iOS notch / status bar, Android
+   status bar + gesture nav). Tauri's Android shell enables edge-to-edge
+   and iOS uses black-translucent + viewport-fit=cover — both require us
+   to pad the app shell ourselves. env() returns 0 on desktop. */
+#root {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  padding-top: env(safe-area-inset-top, 0px);
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+  padding-left: env(safe-area-inset-left, 0px);
+  padding-right: env(safe-area-inset-right, 0px);
+}
+
+@supports (height: 100svh) {
+  #root { height: 100svh; }
+}
+
+@supports (height: 100dvh) {
+  #root { height: 100dvh; }
+}
+
+/* Fills the safe-area-padded #root. Avoid 100dvh here — that would
+   re-expand past the safe-area insets and clip under status / nav bars. */
 .app-viewport {
   height: 100%;
-  height: 100svh;
-  height: 100dvh;
 }
 
 .max-app-viewport-minus-16 {
   max-height: calc(100% - 4rem);
-  max-height: calc(100svh - 4rem);
-  max-height: calc(100dvh - 4rem);
 }
 
 body {
