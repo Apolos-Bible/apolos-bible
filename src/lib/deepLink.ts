@@ -10,30 +10,54 @@ type Navigate = (to: string, opts?: { replace?: boolean }) => void
  *
  * Listens both to URLs the app is launched with (cold start) and to
  * URLs received while running.
+ *
+ * Note: `new URL(...)` is unreliable for custom schemes on Android
+ * WebView (it leaves host empty and stuffs everything in pathname),
+ * so we parse with a regex tolerant to scheme://host/path?query#frag.
  */
 export function registerAuthDeepLink(navigate: Navigate): () => void {
   if (!isTauri()) return () => {}
 
   const handle = (url: string) => {
-    try {
-      const parsed = new URL(url)
-      if (parsed.protocol !== 'tulia:') return
-      if (parsed.host !== 'auth' || parsed.pathname !== '/finish') return
-      navigate(`/auth/google/finish${parsed.search}${parsed.hash}`, { replace: true })
-    } catch {
-      // not a valid URL — ignore
+    console.log('[deepLink] received:', url)
+    if (typeof url !== 'string' || !url) return
+
+    const match = url.match(/^tulia:\/*([^/?#]*)([^?#]*)(\?[^#]*)?(#.*)?$/i)
+    if (!match) {
+      console.warn('[deepLink] no scheme match:', url)
+      return
     }
+    const [, host, path, search = '', hash = ''] = match
+    console.log('[deepLink] parsed:', { host, path, search, hash })
+
+    const isAuthFinish =
+      (host === 'auth' && (path === '/finish' || path === '')) ||
+      (host === '' && /^\/*auth\/finish\/?$/.test(path)) ||
+      /auth\/finish/i.test(`${host}${path}`)
+
+    if (!isAuthFinish) {
+      console.warn('[deepLink] not auth/finish:', `${host}${path}`)
+      return
+    }
+
+    const target = `/auth/google/finish${search}${hash}`
+    console.log('[deepLink] navigating to', target)
+    navigate(target, { replace: true })
   }
 
   let unlisten: (() => void) | undefined
 
   void getCurrent()
     .then((urls) => {
+      console.log('[deepLink] getCurrent:', urls)
       if (urls && urls.length > 0) handle(urls[0])
     })
-    .catch(() => {})
+    .catch((err) => {
+      console.warn('[deepLink] getCurrent failed:', err)
+    })
 
   void onOpenUrl((urls) => {
+    console.log('[deepLink] onOpenUrl:', urls)
     if (urls && urls.length > 0) handle(urls[0])
   }).then((fn) => {
     unlisten = fn
