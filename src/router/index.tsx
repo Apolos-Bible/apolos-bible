@@ -5,6 +5,7 @@ import { BibleRoute } from './routes/BibleRoute'
 import { StudyRoute } from './routes/StudyRoute'
 import { ResetPasswordRoute } from './routes/ResetPasswordRoute'
 import { GoogleFinishRoute } from './routes/GoogleFinishRoute'
+import { AuthBridgeRoute } from './routes/AuthBridgeRoute'
 import { NotFound } from './routes/NotFound'
 
 export const router = createBrowserRouter([
@@ -33,6 +34,10 @@ export const router = createBrowserRouter([
 
       // Google OAuth callback landing — backend redirects here with #token=...
       { path: 'auth/google/finish', element: <GoogleFinishRoute /> },
+
+      // Desktop/mobile OAuth bridge: https page that hands the token back
+      // to the installed Tauri app via a user-initiated `tulia://` link.
+      { path: 'auth/bridge', element: <AuthBridgeRoute /> },
 
       // Catch-all
       { path: '*', element: <NotFound /> },
