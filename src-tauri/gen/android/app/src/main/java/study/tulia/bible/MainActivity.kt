@@ -34,11 +34,34 @@ class MainActivity : TauriActivity() {
     val token = FcmBridge.savedToken(this)
     val tokenJs = if (token != null) "'${escapeJs(token)}'" else "null"
 
-    // Document-start script: token + handler that listens for our custom
-    // navigate event and forwards it through to history.pushState so
-    // react-router picks it up via the popstate listener.
+    // Read system bar insets up-front so we can bake them into the
+    // bootScript. Android WebView doesn't populate env(safe-area-inset-*)
+    // CSS vars (unlike iOS WKWebView), so this is how the React app sees
+    // the status-bar / nav-bar heights under edge-to-edge.
+    val rootInsets = ViewCompat.getRootWindowInsets(window.decorView)
+    val sys = rootInsets?.getInsets(WindowInsetsCompat.Type.systemBars())
+    val density = resources.displayMetrics.density
+    val topDp = (sys?.top ?: 24) / density   // 24 = sensible Android default
+    val bottomDp = (sys?.bottom ?: 0) / density
+    val leftDp = (sys?.left ?: 0) / density
+    val rightDp = (sys?.right ?: 0) / density
+
+    // Document-start script: token, navigate handler, AND safe-area insets.
+    // The insets are baked into the bootScript so they apply during the
+    // same JS context where it executes — separate evaluateJavascript calls
+    // tend to hit an earlier/blank context whose state is discarded before
+    // the real page loads. Setting them on <html> means `#root` (added by
+    // React later) inherits via the custom-property cascade.
     val bootScript = """
       window.__TULIA_FCM_TOKEN__ = $tokenJs;
+      (function(){
+        var html = document.documentElement;
+        if (!html || !html.style) return;
+        html.style.setProperty('--android-safe-area-inset-top', '${topDp}px');
+        html.style.setProperty('--android-safe-area-inset-bottom', '${bottomDp}px');
+        html.style.setProperty('--android-safe-area-inset-left', '${leftDp}px');
+        html.style.setProperty('--android-safe-area-inset-right', '${rightDp}px');
+      })();
       window.addEventListener('tulia-navigate', (e) => {
         const url = (e && e.detail && e.detail.url) || '/';
         try {
@@ -52,24 +75,23 @@ class MainActivity : TauriActivity() {
 
     webView.evaluateJavascript(bootScript, null)
 
-    // Edge-to-edge drawing means the WebView underlaps the status bar
-    // and gesture nav. Android WebView does NOT populate env(safe-area-inset-*)
-    // CSS vars (unlike iOS WKWebView), so we read system bar insets natively
-    // and expose them as CSS custom properties on <html>. globals.css uses
-    // max(env(...), var(--android-safe-area-inset-*)) so both platforms work.
-    ViewCompat.setOnApplyWindowInsetsListener(webView) { _, insets ->
-      val sys = insets.getInsets(WindowInsetsCompat.Type.systemBars())
-      val density = resources.displayMetrics.density
+    // Keep listening for inset changes (rotation, IME, etc.) and re-apply
+    // by dispatching a custom event the page can subscribe to.
+    ViewCompat.setOnApplyWindowInsetsListener(window.decorView) { _, insets ->
+      val newSys = insets.getInsets(WindowInsetsCompat.Type.systemBars())
       val js = """
-        document.documentElement.style.setProperty('--android-safe-area-inset-top', '${sys.top / density}px');
-        document.documentElement.style.setProperty('--android-safe-area-inset-bottom', '${sys.bottom / density}px');
-        document.documentElement.style.setProperty('--android-safe-area-inset-left', '${sys.left / density}px');
-        document.documentElement.style.setProperty('--android-safe-area-inset-right', '${sys.right / density}px');
+        (function(){
+          if (!document.documentElement) return;
+          var d = document.documentElement.style;
+          d.setProperty('--android-safe-area-inset-top', '${newSys.top / density}px');
+          d.setProperty('--android-safe-area-inset-bottom', '${newSys.bottom / density}px');
+          d.setProperty('--android-safe-area-inset-left', '${newSys.left / density}px');
+          d.setProperty('--android-safe-area-inset-right', '${newSys.right / density}px');
+        })();
       """.trimIndent()
       webView.evaluateJavascript(js, null)
       insets
     }
-    ViewCompat.requestApplyInsets(webView)
 
     pendingUrl?.let { url ->
       pendingUrl = null
