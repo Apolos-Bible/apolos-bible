@@ -4,6 +4,8 @@ import android.content.Intent
 import android.os.Bundle
 import android.webkit.WebView
 import androidx.activity.enableEdgeToEdge
+import androidx.core.view.ViewCompat
+import androidx.core.view.WindowInsetsCompat
 
 class MainActivity : TauriActivity() {
 
@@ -49,6 +51,25 @@ class MainActivity : TauriActivity() {
     """.trimIndent()
 
     webView.evaluateJavascript(bootScript, null)
+
+    // Edge-to-edge drawing means the WebView underlaps the status bar
+    // and gesture nav. Android WebView does NOT populate env(safe-area-inset-*)
+    // CSS vars (unlike iOS WKWebView), so we read system bar insets natively
+    // and expose them as CSS custom properties on <html>. globals.css uses
+    // max(env(...), var(--android-safe-area-inset-*)) so both platforms work.
+    ViewCompat.setOnApplyWindowInsetsListener(webView) { _, insets ->
+      val sys = insets.getInsets(WindowInsetsCompat.Type.systemBars())
+      val density = resources.displayMetrics.density
+      val js = """
+        document.documentElement.style.setProperty('--android-safe-area-inset-top', '${sys.top / density}px');
+        document.documentElement.style.setProperty('--android-safe-area-inset-bottom', '${sys.bottom / density}px');
+        document.documentElement.style.setProperty('--android-safe-area-inset-left', '${sys.left / density}px');
+        document.documentElement.style.setProperty('--android-safe-area-inset-right', '${sys.right / density}px');
+      """.trimIndent()
+      webView.evaluateJavascript(js, null)
+      insets
+    }
+    ViewCompat.requestApplyInsets(webView)
 
     pendingUrl?.let { url ->
       pendingUrl = null
