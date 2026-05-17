@@ -41,6 +41,7 @@ export function GoogleFinishRoute() {
       setToken(token)
       try {
         await useAuthStore.getState().init()
+        useUIStore.getState().closeAuthModal()
         useUIStore.getState().addToast(
           t('auth.signedInWithGoogle', 'Sesión iniciada con Google'),
           'success',
