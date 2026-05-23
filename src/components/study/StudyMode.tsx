@@ -179,7 +179,7 @@ export function StudyMode() {
 
   return (
     <div className="fixed inset-0 z-50 bg-bg-primary flex flex-col">
-      <StudyTopBar users={users} isGuest={isGuest} />
+      <StudyTopBar users={users} isGuest={isGuest} doc={doc} />
       {isGuest && (
         <div className="h-8 bg-accent/10 border-b border-accent/20 flex items-center justify-center gap-2 shrink-0">
           <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" className="w-3.5 h-3.5 text-accent">
