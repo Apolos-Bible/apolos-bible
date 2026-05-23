@@ -1,16 +1,18 @@
 import { useState, useCallback } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useNavigate } from 'react-router-dom'
-import { ChevronLeft, UserPlus, MoreHorizontal, Share2, Link, Eye } from 'lucide-react'
+import { ChevronLeft, UserPlus, MoreHorizontal, Share2, Link, Eye, Download } from 'lucide-react'
+import * as Y from 'yjs'
 import { useStudyStore } from '@/lib/store/useStudyStore'
 import { useUIStore } from '@/lib/store/useUIStore'
 import { useAuthStore } from '@/lib/store/useAuthStore'
 import { paths } from '@/router/paths'
+import { exportStudyToText, studyHasContent } from '@/lib/study/exportStudy'
 import { StudyParticipants } from './StudyParticipants'
 import { InviteModal } from './InviteModal'
 import type { AwarenessUser } from '@/hooks/useStudySession'
 
-export function StudyTopBar({ users, isGuest }: { users: AwarenessUser[]; isGuest: boolean }) {
+export function StudyTopBar({ users, isGuest, doc }: { users: AwarenessUser[]; isGuest: boolean; doc: Y.Doc | null }) {
   const { t } = useTranslation();
   const navigate = useNavigate()
   const activeSession = useStudyStore(s => s.activeSession)
@@ -56,6 +58,26 @@ export function StudyTopBar({ users, isGuest }: { users: AwarenessUser[]; isGues
     await end()
     navigate('/')
   }
+
+  const handleExportText = useCallback(async () => {
+    if (!doc) {
+      addToast(t('study.topBar.exportFailed'), 'error')
+      return
+    }
+    try {
+      const session = useStudyStore.getState().activeSession
+      if (!studyHasContent(doc)) {
+        addToast(t('study.topBar.exportEmpty'), 'info')
+        return
+      }
+      const text = exportStudyToText({ doc, title: session?.title })
+      await navigator.clipboard.writeText(text)
+      addToast(t('study.topBar.exportCopied'), 'success')
+    } catch (err) {
+      console.error('[StudyTopBar] export failed', err)
+      addToast(t('study.topBar.exportFailed'), 'error')
+    }
+  }, [doc, addToast, t])
 
   const handleExit = () => {
     navigate('/')
@@ -104,6 +126,17 @@ export function StudyTopBar({ users, isGuest }: { users: AwarenessUser[]; isGues
           title="Copy share link"
         >
           <Share2 className="w-4 h-4" />
+        </button>
+      )}
+
+      {user && !isGuest && (
+        <button
+          onClick={handleExportText}
+          className="w-7 h-7 flex items-center justify-center rounded-md text-text-secondary hover:text-text-primary hover:bg-bg-tertiary transition-colors"
+          title={t('study.topBar.exportText')}
+          aria-label={t('study.topBar.exportText')}
+        >
+          <Download className="w-4 h-4" />
         </button>
       )}
 

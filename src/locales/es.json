@@ -158,6 +158,10 @@
   "study.topBar.invite": "Invitar",
   "study.topBar.more": "Más",
   "study.topBar.endSession": "Finalizar sesión",
+  "study.topBar.exportText": "Exportar como texto",
+  "study.topBar.exportCopied": "Estudio copiado al portapapeles",
+  "study.topBar.exportFailed": "No se pudo exportar el estudio",
+  "study.topBar.exportEmpty": "El estudio está vacío",
 
   "study.start.title": "Iniciar sesión de estudio",
   "study.start.type": "Tipo",
