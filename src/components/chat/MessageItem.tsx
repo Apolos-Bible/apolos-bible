@@ -14,13 +14,15 @@ interface MessageItemProps {
   compact:      boolean
   showReceipt:  boolean
   conversation: Conversation
+  /** Present in study chats: enter "Modo Tulia" to continue this AI thread. */
+  onContinueWithTulia?: () => void
 }
 
 function formatTime(iso: string): string {
   return new Date(iso).toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' })
 }
 
-export function MessageItem({ message, isMine, compact, showReceipt, conversation }: MessageItemProps) {
+export function MessageItem({ message, isMine, compact, showReceipt, conversation, onContinueWithTulia }: MessageItemProps) {
   const { t } = useTranslation()
   const selfId = useAuthStore(s => s.user?.id)
   const isGroup = conversation.type === 'group'
@@ -101,6 +103,18 @@ export function MessageItem({ message, isMine, compact, showReceipt, conversatio
             {timeLabel}
           </span>
         </div>
+
+        {/* Continue this AI exchange without re-typing "/tulia" (study chats). */}
+        {isAi && onContinueWithTulia && (
+          <button
+            type="button"
+            onClick={onContinueWithTulia}
+            className="group/cont mt-1 px-1 inline-flex items-center gap-1 text-2xs text-text-muted hover:text-accent transition-colors"
+          >
+            <Sparkles className="w-3 h-3 opacity-60 group-hover/cont:opacity-100" />
+            {t('study.chat.continueTulia', 'Seguir con Tulia')}
+          </button>
+        )}
 
         {/* Receipt sits as a quiet status below — only on mobile under the last sent message */}
         {showReceipt && receiptLabel && (

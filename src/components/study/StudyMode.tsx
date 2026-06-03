@@ -1,6 +1,7 @@
 import { useEffect, useState, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useStudyStore } from '@/lib/store/useStudyStore'
+import { useChatStore } from '@/lib/store/useChatStore'
 import { useAuthStore } from '@/lib/store/useAuthStore'
 import { useUIStore } from '@/lib/store/useUIStore'
 import { useStudySession } from '@/hooks/useStudySession'
@@ -98,6 +99,18 @@ export function StudyMode() {
       if ((e.metaKey || e.ctrlKey) && e.key === 'z') {
         e.preventDefault()
         getActions()?.undo?.()
+        return
+      }
+
+      // Cmd/Ctrl+J: jump into "Modo Tulia" — open the chat and arm the composer
+      // so you can talk to the AI without typing "/tulia". Works while typing.
+      if ((e.metaKey || e.ctrlKey) && (e.key === 'j' || e.key === 'J')) {
+        e.preventDefault()
+        const convId = useStudyStore.getState().activeSession?.conversation_id
+        if (convId) {
+          setChatOpen(true)
+          useChatStore.getState().setComposerAudience(convId, 'tulia')
+        }
         return
       }
 

@@ -221,3 +221,12 @@ body {
   animation: study-chat-ring 0.85s cubic-bezier(0.22, 1, 0.36, 1) forwards;
   pointer-events: none;
 }
+
+/* Lift the edge-label layer above nodes (selected nodes elevate to z-index
+   1000) so an edge's delete button is clickable instead of being hidden behind
+   notes/verses. Scoped inside the viewport's stacking context (the viewport
+   has a transform), so it never covers panels, the minimap, or other chrome.
+   The layer is pointer-events:none; only the edge's own controls capture clicks. */
+.react-flow__edgelabel-renderer {
+  z-index: 1001;
+}

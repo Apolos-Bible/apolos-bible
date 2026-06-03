@@ -41,7 +41,7 @@ export function CommandPicker({ commands, activeIdx, onSelect, onHover }: Props)
               i === activeIdx ? 'bg-bg-tertiary' : 'hover:bg-bg-tertiary',
             )}
           >
-            <span className="text-sm font-mono font-medium text-accent w-8 shrink-0">
+            <span className="text-sm font-mono font-medium text-accent min-w-[3.5rem] shrink-0">
               {cmd.label}
             </span>
             <span className="text-xs text-text-muted">{t(cmd.description as any)}</span>
