@@ -1362,6 +1362,7 @@ useEffect(() => {
           deleteKeyCode={['Backspace', 'Delete']}
           multiSelectionKeyCode="Shift"
           selectionKeyCode="Shift"
+          elevateEdgesOnSelect
           className={`bg-bg-secondary${
             tool === 'draw' || tool === 'erase'
               ? spaceHeld

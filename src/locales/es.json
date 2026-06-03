@@ -149,7 +149,6 @@
   "study.toolbar.unlock": "Desbloquear",
   "study.toolbar.chat": "Chat (A)",
 
-  "study.ai.hint": "Pregúntale a Tulia o pídele que cambie el lienzo",
   "study.ai.errorVerify": "Verifica tu correo para usar a Tulia.",
   "study.ai.errorBudget": "Has alcanzado el límite de IA de este mes.",
   "study.ai.errorGeneric": "No se pudo contactar a Tulia. Intenta de nuevo.",
@@ -164,6 +163,12 @@
   "study.chat.toggle": "Mostrar chat del estudio",
   "study.chat.close": "Cerrar",
   "study.chat.minimize": "Minimizar",
+  "study.chat.tuliaMode": "Modo Tulia",
+  "study.chat.toTulia": "Pregúntale a Tulia…",
+  "study.chat.sendToTulia": "Enviar a Tulia",
+  "study.chat.exitTulia": "Salir del modo Tulia (Esc)",
+  "study.chat.continueTulia": "Seguir con Tulia",
+  "study.chat.returnNudge": "¿Volver al estudio? Sigues escribiéndole a Tulia.",
 
   "study.topBar.exit": "Salir",
   "study.topBar.invite": "Invitar",
@@ -395,6 +400,7 @@
   "chat.commandInsert": "↵ insertar",
   "chat.commandClose": "Esc cerrar",
   "chat.commandVerseDesc": "Buscar e insertar un versículo",
+  "chat.commandTuliaDesc": "Hablar con Tulia (la IA)",
   "chat.conversationsEmpty": "Sin conversaciones aún. Inicia una desde el botón +.",
   "chat.empty.headline": "Aún no hay tertulia",
   "chat.empty.body": "Invita a un amigo o únete a un estudio para empezar a conversar.",

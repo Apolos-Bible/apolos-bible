@@ -23,6 +23,13 @@ type ChatState = {
   typing:        Record<number, TypingEntry[]>
   /** Per-conversation flag: Tulia (AI) is generating a reply right now. */
   aiThinking:    Record<number, boolean>
+  /**
+   * Per-conversation composer audience. 'tulia' = sticky "Modo Tulia": every
+   * message is routed to the AI assistant without a "/tulia" prefix until the
+   * user exits. Default (absent) = 'study' (the human group). Local/UI only —
+   * never synced to other participants.
+   */
+  composerAudience: Record<number, 'study' | 'tulia'>
 
   load: () => Promise<void>
   select: (id: number | null) => Promise<void>
@@ -30,6 +37,7 @@ type ChatState = {
   loadOlder: (id: number) => Promise<void>
   send: (id: number, body: string) => Promise<void>
   askTulia: (id: number, sessionId: string, prompt: string, documents?: AiContextDocument[]) => Promise<void>
+  setComposerAudience: (id: number, audience: 'study' | 'tulia') => void
   markRead: (id: number) => Promise<void>
   notifyTyping: (id: number) => void
   listenForUpdates: (userId: number) => void
@@ -166,6 +174,7 @@ export const useChatStore = create<ChatState>((set, get) => ({
   loadingThread: {},
   typing:        {},
   aiThinking:    {},
+  composerAudience: {},
 
   load: async () => {
     set({ loadingList: true })
@@ -245,7 +254,7 @@ export const useChatStore = create<ChatState>((set, get) => ({
     })
   },
 
-  // Invoke the Tulia AI assistant for a study conversation. The human "@tulia"
+  // Invoke the Tulia AI assistant for a study conversation. The human "/tulia"
   // message has already been sent; this runs the grounded loop server-side,
   // appends Tulia's persisted reply, and applies any canvas mutations. Other
   // participants receive the reply over the normal realtime channel.
@@ -310,6 +319,9 @@ export const useChatStore = create<ChatState>((set, get) => ({
       set((s) => ({ aiThinking: { ...s.aiThinking, [id]: false } }))
     }
   },
+
+  setComposerAudience: (id, audience) =>
+    set((s) => ({ composerAudience: { ...s.composerAudience, [id]: audience } })),
 
   markRead: async (id) => {
     try {
@@ -410,6 +422,6 @@ export const useChatStore = create<ChatState>((set, get) => ({
     }
     subscribed.clear()
     privateChannelName = null
-    set({ conversations: [], selectedId: null, messages: {}, typing: {}, aiThinking: {} })
+    set({ conversations: [], selectedId: null, messages: {}, typing: {}, aiThinking: {}, composerAudience: {} })
   },
 }))
