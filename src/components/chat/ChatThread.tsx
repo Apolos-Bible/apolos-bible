@@ -34,6 +34,7 @@ export function ChatThread({ conversation, onBack }: ChatThreadProps) {
   const loadOlder      = useChatStore(s => s.loadOlder)
   const typingEntries  = useChatStore(s => s.typing[conversation.id] ?? EMPTY_TYPING)
   const aiThinking     = useChatStore(s => s.aiThinking[conversation.id] === true)
+  const setComposerAudience = useChatStore(s => s.setComposerAudience)
   const selfId         = useAuthStore(s => s.user?.id)
 
   const scrollRef = useRef<HTMLDivElement>(null)
@@ -119,6 +120,7 @@ export function ChatThread({ conversation, onBack }: ChatThreadProps) {
           compact={compact}
           showReceipt={showReceipt}
           conversation={conversation}
+          onContinueWithTulia={conversation.study_session_id ? () => setComposerAudience(conversation.id, 'tulia') : undefined}
         />
       ),
     })

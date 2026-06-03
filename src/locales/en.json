@@ -149,7 +149,6 @@
   "study.toolbar.unlock": "Unlock",
   "study.toolbar.chat": "Chat (A)",
 
-  "study.ai.hint": "Ask Tulia, or have it change the canvas",
   "study.ai.errorVerify": "Verify your email to use Tulia.",
   "study.ai.errorBudget": "You've reached this month's AI limit.",
   "study.ai.errorGeneric": "Couldn't reach Tulia. Try again.",
@@ -164,6 +163,12 @@
   "study.chat.toggle": "Toggle study chat",
   "study.chat.close": "Close",
   "study.chat.minimize": "Minimize",
+  "study.chat.tuliaMode": "Tulia mode",
+  "study.chat.toTulia": "Ask Tulia…",
+  "study.chat.sendToTulia": "Send to Tulia",
+  "study.chat.exitTulia": "Exit Tulia mode (Esc)",
+  "study.chat.continueTulia": "Continue with Tulia",
+  "study.chat.returnNudge": "Back to the study? You're still messaging Tulia.",
 
   "study.topBar.exit": "Exit",
   "study.topBar.invite": "Invite",
@@ -395,6 +400,7 @@
   "chat.commandInsert": "↵ insert",
   "chat.commandClose": "Esc close",
   "chat.commandVerseDesc": "Search and insert a verse",
+  "chat.commandTuliaDesc": "Talk to Tulia (the AI)",
   "chat.conversationsEmpty": "No conversations yet. Start one from the + button.",
   "chat.empty.headline": "No conversation yet",
   "chat.empty.body": "Invite a friend or join a study to start chatting.",

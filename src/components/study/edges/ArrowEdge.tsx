@@ -47,7 +47,10 @@ export function ArrowEdge({
           className="nodrag nopan absolute flex items-center gap-1.5"
           style={{
             transform: `translate(-50%, -50%) translate(${labelX}px, ${labelY}px)`,
-            pointerEvents: 'all',
+            // The label layer sits above nodes (z-index 1001) so the delete
+            // button is reachable; keep it click-through so it doesn't block
+            // clicks on the nodes underneath — only the button re-enables clicks.
+            pointerEvents: 'none',
           }}
         >
           {data?.label != null && (
@@ -62,7 +65,7 @@ export function ArrowEdge({
               onKeyDown={(e) => {
                 if (e.key === 'Enter' || e.key === ' ') removeEdge(e);
               }}
-              className="flex items-center justify-center w-5 h-5 rounded-full bg-surface border border-border text-text-muted hover:text-text-primary hover:border-border-strong shadow-sm"
+              className="pointer-events-auto cursor-pointer flex items-center justify-center w-5 h-5 rounded-full bg-surface border border-border text-text-muted hover:text-text-primary hover:border-border-strong shadow-sm"
               aria-label="Remove edge"
               title="Remove edge"
             >

@@ -11,7 +11,7 @@ export function getEdgesMap(doc: Y.Doc): Y.Map<Y.Map<any>> {
 // --- Attached AI context documents (shared across all study participants) ---
 // Extracted text of PDFs a participant shared as grounding context for Tulia.
 // They live in the Yjs doc so everyone sees the same attachments and anyone's
-// "@tulia" question carries them. They are NEVER auto-added to the canvas.
+// "/tulia" question carries them. They are NEVER auto-added to the canvas.
 export interface StoredAiDocument {
   id: string;
   name: string;

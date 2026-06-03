@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { MessageSquare } from 'lucide-react'
+import { MessageSquare, Sparkles } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { cn } from '@/lib/cn'
 import { chatApi, type ChatMessage, type Conversation } from '@/lib/chatApi'
@@ -22,7 +22,7 @@ interface StudyChatWidgetProps {
  * surface so threading, typing, receipts, and history all come for free.
  *
  * This is the single chat surface for a study: human messages plus the Tulia
- * AI assistant, summoned inline by mentioning "@tulia".
+ * AI assistant, summoned inline with the "/tulia" command.
  */
 export function StudyChatWidget({ conversationId, open: controlledOpen, onOpenChange }: StudyChatWidgetProps) {
   const { t } = useTranslation()
@@ -31,6 +31,8 @@ export function StudyChatWidget({ conversationId, open: controlledOpen, onOpenCh
   const conversations = useChatStore(s => s.conversations)
   const messages = useChatStore(s => s.messages[conversationId] ?? EMPTY_MESSAGES)
   const markRead = useChatStore(s => s.markRead)
+  // When "Modo Tulia" is armed, the bubble becomes an AI (Sparkles) icon.
+  const tuliaArmed = useChatStore(s => s.composerAudience[conversationId]) === 'tulia'
 
   const [conversation, setConversation] = useState<Conversation | null>(null)
   const [internalOpen, setInternalOpen] = useState(false)
@@ -121,10 +123,10 @@ export function StudyChatWidget({ conversationId, open: controlledOpen, onOpenCh
             open && 'scale-95',
             !open && pingKey > 0 && 'study-chat-bouncing',
           )}
-          aria-label={t('study.chat.toggle', 'Toggle chat')}
-          title={t('study.chat.toggle', 'Toggle chat')}
+          aria-label={tuliaArmed ? t('study.chat.tuliaMode', 'Modo Tulia') : t('study.chat.toggle', 'Toggle chat')}
+          title={tuliaArmed ? t('study.chat.tuliaMode', 'Modo Tulia') : t('study.chat.toggle', 'Toggle chat')}
         >
-          <MessageSquare className="w-5 h-5" />
+          {tuliaArmed ? <Sparkles className="w-5 h-5" /> : <MessageSquare className="w-5 h-5" />}
           {unread > 0 && (
             <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 rounded-full bg-red-500 text-white text-2xs font-medium flex items-center justify-center border-2 border-bg-primary">
               {unread > 99 ? '99+' : unread}
