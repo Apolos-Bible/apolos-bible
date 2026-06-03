@@ -8,6 +8,36 @@ export function getEdgesMap(doc: Y.Doc): Y.Map<Y.Map<any>> {
   return doc.getMap('edges');
 }
 
+// --- Attached AI context documents (shared across all study participants) ---
+// Extracted text of PDFs a participant shared as grounding context for Tulia.
+// They live in the Yjs doc so everyone sees the same attachments and anyone's
+// "@tulia" question carries them. They are NEVER auto-added to the canvas.
+export interface StoredAiDocument {
+  id: string;
+  name: string;
+  text: string;
+  truncated?: boolean;
+  addedBy?: string | null;
+  addedAt: number;
+}
+
+export function getAiDocumentsArray(doc: Y.Doc): Y.Array<StoredAiDocument> {
+  return doc.getArray('aiDocuments');
+}
+
+export function addAiDocument(doc: Y.Doc, document: StoredAiDocument) {
+  doc.transact(() => {
+    getAiDocumentsArray(doc).push([document]);
+  });
+}
+
+export function removeAiDocument(doc: Y.Doc, id: string) {
+  doc.transact(() => {
+    const arr = getAiDocumentsArray(doc);
+    const idx = arr.toArray().findIndex((d) => d.id === id);
+    if (idx !== -1) arr.delete(idx, 1);
+  });
+}
 
 export function nodeFromYMap(id: string, m: Y.Map<any>) {
   const node: any = {

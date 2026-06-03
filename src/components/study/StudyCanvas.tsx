@@ -775,6 +775,63 @@ function StudyCanvasInner({
     undoManagerRef.current?.stopCapturing();
   }, [isGuest]);
 
+  // Programmatic node deletion (touch contextual menu). Mirrors the keyboard
+  // delete path: removes the node(s) and any connected edges from the Y.Doc so
+  // collaborators stay in sync, then updates local React Flow state.
+  const deleteNodes = useCallback((ids: string[]) => {
+    if (isGuest || ids.length === 0) return;
+    const d = docRef.current;
+    if (!d) return;
+    const idSet = new Set(ids);
+    const edgeIdsToDelete = edgesRef.current
+      .filter((e) => idSet.has(e.source) || idSet.has(e.target))
+      .map((e) => e.id);
+    const edgeIdSet = new Set(edgeIdsToDelete);
+    d.transact(() => {
+      const nodesMap = getNodesMap(d);
+      const edgesMap = getEdgesMap(d);
+      ids.forEach((id) => {
+        pendingPositionWritesRef.current.delete(id);
+        nodesMap.delete(id);
+      });
+      edgeIdsToDelete.forEach((eid) => edgesMap.delete(eid));
+    }, 'local');
+    setNodes((nds) => nds.filter((n) => !idSet.has(n.id)));
+    if (edgeIdSet.size) setEdges((eds) => eds.filter((e) => !edgeIdSet.has(e.id)));
+    undoManagerRef.current?.stopCapturing();
+  }, [isGuest]);
+
+  // Duplicate a node in place (offset slightly). Connected edges are not
+  // copied — only the node, its type, dimensions and (deep-cloned) data.
+  const duplicateNode = useCallback((id: string) => {
+    if (isGuest) return;
+    const d = docRef.current;
+    if (!d) return;
+    const src = displayedNodesRef.current.find((n) => n.id === id);
+    if (!src || !src.type) return;
+
+    const newId = `${src.type}-dup-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
+    const position = { x: src.position.x + 28, y: src.position.y + 28 };
+    const width = (src as any).width;
+    const height = (src as any).height;
+    let data: unknown;
+    try {
+      data = JSON.parse(JSON.stringify(src.data ?? {}));
+    } catch {
+      data = { ...(src.data as object) };
+    }
+
+    d.transact(() => {
+      const nodesMap = getNodesMap(d);
+      writeNodeToMap(nodesMap, { id: newId, type: src.type as string, position, width, height, data: data as any });
+    }, 'local');
+    setNodes((nds) => [
+      ...nds,
+      { id: newId, type: src.type, position, width, height, data } as unknown as Node,
+    ]);
+    undoManagerRef.current?.stopCapturing();
+  }, [isGuest]);
+
   // Cross references: insert a verse node positioned around the source and
   // connect it with an edge tagged 'xref'.
   const addCrossRefNode = useCallback((
@@ -1077,11 +1134,131 @@ function StudyCanvasInner({
     [isGuest, rfStore],
   );
 
+  // --- AI assistant bridge ---
+  // Serialize a compact, semantic view of the canvas for the backend so the
+  // assistant can reason about what's already on the board. Drawings carry no
+  // text, so they're omitted.
+  const getCanvasContext = useCallback(() => {
+    const nodes = displayedNodesRef.current
+      .filter((n) => n.type !== 'drawing')
+      .map((n) => {
+        const data: any = n.data ?? {};
+        const out: any = { id: n.id, type: n.type };
+        if (data.reference) out.reference = data.reference;
+        if (n.type === 'sticky' && data.text) out.text = data.text;
+        if (n.type === 'ai-note') {
+          out.text = [data.question, data.answer].filter(Boolean).join(' — ');
+        }
+        return out;
+      });
+    const edges = edgesRef.current.map((e) => ({
+      source: e.source,
+      target: e.target,
+      kind: (e.data as any)?.kind ?? '',
+    }));
+    return { nodes, edges };
+  }, []);
+
+  // Apply a backend-resolved mutation plan to the shared Yjs doc in one
+  // transaction. New nodes get temp ids the model invented; we map them to real
+  // ids so 'connect' ops (which may reference temp ids OR existing node ids)
+  // resolve correctly. Placement reuses the radial fan-out / pickHandlesByGeometry
+  // patterns used by addCrossRefNode/addAiNoteNode.
+  const applyAiMutations = useCallback((mutations: Array<Record<string, any>>) => {
+    if (isGuest) return;
+    const d = docRef.current;
+    if (!d || !Array.isArray(mutations) || mutations.length === 0) return;
+
+    const adds = mutations.filter((m) => m?.op === 'add_node');
+    const connects = mutations.filter((m) => m?.op === 'connect');
+    if (adds.length === 0 && connects.length === 0) return;
+
+    const baseTs = Date.now();
+    const idMap = new Map<string, string>();
+    const rects = new Map<string, { x: number; y: number; w: number; h: number }>();
+    for (const n of displayedNodesRef.current) {
+      rects.set(n.id, {
+        x: n.position.x,
+        y: n.position.y,
+        w: (n as any).width ?? 280,
+        h: (n as any).height ?? 120,
+      });
+    }
+
+    // Anchor the new cluster on an existing node the AI is connecting to, if any.
+    let anchor: { x: number; y: number } | null = null;
+    for (const c of connects) {
+      const ex = displayedNodesRef.current.find((n) => n.id === c.source || n.id === c.target);
+      if (ex) {
+        anchor = {
+          x: ex.position.x + ((ex as any).width ?? 280) / 2,
+          y: ex.position.y + ((ex as any).height ?? 120) / 2,
+        };
+        break;
+      }
+    }
+    const center = anchor ?? getVisibleCenterFlow();
+    const sizeFor = (type: string) =>
+      type === 'ai-note' ? { w: 300, h: 180 } : type === 'passage' ? { w: 360, h: 220 } : { w: 300, h: 120 };
+
+    d.transact(() => {
+      const nodesMap = getNodesMap(d);
+      const edgesMap = getEdgesMap(d);
+
+      adds.forEach((m, i) => {
+        const realId = `${m.type === 'ai-note' ? 'ai' : m.type}-${baseTs}-${i}`;
+        idMap.set(m.temp_id, realId);
+        const { w, h } = sizeFor(m.type);
+        let position: { x: number; y: number };
+        if (anchor) {
+          const angle = Math.PI / 4 + i * (Math.PI / 6);
+          const distance = 360 + (i % 2) * 80;
+          position = {
+            x: center.x + Math.cos(angle) * distance - w / 2,
+            y: center.y + Math.sin(angle) * distance - h / 2,
+          };
+        } else {
+          const cols = Math.max(1, Math.ceil(Math.sqrt(adds.length)));
+          const col = i % cols;
+          const row = Math.floor(i / cols);
+          const gx = 340;
+          const gy = 240;
+          position = {
+            x: center.x - ((cols - 1) * gx) / 2 + col * gx - w / 2,
+            y: center.y + row * gy - h / 2,
+          };
+        }
+        rects.set(realId, { x: position.x, y: position.y, w, h });
+        writeNodeToMap(nodesMap, { id: realId, type: m.type, position, width: w, height: h, data: m.data });
+      });
+
+      connects.forEach((c, i) => {
+        const source = idMap.get(c.source) ?? c.source;
+        const target = idMap.get(c.target) ?? c.target;
+        if (source === target) return;
+        const sr = rects.get(source);
+        const tr = rects.get(target);
+        if (!sr || !tr) return; // edge references a node that doesn't exist
+        const handles = pickHandlesByGeometry(sr, tr);
+        writeEdgeToMap(edgesMap, {
+          id: `ai-${source}-${target}-${baseTs}-${i}`,
+          source,
+          target,
+          sourceHandle: handles.sourceHandle,
+          targetHandle: handles.targetHandle,
+          type: 'default',
+          data: { kind: c.kind || 'ai', ...(c.label ? { label: c.label } : {}) },
+        });
+      });
+    });
+    undoManagerRef.current?.stopCapturing();
+  }, [isGuest, getVisibleCenterFlow]);
+
 useEffect(() => {
-    (window as any).__studyCanvasActions = { addStickyNote, addVerseNode, addPassageNode, addVerseChain, addCrossRefNode, addAiNoteNode, setVerseNodeVersion, undo, redo, resizeNode, zoomIn, zoomOut, fitView, toggleLock };
+    (window as any).__studyCanvasActions = { addStickyNote, addVerseNode, addPassageNode, addVerseChain, addCrossRefNode, addAiNoteNode, setVerseNodeVersion, undo, redo, resizeNode, deleteNodes, duplicateNode, zoomIn, zoomOut, fitView, toggleLock, getCanvasContext, applyAiMutations };
     (window as any).__studyCanvasState = { isLocked: !isInteractive };
     return () => { delete (window as any).__studyCanvasActions; delete (window as any).__studyCanvasState; };
-  }, [addStickyNote, addVerseNode, addPassageNode, addVerseChain, addCrossRefNode, addAiNoteNode, setVerseNodeVersion, undo, redo, resizeNode, zoomIn, zoomOut, fitView, toggleLock, isInteractive]);
+  }, [addStickyNote, addVerseNode, addPassageNode, addVerseChain, addCrossRefNode, addAiNoteNode, setVerseNodeVersion, undo, redo, resizeNode, deleteNodes, duplicateNode, zoomIn, zoomOut, fitView, toggleLock, getCanvasContext, applyAiMutations, isInteractive]);
 
   // --- Cursor tracking ---
   const handleCanvasPointerMove = useCallback(

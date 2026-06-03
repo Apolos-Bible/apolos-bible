@@ -1,6 +1,7 @@
 import { memo } from 'react';
-import { NodeResizer, type NodeProps } from '@xyflow/react';
+import { NodeResizer, NodeResizeControl, type NodeProps } from '@xyflow/react';
 import { cn } from '@/lib/cn';
+import { useIsMobile } from '@/lib/useIsMobile';
 import { buildPenPath, strokeGeometryBounds, type StrokeData } from '@/lib/study/strokes';
 
 function StrokeShape({ data }: { data: StrokeData }) {
@@ -55,6 +56,7 @@ function StrokeShape({ data }: { data: StrokeData }) {
 export const DrawingNode = memo(function DrawingNode({ data, selected }: NodeProps) {
   const stroke = data as unknown as StrokeData;
   const vb = stroke.viewBox ?? { x: 0, y: 0, w: 1, h: 1 };
+  const isMobile = useIsMobile();
 
   return (
     <div
@@ -63,16 +65,38 @@ export const DrawingNode = memo(function DrawingNode({ data, selected }: NodePro
         selected && 'ring-2 ring-accent',
       )}
     >
-      <NodeResizer
-        isVisible={!!selected}
-        keepAspectRatio
-        minWidth={20}
-        minHeight={20}
-        lineStyle={{ borderWidth: 6, borderColor: 'transparent' }}
-        lineClassName="hover:!border-accent/60 transition-colors"
-        handleStyle={{ width: 10, height: 10, borderRadius: 3 }}
-        handleClassName="!bg-accent !border-2 !border-bg-primary"
-      />
+      {/* Desktop: precise aspect-locked handles. */}
+      {!isMobile && (
+        <NodeResizer
+          isVisible={!!selected}
+          keepAspectRatio
+          minWidth={20}
+          minHeight={20}
+          lineStyle={{ borderWidth: 6, borderColor: 'transparent' }}
+          lineClassName="hover:!border-accent/60 transition-colors"
+          handleStyle={{ width: 10, height: 10, borderRadius: 3 }}
+          handleClassName="!bg-accent !border-2 !border-bg-primary"
+        />
+      )}
+
+      {/* Touch: one large grip at the bottom-right corner. */}
+      {isMobile && selected && (
+        <NodeResizeControl
+          position="bottom-right"
+          keepAspectRatio
+          minWidth={20}
+          minHeight={20}
+          autoScale={false}
+          className="!border-0 !bg-transparent"
+          style={{ width: 30, height: 30, background: 'transparent', border: 'none' }}
+        >
+          <div className="pointer-events-none flex items-center justify-center w-[26px] h-[26px] translate-x-1 translate-y-1 rounded-lg bg-accent text-bg-primary shadow-md">
+            <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" className="w-3.5 h-3.5">
+              <path d="M13.5 6.5 6.5 13.5M13.5 11 11 13.5" />
+            </svg>
+          </div>
+        </NodeResizeControl>
+      )}
       <svg
         width="100%"
         height="100%"
