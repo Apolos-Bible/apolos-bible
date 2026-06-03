@@ -10,6 +10,7 @@ import { StudyToolbar } from './StudyToolbar'
 import { StudyCanvas } from './StudyCanvas'
 import { BiblePanel } from './BiblePanel'
 import { StudyChatWidget } from './StudyChatWidget'
+import { StudyDocContext } from '@/lib/study/StudyDocContext'
 import type { DrawSettings } from './DrawingLayer'
 
 export type Tool = 'select' | 'hand' | 'sticky' | 'verse' | 'draw' | 'erase'
@@ -27,6 +28,7 @@ export function StudyMode() {
   const [tool, setTool] = useState<Tool>('select')
   const [showInsertVerse, setShowInsertVerse] = useState(false)
   const [biblePanelOpen, setBiblePanelOpen] = useState(false)
+  const [chatOpen, setChatOpen] = useState(false)
   const [drawSettings, setDrawSettings] = useState<DrawSettings>({
     kind: 'pen',
     color: DRAW_COLORS[0],
@@ -115,6 +117,10 @@ export function StudyMode() {
       }
       if (e.key === 'b' || e.key === 'B') {
         setBiblePanelOpen(v => !v)
+        return
+      }
+      if (e.key === 'a' || e.key === 'A') {
+        setChatOpen(v => !v)
         return
       }
       if (e.key === 'd' || e.key === 'D') { setTool('draw'); return }
@@ -206,6 +212,8 @@ export function StudyMode() {
           onCloseInsertVerse={() => { setShowInsertVerse(false); setTool('select') }}
           biblePanelOpen={biblePanelOpen}
           onToggleBiblePanel={() => setBiblePanelOpen(v => !v)}
+          chatOpen={chatOpen}
+          onToggleChat={() => setChatOpen(v => !v)}
           isGuest={isGuest}
           drawSettings={drawSettings}
           onDrawSettingsChange={setDrawSettings}
@@ -227,7 +235,16 @@ export function StudyMode() {
         />
         <BiblePanel open={biblePanelOpen} onClose={() => setBiblePanelOpen(false)} />
         {!isGuest && activeSession?.conversation_id && (
-          <StudyChatWidget conversationId={activeSession.conversation_id} />
+          // Provide the shared Yjs doc so the chat composer can read/write the
+          // attached AI context documents (StudyCanvas re-provides the same doc
+          // internally for its nodes).
+          <StudyDocContext.Provider value={doc}>
+            <StudyChatWidget
+              conversationId={activeSession.conversation_id}
+              open={chatOpen}
+              onOpenChange={setChatOpen}
+            />
+          </StudyDocContext.Provider>
         )}
       </div>
     </div>

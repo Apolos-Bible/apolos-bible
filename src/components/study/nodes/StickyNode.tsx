@@ -1,7 +1,7 @@
 import { useContext, useEffect, useRef, useState, useCallback } from 'react';
 import { Handle, Position, type NodeProps, type Node } from '@xyflow/react';
 import { useTranslation } from 'react-i18next';
-import { Settings2 } from 'lucide-react';
+import { Palette } from 'lucide-react';
 import { cn } from '@/lib/cn';
 import { StudyDocContext } from '@/lib/study/StudyDocContext';
 import { getNodesMap } from '@/lib/study/yDocHelpers';
@@ -93,7 +93,21 @@ useEffect(() => {
   const colorStyle = STICKY_COLORS.find((c) => c.value === color) ?? STICKY_COLORS[0];
 
   return (
-    <ResizableNode id={id} selected={selected} minWidth={180} minHeight={90}>
+    <ResizableNode
+      id={id}
+      selected={selected}
+      minWidth={180}
+      minHeight={90}
+      radialActions={[
+        {
+          key: 'color',
+          icon: <Palette className="w-[18px] h-[18px]" />,
+          label: t('study.node.color', 'Color'),
+          active: settingsOpen,
+          onClick: () => setSettingsOpen((o) => !o),
+        },
+      ]}
+    >
     <div
       className={cn(
         'group/sticky relative rounded-lg border shadow-sm w-full h-full flex flex-col',
@@ -132,60 +146,35 @@ useEffect(() => {
         placeholder={t('study.sticky.placeholder')}
       />
 
-      {/* Settings button */}
-      <div
-        ref={settingsRef}
-        className={cn(
-          'nodrag absolute bottom-1.5 right-1.5',
-          'opacity-0 group-hover/sticky:opacity-100 focus-within:opacity-100 transition-opacity',
-          (selected || settingsOpen) && 'opacity-100',
-        )}
-      >
-        <button
-          type="button"
-          onClick={(e) => {
-            e.stopPropagation();
-            setSettingsOpen((o) => !o);
-          }}
+      {/* Color popover — opened from the node's radial menu (Color action) */}
+      {settingsOpen && (
+        <div
+          ref={settingsRef}
           className={cn(
-            'cursor-pointer flex items-center justify-center w-6 h-6 rounded-md',
-            'text-text-muted hover:text-text-primary hover:bg-black/5 dark:hover:bg-white/10 transition-colors',
-            settingsOpen && 'bg-black/5 dark:bg-white/10 text-text-primary',
+            'nodrag absolute bottom-2 left-1/2 -translate-x-1/2 z-10',
+            'bg-surface border border-border rounded-lg shadow-lg',
+            'p-2 flex items-center gap-1.5',
           )}
-          title={t('study.sticky.settings', 'Opciones')}
-          aria-label={t('study.sticky.settings', 'Opciones')}
         >
-          <Settings2 className="w-3.5 h-3.5" />
-        </button>
-
-        {settingsOpen && (
-          <div
-            className={cn(
-              'absolute bottom-full right-0 mb-1.5 z-10',
-              'bg-surface border border-border rounded-lg shadow-lg',
-              'p-2 flex items-center gap-1.5',
-            )}
-          >
-            {STICKY_COLORS.map((c) => (
-              <button
-                key={c.value}
-                type="button"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  handleColorChange(c.value);
-                }}
-                className={cn(
-                  'cursor-pointer w-5 h-5 rounded-full transition-transform hover:scale-110',
-                  c.swatch,
-                  color === c.value && 'ring-2 ring-text-primary ring-offset-2 ring-offset-surface',
-                )}
-                title={t(c.colorKey)}
-                aria-label={t(c.colorKey)}
-              />
-            ))}
-          </div>
-        )}
-      </div>
+          {STICKY_COLORS.map((c) => (
+            <button
+              key={c.value}
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                handleColorChange(c.value);
+              }}
+              className={cn(
+                'cursor-pointer w-5 h-5 rounded-full transition-transform hover:scale-110',
+                c.swatch,
+                color === c.value && 'ring-2 ring-text-primary ring-offset-2 ring-offset-surface',
+              )}
+              title={t(c.colorKey)}
+              aria-label={t(c.colorKey)}
+            />
+          ))}
+        </div>
+      )}
 
       <Handle id="bottom" type="source" position={Position.Bottom} className="!bg-border" />
     </div>

@@ -33,6 +33,7 @@ export function ChatThread({ conversation, onBack }: ChatThreadProps) {
   const loadMessages   = useChatStore(s => s.loadMessages)
   const loadOlder      = useChatStore(s => s.loadOlder)
   const typingEntries  = useChatStore(s => s.typing[conversation.id] ?? EMPTY_TYPING)
+  const aiThinking     = useChatStore(s => s.aiThinking[conversation.id] === true)
   const selfId         = useAuthStore(s => s.user?.id)
 
   const scrollRef = useRef<HTMLDivElement>(null)
@@ -198,10 +199,16 @@ export function ChatThread({ conversation, onBack }: ChatThreadProps) {
             <TypingDots names={typingEntries.map(e => e.userName)} />
           </div>
         )}
+
+        {aiThinking && (
+          <div className="px-2 mt-1">
+            <TypingDots names={['Tulia']} />
+          </div>
+        )}
       </div>
 
       {/* Input */}
-      <MessageInput conversationId={conversation.id} />
+      <MessageInput conversationId={conversation.id} studySessionId={conversation.study_session_id} />
       <ManageConversationDialog
         conversation={conversation}
         open={manageOpen}

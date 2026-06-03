@@ -11,14 +11,20 @@ const EMPTY_MESSAGES: ChatMessage[] = []
 
 interface StudyChatWidgetProps {
   conversationId: number
+  /** Optional controlled open state (e.g. toggled by the `A` shortcut). */
+  open?: boolean
+  onOpenChange?: (open: boolean) => void
 }
 
 /**
  * Floating Messenger-style chat for the study page. Anchored to the
  * bottom-right corner of the canvas. Reuses ChatThread for the message
  * surface so threading, typing, receipts, and history all come for free.
+ *
+ * This is the single chat surface for a study: human messages plus the Tulia
+ * AI assistant, summoned inline by mentioning "@tulia".
  */
-export function StudyChatWidget({ conversationId }: StudyChatWidgetProps) {
+export function StudyChatWidget({ conversationId, open: controlledOpen, onOpenChange }: StudyChatWidgetProps) {
   const { t } = useTranslation()
   const userId = useAuthStore(s => s.user?.id)
 
@@ -27,7 +33,13 @@ export function StudyChatWidget({ conversationId }: StudyChatWidgetProps) {
   const markRead = useChatStore(s => s.markRead)
 
   const [conversation, setConversation] = useState<Conversation | null>(null)
-  const [open, setOpen] = useState(false)
+  const [internalOpen, setInternalOpen] = useState(false)
+  const isControlled = controlledOpen !== undefined
+  const open = isControlled ? controlledOpen : internalOpen
+  const setOpen = (next: boolean) => {
+    if (!isControlled) setInternalOpen(next)
+    onOpenChange?.(next)
+  }
   const [unreadFromOpen, setUnreadFromOpen] = useState(0)
   // Bumped each time a new message from someone else lands while the panel
   // is closed; used as a key to retrigger the bounce + ring animation.
@@ -99,7 +111,7 @@ export function StudyChatWidget({ conversationId }: StudyChatWidgetProps) {
         )}
         <button
           type="button"
-          onClick={() => setOpen(o => !o)}
+          onClick={() => setOpen(!open)}
           key={`bubble-${pingKey}`}
           className={cn(
             'relative cursor-pointer',

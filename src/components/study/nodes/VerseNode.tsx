@@ -2,7 +2,7 @@ import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { Handle, Position, type NodeProps, type Node } from '@xyflow/react';
 import { useTranslation } from 'react-i18next';
-import { ChevronDown, Loader2, Network, Sparkles } from 'lucide-react';
+import { ChevronDown, Languages, Loader2, Network, Sparkles } from 'lucide-react';
 import { cn } from '@/lib/cn';
 import { useVerseStore } from '@/lib/store/useVerseStore';
 import { ResizableNode } from './ResizableNode';
@@ -78,7 +78,35 @@ export function VerseNode({ id, data, selected }: NodeProps<VerseNodeType>) {
   };
 
   return (
-    <ResizableNode id={id} selected={selected} minWidth={240} minHeight={90}>
+    <ResizableNode
+      id={id}
+      selected={selected}
+      minWidth={240}
+      minHeight={90}
+      radialActions={[
+        {
+          key: 'version',
+          icon: <Languages className="w-[18px] h-[18px]" />,
+          label: t('study.verseNode.changeVersion', 'Cambiar versión'),
+          active: versionMenuOpen,
+          onClick: () => setVersionMenuOpen((v) => !v),
+        },
+        {
+          key: 'ai',
+          icon: <Sparkles className="w-[18px] h-[18px]" />,
+          label: t('study.verseNode.askAi', 'Preguntar a la IA'),
+          active: aiOpen,
+          onClick: () => setAiOpen((v) => !v),
+        },
+        {
+          key: 'xref',
+          icon: <Network className="w-[18px] h-[18px]" />,
+          label: t('study.verseNode.crossRefs'),
+          active: xrefOpen,
+          onClick: () => setXrefOpen((v) => !v),
+        },
+      ]}
+    >
       <div
         className={cn(
           'group/verse relative bg-surface border border-border rounded-lg p-3 shadow-sm w-full h-full flex flex-col overflow-visible',

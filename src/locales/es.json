@@ -147,6 +147,17 @@
   "study.toolbar.fitView": "Ajustar vista",
   "study.toolbar.lock": "Bloquear",
   "study.toolbar.unlock": "Desbloquear",
+  "study.toolbar.chat": "Chat (A)",
+
+  "study.ai.hint": "Pregúntale a Tulia o pídele que cambie el lienzo",
+  "study.ai.errorVerify": "Verifica tu correo para usar a Tulia.",
+  "study.ai.errorBudget": "Has alcanzado el límite de IA de este mes.",
+  "study.ai.errorGeneric": "No se pudo contactar a Tulia. Intenta de nuevo.",
+
+  "study.node.delete": "Eliminar",
+  "study.node.duplicate": "Duplicar",
+  "study.node.color": "Color",
+  "study.node.resize": "Redimensionar",
 
   "study.sticky.placeholder": "Escribe una nota...",
 
