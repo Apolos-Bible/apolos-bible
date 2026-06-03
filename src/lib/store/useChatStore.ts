@@ -1,9 +1,11 @@
 import { create } from 'zustand'
 import { chatApi, type ChatMessage, type Conversation } from '@/lib/chatApi'
+import { aiApi, type AiContextDocument } from '@/lib/aiApi'
 import { initEcho, getEcho } from '@/lib/echo'
 import i18n from '@/lib/i18n'
 import { useAuthStore } from './useAuthStore'
 import { useUIStore } from './useUIStore'
+import { useVerseStore } from './useVerseStore'
 import { notifyChatMessage, clearChatNotifications } from '@/lib/desktopNotify'
 
 interface TypingEntry {
@@ -19,12 +21,15 @@ type ChatState = {
   loadingList:   boolean
   loadingThread: Record<number, boolean>
   typing:        Record<number, TypingEntry[]>
+  /** Per-conversation flag: Tulia (AI) is generating a reply right now. */
+  aiThinking:    Record<number, boolean>
 
   load: () => Promise<void>
   select: (id: number | null) => Promise<void>
   loadMessages: (id: number) => Promise<void>
   loadOlder: (id: number) => Promise<void>
   send: (id: number, body: string) => Promise<void>
+  askTulia: (id: number, sessionId: string, prompt: string, documents?: AiContextDocument[]) => Promise<void>
   markRead: (id: number) => Promise<void>
   notifyTyping: (id: number) => void
   listenForUpdates: (userId: number) => void
@@ -69,6 +74,7 @@ function subscribeToConversation(id: number, set: (fn: (s: ChatState) => Partial
         conversation_id: payload.conversation_id,
         user_id:         payload.user_id,
         user:            payload.user_name ? { id: payload.user_id, name: payload.user_name, email: '' } : null,
+        is_ai:           payload.is_ai === true,
         body:            payload.body,
         created_at:      payload.created_at,
       }
@@ -159,6 +165,7 @@ export const useChatStore = create<ChatState>((set, get) => ({
   loadingList:   false,
   loadingThread: {},
   typing:        {},
+  aiThinking:    {},
 
   load: async () => {
     set({ loadingList: true })
@@ -236,6 +243,72 @@ export const useChatStore = create<ChatState>((set, get) => ({
       list.sort((a, b) => (b.last_message_at ?? '').localeCompare(a.last_message_at ?? ''))
       return { conversations: list }
     })
+  },
+
+  // Invoke the Tulia AI assistant for a study conversation. The human "@tulia"
+  // message has already been sent; this runs the grounded loop server-side,
+  // appends Tulia's persisted reply, and applies any canvas mutations. Other
+  // participants receive the reply over the normal realtime channel.
+  askTulia: async (id, sessionId, prompt, documents) => {
+    set((s) => ({ aiThinking: { ...s.aiThinking, [id]: true } }))
+    try {
+      const actions = (window as never as { __studyCanvasActions?: {
+        getCanvasContext?: () => { nodes: unknown[]; edges: unknown[] }
+        applyAiMutations?: (m: unknown[]) => void
+      } }).__studyCanvasActions
+      const canvas = actions?.getCanvasContext?.() ?? { nodes: [], edges: [] }
+      const versionId = useVerseStore.getState().versionId
+
+      const res = await aiApi.studyChat({
+        session_id: sessionId,
+        conversation_id: id,
+        version_id: versionId,
+        prompt,
+        canvas: canvas as { nodes: never[]; edges: never[] },
+        ...(documents && documents.length > 0 ? { documents } : {}),
+      })
+
+      const message = res.message
+      set((s) => {
+        const existing = s.messages[id] ?? []
+        if (existing.some((m) => m.id === message.id)) return s
+        return { messages: { ...s.messages, [id]: [...existing, message] } }
+      })
+      set((s) => {
+        const list = s.conversations.map((c) =>
+          c.id === id
+            ? {
+                ...c,
+                last_message_at: message.created_at,
+                last_message: {
+                  id:         message.id,
+                  user_id:    message.user_id,
+                  user_name:  message.user?.name ?? 'Tulia',
+                  body:       message.body,
+                  created_at: message.created_at,
+                },
+              }
+            : c,
+        )
+        list.sort((a, b) => (b.last_message_at ?? '').localeCompare(a.last_message_at ?? ''))
+        return { conversations: list }
+      })
+
+      if (Array.isArray(res.mutations) && res.mutations.length > 0) {
+        actions?.applyAiMutations?.(res.mutations as unknown[])
+      }
+    } catch (e) {
+      const status = (e as { status?: number } | null)?.status
+      const msg =
+        status === 403
+          ? i18n.t('study.ai.errorVerify', 'Verifica tu correo para usar a Tulia.')
+          : status === 429
+            ? i18n.t('study.ai.errorBudget', 'Has alcanzado el límite de IA de este mes.')
+            : i18n.t('study.ai.errorGeneric', 'No se pudo contactar a Tulia. Intenta de nuevo.')
+      useUIStore.getState().addToast(msg, 'error')
+    } finally {
+      set((s) => ({ aiThinking: { ...s.aiThinking, [id]: false } }))
+    }
   },
 
   markRead: async (id) => {
@@ -337,6 +410,6 @@ export const useChatStore = create<ChatState>((set, get) => ({
     }
     subscribed.clear()
     privateChannelName = null
-    set({ conversations: [], selectedId: null, messages: {}, typing: {} })
+    set({ conversations: [], selectedId: null, messages: {}, typing: {}, aiThinking: {} })
   },
 }))

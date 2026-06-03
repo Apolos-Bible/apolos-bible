@@ -1,8 +1,12 @@
 import { useEffect, useRef, useState, type KeyboardEvent } from 'react'
 import { useTranslation } from 'react-i18next'
+import { FileText, Paperclip, X } from 'lucide-react'
 import { useChatStore } from '@/lib/store/useChatStore'
 import { useUIStore } from '@/lib/store/useUIStore'
 import { useVerseStore } from '@/lib/store/useVerseStore'
+import { useAuthStore } from '@/lib/store/useAuthStore'
+import { useAiDocuments } from '@/hooks/useAiDocuments'
+import { aiApi } from '@/lib/aiApi'
 import { bibleApi, type ApiSearchResult } from '@/lib/bibleApi'
 import { CHAT_COMMANDS, filterCommands, type ChatCommand } from './chatCommands'
 import { normalizeText } from '@/lib/normalizeText'
@@ -12,22 +16,43 @@ import { cn } from '@/lib/cn'
 
 interface MessageInputProps {
   conversationId: number
+  /** When set, this is a study chat: "@tulia ..." also summons the assistant. */
+  studySessionId?: string | null
 }
 
 // /v  (no space yet) → command picker mode
 const IS_CMD_MODE   = /^\/\S*$/
 // /v  (with space)  → verse autocomplete mode
 const IS_VERSE_MODE = /^\/v\s/
+// "@tulia ..." anywhere → also route the message to the AI assistant.
+const HAS_TULIA_MENTION = /@tulia\b/i
+// Just the bare mention typed → offer suggestion chips.
+const IS_TULIA_HINT = /^@tulia\s*$/i
 
-export function MessageInput({ conversationId }: MessageInputProps) {
+const TULIA_SUGGESTIONS = [
+  'Resume lo que hay en el lienzo',
+  'Añade Juan 3:16 y explícalo',
+  'Conecta los versículos sobre el amor',
+]
+
+export function MessageInput({ conversationId, studySessionId = null }: MessageInputProps) {
   const { t }        = useTranslation()
   const send         = useChatStore(s => s.send)
+  const askTulia     = useChatStore(s => s.askTulia)
   const notifyTyping = useChatStore(s => s.notifyTyping)
   const addToast     = useUIStore(s => s.addToast)
   const versionId    = useVerseStore(s => s.versionId)
+  const userName     = useAuthStore(s => s.user?.name ?? null)
 
-  const [body, setBody]       = useState('')
-  const [sending, setSending] = useState(false)
+  // PDFs attached as shared context for Tulia (live in the study's Yjs doc).
+  // `available` is false outside a study, hiding the attach affordance.
+  const aiDocs = useAiDocuments()
+  const canAttach = !!studySessionId && aiDocs.available
+
+  const [body, setBody]             = useState('')
+  const [sending, setSending]       = useState(false)
+  const [extracting, setExtracting] = useState(false)
+  const fileRef = useRef<HTMLInputElement>(null)
 
   // Command picker state
   const [cmdActive, setCmdActive] = useState(0)
@@ -126,12 +151,67 @@ export function MessageInput({ conversationId }: MessageInputProps) {
       await send(conversationId, trimmed)
       setBody('')
       autoresize()
+      // In a study chat, an "@tulia ..." message also summons the assistant.
+      // Fire-and-forget: it manages its own thinking indicator + bot reply.
+      // Attached documents ride along as grounding context.
+      if (studySessionId && HAS_TULIA_MENTION.test(trimmed)) {
+        const documents = aiDocs.documents.map(d => ({ name: d.name, text: d.text }))
+        void askTulia(conversationId, studySessionId, trimmed, documents)
+      }
     } catch {
       addToast(t('chat.sendFailed'), 'error')
     } finally {
       setSending(false)
     }
   }
+
+  // Attach a PDF as shared context: extract its text server-side (token-free),
+  // store it in the study's Yjs doc so every participant sees it, and announce
+  // it in the thread. Nothing is added to the canvas.
+  const attachPdf = async (file: File) => {
+    if (!studySessionId || extracting) return
+    setExtracting(true)
+    try {
+      const res = await aiApi.extractDocument(studySessionId, file)
+      aiDocs.add({
+        id: `doc-${Date.now()}`,
+        name: res.name,
+        text: res.text,
+        truncated: res.truncated,
+        addedBy: userName,
+        addedAt: Date.now(),
+      })
+      void send(
+        conversationId,
+        t('study.ai.attached', '📄 Adjunté «{{name}}» como contexto para Tulia', { name: res.name }),
+      ).catch(() => {})
+    } catch (e) {
+      const status = (e as { status?: number } | null)?.status
+      const msg =
+        status === 422
+          ? t('study.ai.attachUnreadable', 'No pude leer ese PDF. ¿Tiene texto seleccionable?')
+          : status === 403
+            ? t('study.ai.errorVerify', 'Verifica tu correo para usar a Tulia.')
+            : t('study.ai.attachFailed', 'No se pudo adjuntar el documento.')
+      addToast(msg, 'error')
+    } finally {
+      setExtracting(false)
+    }
+  }
+
+  const onPickFile = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    e.target.value = '' // allow re-selecting the same file
+    if (file) void attachPdf(file)
+  }
+
+  const pickTuliaSuggestion = (s: string) => {
+    setBody(`@tulia ${s} `)
+    textareaRef.current?.focus()
+    requestAnimationFrame(autoresize)
+  }
+
+  const showTuliaHint = !!studySessionId && IS_TULIA_HINT.test(body)
 
   const handleChange = (value: string) => {
     setBody(value)
@@ -163,7 +243,75 @@ export function MessageInput({ conversationId }: MessageInputProps) {
         />
       )}
 
+      {showTuliaHint && (
+        <div className="absolute bottom-full left-3 right-3 mb-2 z-10 rounded-xl border border-border-subtle bg-surface/95 backdrop-blur shadow-lg p-2">
+          <p className="px-1.5 pb-1.5 text-2xs text-text-muted">
+            {t('study.ai.hint', 'Pregúntale a Tulia o pídele que cambie el lienzo')}
+          </p>
+          <div className="flex flex-col gap-1">
+            {TULIA_SUGGESTIONS.map((s) => (
+              <button
+                key={s}
+                type="button"
+                onClick={() => pickTuliaSuggestion(s)}
+                className="text-left text-sm text-text-secondary hover:text-text-primary rounded-lg px-2 py-1.5 hover:bg-bg-tertiary transition-colors"
+              >
+                {s}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {canAttach && aiDocs.documents.length > 0 && (
+        <div className="flex flex-wrap gap-1.5 pb-2">
+          {aiDocs.documents.map((d) => (
+            <span
+              key={d.id}
+              title={d.addedBy ? t('study.ai.attachedBy', 'Adjuntado por {{name}}', { name: d.addedBy }) : undefined}
+              className="inline-flex items-center gap-1.5 max-w-[220px] rounded-md border border-border-subtle bg-bg-tertiary px-2 py-1 text-2xs text-text-secondary"
+            >
+              <FileText className="w-3 h-3 shrink-0 text-accent" />
+              <span className="truncate">{d.name}</span>
+              <button
+                type="button"
+                onClick={() => aiDocs.remove(d.id)}
+                aria-label={t('study.ai.removeDoc', 'Quitar documento')}
+                className="shrink-0 text-text-muted hover:text-text-primary transition-colors"
+              >
+                <X className="w-3 h-3" />
+              </button>
+            </span>
+          ))}
+        </div>
+      )}
+
       <div className="flex items-end gap-2">
+        {canAttach && (
+          <>
+            <input
+              ref={fileRef}
+              type="file"
+              accept="application/pdf,.pdf"
+              className="hidden"
+              onChange={onPickFile}
+            />
+            <button
+              type="button"
+              onClick={() => fileRef.current?.click()}
+              disabled={extracting}
+              aria-label={t('study.ai.attachPdf', 'Adjuntar un PDF como contexto para Tulia')}
+              title={t('study.ai.attachPdf', 'Adjuntar un PDF como contexto para Tulia')}
+              className={cn(
+                'shrink-0 h-9 w-9 md:h-8 md:w-8 rounded-md flex items-center justify-center transition-colors',
+                'text-text-muted hover:text-text-primary hover:bg-bg-tertiary',
+                extracting && 'opacity-40 cursor-not-allowed animate-pulse',
+              )}
+            >
+              <Paperclip className="w-4 h-4" />
+            </button>
+          </>
+        )}
         <textarea
           ref={textareaRef}
           value={body}

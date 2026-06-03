@@ -147,6 +147,17 @@
   "study.toolbar.fitView": "Fit View",
   "study.toolbar.lock": "Lock",
   "study.toolbar.unlock": "Unlock",
+  "study.toolbar.chat": "Chat (A)",
+
+  "study.ai.hint": "Ask Tulia, or have it change the canvas",
+  "study.ai.errorVerify": "Verify your email to use Tulia.",
+  "study.ai.errorBudget": "You've reached this month's AI limit.",
+  "study.ai.errorGeneric": "Couldn't reach Tulia. Try again.",
+
+  "study.node.delete": "Delete",
+  "study.node.duplicate": "Duplicate",
+  "study.node.color": "Color",
+  "study.node.resize": "Resize",
 
   "study.sticky.placeholder": "Write a note...",
 
