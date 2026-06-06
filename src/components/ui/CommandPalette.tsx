@@ -1,25 +1,37 @@
 import { useState, useEffect } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { Command } from 'cmdk'
+import { User, Settings, LogOut } from 'lucide-react'
 import { useUIStore } from '@/lib/store/useUIStore'
 import { useVerseStore } from '@/lib/store/useVerseStore'
+import { useAuthStore } from '@/lib/store/useAuthStore'
 import { bibleApi, ApiSearchResult } from '@/lib/bibleApi'
+import { friendApi } from '@/lib/friendApi'
+import { paths } from '@/router/paths'
+import { UserAvatar } from '@/components/auth/UserAvatar'
 import { normalizeText } from '@/lib/normalizeText'
 import { cn } from '@/lib/cn'
+import type { Friend } from '@/types'
 
 export function CommandPalette() {
   const { t } = useTranslation()
+  const navigate = useNavigate()
   const { commandPaletteOpen, closeCommandPalette } = useUIStore()
   const { selectBook, openVerse } = useVerseStore()
   const books = useVerseStore((s) => s.books)
   const versionId = useVerseStore((s) => s.versionId)
+  const user = useAuthStore((s) => s.user)
+  const logout = useAuthStore((s) => s.logout)
   const [query, setQuery] = useState('')
   const [verseResults, setVerseResults] = useState<ApiSearchResult[]>([])
+  const [people, setPeople] = useState<Friend[]>([])
 
   useEffect(() => {
     if (!commandPaletteOpen) {
       setQuery('')
       setVerseResults([])
+      setPeople([])
     }
   }, [commandPaletteOpen])
 
@@ -39,11 +51,39 @@ export function CommandPalette() {
     return () => clearTimeout(timer)
   }, [query, versionId])
 
+  useEffect(() => {
+    if (!user || query.trim().length < 2) {
+      setPeople([])
+      return
+    }
+    const timer = setTimeout(async () => {
+      try {
+        setPeople((await friendApi.search(query)).slice(0, 6))
+      } catch {
+        setPeople([])
+      }
+    }, 300)
+    return () => clearTimeout(timer)
+  }, [query, user])
+
   if (!commandPaletteOpen) return null
 
   const filteredBooks = books.filter((b) =>
     normalizeText(b.name).includes(normalizeText(query))
   )
+
+  const runNav = (to: string) => {
+    closeCommandPalette()
+    navigate(to)
+  }
+
+  const accountCommands = user
+    ? [
+        { id: 'profile', label: t('command.myProfile'), icon: <User size={14} strokeWidth={1.6} />, run: () => runNav(paths.profile()) },
+        { id: 'settings', label: t('command.settings'), icon: <Settings size={14} strokeWidth={1.6} />, run: () => runNav(paths.settings()) },
+        { id: 'signout', label: t('command.signOut'), icon: <LogOut size={14} strokeWidth={1.6} />, run: () => { closeCommandPalette(); void logout(); navigate(paths.root()) } },
+      ].filter((c) => normalizeText(c.label).includes(normalizeText(query)))
+    : []
 
   const handleBookSelect = (bookId: string) => {
     selectBook(bookId)
@@ -84,6 +124,34 @@ export function CommandPalette() {
             <Command.Empty className="text-sm text-text-muted text-center py-6">
               {t('commandPalette.noResults')}
             </Command.Empty>
+
+            {accountCommands.length > 0 && (
+              <Command.Group
+                heading={
+                  <span className="px-4 py-1.5 text-2xs font-medium text-text-muted uppercase tracking-wider block">
+                    {t('command.account')}
+                  </span>
+                }
+              >
+                {accountCommands.map((c) => (
+                  <Command.Item
+                    key={c.id}
+                    value={`__account_${c.id} ${c.label}`}
+                    onSelect={c.run}
+                    onClick={c.run}
+                    className={cn(
+                      'px-4 py-2 cursor-pointer text-sm text-text-secondary',
+                      'hover:bg-bg-tertiary hover:text-text-primary',
+                      'aria-selected:bg-bg-tertiary aria-selected:text-text-primary',
+                      'flex items-center gap-2 transition-colors',
+                    )}
+                  >
+                    <span className="text-text-muted">{c.icon}</span>
+                    <span>{c.label}</span>
+                  </Command.Item>
+                ))}
+              </Command.Group>
+            )}
 
             {filteredBooks.length > 0 && (
               <Command.Group
@@ -153,6 +221,37 @@ export function CommandPalette() {
                           ? verse.text.slice(0, 72) + '…'
                           : verse.text}
                       </span>
+                    </span>
+                  </Command.Item>
+                ))}
+              </Command.Group>
+            )}
+
+            {people.length > 0 && (
+              <Command.Group
+                heading={
+                  <span className="px-4 py-1.5 text-2xs font-medium text-text-muted uppercase tracking-wider block">
+                    {t('command.people')}
+                  </span>
+                }
+              >
+                {people.map((p) => (
+                  <Command.Item
+                    key={`person-${p.id}`}
+                    value={`__person_${p.id} ${p.name} ${p.email}`}
+                    onSelect={() => runNav(paths.userProfile(p.id))}
+                    onClick={() => runNav(paths.userProfile(p.id))}
+                    className={cn(
+                      'px-4 py-2 cursor-pointer text-sm text-text-secondary',
+                      'hover:bg-bg-tertiary hover:text-text-primary',
+                      'aria-selected:bg-bg-tertiary aria-selected:text-text-primary',
+                      'flex items-center gap-2 transition-colors',
+                    )}
+                  >
+                    <UserAvatar name={p.name} email={p.email} src={p.avatar_url} size="md" />
+                    <span className="flex flex-col min-w-0">
+                      <span className="truncate text-text-primary">{p.name}</span>
+                      <span className="truncate text-2xs text-text-muted">{p.email}</span>
                     </span>
                   </Command.Item>
                 ))}

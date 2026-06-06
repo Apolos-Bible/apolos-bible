@@ -8,6 +8,7 @@ export interface UserSettings {
   font_size: FontSize | null
   reading_mode: ReadingMode | null
   tutorial_completed?: boolean
+  content_public_default?: boolean
 }
 
 export type UserSettingsUpdate = Partial<UserSettings>
