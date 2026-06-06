@@ -16,7 +16,7 @@ import { cn } from '@/lib/cn'
 
 interface MessageInputProps {
   conversationId: number
-  /** When set, this is a study chat: "/tulia ..." also summons the assistant. */
+  /** When set, this is a study chat: "/apolos ..." also summons the assistant. */
   studySessionId?: string | null
 }
 
@@ -24,26 +24,26 @@ interface MessageInputProps {
 const IS_CMD_MODE   = /^\/\S*$/
 // /v  (with space)  → verse autocomplete mode
 const IS_VERSE_MODE = /^\/v\s/
-// A leading "/tulia" routes the message to the AI assistant (prefix stripped).
-// "/tulia" is also registered as a slash command, so it shows in the "/" picker.
-const TULIA_PREFIX = /^\/tulia\b\s*/i
+// A leading "/apolos" routes the message to the AI assistant (prefix stripped).
+// "/apolos" is also registered as a slash command, so it shows in the "/" picker.
+const APOLOS_PREFIX = /^\/apolos\b\s*/i
 
 export function MessageInput({ conversationId, studySessionId = null }: MessageInputProps) {
   const { t }        = useTranslation()
   const send         = useChatStore(s => s.send)
-  const askTulia     = useChatStore(s => s.askTulia)
+  const askApolos    = useChatStore(s => s.askApolos)
   const notifyTyping = useChatStore(s => s.notifyTyping)
   const addToast     = useUIStore(s => s.addToast)
   const versionId    = useVerseStore(s => s.versionId)
   const userName     = useAuthStore(s => s.user?.name ?? null)
   const userId       = useAuthStore(s => s.user?.id)
 
-  // Sticky "Modo Tulia": when armed, every message routes to the AI assistant
-  // without a "/tulia" prefix. Only meaningful inside a study chat.
+  // Sticky "Modo Apolos": when armed, every message routes to the AI assistant
+  // without a "/apolos" prefix. Only meaningful inside a study chat.
   const setComposerAudience = useChatStore(s => s.setComposerAudience)
   const composerAudience = useChatStore(s => s.composerAudience[conversationId])
-  const armed = !!studySessionId && composerAudience === 'tulia'
-  const arm   = () => setComposerAudience(conversationId, 'tulia')
+  const armed = !!studySessionId && composerAudience === 'apolos'
+  const arm   = () => setComposerAudience(conversationId, 'apolos')
   const disarm = () => setComposerAudience(conversationId, 'study')
   // Last message in the thread (to nudge back to humans if someone speaks).
   const lastMessage = useChatStore(s => {
@@ -55,7 +55,7 @@ export function MessageInput({ conversationId, studySessionId = null }: MessageI
   // arrive while armed (reset per conversation below).
   const prevLastIdRef = useRef<number | null>(null)
 
-  // PDFs attached as shared context for Tulia (live in the study's Yjs doc).
+  // PDFs attached as shared context for Apolos (live in the study's Yjs doc).
   // `available` is false outside a study, hiding the attach affordance.
   const aiDocs = useAiDocuments()
   const canAttach = !!studySessionId && aiDocs.available
@@ -115,13 +115,13 @@ export function MessageInput({ conversationId, studySessionId = null }: MessageI
     return () => clearTimeout(timer)
   }, [acQuery, isVerseMode, versionId])
 
-  // Focus the composer whenever Modo Tulia is (re)armed from any entry point
-  // (pill, /tulia, tapping a Tulia bubble, Cmd/Ctrl+J).
+  // Focus the composer whenever Modo Apolos is (re)armed from any entry point
+  // (pill, /apolos, tapping an Apolos bubble, Cmd/Ctrl+J).
   useEffect(() => {
     if (armed) textareaRef.current?.focus()
   }, [armed])
 
-  // Safety net: auto-exit Modo Tulia after ~45s idle with an empty draft, so you
+  // Safety net: auto-exit Modo Apolos after ~45s idle with an empty draft, so you
   // never stay silently pointed at the bot.
   useEffect(() => {
     if (!armed || body.trim() !== '') return
@@ -129,7 +129,7 @@ export function MessageInput({ conversationId, studySessionId = null }: MessageI
     return () => clearTimeout(timer)
   }, [armed, body, conversationId, setComposerAudience])
 
-  // Soft nudge: if a human (not me, not Tulia) speaks while armed, gently suggest
+  // Soft nudge: if a human (not me, not Apolos) speaks while armed, gently suggest
   // returning to the study chat — but never auto-disarm (that would re-add the
   // friction we removed). Only fires for messages that ARRIVE while armed, not
   // for whatever happened to be the last message when you entered the mode.
@@ -144,8 +144,8 @@ export function MessageInput({ conversationId, studySessionId = null }: MessageI
   }, [armed, lastMessage, userId])
 
   const activateCommand = (cmd: ChatCommand) => {
-    // "/tulia" arms Modo Tulia (no prefix to keep typing) instead of inserting text.
-    if (cmd.trigger === 'tulia') {
+    // "/apolos" arms Modo Apolos (no prefix to keep typing) instead of inserting text.
+    if (cmd.trigger === 'apolos') {
       arm()
       setBody('')
       textareaRef.current?.focus()
@@ -193,7 +193,7 @@ export function MessageInput({ conversationId, studySessionId = null }: MessageI
       if (e.key === 'Escape')    { e.preventDefault(); setBody(''); setAcResults([]); return }
     }
 
-    // Esc on an empty composer exits Modo Tulia (back to the human study chat).
+    // Esc on an empty composer exits Modo Apolos (back to the human study chat).
     if (e.key === 'Escape' && armed && body.trim() === '') {
       e.preventDefault()
       disarm()
@@ -209,13 +209,13 @@ export function MessageInput({ conversationId, studySessionId = null }: MessageI
   const submit = async () => {
     const trimmed = body.trim()
     if (!trimmed || sending) return
-    // Route to Tulia when armed (sticky mode) or on a leading "/tulia".
-    const hasTuliaPrefix = !!studySessionId && TULIA_PREFIX.test(trimmed)
-    const goToTulia = !!studySessionId && (armed || hasTuliaPrefix)
-    // Drop a leading "/tulia" so neither the posted message nor the prompt shows it.
-    const outgoing = hasTuliaPrefix ? trimmed.replace(TULIA_PREFIX, '').trim() : trimmed
-    // Bare "/tulia" (no question) just arms the mode — don't post an empty message.
-    if (goToTulia && outgoing === '') {
+    // Route to Apolos when armed (sticky mode) or on a leading "/apolos".
+    const hasApolosPrefix = !!studySessionId && APOLOS_PREFIX.test(trimmed)
+    const goToApolos = !!studySessionId && (armed || hasApolosPrefix)
+    // Drop a leading "/apolos" so neither the posted message nor the prompt shows it.
+    const outgoing = hasApolosPrefix ? trimmed.replace(APOLOS_PREFIX, '').trim() : trimmed
+    // Bare "/apolos" (no question) just arms the mode — don't post an empty message.
+    if (goToApolos && outgoing === '') {
       arm()
       setBody('')
       return
@@ -226,12 +226,12 @@ export function MessageInput({ conversationId, studySessionId = null }: MessageI
       setBody('') // height resets via the useLayoutEffect on [body]
       setShowReturnNudge(false)
       // The human message is always posted (visible to everyone). When directed
-      // at Tulia, also summon the assistant (fire-and-forget; it owns its own
+      // at Apolos, also summon the assistant (fire-and-forget; it owns its own
       // thinking indicator + bot reply) and LATCH sticky mode so the next turn
       // needs no prefix. Attached documents ride along as grounding context.
-      if (goToTulia && studySessionId) {
+      if (goToApolos && studySessionId) {
         const documents = aiDocs.documents.map(d => ({ name: d.name, text: d.text }))
-        void askTulia(conversationId, studySessionId, outgoing, documents)
+        void askApolos(conversationId, studySessionId, outgoing, documents)
         arm()
       }
     } catch {
@@ -259,7 +259,7 @@ export function MessageInput({ conversationId, studySessionId = null }: MessageI
       })
       void send(
         conversationId,
-        t('study.ai.attached', '📄 Adjunté «{{name}}» como contexto para Tulia', { name: res.name }),
+        t('study.ai.attached', '📄 Adjunté «{{name}}» como contexto para Apolos', { name: res.name }),
       ).catch(() => {})
     } catch (e) {
       const status = (e as { status?: number } | null)?.status
@@ -267,7 +267,7 @@ export function MessageInput({ conversationId, studySessionId = null }: MessageI
         status === 422
           ? t('study.ai.attachUnreadable', 'No pude leer ese PDF. ¿Tiene texto seleccionable?')
           : status === 403
-            ? t('study.ai.errorVerify', 'Verifica tu correo para usar a Tulia.')
+            ? t('study.ai.errorVerify', 'Verifica tu correo para usar a Apolos.')
             : t('study.ai.attachFailed', 'No se pudo adjuntar el documento.')
       addToast(msg, 'error')
     } finally {
@@ -341,7 +341,7 @@ export function MessageInput({ conversationId, studySessionId = null }: MessageI
           onClick={() => { disarm(); textareaRef.current?.focus() }}
           className="mb-2 w-full flex items-center justify-center gap-1.5 rounded-lg bg-bg-tertiary/70 hover:bg-bg-tertiary px-2 py-1.5 text-2xs text-text-secondary transition-colors"
         >
-          {t('study.chat.returnNudge', '¿Volver al estudio? Sigues escribiéndole a Tulia.')}
+          {t('study.chat.returnNudge', '¿Volver al estudio? Sigues escribiéndole a Apolos.')}
         </button>
       )}
 
@@ -349,12 +349,12 @@ export function MessageInput({ conversationId, studySessionId = null }: MessageI
         <div className="flex items-center gap-1.5 pb-2">
           <span className="inline-flex items-center gap-1.5 rounded-full bg-accent/10 border border-accent/30 pl-2 pr-1 py-0.5 text-2xs font-medium text-accent">
             <Sparkles className="w-3 h-3" />
-            {t('study.chat.tuliaMode', 'Modo Tulia')}
+            {t('study.chat.apolosMode', 'Modo Apolos')}
             <button
               type="button"
               onClick={() => { disarm(); textareaRef.current?.focus() }}
-              aria-label={t('study.chat.exitTulia', 'Salir del modo Tulia (Esc)')}
-              title={t('study.chat.exitTulia', 'Salir del modo Tulia (Esc)')}
+              aria-label={t('study.chat.exitApolos', 'Salir del modo Apolos (Esc)')}
+              title={t('study.chat.exitApolos', 'Salir del modo Apolos (Esc)')}
               className="ml-0.5 flex items-center justify-center w-4 h-4 rounded-full hover:bg-accent/20 transition-colors"
             >
               <X className="w-3 h-3" />
@@ -377,8 +377,8 @@ export function MessageInput({ conversationId, studySessionId = null }: MessageI
               type="button"
               onClick={() => fileRef.current?.click()}
               disabled={extracting}
-              aria-label={t('study.ai.attachPdf', 'Adjuntar un PDF como contexto para Tulia')}
-              title={t('study.ai.attachPdf', 'Adjuntar un PDF como contexto para Tulia')}
+              aria-label={t('study.ai.attachPdf', 'Adjuntar un PDF como contexto para Apolos')}
+              title={t('study.ai.attachPdf', 'Adjuntar un PDF como contexto para Apolos')}
               className={cn(
                 'shrink-0 h-9 w-9 md:h-8 md:w-8 rounded-md flex items-center justify-center transition-colors',
                 'text-text-muted hover:text-text-primary hover:bg-bg-tertiary',
@@ -395,7 +395,7 @@ export function MessageInput({ conversationId, studySessionId = null }: MessageI
           onChange={(e) => handleChange(e.target.value)}
           onKeyDown={handleKeyDown}
           rows={1}
-          placeholder={armed ? t('study.chat.toTulia', 'Pregúntale a Tulia…') : t('chat.messagePlaceholder')}
+          placeholder={armed ? t('study.chat.toApolos', 'Pregúntale a Apolos…') : t('chat.messagePlaceholder')}
           className={cn(
             'flex-1 resize-none bg-bg-tertiary md:bg-bg-secondary rounded-2xl md:rounded-md border border-border-subtle focus:border-border-hover',
             'text-[15px] md:text-sm text-text-primary placeholder:text-text-muted',
@@ -404,13 +404,13 @@ export function MessageInput({ conversationId, studySessionId = null }: MessageI
             armed && 'border-accent/60 focus:border-accent bg-accent/5 md:bg-accent/5',
           )}
         />
-        {/* Mobile: circular send button, only when there's text. In Modo Tulia
+        {/* Mobile: circular send button, only when there's text. In Modo Apolos
             it shows the Sparkles glyph so the target audience is unmistakable. */}
         <button
           type="button"
           onClick={submit}
           disabled={sendDisabled}
-          aria-label={armed ? t('study.chat.sendToTulia', 'Enviar a Tulia') : t('chat.send')}
+          aria-label={armed ? t('study.chat.sendToApolos', 'Enviar a Apolos') : t('chat.send')}
           className={cn(
             'md:hidden shrink-0 h-11 w-11 rounded-full flex items-center justify-center transition-all duration-150',
             hasText
@@ -426,7 +426,7 @@ export function MessageInput({ conversationId, studySessionId = null }: MessageI
             </svg>
           )}
         </button>
-        {/* Desktop: labelled button — relabels to "Enviar a Tulia" when armed. */}
+        {/* Desktop: labelled button — relabels to "Enviar a Apolos" when armed. */}
         <button
           type="button"
           onClick={submit}
@@ -445,7 +445,7 @@ export function MessageInput({ conversationId, studySessionId = null }: MessageI
               <path d="M2 8l11-5-3 11-3-4-5-2z" strokeLinecap="round" strokeLinejoin="round" />
             </svg>
           )}
-          {armed ? t('study.chat.sendToTulia', 'Enviar a Tulia') : t('chat.send')}
+          {armed ? t('study.chat.sendToApolos', 'Enviar a Apolos') : t('chat.send')}
         </button>
       </div>
     </div>

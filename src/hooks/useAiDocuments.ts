@@ -9,7 +9,7 @@ import {
 
 /**
  * Reactive view of the study's attached AI context documents (extracted PDFs
- * shared as grounding context for Tulia). Backed by a Y.Array in the shared
+ * shared as grounding context for Apolos). Backed by a Y.Array in the shared
  * doc, so attachments and removals sync to every participant in real time.
  *
  * Returns empty state when used outside a study (no StudyDocContext provider),

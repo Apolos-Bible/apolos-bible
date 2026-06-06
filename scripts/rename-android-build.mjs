@@ -7,8 +7,8 @@ const version = pkg.version
 const base = resolve(import.meta.dirname, '../src-tauri/gen/android/app/build/outputs')
 
 const files = [
-  { from: 'apk/universal/release/app-universal-release-unsigned.apk', to: `apk/universal/release/Tulia Study_${version}.apk` },
-  { from: 'bundle/universalRelease/app-universal-release.aab', to: `bundle/universalRelease/Tulia Study_${version}.aab` },
+  { from: 'apk/universal/release/app-universal-release-unsigned.apk', to: `apk/universal/release/Apolos_${version}.apk` },
+  { from: 'bundle/universalRelease/app-universal-release.aab', to: `bundle/universalRelease/Apolos_${version}.aab` },
 ]
 
 for (const { from, to } of files) {

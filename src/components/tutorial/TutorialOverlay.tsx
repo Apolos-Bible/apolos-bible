@@ -56,7 +56,7 @@ export function TutorialOverlay() {
       if (!found) {
         if (current.target) {
           // eslint-disable-next-line no-console
-          console.warn('[Tulia tour] target not found:', current.target)
+          console.warn('[Apolos tour] target not found:', current.target)
         }
         setRect(null)
         return
@@ -149,15 +149,15 @@ export function TutorialOverlay() {
   return (
     <div className="fixed inset-0 z-50 pointer-events-none">
       <style>{`
-        @keyframes tulia-tour-pulse {
+        @keyframes apolos-tour-pulse {
           0%, 100% { box-shadow: 0 0 0 0 rgba(200,169,106,0.55), 0 0 40px 8px rgba(200,169,106,0.25); }
           50%      { box-shadow: 0 0 0 8px rgba(200,169,106,0), 0 0 60px 16px rgba(200,169,106,0.35); }
         }
-        @keyframes tulia-tour-glow {
+        @keyframes apolos-tour-glow {
           0%, 100% { opacity: 0.55; }
           50%      { opacity: 1; }
         }
-        @keyframes tulia-tour-fade-in {
+        @keyframes apolos-tour-fade-in {
           from { opacity: 0; transform: translateY(4px); }
           to   { opacity: 1; transform: translateY(0); }
         }
@@ -194,7 +194,7 @@ export function TutorialOverlay() {
               left: spotLeft,
               width: spotWidth,
               height: spotHeight,
-              animation: 'tulia-tour-pulse 2.2s ease-in-out infinite',
+              animation: 'apolos-tour-pulse 2.2s ease-in-out infinite',
               transition: 'top 350ms cubic-bezier(0.4, 0, 0.2, 1), left 350ms cubic-bezier(0.4, 0, 0.2, 1), width 350ms cubic-bezier(0.4, 0, 0.2, 1), height 350ms cubic-bezier(0.4, 0, 0.2, 1)',
             }}
           />
@@ -208,7 +208,7 @@ export function TutorialOverlay() {
               width: spotWidth,
               height: spotHeight,
               background: 'radial-gradient(ellipse at center, rgba(200,169,106,0.10) 0%, rgba(200,169,106,0) 70%)',
-              animation: 'tulia-tour-glow 2.6s ease-in-out infinite',
+              animation: 'apolos-tour-glow 2.6s ease-in-out infinite',
               transition: 'top 350ms cubic-bezier(0.4, 0, 0.2, 1), left 350ms cubic-bezier(0.4, 0, 0.2, 1), width 350ms cubic-bezier(0.4, 0, 0.2, 1), height 350ms cubic-bezier(0.4, 0, 0.2, 1)',
             }}
           />
@@ -223,7 +223,7 @@ export function TutorialOverlay() {
           width: TOOLTIP_W,
           top: tipTop,
           left: tipLeft,
-          animation: 'tulia-tour-fade-in 220ms ease-out',
+          animation: 'apolos-tour-fade-in 220ms ease-out',
         }}
       >
         <div className="flex items-center justify-between gap-2">

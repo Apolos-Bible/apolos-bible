@@ -1,4 +1,4 @@
 User-agent: *
 Allow: /
 
-Sitemap: https://bible.tulia.study/sitemap.xml
+Sitemap: https://apolos.bible/sitemap.xml

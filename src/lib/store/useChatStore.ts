@@ -21,23 +21,23 @@ type ChatState = {
   loadingList:   boolean
   loadingThread: Record<number, boolean>
   typing:        Record<number, TypingEntry[]>
-  /** Per-conversation flag: Tulia (AI) is generating a reply right now. */
+  /** Per-conversation flag: Apolos (AI) is generating a reply right now. */
   aiThinking:    Record<number, boolean>
   /**
-   * Per-conversation composer audience. 'tulia' = sticky "Modo Tulia": every
-   * message is routed to the AI assistant without a "/tulia" prefix until the
+   * Per-conversation composer audience. 'apolos' = sticky "Modo Apolos": every
+   * message is routed to the AI assistant without a "/apolos" prefix until the
    * user exits. Default (absent) = 'study' (the human group). Local/UI only —
    * never synced to other participants.
    */
-  composerAudience: Record<number, 'study' | 'tulia'>
+  composerAudience: Record<number, 'study' | 'apolos'>
 
   load: () => Promise<void>
   select: (id: number | null) => Promise<void>
   loadMessages: (id: number) => Promise<void>
   loadOlder: (id: number) => Promise<void>
   send: (id: number, body: string) => Promise<void>
-  askTulia: (id: number, sessionId: string, prompt: string, documents?: AiContextDocument[]) => Promise<void>
-  setComposerAudience: (id: number, audience: 'study' | 'tulia') => void
+  askApolos: (id: number, sessionId: string, prompt: string, documents?: AiContextDocument[]) => Promise<void>
+  setComposerAudience: (id: number, audience: 'study' | 'apolos') => void
   markRead: (id: number) => Promise<void>
   notifyTyping: (id: number) => void
   listenForUpdates: (userId: number) => void
@@ -123,7 +123,7 @@ function subscribeToConversation(id: number, set: (fn: (s: ChatState) => Partial
         // Desktop tray: render an OS banner via tauri-plugin-notification.
         // Web/SW path is handled by FCM data-only pushes; backend skips
         // FCM when the user is online so this won't double up.
-        const senderName = message.user?.name || 'Tulia'
+        const senderName = message.user?.name || 'Apolos'
         void notifyChatMessage(id, senderName, message.body)
       }
     })
@@ -254,11 +254,11 @@ export const useChatStore = create<ChatState>((set, get) => ({
     })
   },
 
-  // Invoke the Tulia AI assistant for a study conversation. The human "/tulia"
+  // Invoke the Apolos AI assistant for a study conversation. The human "/apolos"
   // message has already been sent; this runs the grounded loop server-side,
-  // appends Tulia's persisted reply, and applies any canvas mutations. Other
+  // appends Apolos's persisted reply, and applies any canvas mutations. Other
   // participants receive the reply over the normal realtime channel.
-  askTulia: async (id, sessionId, prompt, documents) => {
+  askApolos: async (id, sessionId, prompt, documents) => {
     set((s) => ({ aiThinking: { ...s.aiThinking, [id]: true } }))
     try {
       const actions = (window as never as { __studyCanvasActions?: {
@@ -292,7 +292,7 @@ export const useChatStore = create<ChatState>((set, get) => ({
                 last_message: {
                   id:         message.id,
                   user_id:    message.user_id,
-                  user_name:  message.user?.name ?? 'Tulia',
+                  user_name:  message.user?.name ?? 'Apolos',
                   body:       message.body,
                   created_at: message.created_at,
                 },
@@ -310,10 +310,10 @@ export const useChatStore = create<ChatState>((set, get) => ({
       const status = (e as { status?: number } | null)?.status
       const msg =
         status === 403
-          ? i18n.t('study.ai.errorVerify', 'Verifica tu correo para usar a Tulia.')
+          ? i18n.t('study.ai.errorVerify', 'Verifica tu correo para usar a Apolos.')
           : status === 429
             ? i18n.t('study.ai.errorBudget', 'Has alcanzado el límite de IA de este mes.')
-            : i18n.t('study.ai.errorGeneric', 'No se pudo contactar a Tulia. Intenta de nuevo.')
+            : i18n.t('study.ai.errorGeneric', 'No se pudo contactar a Apolos. Intenta de nuevo.')
       useUIStore.getState().addToast(msg, 'error')
     } finally {
       set((s) => ({ aiThinking: { ...s.aiThinking, [id]: false } }))

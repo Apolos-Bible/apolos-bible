@@ -1,17 +1,17 @@
-# Tulia
+# Apolos
 
 Spanish-first social Bible reading app. Read the Bible *with others* — friends, comments, shared feed, reading presence.
 
 **Design**: keyboard-first, minimalist, Linear-style. Every action should be reachable by keyboard; favor command palettes, shortcuts, and dense-but-quiet UI over mouse-driven affordances. Visual language follows Linear: restrained typography, subtle borders, generous whitespace, no decorative chrome.
 
-Name comes from *Tertulia* (Spanish: a social gathering to discuss books/ideas). Domain: `tulia.study`.
+Named after *Apolos* (Acts 18:24-28) — a Jew from Alexandria, *"poderoso en las Escrituras"*, taught more accurately by Priscila y Aquila. The in-app AI study assistant shares the name ("estudia con Apolos"). Domains: web app `apolos.bible`, API/landing `apolos.io`. The old `tulia.study` / `bible.tulia.study` domains are transitional aliases.
 
 ## Layout
 
 This folder contains both halves of the product. Claude is invoked from here so it can see and edit across both.
 
-- `backend/` — Laravel + Livewire + Alpine + Tailwind. Local: `https://verbum.test` via Herd (symlink in `~/Library/Application Support/Herd/config/valet/Sites/verbum`). Prod: `https://tulia.study`. SQLite at `backend/database/database.sqlite` (absolute path in `.env`).
-- `frontend/` — Tauri 2 desktop/mobile + Vite + React 18 + TypeScript + Tailwind. Package name `tulia-study`. Web build deploys to Firebase Hosting at `https://bible.tulia.study` (`pnpm deploy`). Talks to the backend over HTTP and to a Hocuspocus collab server (JWT-authed) for shared study sessions.
+- `backend/` — Laravel + Livewire + Alpine + Tailwind. Local: `https://verbum.test` via Herd (symlink in `~/Library/Application Support/Herd/config/valet/Sites/verbum`). Prod: `https://apolos.io`. SQLite at `backend/database/database.sqlite` (absolute path in `.env`).
+- `frontend/` — Tauri 2 desktop/mobile + Vite + React 18 + TypeScript + Tailwind. Package name `apolos`. Web build deploys to Firebase Hosting at `https://apolos.bible` (`pnpm deploy`). Talks to the backend over HTTP and to a Hocuspocus collab server (JWT-authed) for shared study sessions.
 
 ## Common commands
 

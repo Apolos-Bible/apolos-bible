@@ -25,7 +25,7 @@ export function AuthBridgeRoute() {
   }, [error])
 
   useEffect(() => {
-    document.title = 'Tulia'
+    document.title = 'Apolos'
   }, [])
 
   const open = () => {
@@ -48,14 +48,14 @@ export function AuthBridgeRoute() {
               {t('authBridge.errorTitle', 'No pudimos completar el inicio de sesión')}
             </h1>
             <p className="text-sm text-text-muted mb-6">
-              {t('authBridge.errorBody', 'Vuelve a Tulia e inténtalo otra vez.')}
+              {t('authBridge.errorBody', 'Vuelve a Apolos e inténtalo otra vez.')}
             </p>
             <button
               type="button"
               onClick={open}
               className="w-full py-2.5 rounded-lg bg-accent text-white text-sm font-medium hover:bg-accent/90 transition-colors"
             >
-              {t('authBridge.returnToApp', 'Volver a Tulia')}
+              {t('authBridge.returnToApp', 'Volver a Apolos')}
             </button>
           </>
         ) : (
@@ -66,7 +66,7 @@ export function AuthBridgeRoute() {
             <p className="text-sm text-text-muted mb-6">
               {t(
                 'authBridge.readyBody',
-                'Toca el botón para volver a la app de Tulia y terminar de iniciar sesión.',
+                'Toca el botón para volver a la app de Apolos y terminar de iniciar sesión.',
               )}
             </p>
             <button
@@ -75,14 +75,14 @@ export function AuthBridgeRoute() {
               className="w-full py-2.5 rounded-lg bg-accent text-white text-sm font-medium hover:bg-accent/90 transition-colors"
             >
               {launched
-                ? t('authBridge.opening', 'Abriendo Tulia…')
-                : t('authBridge.openApp', 'Abrir en Tulia')}
+                ? t('authBridge.opening', 'Abriendo Apolos…')
+                : t('authBridge.openApp', 'Abrir en Apolos')}
             </button>
             {launched && (
               <p className="mt-4 text-xs text-text-muted">
                 {t(
                   'authBridge.fallback',
-                  '¿No se abrió la app? Asegúrate de tener Tulia instalada y vuelve a tocar el botón.',
+                  '¿No se abrió la app? Asegúrate de tener Apolos instalada y vuelve a tocar el botón.',
                 )}
               </p>
             )}

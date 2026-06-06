@@ -61,13 +61,13 @@ function bookUrl(slug, lang) {
 }
 
 function seoHead(bookName, slug, chapter, firstVerseText, lang) {
-  const title = `${bookName} ${chapter} — Tulia Bible`
+  const title = `${bookName} ${chapter} — Apolos Bible`
   const description = firstVerseText
     ? `${firstVerseText.slice(0, 155).trim()}`
-    : `Read ${bookName} chapter ${chapter} in Tulia Bible, the collaborative Bible study app.`
+    : `Read ${bookName} chapter ${chapter} in Apolos Bible, the collaborative Bible study app.`
   const canonical = chapterUrl(slug, chapter, lang)
   const breadcrumbs = [
-    { '@type': 'ListItem', position: 1, name: 'Tulia Bible', item: SITE_BASE },
+    { '@type': 'ListItem', position: 1, name: 'Apolos Bible', item: SITE_BASE },
     { '@type': 'ListItem', position: 2, name: bookName, item: bookUrl(slug, lang) },
     { '@type': 'ListItem', position: 3, name: `Chapter ${chapter}`, item: canonical },
   ]
@@ -78,7 +78,7 @@ function seoHead(bookName, slug, chapter, firstVerseText, lang) {
     name: title,
     description,
     url: canonical,
-    isPartOf: { '@type': 'WebSite', name: 'Tulia Bible', url: SITE_BASE },
+    isPartOf: { '@type': 'WebSite', name: 'Apolos Bible', url: SITE_BASE },
     breadcrumb: { '@type': 'BreadcrumbList', itemListElement: breadcrumbs },
   })
 
@@ -99,7 +99,7 @@ function seoHead(bookName, slug, chapter, firstVerseText, lang) {
     <meta property="og:image:width" content="799" />
     <meta property="og:image:height" content="799" />
     <meta property="og:type" content="article" />
-    <meta property="og:site_name" content="Tulia Bible" />
+    <meta property="og:site_name" content="Apolos Bible" />
     <meta property="og:locale" content="en_US" />
 
     <meta name="twitter:card" content="summary" />
@@ -170,15 +170,15 @@ function generateChapterHtml(data, lang) {
 
   html += `  <nav class="nav">\n    <span></span>\n    <span></span>\n  </nav>\n`
   html += `  <div class="footer">
-    <p>Read <a href="${chapterUrl(book.slug, chapter, lang)}">${escapeHtml(book.name)} ${chapter}</a> interactively on <a href="${SITE_BASE}">Tulia Bible</a> — with highlights, notes, cross-references, and collaborative study.</p>
+    <p>Read <a href="${chapterUrl(book.slug, chapter, lang)}">${escapeHtml(book.name)} ${chapter}</a> interactively on <a href="${SITE_BASE}">Apolos Bible</a> — with highlights, notes, cross-references, and collaborative study.</p>
   </div>\n`
   html += `</body>\n</html>\n`
   return html
 }
 
 function generateBookHtml(book, lang) {
-  const title = `${book.name} — Tulia Bible`
-  const description = `Read the book of ${book.name} (${book.chapters_count} chapters) in Tulia Bible, the collaborative Bible study app.`
+  const title = `${book.name} — Apolos Bible`
+  const description = `Read the book of ${book.name} (${book.chapters_count} chapters) in Apolos Bible, the collaborative Bible study app.`
   const canonical = bookUrl(book.slug, lang)
 
   let chapterLinks = ''
@@ -192,7 +192,7 @@ function generateBookHtml(book, lang) {
     name: title,
     description,
     url: canonical,
-    isPartOf: { '@type': 'WebSite', name: 'Tulia Bible', url: SITE_BASE },
+    isPartOf: { '@type': 'WebSite', name: 'Apolos Bible', url: SITE_BASE },
   })
 
   return `<!doctype html>
@@ -211,7 +211,7 @@ function generateBookHtml(book, lang) {
     <meta property="og:image:width" content="799" />
     <meta property="og:image:height" content="799" />
     <meta property="og:type" content="website" />
-    <meta property="og:site_name" content="Tulia Bible" />
+    <meta property="og:site_name" content="Apolos Bible" />
     <meta property="og:locale" content="en_US" />
     <meta name="twitter:card" content="summary" />
     <meta name="twitter:title" content="${escapeHtml(title)}" />
@@ -238,7 +238,7 @@ function generateBookHtml(book, lang) {
     <ul class="chapters">
 ${chapterLinks}    </ul>
     <div class="footer">
-      <p>Read <a href="${bookUrl(book.slug, lang)}">${escapeHtml(book.name)}</a> interactively on <a href="${SITE_BASE}">Tulia Bible</a>.</p>
+      <p>Read <a href="${bookUrl(book.slug, lang)}">${escapeHtml(book.name)}</a> interactively on <a href="${SITE_BASE}">Apolos Bible</a>.</p>
     </div>
   </body>
 </html>

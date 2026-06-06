@@ -1,8 +1,8 @@
-# tulia.study
+# apolos.bible
 
 A desktop Bible study app built for focus, depth, and collaboration.
 
-> **Landing:** [tulia.study](https://tulia.study) · **Privacy:** [tulia.study/privacy](https://tulia.study/privacy) · **Terms:** [tulia.study/terms](https://tulia.study/terms) · **GitHub:** [Tulia-Study/tulia-bible](https://github.com/Tulia-Study/tulia-bible)
+> **Landing:** [apolos.io](https://apolos.io) · **Privacy:** [apolos.io/privacy](https://apolos.io/privacy) · **Terms:** [apolos.io/terms](https://apolos.io/terms) · **GitHub:** [Tulia-Study/tulia-bible](https://github.com/Tulia-Study/tulia-bible)
 
 <img width="1680" height="960" alt="Reading view with friends panel open — Genesis 1 with accepted friends visible in the sidebar" src="https://github.com/user-attachments/assets/7c0a9ca9-33ea-47bc-9cb8-3067a0514508" />
 <img width="3360" height="1918" alt="Command palette — search and jump to any book, chapter, or verse in a keystroke" src="https://github.com/user-attachments/assets/90be971d-51f7-449a-bb77-8ede0ae4b918" />
@@ -14,7 +14,13 @@ A desktop Bible study app built for focus, depth, and collaboration.
 
 I wanted to study the Bible more seriously — not just read it, but actually dig in, take notes, highlight passages, and do it together with friends online. Every tool I found was either too bloated, too simple, or not designed for the way I actually study. So I built one.
 
-tulia.study is the app I wished existed.
+Apolos is the app I wished existed.
+
+---
+
+## The name
+
+Named after **Apolos** (Acts 18:24-28) — a Jew from Alexandria, *"poderoso en las Escrituras"* (mighty in the Scriptures), who was taught more accurately "the way of God" by Priscila and Aquila and then powerfully helped the believers. The name captures both careful study and study *together*. The in-app AI study assistant shares the name: you study **with Apolos**.
 
 ---
 
@@ -66,10 +72,10 @@ In the future, some features that cost money to run — AI-powered search, exten
 
 ### macOS — first-time open
 
-The macOS builds aren't signed with an Apple Developer certificate yet (it's $99/year and the app is still early). Gatekeeper will say *"Apple could not verify Tulia Study is free of malware..."*. The code is open source — you can read every line in this repo. To open it the first time:
+The macOS builds aren't signed with an Apple Developer certificate yet (it's $99/year and the app is still early). Gatekeeper will say *"Apple could not verify Apolos is free of malware..."*. The code is open source — you can read every line in this repo. To open it the first time:
 
-- **macOS 14 and earlier**: in Finder, right-click `Tulia Study.app` → **Open**. The same warning appears, but now with an **Open** button. Only needed once.
-- **macOS 15 (Sequoia) and later**: open **System Settings → Privacy & Security**, scroll down, you'll see *"Tulia Study was blocked..."* → click **Open Anyway**.
+- **macOS 14 and earlier**: in Finder, right-click `Apolos.app` → **Open**. The same warning appears, but now with an **Open** button. Only needed once.
+- **macOS 15 (Sequoia) and later**: open **System Settings → Privacy & Security**, scroll down, you'll see *"Apolos was blocked..."* → click **Open Anyway**.
 
 After that first launch, double-clicking works normally.
 
@@ -87,7 +93,7 @@ Download the .apk from [GitHub Releases](https://github.com/Tulia-Study/tulia-bi
 
 ### Web (offline / PWA)
 
-The web version at [bible.tulia.study](https://bible.tulia.study) requires an internet connection. There is no offline/PWA support for the web client at this time — use the desktop app for the best offline experience.
+The web version at [apolos.bible](https://apolos.bible) requires an internet connection. There is no offline/PWA support for the web client at this time — use the desktop app for the best offline experience.
 
 ---
 
@@ -115,7 +121,7 @@ The backend lives in `../backend/` of this monorepo and is served locally at `ht
 
 ## Acknowledgements
 
-tulia.study is built on the shoulders of people who did the hard work of digitizing and publishing scripture openly.
+Apolos is built on the shoulders of people who did the hard work of digitizing and publishing scripture openly.
 
 **Bible texts**
 
