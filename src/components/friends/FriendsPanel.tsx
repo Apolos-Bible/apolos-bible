@@ -81,7 +81,7 @@ export function FriendsPanel() {
   }
 
   return (
-    <div className="w-full md:w-panel h-full bg-bg-primary border-r border-border-subtle flex flex-col overflow-hidden">
+    <div className="w-full md:w-panel h-full bg-bg-secondary border-r border-border-subtle flex flex-col overflow-hidden">
       <PanelHeader
         title={t('friends.title')}
         onClose={closePanel}

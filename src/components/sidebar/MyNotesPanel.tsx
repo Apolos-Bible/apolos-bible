@@ -49,7 +49,7 @@ export function MyNotesPanel() {
   }
 
   return (
-    <div className="flex flex-col h-full bg-bg-secondary md:bg-transparent">
+    <div className="flex flex-col h-full bg-bg-secondary">
       <PanelHeader
         title={t('nav.myNotes')}
         onClose={closePanel}
@@ -65,7 +65,7 @@ export function MyNotesPanel() {
             <button
               key={n.id}
               onClick={() => handleNoteClick(n)}
-              className="w-full text-left px-4 py-3.5 md:py-3 border-b border-border-subtle hover:bg-bg-secondary transition-colors"
+              className="w-full text-left px-4 py-3.5 md:py-3 border-b border-border-subtle hover:bg-bg-tertiary transition-colors"
             >
               <p className="text-sm md:text-xs text-accent font-medium mb-1">
                 {n.verse.book} {n.verse.chapter}:{n.verse.number}

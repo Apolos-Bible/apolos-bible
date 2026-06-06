@@ -24,7 +24,7 @@ export function FavoritesPanel() {
   )
 
   return (
-    <div className="flex flex-col h-full bg-bg-secondary md:bg-transparent">
+    <div className="flex flex-col h-full bg-bg-secondary">
       <PanelHeader
         title={t('nav.favorites')}
         onClose={closePanel}
@@ -43,7 +43,7 @@ export function FavoritesPanel() {
                 void openVerse(b.verse.slug, b.verse.chapter, b.verse.number)
                 closePanel()
               }}
-              className="w-full text-left px-4 py-3.5 md:py-3 border-b border-border-subtle hover:bg-bg-secondary transition-colors"
+              className="w-full text-left px-4 py-3.5 md:py-3 border-b border-border-subtle hover:bg-bg-tertiary transition-colors"
             >
               <p className="text-sm md:text-xs text-accent font-medium mb-1">
                 {b.verse.book} {b.verse.chapter}:{b.verse.number}

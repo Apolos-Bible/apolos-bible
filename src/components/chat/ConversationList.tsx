@@ -103,8 +103,8 @@ export function ConversationList({ onNewChat }: ConversationListProps = {}) {
               isActive
                 ? 'bg-bg-tertiary'
                 : isUnread
-                  ? 'active:bg-bg-tertiary/60 md:hover:bg-bg-secondary'
-                  : 'active:bg-bg-tertiary/40 md:hover:bg-bg-secondary',
+                  ? 'active:bg-bg-tertiary/60 md:hover:bg-bg-tertiary/50'
+                  : 'active:bg-bg-tertiary/40 md:hover:bg-bg-tertiary/50',
             )}
           >
             {/* Unread accent rail (mobile only) */}
