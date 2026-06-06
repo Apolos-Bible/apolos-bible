@@ -185,9 +185,11 @@ export function PanelLayout({ sidebar, main, panel, leftPanel }: PanelLayoutProp
           {sidebar}
         </aside>
 
+        {/* bg on the aside so the close animation stays on the panel surface —
+            the content unmounts instantly while the width is still collapsing */}
         <aside
           className={cn(
-            'flex-shrink-0 h-full overflow-hidden transition-all duration-300 ease-in-out border-r border-border-subtle',
+            'flex-shrink-0 h-full overflow-hidden transition-all duration-300 ease-in-out border-r border-border-subtle bg-bg-secondary',
             leftPanel != null ? 'w-panel opacity-100' : 'w-0 opacity-0 border-0',
           )}
         >
@@ -202,7 +204,7 @@ export function PanelLayout({ sidebar, main, panel, leftPanel }: PanelLayoutProp
 
         <aside
           className={cn(
-            'flex-shrink-0 h-full overflow-hidden transition-all duration-300 ease-in-out',
+            'flex-shrink-0 h-full overflow-hidden transition-all duration-300 ease-in-out bg-bg-secondary',
             panel !== null ? 'w-panel opacity-100' : 'w-0 opacity-0',
           )}
         >
