@@ -251,4 +251,36 @@ describe('useVerseStore', () => {
     useVerseStore.getState().clearLastReading()
     expect(localStorage.getItem('verbum_last_reading')).toBeNull()
   })
+
+  describe('ensureBooks', () => {
+    it('loads books without fetching any chapter', async () => {
+      mockBibleApi.books.mockResolvedValue(mockBooks)
+
+      await useVerseStore.getState().ensureBooks()
+
+      expect(useVerseStore.getState().books).toHaveLength(2)
+      expect(mockBibleApi.chapter).not.toHaveBeenCalled()
+    })
+
+    it('restores the selected-book highlight from last reading', async () => {
+      localStorage.setItem('verbum_last_reading', JSON.stringify({ book: 'john', chapter: 3 }))
+      mockBibleApi.books.mockResolvedValue(mockBooks)
+
+      await useVerseStore.getState().ensureBooks()
+
+      expect(useVerseStore.getState().selectedBook).toBe('john')
+      expect(useVerseStore.getState().selectedChapter).toBe(3)
+      expect(mockBibleApi.chapter).not.toHaveBeenCalled()
+    })
+
+    it('is a no-op when books are already loaded', async () => {
+      useVerseStore.setState({
+        books: [{ id: 'genesis', number: 1, name: 'Genesis', slug: 'genesis', testament: 'old', chapters: 50 }],
+      })
+
+      await useVerseStore.getState().ensureBooks()
+
+      expect(mockBibleApi.books).not.toHaveBeenCalled()
+    })
+  })
 })

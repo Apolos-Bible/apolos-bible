@@ -2,12 +2,19 @@ import { create } from 'zustand'
 import { api, setToken, clearToken } from '@/lib/api'
 import { applyUserSettings, fetchUserSettings, persistClientSettings } from '@/lib/userSettings'
 import { hydrateUserSession, resetUserSession } from '@/lib/userSession'
+import { profileApi } from '@/lib/profileApi'
+import { saveUserSettings } from '@/lib/userSettingsApi'
 
 interface AuthUser {
   id: number
   name: string
   email: string
   email_verified_at?: string | null
+  avatar_url?: string | null
+  bio?: string | null
+  content_public_default?: boolean
+  /** False for Google-only accounts that never set a local password. */
+  has_password?: boolean
 }
 
 interface AuthState {
@@ -19,6 +26,11 @@ interface AuthState {
   resetPassword: (email: string, token: string, password: string, passwordConfirmation: string) => Promise<void>
   resendVerification: () => Promise<{ message: string; verified: boolean }>
   refreshUser: () => Promise<void>
+  updateProfile: (data: { name?: string; bio?: string | null }) => Promise<void>
+  uploadAvatar: (file: File) => Promise<void>
+  removeAvatar: () => Promise<void>
+  changePassword: (currentPassword: string, password: string, passwordConfirmation: string) => Promise<void>
+  setContentPublicDefault: (value: boolean) => Promise<void>
   logout: () => Promise<void>
   deleteAccount: (password: string) => Promise<void>
   init: () => Promise<void>
@@ -91,6 +103,32 @@ export const useAuthStore = create<AuthState>((set) => ({
     } catch {
       // ignore — keep current state
     }
+  },
+
+  updateProfile: async (data) => {
+    const updated = await profileApi.updateProfile(data)
+    set((s) => ({
+      user: s.user ? { ...s.user, name: updated.name, bio: updated.bio, avatar_url: updated.avatar_url } : s.user,
+    }))
+  },
+
+  uploadAvatar: async (file) => {
+    const { avatar_url } = await profileApi.uploadAvatar(file)
+    set((s) => ({ user: s.user ? { ...s.user, avatar_url } : s.user }))
+  },
+
+  removeAvatar: async () => {
+    await profileApi.deleteAvatar()
+    set((s) => ({ user: s.user ? { ...s.user, avatar_url: null } : s.user }))
+  },
+
+  changePassword: async (currentPassword, password, passwordConfirmation) => {
+    await profileApi.changePassword(currentPassword, password, passwordConfirmation)
+  },
+
+  setContentPublicDefault: async (value) => {
+    await saveUserSettings({ content_public_default: value })
+    set((s) => ({ user: s.user ? { ...s.user, content_public_default: value } : s.user }))
   },
 
   resetPassword: async (email, token, password, passwordConfirmation) => {

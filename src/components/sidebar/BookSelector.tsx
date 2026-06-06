@@ -1,10 +1,12 @@
 
 import { useEffect, useRef, useState } from 'react'
+import { useLocation, useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { useVerseStore } from '@/lib/store/useVerseStore'
 import type { Book } from '@/lib/store/useVerseStore'
 import { useUIStore } from '@/lib/store/useUIStore'
 import { useIsMobile } from '@/lib/useIsMobile'
+import { isPageRoute, paths } from '@/router/paths'
 import { cn } from '@/lib/cn'
 
 interface BookGroupProps {
@@ -102,10 +104,13 @@ function BookGroup({ label, books, selectedBook, openBook, selectedChapter, onOp
 
 export function BookSelector() {
   const { t } = useTranslation()
+  const navigate = useNavigate()
+  const { pathname } = useLocation()
   const books = useVerseStore((s) => s.books)
   const selectedBook = useVerseStore((s) => s.selectedBook)
   const selectedChapter = useVerseStore((s) => s.selectedChapter)
   const loadChapter = useVerseStore((s) => s.loadChapter)
+  const locale = useUIStore((s) => s.locale)
   const closeMobileSidebar = useUIStore((s) => s.closeMobileSidebar)
   const closeMobileBookPicker = useUIStore((s) => s.closeMobileBookPicker)
   const isMobile = useIsMobile()
@@ -116,6 +121,12 @@ export function BookSelector() {
     loadChapter(bookId, chapter)
     closeMobileSidebar()
     closeMobileBookPicker()
+    // From a full page (profile / settings) the reader isn't mounted — go to
+    // it so the chapter actually shows. BibleRoute sees the store already
+    // matches the URL and won't re-fetch.
+    if (isPageRoute(pathname)) {
+      navigate(paths.bible({ lang: locale, book: bookId, chapter }))
+    }
   }
 
   useEffect(() => {

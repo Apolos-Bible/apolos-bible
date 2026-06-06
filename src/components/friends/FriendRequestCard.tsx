@@ -1,4 +1,7 @@
+import { Link } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
+import { UserAvatar } from '@/components/auth/UserAvatar'
+import { paths } from '@/router/paths'
 import type { FriendRequest } from '@/types'
 
 interface FriendRequestCardProps {
@@ -15,13 +18,16 @@ export function FriendRequestCard({ request, variant, onAccept = () => {}, onDec
 
   return (
     <div className="flex items-center gap-3 md:gap-2.5 px-3 py-3 md:py-2 rounded bg-bg-secondary border border-border-subtle">
-      <div className="w-10 h-10 md:w-7 md:h-7 rounded-full bg-bg-tertiary border border-border-subtle flex items-center justify-center shrink-0 text-sm md:text-2xs text-text-secondary font-medium select-none">
-        {(person.name.charAt(0) || '?').toUpperCase()}
-      </div>
-      <div className="flex-1 min-w-0">
-        <p className="text-[15px] md:text-xs text-text-primary truncate">{person.name}</p>
-        <p className="text-xs md:text-2xs text-text-muted truncate">{person.email}</p>
-      </div>
+      <Link
+        to={paths.userProfile(person.id)}
+        className="flex flex-1 min-w-0 items-center gap-3 md:gap-2.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/50 rounded"
+      >
+        <UserAvatar name={person.name} email={person.email} src={person.avatar_url} size="md" className="w-10 h-10 md:w-7 md:h-7" />
+        <div className="flex-1 min-w-0">
+          <p className="text-[15px] md:text-xs text-text-primary truncate">{person.name}</p>
+          <p className="text-xs md:text-2xs text-text-muted truncate">{person.email}</p>
+        </div>
+      </Link>
       {variant === 'received' && (
         <div className="flex gap-1.5 md:gap-1 shrink-0">
           <button

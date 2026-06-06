@@ -1,5 +1,8 @@
 import { useState, useEffect, type ReactNode } from 'react'
+import { useNavigate, useLocation } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
+import { paths, isPageRoute } from '@/router/paths'
+import { Settings } from 'lucide-react'
 import { useUIStore } from '@/lib/store/useUIStore'
 import { useAuthStore } from '@/lib/store/useAuthStore'
 import { useNotificationStore } from '@/lib/store/useNotificationStore'
@@ -104,9 +107,11 @@ function SearchIcon() {
 
 export function Sidebar() {
   const { t }          = useTranslation()
+  const navigate           = useNavigate()
+  const { pathname }       = useLocation()
   const openCommandPalette = useUIStore(s => s.openCommandPalette)
   const togglePanel        = useUIStore(s => s.togglePanel)
-  const openSettings       = useUIStore(s => s.openSettings)
+  const openPanel          = useUIStore(s => s.openPanel)
   const openAuthModal      = useUIStore(s => s.openAuthModal)
   const closeMobileSidebar = useUIStore(s => s.closeMobileSidebar)
   const activePanel        = useUIStore(s => s.activePanel)
@@ -121,9 +126,20 @@ export function Sidebar() {
   const loadInvitations = useStudyStore(s => s.loadInvitations)
   const [showStartStudy, setShowStartStudy] = useState(false)
 
+  // Panels render only in the reader's layout — never highlight them while on
+  // a full page route (profile / settings).
+  const onPage = isPageRoute(pathname)
+
   const toggleSidebarPanel = (panel: Parameters<typeof togglePanel>[0]) => {
-    togglePanel(panel)
     closeMobileSidebar()
+    // Panels live in the reader's layout. If we're on a full page (profile /
+    // settings), return to the reader and open the panel there.
+    if (onPage) {
+      openPanel(panel)
+      navigate(paths.root())
+      return
+    }
+    togglePanel(panel)
   }
 
   useEffect(() => {
@@ -173,39 +189,52 @@ export function Sidebar() {
 
       <div className="shrink-0 border-t border-border-subtle px-2 pb-2">
         <SectionLabel>{t('nav.personal')}</SectionLabel>
-        <NavItem dataTour="favorites" icon={<StarIcon />}    label={t('nav.favorites')} active={activePanel === 'favorites'} onClick={() => user ? toggleSidebarPanel('favorites') : openAuthModal()} />
-        <NavItem dataTour="my-notes" icon={<NoteIcon />}    label={t('nav.myNotes')}  active={activePanel === 'my-notes'} onClick={() => user ? toggleSidebarPanel('my-notes')  : openAuthModal()} />
-        <NavItem dataTour="my-studies" icon={<BookOpen className="w-3.5 h-3.5" />} label={t('nav.myStudies')} active={activePanel === 'my-studies'} badge={pendingInvitations} onClick={() => user ? toggleSidebarPanel('my-studies') : openAuthModal()} />
+        <NavItem dataTour="favorites" icon={<StarIcon />}    label={t('nav.favorites')} active={!onPage && activePanel === 'favorites'} onClick={() => user ? toggleSidebarPanel('favorites') : openAuthModal()} />
+        <NavItem dataTour="my-notes" icon={<NoteIcon />}    label={t('nav.myNotes')}  active={!onPage && activePanel === 'my-notes'} onClick={() => user ? toggleSidebarPanel('my-notes')  : openAuthModal()} />
+        <NavItem dataTour="my-studies" icon={<BookOpen className="w-3.5 h-3.5" />} label={t('nav.myStudies')} active={!onPage && activePanel === 'my-studies'} badge={pendingInvitations} onClick={() => user ? toggleSidebarPanel('my-studies') : openAuthModal()} />
         <NavItem dataTour="new-study" icon={<BookOpen className="w-3.5 h-3.5" />} label={t('nav.newStudy')} active={false} onClick={() => user ? setShowStartStudy(true) : openAuthModal()} />
         <SectionLabel>{t('nav.social')}</SectionLabel>
-        <NavItem dataTour="friends" icon={<PeopleIcon />} label={t('nav.friends')} active={activePanel === 'friends'} badge={unreadCount} onClick={() => user ? toggleSidebarPanel('friends') : openAuthModal()} />
-        <NavItem dataTour="chat" icon={<ChatIcon />} label={t('nav.chat')} active={activePanel === 'chat'} badge={chatUnread} onClick={() => user ? toggleSidebarPanel('chat') : openAuthModal()} />
+        <NavItem dataTour="friends" icon={<PeopleIcon />} label={t('nav.friends')} active={!onPage && activePanel === 'friends'} badge={unreadCount} onClick={() => user ? toggleSidebarPanel('friends') : openAuthModal()} />
+        <NavItem dataTour="chat" icon={<ChatIcon />} label={t('nav.chat')} active={!onPage && activePanel === 'chat'} badge={chatUnread} onClick={() => user ? toggleSidebarPanel('chat') : openAuthModal()} />
       </div>
 
       {/* Footer */}
       <div className="shrink-0 border-t border-border-subtle" data-tour="profile">
-        {/* Profile row — opens settings */}
+        {/* Profile row — opens the profile page; the gear opens settings */}
         {user ? (
-          <button
-            onClick={openSettings}
-            className="w-full flex items-center gap-2.5 px-4 py-3 hover:bg-bg-tertiary transition-colors group"
-          >
-            <UserAvatar email={user.email} size="sm" />
-            <div className="flex-1 min-w-0 text-left">
-              <p className="text-xs text-text-primary truncate font-medium">{user.name}</p>
-              <p className="text-2xs text-text-muted truncate">{user.email}</p>
-            </div>
-            <svg
-              viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.4"
-              className="w-3.5 h-3.5 text-text-muted group-hover:text-text-secondary shrink-0 transition-colors"
+          <div className="flex items-stretch">
+            <button
+              onClick={() => navigate(paths.profile())}
+              aria-current={pathname.startsWith('/perfil') ? 'page' : undefined}
+              className={cn(
+                'flex flex-1 min-w-0 items-center gap-2.5 px-4 py-3 transition-colors',
+                pathname.startsWith('/perfil') ? 'bg-bg-tertiary' : 'hover:bg-bg-tertiary',
+              )}
             >
-              <circle cx="8" cy="8" r="2" />
-              <path d="M8 1v2M8 13v2M1 8h2M13 8h2M3.05 3.05l1.41 1.41M11.54 11.54l1.41 1.41M3.05 12.95l1.41-1.41M11.54 4.46l1.41-1.41" strokeLinecap="round"/>
-            </svg>
-          </button>
+              <UserAvatar name={user.name} email={user.email} src={user.avatar_url} size="md" />
+              <div className="flex-1 min-w-0 text-left">
+                <p className="text-xs text-text-primary truncate font-medium">{user.name}</p>
+                <p className="text-2xs text-text-muted truncate">{user.email}</p>
+              </div>
+            </button>
+            <button
+              onClick={() => navigate(paths.settings())}
+              aria-label={t('settings.title')}
+              title={t('settings.title')}
+              aria-current={pathname.startsWith('/ajustes') ? 'page' : undefined}
+              className={cn(
+                'flex w-11 shrink-0 items-center justify-center border-l border-border-subtle transition-colors',
+                pathname.startsWith('/ajustes')
+                  ? 'bg-bg-tertiary text-text-primary'
+                  : 'text-text-muted hover:bg-bg-tertiary hover:text-text-secondary',
+              )}
+            >
+              <Settings className="w-4 h-4" strokeWidth={1.6} />
+            </button>
+          </div>
         ) : (
           <button
-            onClick={openAuthModal}
+            onClick={() => openAuthModal()}
             className="w-full flex items-center gap-2.5 px-4 py-3 hover:bg-bg-tertiary transition-colors group"
           >
             <div className="w-5 h-5 rounded-full bg-bg-tertiary border border-border-subtle flex items-center justify-center shrink-0">

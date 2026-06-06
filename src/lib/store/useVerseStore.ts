@@ -8,6 +8,7 @@ import {
 } from '@/lib/defaultBibleVersion'
 import { saveUserSettingsSilently } from '@/lib/userSettingsApi'
 import { prefetchVersion } from '@/lib/prefetchBible'
+import { pingReadingActivity } from '@/lib/readingActivity'
 
 const LAST_READING_KEY = 'verbum_last_reading'
 
@@ -44,6 +45,7 @@ interface VerseState {
   loadVersions: () => Promise<void>
   setVersion: (id: number, options?: { sync?: boolean }) => Promise<void>
   loadBooks: (initialRoute?: { book: string; chapter: number; verse?: number }) => Promise<void>
+  ensureBooks: () => Promise<void>
   selectBook: (slug: string) => void
   selectChapter: (chapter: number) => void
   selectVerse: (id: string | null) => void
@@ -162,6 +164,60 @@ export const useVerseStore = create<VerseState>((set, get) => ({
     }
   },
 
+  // Lightweight loader for routes that show the sidebar without the reader
+  // (profile / settings). Fetches versions + books and restores the
+  // selected-book highlight from last reading, but does NOT load a chapter —
+  // so no verses are fetched and no reading activity is recorded just for
+  // opening a page.
+  ensureBooks: async () => {
+    if (get().books.length > 0) return
+    let { versionId, versions } = get()
+    try {
+      if (!getStoredBibleVersionId() && versions.length === 0) {
+        versions = await bibleApi.versions()
+        versionId = selectDefaultBibleVersionId(versions, getBrowserLanguage(), versionId)
+        set({ versions, versionId })
+      }
+
+      const apiBooks: ApiBook[] = await bibleApi.books(versionId)
+      if (!Array.isArray(apiBooks)) {
+        console.error('[bibleApi.books] non-array response', { versionId, apiBooks })
+        return
+      }
+      // A concurrent loadBooks() may have populated state meanwhile — defer.
+      if (get().books.length > 0) return
+
+      // No prefetchVersion here — the reader triggers the offline prefetch
+      // itself when it mounts; pages only need the book list.
+      const books: Book[] = apiBooks.map(b => ({
+        id: b.slug,
+        number: b.number,
+        name: b.name,
+        slug: b.slug,
+        testament: testament(b.number),
+        chapters: b.chapters_count,
+      }))
+      set({ books })
+
+      if (get().selectedBook) return
+      try {
+        const raw = localStorage.getItem(LAST_READING_KEY)
+        if (!raw) return
+        const parsed = JSON.parse(raw)
+        if (parsed && typeof parsed.book === 'string' && typeof parsed.chapter === 'number') {
+          const matchedBook = books.find(b => b.slug === parsed.book)
+          if (matchedBook && parsed.chapter >= 1 && parsed.chapter <= matchedBook.chapters) {
+            set({ selectedBook: matchedBook.slug, selectedChapter: parsed.chapter })
+          }
+        }
+      } catch {
+        // ignore parse errors — highlight is cosmetic here
+      }
+    } catch (e) {
+      console.error('Failed to load books', e)
+    }
+  },
+
   loadChapter: async (slug, chapter) => {
     const { versionId } = get()
     set({ selectedBook: slug, selectedChapter: chapter, loadingVerses: true, selectedVerseId: null, selectedVerseIds: [], studyVerseId: null })
@@ -177,6 +233,14 @@ export const useVerseStore = create<VerseState>((set, get) => ({
         text: v.text,
       }))
       set({ verses, chapterId: data.chapter_id, loadingVerses: false })
+      const { versions } = get()
+      pingReadingActivity({
+        book_name: data.book.name,
+        book_slug: slug,
+        chapter,
+        verse: 1,
+        version: versions.find(v => v.id === versionId)?.abbreviation ?? '',
+      })
     } catch (e) {
       console.error('Failed to load chapter', e)
       set({ loadingVerses: false })
@@ -235,6 +299,14 @@ export const useVerseStore = create<VerseState>((set, get) => ({
     await get().loadChapter(slug, chapter)
     const verseId = `${slug}-${chapter}-${verse}`
     set({ selectedVerseId: verseId, selectedVerseIds: [verseId] })
+    const { verses, versionId, versions } = get()
+    pingReadingActivity({
+      book_name: verses[0]?.book ?? slug,
+      book_slug: slug,
+      chapter,
+      verse,
+      version: versions.find(v => v.id === versionId)?.abbreviation ?? '',
+    })
   },
 
   navigateVerse: (dir) => {
