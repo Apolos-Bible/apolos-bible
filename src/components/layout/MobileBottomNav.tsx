@@ -1,6 +1,8 @@
 import { type ReactNode } from 'react'
+import { useNavigate, useLocation } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { BookOpen, GraduationCap } from 'lucide-react'
+import { paths, isPageRoute } from '@/router/paths'
 import { useUIStore } from '@/lib/store/useUIStore'
 import { useAuthStore } from '@/lib/store/useAuthStore'
 import { useChatStore } from '@/lib/store/useChatStore'
@@ -102,11 +104,12 @@ function ProfileIcon() {
 
 export function MobileBottomNav() {
   const { t } = useTranslation()
+  const navigate = useNavigate()
+  const { pathname } = useLocation()
   const togglePanel = useUIStore((s) => s.togglePanel)
+  const openPanel = useUIStore((s) => s.openPanel)
   const closePanel = useUIStore((s) => s.closePanel)
   const activePanel = useUIStore((s) => s.activePanel)
-  const mobileSidebarOpen = useUIStore((s) => s.mobileSidebarOpen)
-  const openMobileSidebar = useUIStore((s) => s.openMobileSidebar)
   const closeMobileSidebar = useUIStore((s) => s.closeMobileSidebar)
   const mobileSearchOpen = useUIStore((s) => s.mobileSearchOpen)
   const openMobileSearch = useUIStore((s) => s.openMobileSearch)
@@ -120,6 +123,8 @@ export function MobileBottomNav() {
   const pendingInvitations = useStudyStore((s) => s.pendingInvitations.length)
   const collapsed = useUIStore((s) => s.mobileChromeCollapsed)
 
+  const onPage = isPageRoute(pathname)
+
   const clearOthers = () => {
     closeMobileSearch()
     closeMobileSidebar()
@@ -127,6 +132,12 @@ export function MobileBottomNav() {
   }
 
   const goToSearch = () => {
+    if (onPage) {
+      clearOthers()
+      openMobileSearch()
+      navigate(paths.root())
+      return
+    }
     if (mobileSearchOpen) {
       closeMobileSearch()
       return
@@ -141,7 +152,14 @@ export function MobileBottomNav() {
       openAuthModal()
       return
     }
-    if (activePanel === panel && !mobileSearchOpen && !mobileSidebarOpen) {
+    // Panels render in the reader's layout — bounce back there if we're on a page.
+    if (onPage) {
+      clearOthers()
+      openPanel(panel)
+      navigate(paths.root())
+      return
+    }
+    if (activePanel === panel && !mobileSearchOpen) {
       closePanel()
       return
     }
@@ -150,19 +168,16 @@ export function MobileBottomNav() {
   }
 
   const goToProfile = () => {
-    if (mobileSidebarOpen) {
-      closeMobileSidebar()
-      return
-    }
     clearOthers()
-    openMobileSidebar()
+    navigate(paths.profile())
   }
 
   const goToBible = () => {
     clearOthers()
+    if (onPage) navigate(paths.root())
   }
 
-  const isReader = !mobileSearchOpen && !mobileSidebarOpen && activePanel === null
+  const isReader = !onPage && !mobileSearchOpen && activePanel === null
   const hidden = collapsed && isReader
 
   return (
@@ -177,13 +192,13 @@ export function MobileBottomNav() {
       <NavButton
         icon={<SearchIcon />}
         label={t('layout.search')}
-        active={mobileSearchOpen}
+        active={!onPage && mobileSearchOpen}
         onClick={goToSearch}
       />
       <NavButton
         icon={<GraduationCap className="h-[22px] w-[22px]" strokeWidth={1.6} />}
         label={t('nav.studies')}
-        active={!isReader && activePanel === 'my-studies'}
+        active={!onPage && activePanel === 'my-studies'}
         badge={pendingInvitations}
         onClick={goToPanel('my-studies')}
       />
@@ -195,14 +210,14 @@ export function MobileBottomNav() {
       <NavButton
         icon={<ChatIcon />}
         label={t('nav.chat')}
-        active={!isReader && activePanel === 'chat'}
+        active={!onPage && activePanel === 'chat'}
         badge={chatUnread}
         onClick={goToPanel('chat')}
       />
       <NavButton
         icon={<ProfileIcon />}
         label={t('nav.profile')}
-        active={mobileSidebarOpen}
+        active={pathname.startsWith('/perfil') || pathname.startsWith('/ajustes') || pathname.startsWith('/u/')}
         badge={friendsUnread}
         onClick={goToProfile}
       />

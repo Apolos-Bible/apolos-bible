@@ -6,7 +6,6 @@ import { useUIStore } from '@/lib/store/useUIStore'
 import { useContextMenuStore } from '@/lib/store/useContextMenuStore'
 import { MobileTopBar } from './MobileTopBar'
 import { MobileBottomNav } from './MobileBottomNav'
-import { MobileProfileSheet } from './MobileProfileSheet'
 import { MobileSearchView } from './MobileSearchView'
 import { BookSelector } from '@/components/sidebar/BookSelector'
 
@@ -26,7 +25,6 @@ export function PanelLayout({ sidebar, main, panel, leftPanel }: PanelLayoutProp
   const mobileBookPickerOpen = useUIStore((s) => s.mobileBookPickerOpen)
   const closeMobileBookPicker = useUIStore((s) => s.closeMobileBookPicker)
   const mobileSearchOpen = useUIStore((s) => s.mobileSearchOpen)
-  const mobileSidebarOpen = useUIStore((s) => s.mobileSidebarOpen)
 
   const closeMobileStudyPanel = () => {
     if (commentaryOpen) {
@@ -49,10 +47,6 @@ export function PanelLayout({ sidebar, main, panel, leftPanel }: PanelLayoutProp
         {mobileSearchOpen ? (
           <div className="min-h-0 flex-1 overflow-hidden">
             <MobileSearchView />
-          </div>
-        ) : mobileSidebarOpen ? (
-          <div className="min-h-0 flex-1 overflow-hidden">
-            <MobileProfileSheet />
           </div>
         ) : leftPanel ? (
           <div className="min-h-0 flex-1 overflow-hidden">

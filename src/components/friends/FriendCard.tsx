@@ -1,4 +1,7 @@
+import { Link } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
+import { UserAvatar } from '@/components/auth/UserAvatar'
+import { paths } from '@/router/paths'
 import type { Friend } from '@/types'
 
 interface FriendCardProps {
@@ -11,13 +14,16 @@ export function FriendCard({ friend, onRemove }: FriendCardProps) {
 
   return (
     <div className="flex items-center gap-3 md:gap-2.5 px-3 py-3 md:py-2 rounded hover:bg-bg-tertiary group transition-colors">
-      <div className="w-10 h-10 md:w-7 md:h-7 rounded-full bg-bg-tertiary border border-border-subtle flex items-center justify-center shrink-0 text-sm md:text-2xs text-text-secondary font-medium select-none">
-        {(friend.name.charAt(0) || '?').toUpperCase()}
-      </div>
-      <div className="flex-1 min-w-0">
-        <p className="text-[15px] md:text-xs text-text-primary truncate">{friend.name}</p>
-        <p className="text-xs md:text-2xs text-text-muted truncate">{friend.email}</p>
-      </div>
+      <Link
+        to={paths.userProfile(friend.id)}
+        className="flex flex-1 min-w-0 items-center gap-3 md:gap-2.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/50 rounded"
+      >
+        <UserAvatar name={friend.name} email={friend.email} src={friend.avatar_url} size="md" className="w-10 h-10 md:w-7 md:h-7" />
+        <div className="flex-1 min-w-0">
+          <p className="text-[15px] md:text-xs text-text-primary truncate">{friend.name}</p>
+          <p className="text-xs md:text-2xs text-text-muted truncate">{friend.email}</p>
+        </div>
+      </Link>
       <button
         onClick={onRemove}
         aria-label={t('friends.removeAria', { name: friend.name })}

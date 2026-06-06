@@ -31,6 +31,27 @@ export const paths = {
   resetPassword(): string {
     return '/auth/reset-password'
   },
+
+  profile(): string {
+    return '/perfil'
+  },
+
+  userProfile(userId: number | string): string {
+    return `/u/${userId}`
+  },
+
+  settings(): string {
+    return '/ajustes'
+  },
+}
+
+/** True for routes that are full "pages" (profile/settings) rather than the reader. */
+export function isPageRoute(pathname: string): boolean {
+  return (
+    pathname.startsWith('/perfil') ||
+    pathname.startsWith('/ajustes') ||
+    pathname.startsWith('/u/')
+  )
 }
 
 export function verseIdToNumber(verseId: string | null | undefined): number | undefined {

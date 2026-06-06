@@ -6,6 +6,8 @@ import { StudyRoute } from './routes/StudyRoute'
 import { ResetPasswordRoute } from './routes/ResetPasswordRoute'
 import { GoogleFinishRoute } from './routes/GoogleFinishRoute'
 import { AuthBridgeRoute } from './routes/AuthBridgeRoute'
+import { ProfileRoute } from './routes/ProfileRoute'
+import { SettingsRoute } from './routes/SettingsRoute'
 import { NotFound } from './routes/NotFound'
 
 export const router = createBrowserRouter([
@@ -28,6 +30,11 @@ export const router = createBrowserRouter([
       // Study sessions: owner (no token), guest (with token)
       { path: 'study/:sessionId', element: <StudyRoute /> },
       { path: 'study/:sessionId/:shareToken', element: <StudyRoute /> },
+
+      // Profile + settings (auth-gated inside the route)
+      { path: 'perfil', element: <ProfileRoute mode="self" /> },
+      { path: 'u/:userId', element: <ProfileRoute mode="other" /> },
+      { path: 'ajustes', element: <SettingsRoute /> },
 
       // Email reset-password deep link (legacy params supported in handler)
       { path: 'auth/reset-password', element: <ResetPasswordRoute /> },
