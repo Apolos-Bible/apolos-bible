@@ -1,4 +1,4 @@
-import { type ReactNode } from 'react'
+import { useEffect, useState, type ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
 import { cn } from '@/lib/cn'
 import { useVerseStore } from '@/lib/store/useVerseStore'
@@ -14,6 +14,26 @@ interface PanelLayoutProps {
   main: ReactNode
   panel: ReactNode | null
   leftPanel?: ReactNode
+}
+
+/**
+ * Keeps the last non-null panel mounted for the duration of the close
+ * animation. Without this the content unmounts the moment the panel state
+ * clears, and the aside collapses as an empty shell.
+ */
+function useDelayedClose(node: ReactNode, ms = 300): ReactNode {
+  const [cached, setCached] = useState<ReactNode>(null)
+
+  useEffect(() => {
+    if (node != null) {
+      setCached(node)
+      return
+    }
+    const timer = setTimeout(() => setCached(null), ms)
+    return () => clearTimeout(timer)
+  }, [node, ms])
+
+  return node ?? cached
 }
 
 export function PanelLayout({ sidebar, main, panel, leftPanel }: PanelLayoutProps) {
@@ -40,6 +60,11 @@ export function PanelLayout({ sidebar, main, panel, leftPanel }: PanelLayoutProp
   const verses = useVerseStore((s) => s.verses)
   const openMenu = useContextMenuStore((s) => s.openMenu)
   const addToast = useUIStore((s) => s.addToast)
+
+  // Content rendered inside the animated asides — survives the close
+  // animation so the panel slides shut with its content still painted.
+  const renderedLeftPanel = useDelayedClose(leftPanel)
+  const renderedPanel = useDelayedClose(panel)
 
   return (
     <div className="app-viewport w-full overflow-hidden bg-bg-primary">
@@ -174,7 +199,7 @@ export function PanelLayout({ sidebar, main, panel, leftPanel }: PanelLayoutProp
           <div className="absolute inset-0 bg-black/60" onClick={closeMobileStudyPanel} />
           <div className="absolute inset-x-0 bottom-0 top-4 rounded-t-2xl bg-bg-secondary shadow-2xl">
             <div className="h-full overflow-hidden">
-              {panel}
+              {renderedPanel}
             </div>
           </div>
         </div>
@@ -185,16 +210,17 @@ export function PanelLayout({ sidebar, main, panel, leftPanel }: PanelLayoutProp
           {sidebar}
         </aside>
 
-        {/* bg on the aside so the close animation stays on the panel surface —
-            the content unmounts instantly while the width is still collapsing */}
+        {/* Pure width slide on a solid surface: no opacity fade (it blended
+            the panel into the gray shell mid-animation) and the content stays
+            mounted via useDelayedClose until the slide finishes. */}
         <aside
           className={cn(
-            'flex-shrink-0 h-full overflow-hidden transition-all duration-300 ease-in-out border-r border-border-subtle bg-bg-secondary',
-            leftPanel != null ? 'w-panel opacity-100' : 'w-0 opacity-0 border-0',
+            'flex-shrink-0 h-full overflow-hidden transition-[width] duration-300 ease-in-out border-r border-border-subtle bg-bg-secondary',
+            leftPanel != null ? 'w-panel' : 'w-0 border-0',
           )}
         >
           <div className="w-panel h-full">
-            {leftPanel}
+            {renderedLeftPanel}
           </div>
         </aside>
 
@@ -204,12 +230,12 @@ export function PanelLayout({ sidebar, main, panel, leftPanel }: PanelLayoutProp
 
         <aside
           className={cn(
-            'flex-shrink-0 h-full overflow-hidden transition-all duration-300 ease-in-out bg-bg-secondary',
-            panel !== null ? 'w-panel opacity-100' : 'w-0 opacity-0',
+            'flex-shrink-0 h-full overflow-hidden transition-[width] duration-300 ease-in-out bg-bg-secondary',
+            panel !== null ? 'w-panel' : 'w-0',
           )}
         >
           <div className="w-panel h-full">
-            {panel}
+            {renderedPanel}
           </div>
         </aside>
       </div>
