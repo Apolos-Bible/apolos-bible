@@ -120,7 +120,7 @@ export function ChatThread({ conversation, onBack }: ChatThreadProps) {
           compact={compact}
           showReceipt={showReceipt}
           conversation={conversation}
-          onContinueWithTulia={conversation.study_session_id ? () => setComposerAudience(conversation.id, 'tulia') : undefined}
+          onContinueWithApolos={conversation.study_session_id ? () => setComposerAudience(conversation.id, 'apolos') : undefined}
         />
       ),
     })
@@ -204,7 +204,7 @@ export function ChatThread({ conversation, onBack }: ChatThreadProps) {
 
         {aiThinking && (
           <div className="px-2 mt-1">
-            <TypingDots names={['Tulia']} />
+            <TypingDots names={['Apolos']} />
           </div>
         )}
       </div>

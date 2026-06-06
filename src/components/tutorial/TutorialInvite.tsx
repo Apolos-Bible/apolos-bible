@@ -16,7 +16,7 @@ export function TutorialInvite() {
   }, [showInvite])
 
   useEffect(() => {
-    ;(window as unknown as { tuliaTour?: () => void }).tuliaTour = () => {
+    ;(window as unknown as { apolosTour?: () => void }).apolosTour = () => {
       useTutorialStore.getState().reset()
     }
   }, [])

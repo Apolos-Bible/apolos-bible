@@ -57,7 +57,7 @@ pub fn run() {
 
             #[cfg(any(target_os = "macos", windows, target_os = "linux"))]
             {
-                let show_item = MenuItem::with_id(app, "show", "Open Tulia", true, None::<&str>)?;
+                let show_item = MenuItem::with_id(app, "show", "Open Apolos", true, None::<&str>)?;
                 let quit_item = MenuItem::with_id(app, "quit", "Quit", true, None::<&str>)?;
                 let menu = Menu::with_items(app, &[&show_item, &quit_item])?;
 

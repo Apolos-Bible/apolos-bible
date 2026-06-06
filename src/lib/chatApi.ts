@@ -38,7 +38,7 @@ export interface ChatMessage {
   conversation_id: number
   user_id:         number
   user:            ChatUser | null
-  /** True when sent by the "Tulia" AI assistant (rendered distinctly). */
+  /** True when sent by the "Apolos" AI assistant (rendered distinctly). */
   is_ai?:          boolean
   body:            string
   created_at:      string

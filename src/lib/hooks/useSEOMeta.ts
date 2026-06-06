@@ -1,7 +1,7 @@
 import { useVerseStore } from '@/lib/store/useVerseStore'
 import { useUIStore } from '@/lib/store/useUIStore'
 
-const BASE_URL = 'https://bible.tulia.study'
+const BASE_URL = 'https://apolos.bible'
 const OG_IMAGE = `${BASE_URL}/logo.png`
 
 export interface SEOMetaData {
@@ -34,9 +34,9 @@ export function useSEOMeta(): SEOMetaData {
 
   let title: string
   if (verseNumber) {
-    title = `${bookName} ${selectedChapter}:${verseNumber} — Tulia Bible`
+    title = `${bookName} ${selectedChapter}:${verseNumber} — Apolos Bible`
   } else {
-    title = `${bookName} ${selectedChapter} — Tulia Bible`
+    title = `${bookName} ${selectedChapter} — Apolos Bible`
   }
 
   let description: string
@@ -45,7 +45,7 @@ export function useSEOMeta(): SEOMetaData {
   } else if (verses.length > 0 && verses[0]?.text) {
     description = `Read ${bookName} chapter ${selectedChapter}. ${verses[0].text.slice(0, 140).trim()}...`
   } else {
-    description = `Read ${bookName} chapter ${selectedChapter} in Tulia Bible, the collaborative Bible study app with cross-references, highlights, notes, and real-time study sessions.`
+    description = `Read ${bookName} chapter ${selectedChapter} in Apolos Bible, the collaborative Bible study app with cross-references, highlights, notes, and real-time study sessions.`
   }
 
   const langPrefix = locale && locale !== 'en' ? `${locale}/` : ''
@@ -58,7 +58,7 @@ export function useSEOMeta(): SEOMetaData {
   }
 
   const breadcrumbs = [
-    { name: 'Tulia Bible', url: BASE_URL },
+    { name: 'Apolos Bible', url: BASE_URL },
     { name: bookName, url: `${BASE_URL}/bible/${langPrefix}${selectedBook}` },
   ]
   if (verseNumber) {

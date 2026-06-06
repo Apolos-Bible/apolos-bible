@@ -43,7 +43,7 @@ class TuliaMessagingService : FirebaseMessagingService() {
     override fun onMessageReceived(remoteMessage: RemoteMessage) {
         val data = remoteMessage.data
         val event = data["event"] ?: "tulia"
-        val title = data["title"] ?: data["sender_name"] ?: "Tulia"
+        val title = data["title"] ?: data["sender_name"] ?: "Apolos"
         val body = data["body"] ?: data["body_preview"] ?: ""
         val url = data["url"] ?: "/"
 

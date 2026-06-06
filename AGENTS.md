@@ -1,6 +1,6 @@
 # AGENTS.md
 
-> **tulia.study** — collaborative Bible study desktop app. React 18 + Vite 8 + TypeScript 5 + Tailwind 3 + Zustand 5, packaged as a Tauri 2 desktop binary. Backend is a separate Laravel API (`verbum`).
+> **Apolos** (web app `apolos.bible`, API/landing `apolos.io`) — collaborative Bible study desktop app. React 18 + Vite 8 + TypeScript 5 + Tailwind 3 + Zustand 5, packaged as a Tauri 2 desktop binary. Backend is a separate Laravel API (`verbum`). The in-app AI study assistant is also called Apolos (Acts 18:24-28).
 
 > **Note:** `CLAUDE.md` exists for Claude Code users but contains stale claims (e.g. "highlights are client-side", "AuthModal not connected"). This file is the authoritative source.
 
@@ -88,8 +88,8 @@ Books/Chapters  | Favorites / My Notes / Friends   | Verses| Study / Commentary
 
 | System | Protocol | Purpose |
 |---|---|---|
-| Hocuspocus | WebSocket (`ws://localhost:1234` / `wss://tulia.study/hocuspocus/`) | Yjs CRDT sync for collaborative study canvas (React Flow) |
-| Laravel Echo + Reverb | WebSocket (`localhost:8080` / `tulia.study:443`) | Chat messages, typing, read receipts |
+| Hocuspocus | WebSocket (`ws://localhost:1234` / `wss://apolos.io/hocuspocus/`) | Yjs CRDT sync for collaborative study canvas (React Flow) |
+| Laravel Echo + Reverb | WebSocket (`localhost:8080` / `apolos.io:443`) | Chat messages, typing, read receipts |
 | Presence channels | Reverb | Who's reading the same chapter (friends only) |
 | Firebase Cloud Messaging | HTTP | Push notifications |
 

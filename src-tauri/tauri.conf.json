@@ -1,6 +1,6 @@
 {
   "$schema": "../node_modules/@tauri-apps/cli/config.schema.json",
-  "productName": "Tulia Study",
+  "productName": "Apolos",
   "version": "../package.json",
   "identifier": "study.tulia.bible",
   "build": {
@@ -12,7 +12,7 @@
   "app": {
     "windows": [
       {
-        "title": "Tulia Study",
+        "title": "Apolos",
         "width": 1280,
         "height": 800,
         "minWidth": 900,

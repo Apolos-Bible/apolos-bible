@@ -43,7 +43,7 @@
   "sidebar.newTestament": "New Testament",
 
   "auth.signIn": "Sign in",
-  "auth.signInTitle": "Sign in to Tulia",
+  "auth.signInTitle": "Sign in to Apolos",
   "auth.welcomeBack": "Welcome back.",
   "auth.createAccount": "Create account",
   "auth.startJourney": "Start your study journey.",
@@ -149,9 +149,9 @@
   "study.toolbar.unlock": "Unlock",
   "study.toolbar.chat": "Chat (A)",
 
-  "study.ai.errorVerify": "Verify your email to use Tulia.",
+  "study.ai.errorVerify": "Verify your email to use Apolos.",
   "study.ai.errorBudget": "You've reached this month's AI limit.",
-  "study.ai.errorGeneric": "Couldn't reach Tulia. Try again.",
+  "study.ai.errorGeneric": "Couldn't reach Apolos. Try again.",
 
   "study.node.delete": "Delete",
   "study.node.duplicate": "Duplicate",
@@ -163,12 +163,12 @@
   "study.chat.toggle": "Toggle study chat",
   "study.chat.close": "Close",
   "study.chat.minimize": "Minimize",
-  "study.chat.tuliaMode": "Tulia mode",
-  "study.chat.toTulia": "Ask Tulia…",
-  "study.chat.sendToTulia": "Send to Tulia",
-  "study.chat.exitTulia": "Exit Tulia mode (Esc)",
-  "study.chat.continueTulia": "Continue with Tulia",
-  "study.chat.returnNudge": "Back to the study? You're still messaging Tulia.",
+  "study.chat.apolosMode": "Apolos mode",
+  "study.chat.toApolos": "Ask Apolos…",
+  "study.chat.sendToApolos": "Send to Apolos",
+  "study.chat.exitApolos": "Exit Apolos mode (Esc)",
+  "study.chat.continueApolos": "Continue with Apolos",
+  "study.chat.returnNudge": "Back to the study? You're still messaging Apolos.",
 
   "study.topBar.exit": "Exit",
   "study.topBar.invite": "Invite",
@@ -400,7 +400,7 @@
   "chat.commandInsert": "↵ insert",
   "chat.commandClose": "Esc close",
   "chat.commandVerseDesc": "Search and insert a verse",
-  "chat.commandTuliaDesc": "Talk to Tulia (the AI)",
+  "chat.commandApolosDesc": "Talk to Apolos (the AI)",
   "chat.conversationsEmpty": "No conversations yet. Start one from the + button.",
   "chat.empty.headline": "No conversation yet",
   "chat.empty.body": "Invite a friend or join a study to start chatting.",
@@ -503,7 +503,7 @@
   "updater.failed": "Could not install update",
 
   "tutorial.invite.title": "Quick tour?",
-  "tutorial.invite.body": "We'll walk you through Tulia's main features in under a minute.",
+  "tutorial.invite.body": "We'll walk you through Apolos's main features in under a minute.",
   "tutorial.invite.start": "Start",
   "tutorial.invite.skip": "Not now",
 
@@ -513,7 +513,7 @@
   "tutorial.done": "Done",
   "tutorial.stepCount": "Step {{current}} of {{total}}",
 
-  "tutorial.welcome.title": "Welcome to Tulia",
+  "tutorial.welcome.title": "Welcome to Apolos",
   "tutorial.welcome.body": "A social, minimalist way to read the Bible with friends. We'll show you the essentials — you can skip anytime (Esc).",
 
   "tutorial.logo.title": "Your home",
@@ -553,7 +553,7 @@
   "tutorial.toolbar.body": "Chapter commentary, version comparison, and cross-references — all from this bar.",
 
   "tutorial.shortcuts.title": "Keyboard shortcuts",
-  "tutorial.shortcuts.body": "Tulia is keyboard-first: J/K for verses, ←/→ for chapters, {{modKey}}K to search, ? to see all shortcuts.",
+  "tutorial.shortcuts.body": "Apolos is keyboard-first: J/K for verses, ←/→ for chapters, {{modKey}}K to search, ? to see all shortcuts.",
 
   "tutorial.done.title": "You're set",
   "tutorial.done.body": "That's the gist. Press ? any time to see shortcuts. Enjoy your reading.",
