@@ -14,15 +14,15 @@ interface MessageItemProps {
   compact:      boolean
   showReceipt:  boolean
   conversation: Conversation
-  /** Present in study chats: enter "Modo Tulia" to continue this AI thread. */
-  onContinueWithTulia?: () => void
+  /** Present in study chats: enter "Modo Apolos" to continue this AI thread. */
+  onContinueWithApolos?: () => void
 }
 
 function formatTime(iso: string): string {
   return new Date(iso).toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' })
 }
 
-export function MessageItem({ message, isMine, compact, showReceipt, conversation, onContinueWithTulia }: MessageItemProps) {
+export function MessageItem({ message, isMine, compact, showReceipt, conversation, onContinueWithApolos }: MessageItemProps) {
   const { t } = useTranslation()
   const selfId = useAuthStore(s => s.user?.id)
   const isGroup = conversation.type === 'group'
@@ -68,7 +68,7 @@ export function MessageItem({ message, isMine, compact, showReceipt, conversatio
 
       <div className={cn('flex flex-col min-w-0 max-w-[82%] md:max-w-[75%]', isMine ? 'items-end' : 'items-start')}>
         {!compact && !isMine && (isGroup || isAi) && message.user && (
-          <span className="text-xs md:text-2xs text-text-muted mb-0.5 px-1">{isAi ? 'Tulia' : message.user.name}</span>
+          <span className="text-xs md:text-2xs text-text-muted mb-0.5 px-1">{isAi ? 'Apolos' : message.user.name}</span>
         )}
 
         <div
@@ -104,15 +104,15 @@ export function MessageItem({ message, isMine, compact, showReceipt, conversatio
           </span>
         </div>
 
-        {/* Continue this AI exchange without re-typing "/tulia" (study chats). */}
-        {isAi && onContinueWithTulia && (
+        {/* Continue this AI exchange without re-typing "/apolos" (study chats). */}
+        {isAi && onContinueWithApolos && (
           <button
             type="button"
-            onClick={onContinueWithTulia}
+            onClick={onContinueWithApolos}
             className="group/cont mt-1 px-1 inline-flex items-center gap-1 text-2xs text-text-muted hover:text-accent transition-colors"
           >
             <Sparkles className="w-3 h-3 opacity-60 group-hover/cont:opacity-100" />
-            {t('study.chat.continueTulia', 'Seguir con Tulia')}
+            {t('study.chat.continueApolos', 'Seguir con Apolos')}
           </button>
         )}
 

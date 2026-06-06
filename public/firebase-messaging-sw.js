@@ -95,7 +95,7 @@ messaging.onBackgroundMessage(async (payload) => {
   if (event !== 'chat_message') {
     // Other events (note_reply, friend_request, etc.) are simple — single
     // notification, no grouping. Reuse title/body from data.
-    await self.registration.showNotification(data.title || 'Tulia', {
+    await self.registration.showNotification(data.title || 'Apolos', {
       body: data.body || '',
       icon: '/pwa-192x192.png',
       badge: '/favicon.png',
@@ -106,7 +106,7 @@ messaging.onBackgroundMessage(async (payload) => {
   }
 
   const convId = String(data.conversation_id || '0')
-  const sender = data.title || 'Tulia'           // SendPushJob puts sender_name in title
+  const sender = data.title || 'Apolos'           // SendPushJob puts sender_name in title
   const bodyPreview = data.body || ''             // and body_preview in body
 
   const g = await loadGroup(convId)

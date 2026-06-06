@@ -39,7 +39,7 @@ export interface AiCanvasContextEdge {
 }
 
 /**
- * Invoke the study assistant from the unified study chat ("/tulia ..."). The
+ * Invoke the study assistant from the unified study chat ("/apolos ..."). The
  * server builds the conversation context itself; the client sends the prompt
  * (mention already stripped is fine too), the linked conversation, and the
  * current canvas snapshot (which only the client can see).
@@ -79,7 +79,7 @@ export interface AiCanvasMutation {
 }
 
 export interface AiStudyChatResponse {
-  /** Tulia's reply, persisted as a real bot message in the conversation. */
+  /** Apolos's reply, persisted as a real bot message in the conversation. */
   message: ChatMessage
   mutations: AiCanvasMutation[]
   usage: AiUsageSummary

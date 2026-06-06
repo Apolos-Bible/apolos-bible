@@ -147,7 +147,7 @@ export function StudyToolbar({ tool, onToolChange, showInsertVerse, onOpenInsert
             />
           </Tooltip>
 
-          {/* Chat (human + Tulia AI via /tulia) */}
+          {/* Chat (human + Apolos AI via /apolos) */}
           <Tooltip label={t('study.toolbar.chat', 'Chat (A)')} side="right">
             <ToolbarButton
               icon={<MessageSquare className="w-4 h-4" />}

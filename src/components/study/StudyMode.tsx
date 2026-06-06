@@ -102,14 +102,14 @@ export function StudyMode() {
         return
       }
 
-      // Cmd/Ctrl+J: jump into "Modo Tulia" — open the chat and arm the composer
-      // so you can talk to the AI without typing "/tulia". Works while typing.
+      // Cmd/Ctrl+J: jump into "Modo Apolos" — open the chat and arm the composer
+      // so you can talk to the AI without typing "/apolos". Works while typing.
       if ((e.metaKey || e.ctrlKey) && (e.key === 'j' || e.key === 'J')) {
         e.preventDefault()
         const convId = useStudyStore.getState().activeSession?.conversation_id
         if (convId) {
           setChatOpen(true)
-          useChatStore.getState().setComposerAudience(convId, 'tulia')
+          useChatStore.getState().setComposerAudience(convId, 'apolos')
         }
         return
       }

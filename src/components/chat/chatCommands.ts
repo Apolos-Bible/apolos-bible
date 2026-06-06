@@ -6,9 +6,9 @@ export interface ChatCommand {
 
 export const CHAT_COMMANDS: ChatCommand[] = [
   {
-    trigger:     'tulia',
-    label:       '/tulia',
-    description: 'chat.commandTuliaDesc',
+    trigger:     'apolos',
+    label:       '/apolos',
+    description: 'chat.commandApolosDesc',
   },
   {
     trigger:     'v',

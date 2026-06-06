@@ -12,8 +12,8 @@ export function SEOMeta() {
     url: meta.canonicalUrl,
     isPartOf: {
       '@type': 'WebSite',
-      name: 'Tulia Bible',
-      url: 'https://bible.tulia.study',
+      name: 'Apolos Bible',
+      url: 'https://apolos.bible',
     },
     breadcrumb: {
       '@type': 'BreadcrumbList',
@@ -46,7 +46,7 @@ export function SEOMeta() {
       <meta property="og:image:width" content="512" />
       <meta property="og:image:height" content="512" />
       <meta property="og:type" content="article" />
-      <meta property="og:site_name" content="Tulia Bible" />
+      <meta property="og:site_name" content="Apolos Bible" />
       <meta property="og:locale" content="en_US" />
 
       {/* Twitter Card */}
