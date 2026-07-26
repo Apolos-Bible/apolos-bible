@@ -24,7 +24,7 @@ html[data-theme="dark"] {
   --text-muted:     #6b7280;
   --border-subtle:  #262b36;
   --border-hover:   #3a4050;
-  --accent:         #c8a96a;
+  --accent:         #6d7cea;
   --fav:            #e06c75;
   --scrollbar:      #262b36;
   --scrollbar-hover:#3a4050;
@@ -41,7 +41,7 @@ html[data-theme="light"] {
   --text-muted:     #8a94a6;
   --border-subtle:  #dde1ea;
   --border-hover:   #c5cad6;
-  --accent:         #b8943a;
+  --accent:         #5563d6;
   --fav:            #c94050;
   --scrollbar:      #dde1ea;
   --scrollbar-hover:#c5cad6;
@@ -137,7 +137,7 @@ body {
 .commentary-content .entry-content { display: contents; }
 
 ::selection {
-  background-color: #c8a96a33;
+  background-color: #6d7cea33;
   color: var(--text-primary);
 }
 

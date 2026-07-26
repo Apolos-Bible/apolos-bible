@@ -26,6 +26,12 @@ function applyTheme(t: Theme) {
   document.documentElement.setAttribute('data-theme', t)
 }
 
+export const DEFAULT_ACCENT_COLOR = '#6d7cea'
+
+function applyAccentColor(color: string) {
+  document.documentElement.style.setProperty('--accent', color)
+}
+
 type UIStore = {
   commandPaletteOpen: boolean
   shortcutsPanelOpen: boolean
@@ -47,6 +53,7 @@ type UIStore = {
   activePanel: Panel | null
   fontSize: FontSize
   theme: Theme
+  accentColor: string
   locale: Locale
   readingMode: ReadingMode
   openCommandPalette: () => void
@@ -70,6 +77,7 @@ type UIStore = {
   closePanel: () => void
   setFontSize: (size: FontSize) => void
   setTheme: (t: Theme) => void
+  setAccentColor: (color: string) => void
   setLocale: (l: Locale) => void
   setReadingMode: (mode: ReadingMode) => void
   enterStudyMode: () => void
@@ -78,10 +86,12 @@ type UIStore = {
 
 const savedFontSize    = (localStorage.getItem('fontSize')    as FontSize)    ?? 'base'
 const savedTheme       = (localStorage.getItem('theme')       as Theme)       ?? 'light'
+const savedAccentColor = localStorage.getItem('accentColor') ?? DEFAULT_ACCENT_COLOR
 const savedReadingMode = (localStorage.getItem('readingMode') as ReadingMode) ?? 'verse'
 const savedLocale      = getStoredAppLocale()
 const savedShowOthers  = localStorage.getItem('showOthersNotes') === 'true'
 applyTheme(savedTheme)
+applyAccentColor(savedAccentColor)
 
 let _toastSeq = 0
 
@@ -111,6 +121,7 @@ export const useUIStore = create<UIStore>((set) => ({
   activePanel: null,
   fontSize: savedFontSize,
   theme: savedTheme,
+  accentColor: savedAccentColor,
   locale: savedLocale ?? selectDefaultAppLocale(getBrowserLocale()),
   readingMode: savedReadingMode,
 
@@ -161,6 +172,12 @@ export const useUIStore = create<UIStore>((set) => ({
     applyTheme(t)
     saveUserSettingsSilently({ theme: t })
     set({ theme: t })
+  },
+
+  setAccentColor: (color) => {
+    localStorage.setItem('accentColor', color)
+    applyAccentColor(color)
+    set({ accentColor: color })
   },
 
   setLocale: (l) => {
