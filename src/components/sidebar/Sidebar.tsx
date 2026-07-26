@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next'
 import { paths, isPageRoute } from '@/router/paths'
 import { Settings } from 'lucide-react'
 import { useUIStore } from '@/lib/store/useUIStore'
+import { useVerseStore } from '@/lib/store/useVerseStore'
 import { useAuthStore } from '@/lib/store/useAuthStore'
 import { useNotificationStore } from '@/lib/store/useNotificationStore'
 import { useChatStore } from '@/lib/store/useChatStore'
@@ -125,10 +126,18 @@ export function Sidebar() {
   const pendingInvitations = useStudyStore(s => s.pendingInvitations.length)
   const loadInvitations = useStudyStore(s => s.loadInvitations)
   const [showStartStudy, setShowStartStudy] = useState(false)
+  const locale = useUIStore(s => s.locale)
+  const selectedBook = useVerseStore(s => s.selectedBook)
+  const selectedChapter = useVerseStore(s => s.selectedChapter)
 
   // Panels render only in the reader's layout — never highlight them while on
   // a full page route (profile / settings).
   const onPage = isPageRoute(pathname)
+
+  const goHome = () => {
+    closeMobileSidebar()
+    navigate(selectedBook ? paths.bible({ lang: locale, book: selectedBook, chapter: selectedChapter }) : paths.root())
+  }
 
   const toggleSidebarPanel = (panel: Parameters<typeof togglePanel>[0]) => {
     closeMobileSidebar()
@@ -163,7 +172,14 @@ export function Sidebar() {
     <div className="w-full h-full bg-bg-secondary border-r border-border-subtle flex flex-col overflow-hidden">
       {/* App name */}
       <div className="px-4 pt-3 pb-2 shrink-0" data-tour="logo">
-        <Logo symbolSize={20} textSize={14} />
+        <button
+          type="button"
+          onClick={goHome}
+          className="rounded-sm outline-none focus-visible:ring-2 focus-visible:ring-accent/50"
+          aria-label={t('nav.home')}
+        >
+          <Logo symbolSize={20} textSize={14} />
+        </button>
       </div>
 
       <div className="px-2 pb-2" data-tour="search">

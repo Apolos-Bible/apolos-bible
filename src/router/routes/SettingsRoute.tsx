@@ -7,9 +7,10 @@ import { UserAvatar } from '@/components/auth/UserAvatar'
 import { SectionLabel } from '@/components/ui/SectionLabel'
 import { SegmentedControl } from '@/components/ui/SegmentedControl'
 import { NotificationsSection } from '@/components/ui/NotificationsSection'
+import { ColorPicker } from '@/components/ui/ColorPicker'
 import { cn } from '@/lib/cn'
 import { paths } from '@/router/paths'
-import { useUIStore, type FontSize, type Locale, type ReadingMode, type Theme } from '@/lib/store/useUIStore'
+import { useUIStore, DEFAULT_ACCENT_COLOR, type FontSize, type Locale, type ReadingMode, type Theme } from '@/lib/store/useUIStore'
 import { useVerseStore } from '@/lib/store/useVerseStore'
 import { useAuthStore } from '@/lib/store/useAuthStore'
 
@@ -17,6 +18,15 @@ const FONT_OPTIONS: { value: FontSize; label: string }[] = [
   { value: 'sm', label: 'S' },
   { value: 'base', label: 'M' },
   { value: 'lg', label: 'L' },
+]
+
+const ACCENT_PRESETS = [
+  DEFAULT_ACCENT_COLOR, // blue (default)
+  '#4fa393', // teal
+  '#c17a54', // terracotta
+  '#a78bfa', // violet
+  '#34d399', // emerald
+  '#e0748a', // rose
 ]
 
 const NAV = [
@@ -72,6 +82,27 @@ export function SettingsRoute() {
   const addToast = useUIStore((s) => s.addToast)
   const theme = useUIStore((s) => s.theme)
   const setTheme = useUIStore((s) => s.setTheme)
+  const accentColor = useUIStore((s) => s.accentColor)
+  const setAccentColor = useUIStore((s) => s.setAccentColor)
+  const [customPickerOpen, setCustomPickerOpen] = useState(false)
+  const [customPreview, setCustomPreview] = useState(accentColor)
+  const customPickerRef = useRef<HTMLDivElement>(null)
+  useEffect(() => setCustomPreview(accentColor), [accentColor])
+  useEffect(() => {
+    if (!customPickerOpen) return
+    const onDown = (e: MouseEvent) => {
+      if (!customPickerRef.current?.contains(e.target as Node)) setCustomPickerOpen(false)
+    }
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setCustomPickerOpen(false)
+    }
+    window.addEventListener('mousedown', onDown)
+    window.addEventListener('keydown', onKey)
+    return () => {
+      window.removeEventListener('mousedown', onDown)
+      window.removeEventListener('keydown', onKey)
+    }
+  }, [customPickerOpen])
   const locale = useUIStore((s) => s.locale)
   const setLocale = useUIStore((s) => s.setLocale)
   const fontSize = useUIStore((s) => s.fontSize)
@@ -502,6 +533,48 @@ export function SettingsRoute() {
                   { value: 'light', label: <><Sun size={13} strokeWidth={1.6} />{t('settings.theme.light')}</> },
                 ]}
               />
+            </SettingRow>
+            <SettingRow label={t('settings.accentColor')}>
+              <div className="flex items-center gap-1.5">
+                {ACCENT_PRESETS.map((color) => (
+                  <button
+                    key={color}
+                    type="button"
+                    onClick={() => setAccentColor(color)}
+                    aria-label={color}
+                    aria-current={accentColor.toLowerCase() === color.toLowerCase() ? 'true' : undefined}
+                    className={cn(
+                      'h-6 w-6 rounded-full border-2 transition-transform',
+                      accentColor.toLowerCase() === color.toLowerCase()
+                        ? 'border-text-primary scale-110'
+                        : 'border-transparent hover:scale-110',
+                    )}
+                    style={{ backgroundColor: color }}
+                  />
+                ))}
+                <div className="relative" ref={customPickerRef}>
+                  <button
+                    type="button"
+                    onClick={() => setCustomPickerOpen((v) => !v)}
+                    aria-label={t('settings.accentColor.custom')}
+                    title={t('settings.accentColor.custom')}
+                    className="ml-1 h-6 w-6 shrink-0 cursor-pointer rounded-full border border-dashed border-border-hover"
+                    style={{ backgroundColor: customPreview }}
+                  />
+                  {customPickerOpen && (
+                    <div className="absolute right-0 top-8 z-20 rounded-lg border border-border-subtle bg-surface p-3 shadow-lg">
+                      <ColorPicker
+                        value={accentColor}
+                        onChange={setCustomPreview}
+                        onChangeEnd={(hex) => {
+                          setCustomPreview(hex)
+                          setAccentColor(hex)
+                        }}
+                      />
+                    </div>
+                  )}
+                </div>
+              </div>
             </SettingRow>
             <SettingRow label={t('settings.language')}>
               <SegmentedControl<Locale>

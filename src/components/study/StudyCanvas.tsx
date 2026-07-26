@@ -122,6 +122,13 @@ function pickHandlesByGeometry(source: Rect, target: Rect): {
     : { sourceHandle: 'top', targetHandle: 'bottom' };
 }
 
+// Header row + padding is ~52px; each wrapped line of body text is ~22px.
+// At this width/font-size a line fits roughly 48 characters.
+function heightForVerseText(text: string) {
+  const lines = Math.max(1, Math.ceil(text.length / 48));
+  return Math.min(320, Math.max(90, 52 + lines * 22));
+}
+
 function parseChapterAnchor(anchorRef: string) {
   const match = anchorRef.match(/^(.+)-(\d+)$/);
   if (!match) return null;
@@ -499,12 +506,12 @@ function StudyCanvasInner({
       if (nodesMap.size > 0) return;
 
       const nodeW = 320;
-      const nodeH = 100;
       const gap = 40;
       const baseTs = Date.now();
 
       if (verseList.length === 1) {
         const v = verseList[0];
+        const nodeH = heightForVerseText(v.text);
         const id = `verse-auto-${baseTs}`;
         doc.transact(() => {
           writeNodeToMap(nodesMap, {
@@ -517,22 +524,26 @@ function StudyCanvasInner({
           });
         });
       } else {
+        const heights = verseList.map((v) => heightForVerseText(v.text));
         const startX = center.x - nodeW / 2;
-        const totalH = verseList.length * nodeH + (verseList.length - 1) * gap;
+        const totalH = heights.reduce((sum, h) => sum + h, 0) + (verseList.length - 1) * gap;
         const startY = center.y - totalH / 2;
         const ids: string[] = [];
         doc.transact(() => {
+          let y = startY;
           verseList.forEach((v, i) => {
+            const nodeH = heights[i];
             const id = `verse-auto-${baseTs}-${i}`;
             ids.push(id);
             writeNodeToMap(nodesMap, {
               id,
               type: 'verse',
-              position: { x: startX, y: startY + i * (nodeH + gap) },
+              position: { x: startX, y },
               width: nodeW,
               height: nodeH,
               data: v,
             });
+            y += nodeH + gap;
             if (i > 0) {
               const prev = ids[i - 1];
               writeEdgeToMap(edgesMap, {
@@ -716,21 +727,24 @@ function StudyCanvasInner({
     if (!d) return;
     const center = getVisibleCenterFlow();
     const nodeW = 320;
-    const nodeH = 100;
     const gap = 40;
+    const heights = verses.map((v) => heightForVerseText(v.text));
     const baseTs = Date.now();
     const startX = center.x - nodeW / 2;
-    const totalH = verses.length * nodeH + (verses.length - 1) * gap;
+    const totalH = heights.reduce((sum, h) => sum + h, 0) + (verses.length - 1) * gap;
     const startY = center.y - totalH / 2;
     d.transact(() => {
       const nodesMap = getNodesMap(d);
       const edgesMap = getEdgesMap(d);
       const ids: string[] = [];
+      let y = startY;
       verses.forEach((v, i) => {
         const id = `verse-${v.verseId}-${baseTs}-${i}`;
         ids.push(id);
-        const position = { x: startX, y: startY + i * (nodeH + gap) };
+        const nodeH = heights[i];
+        const position = { x: startX, y };
         writeNodeToMap(nodesMap, { id, type: 'verse', position, width: nodeW, height: nodeH, data: v });
+        y += nodeH + gap;
         if (i > 0) {
           const prev = ids[i - 1];
           writeEdgeToMap(edgesMap, {
@@ -1397,7 +1411,7 @@ useEffect(() => {
               maskColor="var(--color-bg-primary)"
               nodeColor={(n: Node) => {
                 if (n.type === 'sticky') return '#eab308';
-                if (n.type === 'verse') return '#c8a96a';
+                if (n.type === 'verse') return '#6d7cea';
                 return '#6b7280';
               }}
             />
