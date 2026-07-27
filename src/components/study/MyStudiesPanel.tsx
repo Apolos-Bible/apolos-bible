@@ -38,7 +38,15 @@ export function MyStudiesPanel() {
 
   const handleJoin = async (session: StudySession) => {
     if (session.status === 'ended') {
+      // reopen() creates a *new* active session seeded with a copy of the old
+      // snapshot, so navigate to that id — going to the ended one leaves the
+      // reopened copy orphaned and drops the user back into the ended study.
       await reopen(session.id);
+      const reopened = useStudyStore.getState().activeSession;
+      if (reopened) {
+        navigate(paths.study({ sessionId: reopened.id }));
+        return;
+      }
     }
     navigate(paths.study({ sessionId: session.id }));
   };
