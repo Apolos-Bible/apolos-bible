@@ -39,6 +39,39 @@ export function removeAiDocument(doc: Y.Doc, id: string) {
   });
 }
 
+// --- Guided studies -------------------------------------------------------
+// A guided session walks everyone through the same steps, so the current step
+// and which passages have already been placed on the canvas live in the shared
+// doc. Personal answers do NOT: those are private and stay in the backend.
+export function getGuidedMap(doc: Y.Doc): Y.Map<any> {
+  return doc.getMap('guided');
+}
+
+export function readGuidedStep(doc: Y.Doc): number | null {
+  const value = getGuidedMap(doc).get('currentStep');
+  return typeof value === 'number' ? value : null;
+}
+
+export function writeGuidedStep(doc: Y.Doc, step: number) {
+  doc.transact(() => {
+    getGuidedMap(doc).set('currentStep', step);
+  });
+}
+
+/**
+ * Claim a step's passage insertion. Returns false when someone else already
+ * placed it, so two participants opening the step don't duplicate the verses.
+ */
+export function claimGuidedInsert(doc: Y.Doc, stepId: number): boolean {
+  const key = `inserted:${stepId}`;
+  const guided = getGuidedMap(doc);
+  if (guided.get(key)) return false;
+  doc.transact(() => {
+    guided.set(key, true);
+  });
+  return true;
+}
+
 export function nodeFromYMap(id: string, m: Y.Map<any>) {
   const node: any = {
     id: m.get('id') ?? id,

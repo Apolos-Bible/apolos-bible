@@ -1,6 +1,6 @@
 import { useCallback, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { MousePointer2, Hand, StickyNote, BookOpen, Undo, Redo, ZoomIn, ZoomOut, Maximize2, Lock, Unlock, Pencil, Eraser, Minus, ArrowRight, Square, Circle, MessageSquare } from 'lucide-react';
+import { MousePointer2, Hand, StickyNote, BookOpen, Undo, Redo, ZoomIn, ZoomOut, Maximize2, Lock, Unlock, Pencil, Eraser, Minus, ArrowRight, Square, Circle, MessageSquare, Compass } from 'lucide-react';
 import { cn } from '@/lib/cn';
 import { modKey } from '@/lib/platform';
 import { Tooltip } from '@/components/ui/Tooltip';
@@ -37,8 +37,15 @@ interface StudyToolbarProps {
   onCloseInsertVerse: () => void;
   biblePanelOpen: boolean;
   onToggleBiblePanel: () => void;
+  /** Open (not toggle) the Bible panel — used when handing off from a modal. */
+  onOpenBiblePanel: () => void;
   chatOpen: boolean;
   onToggleChat: () => void;
+  /** Group chat only earns a button once someone else is in the study. */
+  showChat: boolean;
+  /** Only set when the session is following a guided study. */
+  guidedOpen?: boolean;
+  onToggleGuided?: () => void;
   isGuest: boolean;
   drawSettings: DrawSettings;
   onDrawSettingsChange: (next: DrawSettings) => void;
@@ -52,7 +59,7 @@ const STROKE_KINDS: { kind: StrokeKind; icon: React.ReactNode; label: string }[]
   { kind: 'ellipse', icon: <Circle className="w-3.5 h-3.5" />, label: 'Ellipse' },
 ];
 
-export function StudyToolbar({ tool, onToolChange, showInsertVerse, onOpenInsertVerse, onCloseInsertVerse, biblePanelOpen, onToggleBiblePanel, chatOpen, onToggleChat, isGuest, drawSettings, onDrawSettingsChange }: StudyToolbarProps) {
+export function StudyToolbar({ tool, onToolChange, showInsertVerse, onOpenInsertVerse, onCloseInsertVerse, biblePanelOpen, onToggleBiblePanel, onOpenBiblePanel, chatOpen, onToggleChat, showChat, guidedOpen, onToggleGuided, isGuest, drawSettings, onDrawSettingsChange }: StudyToolbarProps) {
   const { t } = useTranslation();
   const getActions = useCallback(() => (window as any).__studyCanvasActions, []);
   const openAuthModal = useUIStore(s => s.openAuthModal);
@@ -147,14 +154,29 @@ export function StudyToolbar({ tool, onToolChange, showInsertVerse, onOpenInsert
             />
           </Tooltip>
 
-          {/* Chat (human + Apolos AI via /apolos) */}
-          <Tooltip label={t('study.toolbar.chat', 'Chat (A)')} side="right">
-            <ToolbarButton
-              icon={<MessageSquare className="w-4 h-4" />}
-              active={chatOpen}
-              onClick={onToggleChat}
-            />
-          </Tooltip>
+          {/* Chat (human + Apolos AI via /apolos). Studying alone there is nobody
+              to talk to, so the button would only be clutter — Apolos stays
+              reachable with the shortcut and from each verse node. */}
+          {showChat && (
+            <Tooltip label={t('study.toolbar.chat', 'Chat (A)')} side="right">
+              <ToolbarButton
+                icon={<MessageSquare className="w-4 h-4" />}
+                active={chatOpen}
+                onClick={onToggleChat}
+              />
+            </Tooltip>
+          )}
+
+          {/* Guided study walkthrough */}
+          {onToggleGuided && (
+            <Tooltip label={t('guided.toolbar')} side="right">
+              <ToolbarButton
+                icon={<Compass className="w-4 h-4" />}
+                active={guidedOpen}
+                onClick={onToggleGuided}
+              />
+            </Tooltip>
+          )}
 
           {!isGuest && <div className="h-px bg-border mx-1" />}
 
@@ -272,7 +294,11 @@ export function StudyToolbar({ tool, onToolChange, showInsertVerse, onOpenInsert
         </div>
       )}
 
-      <InsertVerseModal open={showInsertVerse} onClose={onCloseInsertVerse} />
+      <InsertVerseModal
+        open={showInsertVerse}
+        onClose={onCloseInsertVerse}
+        onBrowseBible={onOpenBiblePanel}
+      />
     </>
   );
 }

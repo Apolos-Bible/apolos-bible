@@ -14,6 +14,12 @@ interface StudyChatWidgetProps {
   /** Optional controlled open state (e.g. toggled by the `A` shortcut). */
   open?: boolean
   onOpenChange?: (open: boolean) => void
+  /**
+   * Width in px of a panel docked to the right edge (the guided study walk-
+   * through). The bubble and its panel slide left by this much so they sit
+   * beside the panel instead of on top of it.
+   */
+  rightInset?: number
 }
 
 /**
@@ -24,7 +30,7 @@ interface StudyChatWidgetProps {
  * This is the single chat surface for a study: human messages plus the Apolos
  * AI assistant, summoned inline with the "/apolos" command.
  */
-export function StudyChatWidget({ conversationId, open: controlledOpen, onOpenChange }: StudyChatWidgetProps) {
+export function StudyChatWidget({ conversationId, open: controlledOpen, onOpenChange, rightInset = 0 }: StudyChatWidgetProps) {
   const { t } = useTranslation()
   const userId = useAuthStore(s => s.user?.id)
 
@@ -102,10 +108,17 @@ export function StudyChatWidget({ conversationId, open: controlledOpen, onOpenCh
     return null
   }
 
+  // `right-5` (20px) from the edge, pushed further in when a panel is docked
+  // there. Matches the toolbar's slide when the Bible panel opens on the left.
+  const rightStyle = { right: rightInset + 20 }
+
   return (
     <>
       {/* Bubble */}
-      <div className="fixed bottom-5 right-5 z-40">
+      <div
+        className="fixed bottom-5 z-40 transition-[right] duration-300"
+        style={rightStyle}
+      >
         {/* Expanding ring on new message; remounts via pingKey so the
             keyframe replays for each ping. */}
         {pingKey > 0 && !open && (
@@ -139,11 +152,12 @@ export function StudyChatWidget({ conversationId, open: controlledOpen, onOpenCh
       {open && (
         <div
           className={cn(
-            'fixed bottom-20 right-5 z-40',
-            'w-[360px] h-[520px] max-h-[calc(100vh-7rem)]',
+            'fixed bottom-20 z-40 transition-[right] duration-300',
+            'w-[360px] max-w-[calc(100vw-2.5rem)] h-[520px] max-h-[calc(100vh-7rem)]',
             'bg-surface border border-border rounded-xl shadow-2xl',
             'flex flex-col overflow-hidden',
           )}
+          style={rightStyle}
         >
           {/* ChatThread's back arrow already calls onBack and the bubble
               click toggles the panel — no extra close icon needed. */}
