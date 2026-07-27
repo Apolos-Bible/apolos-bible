@@ -9,7 +9,7 @@ type StudyStore = {
   shareToken: string | null
   myStudies: StudySession[]
   pendingInvitations: StudyInvitation[]
-  start: (input: { type: string; anchor_ref?: string; title: string }) => Promise<void>
+  start: (input: { type: string; anchor_ref?: string; title?: string; guided_study_slug?: string }) => Promise<void>
   join: (sessionId: string) => Promise<void>
   leave: () => Promise<void>
   end: () => Promise<void>
