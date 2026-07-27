@@ -5,6 +5,7 @@ import { useFriendStore } from '@/lib/store/useFriendStore'
 import { useUIStore } from '@/lib/store/useUIStore'
 import { UserAvatar } from '@/components/auth/UserAvatar'
 import { cn } from '@/lib/cn'
+import { Dialog } from '@/components/ui/Dialog'
 import type { Conversation } from '@/lib/chatApi'
 
 interface ManageConversationDialogProps {
@@ -79,17 +80,15 @@ export function ManageConversationDialog({ conversation, open, onClose }: Manage
   }
 
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm"
-      onClick={onClose}
+    <Dialog
+      open={open}
+      onClose={onClose}
+      labelledBy="manage-conversation-title"
+      className="w-full max-w-md bg-bg-secondary border border-border-subtle rounded-xl shadow-2xl mx-4 overflow-hidden"
     >
-      <div
-        className="w-full max-w-md bg-bg-secondary border border-border-subtle rounded-xl shadow-2xl mx-4 overflow-hidden"
-        onClick={(e) => e.stopPropagation()}
-      >
         <div className="flex items-center justify-between px-4 py-3 border-b border-border-subtle">
           <div>
-            <p className="text-sm font-medium text-text-primary">{t('chat.manageGroup')}</p>
+            <p id="manage-conversation-title" className="text-sm font-medium text-text-primary">{t('chat.manageGroup')}</p>
             <p className="text-2xs text-text-muted mt-0.5">{conversation.name ?? t('chat.groupChat')}</p>
           </div>
           <button
@@ -200,7 +199,6 @@ export function ManageConversationDialog({ conversation, open, onClose }: Manage
             </button>
           </div>
         </div>
-      </div>
-    </div>
+    </Dialog>
   )
 }

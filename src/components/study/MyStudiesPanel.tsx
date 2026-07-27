@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
-import { RotateCw, Clock, Users, Play, RefreshCw, Check, X, Plus } from 'lucide-react';
+import { RotateCw, Clock, Users, Play, RefreshCw, Check, X, Plus, Compass } from 'lucide-react';
 import { useStudyStore } from '@/lib/store/useStudyStore';
 import { useUIStore } from '@/lib/store/useUIStore';
 import { useAuthStore } from '@/lib/store/useAuthStore';
@@ -189,12 +189,17 @@ export function MyStudiesPanel() {
                         <span className="w-2 md:w-1.5 h-2 md:h-1.5 rounded-full bg-green-500 shrink-0" />
                       )}
                     </div>
-                    <p className="text-xs md:text-2xs text-text-muted mt-0.5">
-                      {session.type === 'verse'
-                        ? `${t('study.my.verse')}: ${session.anchor_ref}`
-                        : session.type === 'chapter'
-                          ? `${t('study.my.chapter')}: ${session.anchor_ref}`
-                          : t('study.my.freeStudy')}
+                    <p className="flex items-center gap-1.5 text-xs md:text-2xs text-text-muted mt-0.5">
+                      {session.guided_study && (
+                        <Compass className="w-3.5 h-3.5 md:w-3 md:h-3 text-accent shrink-0" />
+                      )}
+                      {session.guided_study
+                        ? t('guided.typeGuided')
+                        : session.type === 'verse'
+                          ? `${t('study.my.verse')}: ${session.anchor_ref}`
+                          : session.type === 'chapter'
+                            ? `${t('study.my.chapter')}: ${session.anchor_ref}`
+                            : t('study.my.freeStudy')}
                     </p>
                     <div className="flex items-center gap-3 mt-2 md:mt-1.5 text-xs md:text-2xs text-text-muted">
                       <span className="flex items-center gap-1">

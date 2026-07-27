@@ -10,6 +10,7 @@ import { bibleApi, ApiSearchResult } from '@/lib/bibleApi'
 import { friendApi } from '@/lib/friendApi'
 import { paths } from '@/router/paths'
 import { UserAvatar } from '@/components/auth/UserAvatar'
+import { Dialog } from '@/components/ui/Dialog'
 import { normalizeText } from '@/lib/normalizeText'
 import { cn } from '@/lib/cn'
 import type { Friend } from '@/types'
@@ -91,15 +92,13 @@ export function CommandPalette() {
   }
 
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm"
-      onClick={closeCommandPalette}
-      onKeyDown={(e) => { if (e.key === 'Escape') closeCommandPalette() }}
+    <Dialog
+      open={commandPaletteOpen}
+      onClose={closeCommandPalette}
+      label={t('commandPalette.title')}
+      className="max-w-lg w-full bg-bg-secondary rounded-xl border border-border-subtle shadow-2xl overflow-hidden mx-4"
+      initialFocus="[cmdk-input]"
     >
-      <div
-        className="max-w-lg w-full bg-bg-secondary rounded-xl border border-border-subtle shadow-2xl overflow-hidden mx-4"
-        onClick={(e) => e.stopPropagation()}
-      >
         <Command shouldFilter={false}>
           <div className="flex items-center border-b border-border-subtle">
             <Command.Input
@@ -259,7 +258,6 @@ export function CommandPalette() {
             )}
           </Command.List>
         </Command>
-      </div>
-    </div>
+    </Dialog>
   )
 }

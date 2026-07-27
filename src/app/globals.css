@@ -141,6 +141,65 @@ body {
   color: var(--text-primary);
 }
 
+/* ── Keyboard focus ───────────────────────────────────────────────────────
+   The app is keyboard-first, so a focus indicator is not optional. This is
+   declared after @tailwind utilities on purpose: it must win over the
+   `outline-none` utility that several inputs carry, which previously left
+   keyboard users with no visible cursor at all.
+
+   Opt out with `.focus-ring-none` only where a container already shows the
+   focus state (a wrapper with focus-within styling). */
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+  border-radius: 3px;
+}
+
+.focus-ring-none:focus-visible {
+  outline: none;
+}
+
+/* The reader's keyboard cursor. Verses are listbox options, so the ring has to
+   read as "you are here", clear of the text itself. */
+[data-verse-id]:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 3px;
+}
+
+/* Landmarks receive focus programmatically (F6, skip links). They should not
+   flash a ring when clicked into. */
+[data-region]:focus {
+  outline: none;
+}
+[data-region]:focus-visible {
+  outline: 2px dashed color-mix(in srgb, var(--accent) 60%, transparent);
+  outline-offset: -3px;
+}
+
+.skip-link {
+  position: fixed;
+  top: 0.5rem;
+  left: 50%;
+  z-index: 100;
+  transform: translate(-50%, calc(-100% - 1rem));
+  padding: 0.5rem 1rem;
+  border-radius: 0.5rem;
+  border: 1px solid var(--border-subtle);
+  background: var(--bg-secondary);
+  color: var(--text-primary);
+  font-size: 0.8125rem;
+  box-shadow: 0 8px 24px rgb(0 0 0 / 0.24);
+  transition: transform 150ms ease-out;
+}
+
+.skip-link:focus-visible {
+  transform: translate(-50%, 0);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .skip-link { transition: none; }
+}
+
 ::-webkit-scrollbar { width: 6px; height: 6px; }
 ::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb { background: var(--scrollbar); border-radius: 3px; }

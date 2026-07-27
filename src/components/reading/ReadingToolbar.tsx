@@ -99,7 +99,12 @@ export function ReadingToolbar({ showCommentary = true, showVerseActions = true 
     <div className="flex gap-0.5 bg-bg-tertiary border border-border-subtle rounded-md p-0.5 pointer-events-auto shadow-sm" data-tour="toolbar">
       {showCommentary && (
         <Tooltip label={t('toolbar.commentary')} side="bottom">
-          <button onClick={toggleCommentary} className={btnClass(commentaryOpen)}>
+          <button
+            onClick={toggleCommentary}
+            aria-label={t('toolbar.commentary')}
+            aria-pressed={commentaryOpen}
+            className={btnClass(commentaryOpen)}
+          >
             <IconCommentary />
           </button>
         </Tooltip>
@@ -107,7 +112,12 @@ export function ReadingToolbar({ showCommentary = true, showVerseActions = true 
       {showVerseActions && (
         <>
           <Tooltip label={t('toolbar.compareVersions')} side="bottom">
-            <button onClick={handleCompare} className={btnClass(compareOpen)}>
+            <button
+              onClick={handleCompare}
+              aria-label={t('toolbar.compareVersions')}
+              aria-pressed={compareOpen}
+              className={btnClass(compareOpen)}
+            >
               <IconCompare />
             </button>
           </Tooltip>
@@ -115,6 +125,8 @@ export function ReadingToolbar({ showCommentary = true, showVerseActions = true 
             <button
               onClick={handleXRef}
               disabled={!targetVerses.length}
+              aria-label={targetVerses.length ? t('toolbar.crossReferences') : t('toolbar.selectVerseFirst')}
+              aria-pressed={xrefOpen}
               className={cn(btnClass(xrefOpen), !targetVerses.length && 'opacity-40 cursor-not-allowed')}
             >
               <IconXRef />
