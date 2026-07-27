@@ -1,22 +1,13 @@
-import { useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useCrossRefStore } from '@/lib/store/useCrossRefStore'
 import { useVerseStore } from '@/lib/store/useVerseStore'
+import { Dialog } from '@/components/ui/Dialog'
 
 export function CrossReferencesPanel() {
   const { t } = useTranslation()
   const { open, results, groups, loading, closePanel } = useCrossRefStore()
   const selectBook    = useVerseStore(s => s.selectBook)
   const selectChapter = useVerseStore(s => s.selectChapter)
-
-  useEffect(() => {
-    if (!open) return
-    const handler = (e: KeyboardEvent) => { if (e.key === 'Escape') closePanel() }
-    window.addEventListener('keydown', handler)
-    return () => window.removeEventListener('keydown', handler)
-  }, [open, closePanel])
-
-  if (!open) return null
 
   const navigate = (slug: string, chapter: number) => {
     selectBook(slug)
@@ -25,17 +16,16 @@ export function CrossReferencesPanel() {
   }
 
   return (
-    <div
-      className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-end md:items-start md:justify-end"
-      onClick={closePanel}
+    <Dialog
+      open={open}
+      onClose={closePanel}
+      labelledBy="cross-refs-title"
+      overlayClassName="!items-end md:!items-start md:!justify-end"
+      className="max-app-viewport-minus-16 w-full md:w-96 bg-bg-secondary rounded-t-2xl md:rounded-xl border border-border-subtle shadow-2xl flex flex-col overflow-hidden mx-0 md:mr-4 md:mb-4 md:mt-16"
     >
-      <div
-        className="max-app-viewport-minus-16 w-full md:w-96 bg-bg-secondary rounded-t-2xl md:rounded-xl border border-border-subtle shadow-2xl flex flex-col overflow-hidden mx-0 md:mr-4 md:mb-4 md:mt-16"
-        onClick={e => e.stopPropagation()}
-      >
         {/* Header */}
         <div className="flex items-center justify-between px-4 py-3 border-b border-border-subtle shrink-0">
-          <h2 className="text-sm font-medium text-text-primary">{t('crossRef.title')}</h2>
+          <h2 id="cross-refs-title" className="text-sm font-medium text-text-primary">{t('crossRef.title')}</h2>
           <button
             onClick={closePanel}
             className="text-text-muted hover:text-text-primary transition-colors"
@@ -93,7 +83,6 @@ export function CrossReferencesPanel() {
             </div>
           ))}
         </div>
-      </div>
-    </div>
+    </Dialog>
   )
 }

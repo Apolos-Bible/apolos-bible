@@ -1,6 +1,7 @@
 import { useEffect, useRef, useCallback } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useCompareStore } from '@/lib/store/useCompareStore'
+import { Dialog } from '@/components/ui/Dialog'
 import { cn } from '@/lib/cn'
 
 export function CompareVersionsModal() {
@@ -10,13 +11,6 @@ export function CompareVersionsModal() {
   const syncingRef = useRef(false)
   const targetVerseSet = new Set(targetVerseNumbers)
   const firstTargetVerseNumber = targetVerseNumbers[0] ?? null
-
-  useEffect(() => {
-    if (!open) return
-    const handler = (e: KeyboardEvent) => { if (e.key === 'Escape') closeCompare() }
-    window.addEventListener('keydown', handler)
-    return () => window.removeEventListener('keydown', handler)
-  }, [open, closeCompare])
 
   // Sync scroll across all columns
   const handleScroll = useCallback((sourceIdx: number) => {
@@ -50,17 +44,16 @@ export function CompareVersionsModal() {
   if (!open) return null
 
   return (
-    <div
-      className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex flex-col"
-      onClick={closeCompare}
+    <Dialog
+      open={open}
+      onClose={closeCompare}
+      labelledBy="compare-versions-title"
+      overlayClassName="!flex-col !items-stretch !justify-start"
+      className="flex flex-col flex-1 min-h-0 mt-4 md:mt-16 mb-0 md:mb-4 mx-0 md:mx-4 bg-bg-secondary rounded-none md:rounded-xl border border-border-subtle shadow-2xl overflow-hidden"
     >
-      <div
-        className="flex flex-col flex-1 mt-4 md:mt-16 mb-0 md:mb-4 mx-0 md:mx-4 bg-bg-secondary rounded-none md:rounded-xl border border-border-subtle shadow-2xl overflow-hidden"
-        onClick={e => e.stopPropagation()}
-      >
         {/* Header */}
         <div className="flex items-center justify-between px-5 py-3 border-b border-border-subtle shrink-0">
-          <h2 className="text-sm font-medium text-text-primary">{t('compareVersions.title')}</h2>
+          <h2 id="compare-versions-title" className="text-sm font-medium text-text-primary">{t('compareVersions.title')}</h2>
           <button
             onClick={closeCompare}
             className="text-text-muted hover:text-text-primary transition-colors"
@@ -116,7 +109,6 @@ export function CompareVersionsModal() {
             </div>
           ))}
         </div>
-      </div>
-    </div>
+    </Dialog>
   )
 }

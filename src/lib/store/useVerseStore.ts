@@ -38,6 +38,18 @@ interface VerseState {
   selectedChapter: number
   selectedVerseId: string | null
   selectedVerseIds: string[]
+  /**
+   * The reader's keyboard cursor. Deliberately outlives the selection: clearing
+   * the selection with Esc must not move the cursor, and verse commands (n, f,
+   * h…) need a target even when nothing is selected.
+   */
+  cursorVerseId: string | null
+  /**
+   * Where a Shift-range starts. Set by every deliberate single pick (plain
+   * click, j/k, mod+click) and left alone while a range is being extended, so
+   * Shift+click / Shift+J keep growing from the same origin.
+   */
+  selectionAnchorId: string | null
   studyVerseId: string | null
   chapterId: number | null
   verses: Verse[]
@@ -49,6 +61,12 @@ interface VerseState {
   selectBook: (slug: string) => void
   selectChapter: (chapter: number) => void
   selectVerse: (id: string | null) => void
+  setCursorVerse: (id: string | null) => void
+  /** Shift+click / Shift+J: select everything between the anchor and `id`. */
+  selectVerseRangeTo: (id: string) => void
+  /** Shift+J / Shift+K: grow or shrink the range one verse at a time. */
+  extendVerseSelection: (dir: 'next' | 'prev') => void
+  selectAllVerses: () => void
   toggleVerseSelection: (id: string) => void
   openStudyPanel: (id: string) => void
   closeStudyPanel: () => void
@@ -72,6 +90,8 @@ export const useVerseStore = create<VerseState>((set, get) => ({
   selectedChapter: 1,
   selectedVerseId: null,
   selectedVerseIds: [],
+  cursorVerseId: null,
+  selectionAnchorId: null,
   studyVerseId: null,
   chapterId: null,
   verses: [],
@@ -92,7 +112,7 @@ export const useVerseStore = create<VerseState>((set, get) => ({
 
   setVersion: async (id, options) => {
     localStorage.setItem(BIBLE_VERSION_STORAGE_KEY, String(id))
-    set({ versionId: id, books: [], verses: [], selectedVerseId: null, selectedVerseIds: [], studyVerseId: null })
+    set({ versionId: id, books: [], verses: [], selectedVerseId: null, selectedVerseIds: [], cursorVerseId: null, selectionAnchorId: null, studyVerseId: null })
     if (options?.sync !== false) {
       saveUserSettingsSilently({ preferred_bible_version_id: id })
     }
@@ -220,7 +240,7 @@ export const useVerseStore = create<VerseState>((set, get) => ({
 
   loadChapter: async (slug, chapter) => {
     const { versionId } = get()
-    set({ selectedBook: slug, selectedChapter: chapter, loadingVerses: true, selectedVerseId: null, selectedVerseIds: [], studyVerseId: null })
+    set({ selectedBook: slug, selectedChapter: chapter, loadingVerses: true, selectedVerseId: null, selectedVerseIds: [], cursorVerseId: null, selectionAnchorId: null, studyVerseId: null })
     localStorage.setItem(LAST_READING_KEY, JSON.stringify({ book: slug, chapter }))
     try {
       const data = await bibleApi.chapter(versionId, slug, chapter)
@@ -248,19 +268,72 @@ export const useVerseStore = create<VerseState>((set, get) => ({
   },
 
   selectBook: (slug) => {
-    set({ selectedBook: slug, selectedChapter: 1, selectedVerseId: null, selectedVerseIds: [], studyVerseId: null })
+    set({ selectedBook: slug, selectedChapter: 1, selectedVerseId: null, selectedVerseIds: [], cursorVerseId: null, selectionAnchorId: null, studyVerseId: null })
     localStorage.setItem(LAST_READING_KEY, JSON.stringify({ book: slug, chapter: 1 }))
     get().loadChapter(slug, 1)
   },
 
   selectChapter: (chapter) => {
     const { selectedBook } = get()
-    set({ selectedChapter: chapter, selectedVerseId: null, selectedVerseIds: [], studyVerseId: null })
+    set({ selectedChapter: chapter, selectedVerseId: null, selectedVerseIds: [], cursorVerseId: null, selectionAnchorId: null, studyVerseId: null })
     localStorage.setItem(LAST_READING_KEY, JSON.stringify({ book: selectedBook, chapter }))
     get().loadChapter(selectedBook, chapter)
   },
 
-  selectVerse: (id) => set({ selectedVerseId: id, selectedVerseIds: id ? [id] : [] }),
+  // Note: clearing the selection (id === null) leaves the cursor where it is.
+  selectVerse: (id) =>
+    set(
+      id
+        ? { selectedVerseId: id, selectedVerseIds: [id], cursorVerseId: id, selectionAnchorId: id }
+        : { selectedVerseId: null, selectedVerseIds: [] },
+    ),
+
+  setCursorVerse: (id) => set({ cursorVerseId: id }),
+
+  selectVerseRangeTo: (id) => {
+    const { verses, selectionAnchorId, selectedVerseId, cursorVerseId } = get()
+    const anchorId = selectionAnchorId ?? selectedVerseId ?? cursorVerseId ?? id
+
+    const from = verses.findIndex((v) => v.id === anchorId)
+    const to = verses.findIndex((v) => v.id === id)
+    if (from < 0 || to < 0) return
+
+    const [lo, hi] = from <= to ? [from, to] : [to, from]
+    set({
+      selectedVerseIds: verses.slice(lo, hi + 1).map((v) => v.id),
+      selectedVerseId: id,
+      cursorVerseId: id,
+      // The anchor deliberately survives so successive extensions keep growing
+      // from the original origin instead of ratcheting along.
+      selectionAnchorId: anchorId,
+    })
+  },
+
+  extendVerseSelection: (dir) => {
+    const { verses, selectedVerseId, cursorVerseId } = get()
+    if (!verses.length) return
+
+    const idx = verses.findIndex((v) => v.id === (selectedVerseId ?? cursorVerseId))
+    const nextIdx = idx < 0
+      ? 0
+      : dir === 'next'
+        ? Math.min(verses.length - 1, idx + 1)
+        : Math.max(0, idx - 1)
+
+    const next = verses[nextIdx]
+    if (next) get().selectVerseRangeTo(next.id)
+  },
+
+  selectAllVerses: () => {
+    const { verses } = get()
+    if (!verses.length) return
+    set({
+      selectedVerseIds: verses.map((v) => v.id),
+      selectedVerseId: verses[verses.length - 1].id,
+      cursorVerseId: verses[verses.length - 1].id,
+      selectionAnchorId: verses[0].id,
+    })
+  },
 
   toggleVerseSelection: (id) => {
     const { selectedVerseId, selectedVerseIds } = get()
@@ -271,6 +344,8 @@ export const useVerseStore = create<VerseState>((set, get) => ({
 
     set({
       selectedVerseIds: nextIds,
+      cursorVerseId: id,
+      selectionAnchorId: id,
       selectedVerseId: isSelected
         ? selectedVerseId === id
           ? nextIds[nextIds.length - 1] ?? null
@@ -284,6 +359,7 @@ export const useVerseStore = create<VerseState>((set, get) => ({
     set({
       studyVerseId: id,
       selectedVerseId: id,
+      cursorVerseId: id,
       selectedVerseIds: selectedVerseIds.includes(id) ? selectedVerseIds : [id],
     })
   },
@@ -295,10 +371,10 @@ export const useVerseStore = create<VerseState>((set, get) => ({
   },
 
   openVerse: async (slug, chapter, verse) => {
-    set({ selectedBook: slug, selectedChapter: chapter, selectedVerseId: null, selectedVerseIds: [], studyVerseId: null })
+    set({ selectedBook: slug, selectedChapter: chapter, selectedVerseId: null, selectedVerseIds: [], cursorVerseId: null, selectionAnchorId: null, studyVerseId: null })
     await get().loadChapter(slug, chapter)
     const verseId = `${slug}-${chapter}-${verse}`
-    set({ selectedVerseId: verseId, selectedVerseIds: [verseId] })
+    set({ selectedVerseId: verseId, selectedVerseIds: [verseId], cursorVerseId: verseId, selectionAnchorId: verseId })
     const { verses, versionId, versions } = get()
     pingReadingActivity({
       book_name: verses[0]?.book ?? slug,
@@ -316,7 +392,12 @@ export const useVerseStore = create<VerseState>((set, get) => ({
     const next = dir === 'next'
       ? verses[idx + 1] ?? verses[0]
       : verses[idx - 1] ?? verses[verses.length - 1]
-    set({ selectedVerseId: next.id, selectedVerseIds: [next.id] })
+    set({
+      selectedVerseId: next.id,
+      selectedVerseIds: [next.id],
+      cursorVerseId: next.id,
+      selectionAnchorId: next.id,
+    })
   },
 
   navigateChapter: (dir) => {
@@ -331,7 +412,7 @@ export const useVerseStore = create<VerseState>((set, get) => ({
         get().selectChapter(selectedChapter + 1)
       } else if (bookIdx < books.length - 1) {
         const nextBook = books[bookIdx + 1]
-        set({ selectedBook: nextBook.slug, selectedChapter: 1, selectedVerseId: null, selectedVerseIds: [], studyVerseId: null })
+        set({ selectedBook: nextBook.slug, selectedChapter: 1, selectedVerseId: null, selectedVerseIds: [], cursorVerseId: null, selectionAnchorId: null, studyVerseId: null })
         get().loadChapter(nextBook.slug, 1)
       }
     } else {
@@ -339,7 +420,7 @@ export const useVerseStore = create<VerseState>((set, get) => ({
         get().selectChapter(selectedChapter - 1)
       } else if (bookIdx > 0) {
         const prevBook = books[bookIdx - 1]
-        set({ selectedBook: prevBook.slug, selectedChapter: prevBook.chapters, selectedVerseId: null, selectedVerseIds: [], studyVerseId: null })
+        set({ selectedBook: prevBook.slug, selectedChapter: prevBook.chapters, selectedVerseId: null, selectedVerseIds: [], cursorVerseId: null, selectionAnchorId: null, studyVerseId: null })
         get().loadChapter(prevBook.slug, prevBook.chapters)
       }
     }

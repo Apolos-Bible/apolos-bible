@@ -1,5 +1,5 @@
 
-import { useEffect, useRef } from 'react'
+import { useCallback, useEffect, useMemo, useRef } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useVerseStore } from '@/lib/store/useVerseStore'
 import type { Verse } from '@/lib/store/useVerseStore'
@@ -13,8 +13,9 @@ import { useActivityStore } from '@/lib/store/useActivityStore'
 import { useFriendStore } from '@/lib/store/useFriendStore'
 import { useContextMenuStore } from '@/lib/store/useContextMenuStore'
 import { useCrossRefStore } from '@/lib/store/useCrossRefStore'
-import { modKey } from '@/lib/platform'
-import type { MenuItem } from '@/lib/store/useContextMenuStore'
+import { useVerseActions, HIGHLIGHT_SWATCHES } from '@/lib/verseActions'
+import { useCommands } from '@/lib/keyboard'
+import { isFocusIdle } from '@/lib/keyboard/focus'
 import { ReadingToolbar } from '@/components/reading/ReadingToolbar'
 import { PresenceAvatars } from '@/components/realtime/PresenceAvatars'
 import { Tooltip } from '@/components/ui/Tooltip'
@@ -23,47 +24,8 @@ import { EmptyState } from '@/components/ui/EmptyState'
 import { SEOMeta } from '@/components/seo/SEOMeta'
 import { cn } from '@/lib/cn'
 import { isAuthError } from '@/lib/auth'
-import type { HighlightColor } from '@/types'
 
 // ── Icons ──────────────────────────────────────────────────────────────────
-
-function IconCopy() {
-  return (
-    <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round">
-      <rect x="4" y="4" width="7" height="7" rx="1" />
-      <path d="M1 8V2a1 1 0 0 1 1-1h6" />
-    </svg>
-  )
-}
-
-function IconNote() {
-  return (
-    <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M2 2h8v7H7l-1 1.5L5 9H2V2z" />
-      <path d="M4 5h4M4 7h2" />
-    </svg>
-  )
-}
-
-function IconStar({ filled }: { filled?: boolean }) {
-  return (
-    <svg width="12" height="12" viewBox="0 0 12 12" fill={filled ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth="1.2" strokeLinejoin="round">
-      <polygon points="6,1 7.2,4.3 10.8,4.5 8.0,6.6 8.9,10.0 6,8.1 3.1,10.0 4.0,6.6 1.2,4.5 4.8,4.3" />
-    </svg>
-  )
-}
-
-function IconXRef() {
-  return (
-    <svg width="12" height="12" viewBox="0 0 14 14" fill="none"
-      stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round">
-      <circle cx="3" cy="4" r="1.5" />
-      <circle cx="11" cy="4" r="1.5" />
-      <circle cx="7" cy="11" r="1.5" />
-      <path d="M4.3 4.8C5 7 7 9.5 7 9.5M9.7 4.8C9 7 7 9.5 7 9.5" />
-    </svg>
-  )
-}
 
 function IconMore() {
   return (
@@ -73,21 +35,6 @@ function IconMore() {
       <circle cx="12.5" cy="8" r="1.2" />
     </svg>
   )
-}
-
-function IconShare() {
-  return (
-    <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round">
-      <circle cx="3.5" cy="6" r="2" />
-      <circle cx="8.5" cy="3" r="2" />
-      <circle cx="8.5" cy="9" r="2" />
-      <path d="M5 5l2-1.5M5 7l2 1.5" />
-    </svg>
-  )
-}
-
-function ColorDot({ color }: { color: string }) {
-  return <span className="w-3 h-3 rounded-full shrink-0 inline-block" style={{ backgroundColor: color }} />
 }
 
 function HeartIcon({ size = 10, filled = false }: { size?: number; filled?: boolean }) {
@@ -105,7 +52,7 @@ function HeartIcon({ size = 10, filled = false }: { size?: number; filled?: bool
 
 function FlowIcon({ className }: { className?: string }) {
   return (
-    <svg width="14" height="14" viewBox="0 0 14 14" fill="currentColor" className={className}>
+    <svg width="14" height="14" viewBox="0 0 14 14" fill="currentColor" className={className} aria-hidden="true">
       <rect x="1" y="2"    width="12" height="1.4" rx="0.7" />
       <rect x="1" y="4.8"  width="12" height="1.4" rx="0.7" />
       <rect x="1" y="7.6"  width="12" height="1.4" rx="0.7" />
@@ -116,7 +63,7 @@ function FlowIcon({ className }: { className?: string }) {
 
 function VerseIcon({ className }: { className?: string }) {
   return (
-    <svg width="14" height="14" viewBox="0 0 14 14" fill="currentColor" className={className}>
+    <svg width="14" height="14" viewBox="0 0 14 14" fill="currentColor" className={className} aria-hidden="true">
       <rect x="1" y="1"    width="12" height="1.4" rx="0.7" />
       <rect x="1" y="2.8"  width="9"  height="1.4" rx="0.7" />
       <rect x="1" y="5.8"  width="12" height="1.4" rx="0.7" />
@@ -146,6 +93,12 @@ export function VerseList() {
   const selectVerse       = useVerseStore((s) => s.selectVerse)
   const openStudyPanel    = useVerseStore((s) => s.openStudyPanel)
   const toggleVerseSelection = useVerseStore((s) => s.toggleVerseSelection)
+  const selectVerseRangeTo = useVerseStore((s) => s.selectVerseRangeTo)
+  const extendVerseSelection = useVerseStore((s) => s.extendVerseSelection)
+  const selectAllVerses  = useVerseStore((s) => s.selectAllVerses)
+  const navigateVerse    = useVerseStore((s) => s.navigateVerse)
+  const cursorVerseId    = useVerseStore((s) => s.cursorVerseId)
+  const setCursorVerse   = useVerseStore((s) => s.setCursorVerse)
   const books            = useVerseStore((s) => s.books)
   const selectedBook     = useVerseStore((s) => s.selectedBook)
   const selectedChapter  = useVerseStore((s) => s.selectedChapter)
@@ -164,8 +117,6 @@ export function VerseList() {
   const notesLoading = useNoteStore((s) => s.loading)
   const loadNotes  = useNoteStore((s) => s.loadNotes)
   const highlights = useHighlightStore((s) => s.highlights)
-  const addHighlight = useHighlightStore((s) => s.addHighlight)
-  const removeHighlight = useHighlightStore((s) => s.removeHighlight)
   const loadHighlightsForChapter = useHighlightStore((s) => s.loadHighlightsForChapter)
 
   const bookmarkedIds  = useBookmarkStore((s) => s.bookmarkedIds)
@@ -182,11 +133,22 @@ export function VerseList() {
   const openMenu            = useContextMenuStore((s) => s.openMenu)
   const verseIdsWithRefs    = useCrossRefStore((s) => s.verseIdsWithRefs)
   const loadChapterRefs     = useCrossRefStore((s) => s.loadChapterRefs)
-  const openCrossRefs       = useCrossRefStore((s) => s.openPanel)
+
+  const actions = useVerseActions()
 
   const scrollRef = useRef<HTMLDivElement>(null)
   const lastScrollTop = useRef(0)
   const scrollAcc = useRef(0)
+
+  /**
+   * The roving-tabindex anchor. Same rule the verse commands use to pick their
+   * target (see useVerseActions), so the row that looks focused is the row `n`,
+   * `f` and `h` act on.
+   */
+  const tabbableVerseId = useMemo(() => {
+    const stillHere = (id: string | null) => (id && verses.some((v) => v.id === id) ? id : null)
+    return stillHere(selectedVerseId) ?? stillHere(cursorVerseId) ?? verses[0]?.id ?? null
+  }, [cursorVerseId, selectedVerseId, verses])
 
   useEffect(() => {
     setMobileChromeCollapsed(false)
@@ -251,12 +213,23 @@ export function VerseList() {
     if (chapterId) loadChapterRefs(chapterId)
   }, [chapterId])
 
+  /**
+   * The keyboard cursor. `selectedVerseId` is the model; this moves real DOM
+   * focus to match it, which is what makes j/k reachable by screen readers and
+   * what lets `.`/Menu open the actions menu on the right row.
+   *
+   * Focus only moves when it's idle or already inside the list, so it never
+   * yanks the caret out of a note the user is writing.
+   */
   useEffect(() => {
     if (!selectedVerseId) return
     const el = document.querySelector<HTMLElement>(`[data-verse-id="${selectedVerseId}"]`)
     if (!el) return
+
+    const shouldFocus = isFocusIdle(scrollRef.current)
     requestAnimationFrame(() => {
       el.scrollIntoView({ block: 'center', behavior: 'smooth' })
+      if (shouldFocus && document.activeElement !== el) el.focus({ preventScroll: true })
     })
   }, [selectedVerseId, verses.length, readingMode])
 
@@ -278,251 +251,158 @@ export function VerseList() {
     fontSize === 'lg' ? 'text-[18px] leading-[26px]' :
     'text-[15px] leading-[22px]'
 
-  // ── Context menu builder ─────────────────────────────────────────────────
+  // ── Menu plumbing ────────────────────────────────────────────────────────
 
-  function requireLogin(): boolean {
-    if (user) return false
-    addToast(t('study.loginRequired'), 'error', {
-      action: { label: t('auth.logIn'), onClick: openAuthModal },
-    })
-    openAuthModal()
-    return true
-  }
-
-  function addVerseHighlight(verse: Verse, color: HighlightColor) {
-    if (requireLogin()) return
-    const existingHighlights = highlights[verse.apiId] ?? []
-    Promise.all(existingHighlights.map(h => removeHighlight(verse.apiId, h.id)))
-      .then(() => addHighlight(verse.apiId, 0, verse.text.length, color))
-      .catch((error) => {
-        if (isAuthError(error)) {
-          addToast(t('study.loginRequired'), 'error', {
-            action: { label: t('auth.logIn'), onClick: openAuthModal },
-          })
-          return
-        }
-        addToast(t('toast.highlightFailed'), 'error')
-      })
-  }
-
-  function addVerseHighlights(verses: Verse[], color: HighlightColor) {
-    if (requireLogin()) return
-    Promise.all(verses.map(async v => {
-      const existingHighlights = highlights[v.apiId] ?? []
-      await Promise.all(existingHighlights.map(h => removeHighlight(v.apiId, h.id)))
-      await addHighlight(v.apiId, 0, v.text.length, color)
-    }))
-      .catch((error) => {
-        if (isAuthError(error)) {
-          addToast(t('study.loginRequired'), 'error', {
-            action: { label: t('auth.logIn'), onClick: openAuthModal },
-          })
-          return
-        }
-        addToast(t('toast.highlightFailed'), 'error')
-      })
-  }
-
-  function buildVerseMenu(verse: Verse): MenuItem[] {
-    const bookmarked   = bookmarkedIds.has(verse.apiId)
-    const hasCrossRefs = verseIdsWithRefs.has(verse.apiId)
-
-    const items: MenuItem[] = [
-      {
-        type: 'action',
-        label: t('study.copyVerseText'),
-        icon: <IconCopy />,
-        shortcut: `${modKey}C`,
-        onClick: () => { navigator.clipboard.writeText(verse.text); addToast(t('toast.copied'), 'success') },
-      },
-      {
-        type: 'action',
-        label: t('verse.copyReference'),
-        icon: <IconCopy />,
-        onClick: () => {
-          const ref = `${bookName} ${verse.chapter}:${verse.verse}`
-          navigator.clipboard.writeText(`${ref} — ${verse.text}`)
-          addToast(t('verse.copiedRef', { ref }), 'success')
-        },
-      },
-      {
-        type: 'action',
-        label: t('verse.shareVerse'),
-        icon: <IconShare />,
-        onClick: () => {
-          const ref = `${bookName} ${verse.chapter}:${verse.verse}`
-          const shareText = `${ref} — ${verse.text}`
-          if (navigator.share) {
-            navigator.share({ title: ref, text: shareText, url: window.location.href })
-          } else {
-            navigator.clipboard.writeText(shareText)
-            addToast(t('toast.copied'), 'success')
-          }
-        },
-      },
-      { type: 'separator' },
-      { type: 'label', text: t('verse.highlightVerse') },
-      {
-        type: 'action', label: t('study.colorYellow'), icon: <ColorDot color="#e5c07b" />,
-        onClick: () => addVerseHighlight(verse, 'yellow'),
-      },
-      {
-        type: 'action', label: t('study.colorBlue'), icon: <ColorDot color="#61afef" />,
-        onClick: () => addVerseHighlight(verse, 'blue'),
-      },
-      {
-        type: 'action', label: t('study.colorGreen'), icon: <ColorDot color="#98c379" />,
-        onClick: () => addVerseHighlight(verse, 'green'),
-      },
-      { type: 'separator' },
-      {
-        type: 'action',
-        label: t('verse.addNote'),
-        icon: <IconNote />,
-        onClick: () => {
-          if (requireLogin()) return
-          openStudyPanel(verse.id)
-        },
-      },
-      ...(hasCrossRefs ? [{ type: 'separator' as const }, {
-        type: 'action' as const,
-        label: t('toolbar.crossReferences'),
-        icon: <IconXRef />,
-        onClick: () => openCrossRefs(verse.apiId),
-      }] : []),
-    ]
-
-    items.push({
-      type: 'action',
-      label: bookmarked ? t('verse.removeFromFavorites') : t('verse.addToFavorites'),
-      icon: <IconStar filled={bookmarked} />,
-      onClick: () => {
-        if (requireLogin()) return
-        toggleBookmark(verse.apiId)
-          .catch((error) => {
-            if (isAuthError(error)) {
-              addToast(t('study.loginRequired'), 'error', {
-                action: { label: t('auth.logIn'), onClick: openAuthModal },
-              })
-              return
-            }
-            addToast(t('toast.bookmarkFailed'), 'error')
-          })
-      },
-    })
-
-    return items
-  }
-
-  function buildMultiVerseMenu(): MenuItem[] {
-    const multiVerses = verses.filter(v => selectedVerseIds.includes(v.id))
-    const allBookmarked = multiVerses.every(v => bookmarkedIds.has(v.apiId))
-
-    const items: MenuItem[] = [
-      {
-        type: 'action',
-        label: t('study.copyVerseText'),
-        icon: <IconCopy />,
-        shortcut: `${modKey}C`,
-        onClick: () => {
-          const text = multiVerses.map(v => v.text).join('\n\n')
-          navigator.clipboard.writeText(text)
-          addToast(t('toast.copied'), 'success')
-        },
-      },
-      {
-        type: 'action',
-        label: t('verse.copyReference'),
-        icon: <IconCopy />,
-        onClick: () => {
-          const refs = multiVerses.map(v => `${bookName} ${v.chapter}:${v.verse}`).join(', ')
-          navigator.clipboard.writeText(refs)
-          addToast(t('verse.copiedRef', { ref: refs }), 'success')
-        },
-      },
-      {
-        type: 'action',
-        label: t('verse.shareVerse'),
-        icon: <IconShare />,
-        onClick: () => {
-          const shareText = multiVerses.map(v =>
-            `${bookName} ${v.chapter}:${v.verse} — ${v.text}`
-          ).join('\n\n')
-          const refs = multiVerses.map(v => `${bookName} ${v.chapter}:${v.verse}`).join(', ')
-          const shareUrl = window.location.href
-          if (navigator.share) {
-            navigator.share({ title: refs, text: shareText, url: shareUrl })
-          } else {
-            navigator.clipboard.writeText(`${shareText}\n\n${shareUrl}`)
-            addToast(t('toast.copied'), 'success')
-          }
-        },
-      },
-      { type: 'separator' },
-      { type: 'label', text: t('verse.highlightVerse') },
-      {
-        type: 'action', label: t('study.colorYellow'), icon: <ColorDot color="#e5c07b" />,
-        onClick: () => addVerseHighlights(multiVerses, 'yellow'),
-      },
-      {
-        type: 'action', label: t('study.colorBlue'), icon: <ColorDot color="#61afef" />,
-        onClick: () => addVerseHighlights(multiVerses, 'blue'),
-      },
-      {
-        type: 'action', label: t('study.colorGreen'), icon: <ColorDot color="#98c379" />,
-        onClick: () => addVerseHighlights(multiVerses, 'green'),
-      },
-      { type: 'separator' },
-      {
-        type: 'action',
-        label: t('verse.addNote'),
-        icon: <IconNote />,
-        onClick: () => {
-          if (requireLogin()) return
-          openStudyPanel(multiVerses[0].id)
-        },
-      },
-      { type: 'separator' },
-      {
-        type: 'action',
-        label: allBookmarked ? t('verse.removeFromFavorites') : t('verse.addToFavorites'),
-        icon: <IconStar filled={allBookmarked} />,
-        onClick: () => {
-          if (requireLogin()) return
-          Promise.all(multiVerses.map(v => toggleBookmark(v.apiId)))
-            .catch((error) => {
-              if (isAuthError(error)) {
-                addToast(t('study.loginRequired'), 'error', {
-                  action: { label: t('auth.logIn'), onClick: openAuthModal },
-                })
-                return
-              }
-              addToast(t('toast.bookmarkFailed'), 'error')
-            })
-        },
-      },
-    ]
-
-    return items
-  }
+  /** Menu targets: the multi-selection when the verse is part of it, else itself. */
+  const menuVersesFor = useCallback(
+    (verse: Verse): Verse[] =>
+      selectedVerseIds.includes(verse.id) && selectedVerseIds.length > 1
+        ? verses.filter((v) => selectedVerseIds.includes(v.id))
+        : [verse],
+    [selectedVerseIds, verses],
+  )
 
   function handleContextMenu(e: React.MouseEvent, verse: Verse) {
     e.preventDefault()
     e.stopPropagation()
-    if (selectedVerseIds.includes(verse.id) && selectedVerseIds.length > 1) {
-      openMenu(e.clientX, e.clientY, buildMultiVerseMenu())
-    } else {
-      selectVerse(verse.id)
-      openMenu(e.clientX, e.clientY, buildVerseMenu(verse))
-    }
+    const targets = menuVersesFor(verse)
+    if (targets.length === 1) selectVerse(verse.id)
+    openMenu(e.clientX, e.clientY, actions.buildMenu(targets))
   }
 
   function openVerseMenuFromButton(target: HTMLElement, verse: Verse) {
     const rect = target.getBoundingClientRect()
-    if (selectedVerseIds.includes(verse.id) && selectedVerseIds.length > 1) {
-      openMenu(rect.right - 12, rect.bottom + 8, buildMultiVerseMenu())
-    } else {
-      openMenu(rect.right - 12, rect.bottom + 8, buildVerseMenu(verse))
+    openMenu(rect.right - 12, rect.bottom + 8, actions.buildMenu(menuVersesFor(verse)))
+  }
+
+  /** Anchor the menu on the focused row — the keyboard path to verse actions. */
+  const openMenuAtCursor = useCallback(() => {
+    const targets = actions.targetVerses
+    if (targets.length === 0) return false
+
+    const anchorId = selectedVerseId ?? targets[0].id
+    const el = document.querySelector<HTMLElement>(`[data-verse-id="${anchorId}"]`)
+    const rect = el?.getBoundingClientRect()
+    const x = rect ? Math.min(rect.left + 24, window.innerWidth - 220) : window.innerWidth / 2
+    const y = rect ? rect.bottom + 4 : window.innerHeight / 2
+
+    openMenu(x, y, actions.buildMenu(targets))
+  }, [actions, selectedVerseId, openMenu])
+
+  // ── Keyboard commands ────────────────────────────────────────────────────
+
+  const inSidebar = () =>
+    (document.activeElement as HTMLElement | null)?.closest('[data-region="sidebar"]') != null
+
+  /**
+   * Runs a verse command against the current target, or explains why it can't.
+   * A verse shortcut that silently does nothing is worse than one that says
+   * there's nothing to act on.
+   */
+  const onTarget = (run: (targets: Verse[]) => void) => () => {
+    const targets = actions.targetVerses
+    if (targets.length === 0) {
+      addToast(t('toolbar.selectVerseFirst'), 'info')
+      return
+    }
+    run(targets)
+  }
+
+  useCommands({
+    'reader.nextVerse': () => navigateVerse('next'),
+    'reader.prevVerse': () => navigateVerse('prev'),
+    'reader.nextChapter': () => (inSidebar() ? false : navigateChapter('next')),
+    'reader.prevChapter': () => (inSidebar() ? false : navigateChapter('prev')),
+
+    'reader.extendSelectionNext': () => extendVerseSelection('next'),
+    'reader.extendSelectionPrev': () => extendVerseSelection('prev'),
+    'reader.selectAll': () => selectAllVerses(),
+
+    'reader.toggleSelection': () => {
+      // Only when the row itself holds focus — otherwise Enter/Space belong to
+      // whatever button is focused inside it.
+      const active = document.activeElement as HTMLElement | null
+      const verseId = active?.getAttribute?.('data-verse-id')
+      if (!verseId) return false
+      toggleVerseSelection(verseId)
+    },
+    'reader.clearSelection': () => {
+      if (selectedVerseIds.length === 0) return false
+      selectVerse(null)
+    },
+
+    'reader.openActions': () => openMenuAtCursor(),
+    'reader.addNote': onTarget((targets) => actions.addNote(targets)),
+    'reader.toggleHighlight': onTarget((targets) => actions.toggleHighlight(targets)),
+    'reader.highlightColor': (e) => {
+      const swatch = HIGHLIGHT_SWATCHES[Number(e.key) - 1]
+      if (!swatch) return false
+      onTarget((targets) => actions.highlight(targets, swatch.color))()
+    },
+    'reader.toggleFavorite': onTarget((targets) => actions.toggleFavorite(targets)),
+    'reader.copyText': onTarget((targets) => actions.copyText(targets)),
+    'reader.copyReference': onTarget((targets) => actions.copyReference(targets)),
+    'reader.crossReferences': onTarget((targets) => {
+      const withRefs = targets.filter((v) => verseIdsWithRefs.has(v.apiId))
+      if (withRefs.length === 0) {
+        addToast(t('toolbar.noCrossReferences'), 'info')
+        return
+      }
+      actions.openCrossRefs(withRefs)
+    }),
+    'reader.compareVersions': onTarget((targets) => void actions.compareVersions(targets)),
+  })
+
+  function getMyNoteBodies(verseApiId: number): string[] {
+    if (!user) return []
+
+    return (notes[verseApiId] ?? [])
+      .filter((note) => note.user?.id === user.id)
+      .map((note) => note.body)
+  }
+
+  /**
+   * Shared props that make a verse a real, focusable listbox option.
+   *
+   * The list is a single tab stop (roving tabindex): exactly one row is
+   * tabbable and j/k move between them. The controls *inside* a row are
+   * deliberately not tab stops — 40 verses would otherwise mean ~120 stops,
+   * most of them on icons that are invisible until hover. They stay reachable
+   * by keyboard through their own commands: `.` for the actions menu, `N` for
+   * notes, `F` for favorite.
+   */
+  function verseOptionProps(verse: Verse, isSelected: boolean) {
+    return {
+      'data-verse-id': verse.id,
+      role: 'option',
+      'aria-selected': isSelected,
+      tabIndex: verse.id === tabbableVerseId ? 0 : -1,
+      // Standard list semantics: plain click replaces the selection, Cmd/Ctrl
+      // adds or removes one verse, Shift takes everything back to the anchor.
+      onMouseDown: (e: React.MouseEvent) => {
+        // Stops the browser from painting a text selection across the range.
+        if (e.shiftKey) e.preventDefault()
+      },
+      onClick: (e: React.MouseEvent) => {
+        if (e.shiftKey) {
+          selectVerseRangeTo(verse.id)
+          return
+        }
+        if (e.metaKey || e.ctrlKey) {
+          toggleVerseSelection(verse.id)
+          return
+        }
+        selectVerse(verse.id)
+      },
+      onFocus: () => {
+        setCursorVerse(verse.id)
+        // Tabbing or clicking into a row makes it the cursor, so the next j/k
+        // continues from where the user actually is.
+        if (verse.id !== selectedVerseId && !selectedVerseIds.includes(verse.id)) {
+          useVerseStore.setState({ selectedVerseId: verse.id })
+        }
+      },
+      onContextMenu: (e: React.MouseEvent) => handleContextMenu(e, verse),
     }
   }
 
@@ -556,15 +436,6 @@ export function VerseList() {
     )
   }
 
-
-  function getMyNoteBodies(verseApiId: number): string[] {
-    if (!user) return []
-
-    return (notes[verseApiId] ?? [])
-      .filter((note) => note.user?.id === user.id)
-      .map((note) => note.body)
-  }
-
   return (
     <div className="bg-bg-secondary flex h-full flex-col relative">
       <SEOMeta />
@@ -584,7 +455,7 @@ export function VerseList() {
                 : 'border-border-subtle text-accent/70 hover:text-accent hover:border-accent/40 hover:bg-bg-tertiary active:scale-95',
             )}
           >
-            <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+            <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
               <path d="M7.5 2L3.5 6L7.5 10" />
             </svg>
           </button>
@@ -603,7 +474,7 @@ export function VerseList() {
                 : 'border-border-subtle text-accent/70 hover:text-accent hover:border-accent/40 hover:bg-bg-tertiary active:scale-95',
             )}
           >
-            <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+            <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
               <path d="M4.5 2L8.5 6L4.5 10" />
             </svg>
           </button>
@@ -634,10 +505,16 @@ export function VerseList() {
                 <div className="md:hidden">
                   <ReadingToolbar showVerseActions={false} />
                 </div>
-                <div className="flex gap-0.5 bg-bg-tertiary border border-border-subtle rounded-md p-0.5 md:p-0.5 pointer-events-auto shadow-sm">
+                <div
+                  role="group"
+                  aria-label={t('verse.readingModeGroup')}
+                  className="flex gap-0.5 bg-bg-tertiary border border-border-subtle rounded-md p-0.5 md:p-0.5 pointer-events-auto shadow-sm"
+                >
                   <Tooltip label={t('verse.verseMode')} side="bottom">
                     <button
                       onClick={() => setReadingMode('verse')}
+                      aria-label={t('verse.verseMode')}
+                      aria-pressed={readingMode === 'verse'}
                       className={cn(
                         'p-2.5 md:p-1.5 rounded transition-colors duration-100',
                         readingMode === 'verse' ? 'bg-bg-secondary text-accent shadow-sm' : 'text-text-muted hover:text-text-secondary',
@@ -649,6 +526,8 @@ export function VerseList() {
                   <Tooltip label={t('verse.flowMode')} side="bottom">
                     <button
                       onClick={() => setReadingMode('flow')}
+                      aria-label={t('verse.flowMode')}
+                      aria-pressed={readingMode === 'flow'}
                       className={cn(
                         'p-2.5 md:p-1.5 rounded transition-colors duration-100',
                         readingMode === 'flow' ? 'bg-bg-secondary text-accent shadow-sm' : 'text-text-muted hover:text-text-secondary',
@@ -675,7 +554,12 @@ export function VerseList() {
 
             {/* ── Flow mode ── */}
             {readingMode === 'flow' && (
-              <p className={cn('font-reading leading-[2.2] md:leading-[2.6] tracking-wide text-text-primary select-none md:select-text', textSizeClass)}>
+              <p
+                role="listbox"
+                aria-multiselectable="true"
+                aria-label={t('a11y.verseList', { book: bookName, chapter: selectedChapter })}
+                className={cn('font-reading leading-[2.2] md:leading-[2.6] tracking-wide text-text-primary select-none md:select-text', textSizeClass)}
+              >
                 {verses.map((verse, i) => {
                   const isSelected      = selectedVerseIds.includes(verse.id)
                   const verseHighlights = highlights[verse.apiId] ?? []
@@ -688,9 +572,7 @@ export function VerseList() {
                   return (
                     <span
                       key={verse.id}
-                      data-verse-id={verse.id}
-                      onClick={() => toggleVerseSelection(verse.id)}
-                      onContextMenu={(e) => handleContextMenu(e, verse)}
+                      {...verseOptionProps(verse, isSelected)}
                       className={cn(
                         'cursor-pointer rounded-[2px] transition-[background-color] duration-150',
                         '[box-decoration-break:clone] [-webkit-box-decoration-break:clone]',
@@ -717,6 +599,7 @@ export function VerseList() {
                             selectVerse(verse.id)
                             openStudyPanel(verse.id)
                           }}
+                          tabIndex={-1}
                           className="inline-flex align-super mx-[2px] text-accent/70 hover:text-accent"
                           aria-label={t('verse.openNotes')}
                           title={t('verse.openNotes')}
@@ -732,7 +615,12 @@ export function VerseList() {
 
             {/* ── Verse mode ── */}
             {readingMode === 'verse' && (
-              <div className="space-y-4">
+              <div
+                role="listbox"
+                aria-multiselectable="true"
+                aria-label={t('a11y.verseList', { book: bookName, chapter: selectedChapter })}
+                className="space-y-4"
+              >
                 {verses.map((verse) => {
                   const isSelected      = selectedVerseIds.includes(verse.id)
                   const verseHighlights = highlights[verse.apiId] ?? []
@@ -745,9 +633,7 @@ export function VerseList() {
                   return (
                     <div
                       key={verse.id}
-                      data-verse-id={verse.id}
-                      onClick={() => toggleVerseSelection(verse.id)}
-                      onContextMenu={(e) => handleContextMenu(e, verse)}
+                      {...verseOptionProps(verse, isSelected)}
                       className={cn(
                         'group flex gap-3 cursor-pointer rounded-md px-2 py-2 md:py-1 -mx-2 transition-all duration-150 border-l-2 border-l-transparent',
                         isSelected ? 'bg-accent/[0.08] border-l-accent' : 'hover:bg-black/[0.03]',
@@ -790,6 +676,7 @@ export function VerseList() {
                             selectVerse(verse.id)
                             openStudyPanel(verse.id)
                           }}
+                          tabIndex={-1}
                           className="shrink-0 self-start mt-0.5 inline-flex h-9 w-9 md:h-6 md:w-6 items-center justify-center rounded-md text-accent/70 hover:text-accent hover:bg-bg-tertiary"
                           aria-label={t('verse.openNotes')}
                           title={t('verse.openNotes')}
@@ -797,6 +684,9 @@ export function VerseList() {
                           <NoteIcon size={12} />
                         </button>
                       )}
+                      {/* Actions menu. Visible on every viewport now: hiding it on
+                          desktop left right-click as the only path, which the
+                          keyboard cannot take. */}
                       <button
                         type="button"
                         onClick={(e) => {
@@ -804,9 +694,12 @@ export function VerseList() {
                           openVerseMenuFromButton(e.currentTarget, verse)
                         }}
                         className={cn(
-                          'shrink-0 self-start mt-0.5 inline-flex h-10 w-10 md:h-8 md:w-8 items-center justify-center rounded-md text-text-muted hover:text-text-primary hover:bg-bg-tertiary',
-                          selectedVerseIds.length > 1 ? 'hidden' : 'md:hidden',
+                          'shrink-0 self-start mt-0.5 inline-flex h-10 w-10 md:h-8 md:w-8 items-center justify-center rounded-md',
+                          'text-text-muted hover:text-text-primary hover:bg-bg-tertiary transition-opacity',
+                          'md:opacity-0 md:group-hover:opacity-100 md:group-focus-within:opacity-100 md:focus-visible:opacity-100',
+                          selectedVerseIds.length > 1 && 'hidden',
                         )}
+                        tabIndex={-1}
                         aria-label={t('verse.openActions', { verse: verse.verse })}
                       >
                         <IconMore />
@@ -815,7 +708,7 @@ export function VerseList() {
                         type="button"
                         onClick={(e) => {
                           e.stopPropagation()
-                          if (requireLogin()) return
+                          if (actions.requireLogin()) return
                           toggleBookmark(verse.apiId)
                             .catch((error) => {
                               if (isAuthError(error)) {
@@ -832,9 +725,11 @@ export function VerseList() {
                           'hover:bg-bg-tertiary',
                           isBookmarked
                             ? 'text-[var(--fav)] opacity-100'
-                            : 'text-text-muted opacity-0 group-hover:opacity-100 focus-visible:opacity-100 hover:text-[var(--fav)]',
+                            : 'text-text-muted opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 focus-visible:opacity-100 hover:text-[var(--fav)]',
                         )}
+                        tabIndex={-1}
                         aria-label={isBookmarked ? t('verse.removeFromFavorites') : t('verse.addToFavorites')}
+                        aria-pressed={isBookmarked}
                         title={isBookmarked ? t('verse.removeFromFavorites') : t('verse.addToFavorites')}
                       >
                         <HeartIcon size={14} filled={isBookmarked} />
@@ -849,30 +744,31 @@ export function VerseList() {
         </div>
       )}
 
-      {selectedVerseIds.length > 0 && (
+      {/* Only worth showing for a real multi-selection. With one verse the row's
+          own highlight already says it, and Esc clears it. */}
+      {selectedVerseIds.length > 1 && (
         <div className="hidden md:flex fixed bottom-4 right-4 z-20 items-center gap-2 bg-bg-tertiary border border-border-subtle rounded-lg px-3 py-2 shadow-lg text-xs">
           <span className="text-text-secondary tabular-nums">
             {t('verse.selectedVerses', { count: selectedVerseIds.length })}
           </span>
-          {selectedVerseIds.length > 1 && (
-            <button
-              type="button"
-              onClick={(e) => {
-                const firstVerse = verses.find(v => v.id === selectedVerseIds[0])
-                if (firstVerse) openVerseMenuFromButton(e.currentTarget, firstVerse)
-              }}
-              className="flex items-center gap-1 text-text-muted hover:text-text-primary transition-colors"
-              aria-label={t('verse.openActions', { verse: selectedVerseIds.length })}
-            >
-              <IconMore />
-            </button>
-          )}
+          <button
+            type="button"
+            onClick={(e) => {
+              const rect = e.currentTarget.getBoundingClientRect()
+              openMenu(rect.right - 12, rect.bottom + 8, actions.buildMenu(actions.targetVerses))
+            }}
+            className="flex items-center gap-1 text-text-muted hover:text-text-primary transition-colors"
+            aria-label={t('verse.openActions', { verse: selectedVerseIds.length })}
+          >
+            <IconMore />
+          </button>
           <button
             type="button"
             onClick={() => selectVerse(null)}
             className="flex items-center gap-1 text-text-muted hover:text-text-primary transition-colors"
+            aria-label={t('verse.clear')}
           >
-            <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round">
+            <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" aria-hidden="true">
               <path d="M3 3l6 6M9 3l-6 6" />
             </svg>
           </button>

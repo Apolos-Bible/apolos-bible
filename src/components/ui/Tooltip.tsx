@@ -19,12 +19,17 @@ export function Tooltip({ label, children, side = 'bottom', className }: Tooltip
   return (
     <span className={cn('relative group/tooltip inline-flex', className)}>
       {children}
+      {/* Visual affordance only: the trigger carries its own aria-label, so
+          exposing the tooltip too would announce the name twice. It must also
+          appear on keyboard focus — hover-only labels are invisible to anyone
+          navigating with Tab. */}
       <span
-        role="tooltip"
+        aria-hidden="true"
         className={cn(
           'pointer-events-none absolute z-50 whitespace-nowrap',
           'rounded px-2 py-1 text-2xs text-text-primary bg-bg-tertiary border border-border-subtle shadow-md',
-          'opacity-0 group-hover/tooltip:opacity-100 transition-opacity duration-150 delay-300',
+          'opacity-0 group-hover/tooltip:opacity-100 group-focus-within/tooltip:opacity-100',
+          'transition-opacity duration-150 delay-300',
           sideClasses[side],
         )}
       >

@@ -4,6 +4,8 @@ import { cn } from '@/lib/cn'
 import { useVerseStore } from '@/lib/store/useVerseStore'
 import { useUIStore } from '@/lib/store/useUIStore'
 import { useContextMenuStore } from '@/lib/store/useContextMenuStore'
+import { useVerseActions } from '@/lib/verseActions'
+import { KeyboardScope, useCommands } from '@/lib/keyboard'
 import { MobileTopBar } from './MobileTopBar'
 import { MobileBottomNav } from './MobileBottomNav'
 import { MobileSearchView } from './MobileSearchView'
@@ -16,15 +18,32 @@ interface PanelLayoutProps {
   leftPanel?: ReactNode
 }
 
-export function PanelLayout({ sidebar, main, panel, leftPanel }: PanelLayoutProps) {
+/**
+ * The reader shell. It owns the `reader` keyboard scope, so every shortcut
+ * registered by the reader and its panels is automatically inert on the
+ * profile/settings routes — no pathname checks needed.
+ */
+export function PanelLayout(props: PanelLayoutProps) {
+  return (
+    <KeyboardScope scope="reader">
+      <PanelLayoutSurface {...props} />
+    </KeyboardScope>
+  )
+}
+
+function PanelLayoutSurface({ sidebar, main, panel, leftPanel }: PanelLayoutProps) {
   const { t } = useTranslation()
   const studyVerseId = useVerseStore((s) => s.studyVerseId)
   const closeStudyPanel = useVerseStore((s) => s.closeStudyPanel)
   const commentaryOpen = useUIStore((s) => s.commentaryOpen)
   const toggleCommentary = useUIStore((s) => s.toggleCommentary)
   const mobileBookPickerOpen = useUIStore((s) => s.mobileBookPickerOpen)
+  const openMobileBookPicker = useUIStore((s) => s.openMobileBookPicker)
   const closeMobileBookPicker = useUIStore((s) => s.closeMobileBookPicker)
   const mobileSearchOpen = useUIStore((s) => s.mobileSearchOpen)
+  const togglePanel = useUIStore((s) => s.togglePanel)
+  const readingMode = useUIStore((s) => s.readingMode)
+  const setReadingMode = useUIStore((s) => s.setReadingMode)
 
   const closeMobileStudyPanel = () => {
     if (commentaryOpen) {
@@ -39,7 +58,30 @@ export function PanelLayout({ sidebar, main, panel, leftPanel }: PanelLayoutProp
   const selectVerse = useVerseStore((s) => s.selectVerse)
   const verses = useVerseStore((s) => s.verses)
   const openMenu = useContextMenuStore((s) => s.openMenu)
-  const addToast = useUIStore((s) => s.addToast)
+  const { buildMenu } = useVerseActions()
+
+  // View + panel shortcuts. Verse-level ones live in VerseList, next to the
+  // element they act on.
+  useCommands({
+    'reader.toggleReadingMode': () => setReadingMode(readingMode === 'verse' ? 'flow' : 'verse'),
+    'reader.toggleCommentary': () => toggleCommentary(),
+    'reader.panelFavorites': () => togglePanel('favorites'),
+    'reader.panelNotes': () => togglePanel('my-notes'),
+    'reader.panelFriends': () => togglePanel('friends'),
+    'reader.panelChat': () => togglePanel('chat'),
+    'reader.panelStudies': () => togglePanel('my-studies'),
+    'reader.focusBooks': () => {
+      if (window.matchMedia('(max-width: 767px)').matches) {
+        openMobileBookPicker()
+        return
+      }
+      const region = document.querySelector<HTMLElement>('[data-region="sidebar"]')
+      const activeBook = region?.querySelector<HTMLElement>('[data-book-id][aria-expanded="true"]')
+      ;(activeBook ?? region?.querySelector<HTMLElement>('[data-book-id]') ?? region)?.focus()
+    },
+  })
+
+  const multiSelectedVerses = verses.filter((v) => selectedVerseIds.includes(v.id))
 
   return (
     <div className="app-viewport w-full overflow-hidden bg-bg-primary">
@@ -56,7 +98,12 @@ export function PanelLayout({ sidebar, main, panel, leftPanel }: PanelLayoutProp
           <>
         <MobileTopBar />
 
-        <main className="min-h-0 flex-1 overflow-hidden relative">
+        <main
+          className="min-h-0 flex-1 overflow-hidden relative"
+          data-region="reader"
+          aria-label={t('a11y.regionReader')}
+          tabIndex={-1}
+        >
           {main}
 
           {selectedVerseIds.length > 0 && (
@@ -67,42 +114,8 @@ export function PanelLayout({ sidebar, main, panel, leftPanel }: PanelLayoutProp
                   <button
                     type="button"
                     onClick={(e) => {
-                      const multiVerses = verses.filter(v => selectedVerseIds.includes(v.id))
-                      const bookName = multiVerses[0]?.book ?? ''
                       const rect = e.currentTarget.getBoundingClientRect()
-                      openMenu(rect.left + rect.width / 2, rect.top - 8, [
-                        {
-                          type: 'action',
-                          label: t('study.copyVerseText'),
-                          onClick: () => {
-                            navigator.clipboard.writeText(multiVerses.map(v => v.text).join('\n\n'))
-                            addToast(t('toast.copied'), 'success')
-                          },
-                        },
-                        {
-                          type: 'action',
-                          label: t('verse.copyReference'),
-                          onClick: () => {
-                            const refs = multiVerses.map(v => `${bookName} ${v.chapter}:${v.verse}`).join(', ')
-                            navigator.clipboard.writeText(refs)
-                            addToast(t('verse.copiedRef', { ref: refs }), 'success')
-                          },
-                        },
-                        {
-                          type: 'action',
-                          label: t('verse.shareVerse'),
-                          onClick: () => {
-                            const shareText = multiVerses.map(v => `${bookName} ${v.chapter}:${v.verse} — ${v.text}`).join('\n\n')
-                            const shareUrl = window.location.href
-                            if (navigator.share) {
-                              navigator.share({ title: t('verse.shareVerse'), text: shareText, url: shareUrl })
-                            } else {
-                              navigator.clipboard.writeText(`${shareText}\n\n${shareUrl}`)
-                              addToast(t('toast.copied'), 'success')
-                            }
-                          },
-                        },
-                      ])
+                      openMenu(rect.left + rect.width / 2, rect.top - 8, buildMenu(multiSelectedVerses))
                     }}
                     className="flex items-center justify-center text-text-muted hover:text-text-primary transition-colors"
                     aria-label={t('verse.openActions', { verse: selectedVerseIds.length })}
@@ -133,11 +146,15 @@ export function PanelLayout({ sidebar, main, panel, leftPanel }: PanelLayoutProp
 
         <MobileBottomNav />
 
+        {/* Closed drawers stay mounted for the slide transition. `inert` is what
+            actually keeps them out of the tab order — opacity-0 does not. */}
         <div
           className={cn(
             'fixed inset-0 z-40 transition-opacity duration-200 md:hidden',
             mobileBookPickerOpen ? 'pointer-events-auto opacity-100' : 'pointer-events-none opacity-0',
           )}
+          inert={mobileBookPickerOpen ? undefined : ''}
+          aria-hidden={!mobileBookPickerOpen}
         >
           <div className="absolute inset-0 bg-black/60" onClick={closeMobileBookPicker} />
           <div
@@ -170,6 +187,8 @@ export function PanelLayout({ sidebar, main, panel, leftPanel }: PanelLayoutProp
             'absolute inset-0 z-30 transition-opacity duration-200 md:hidden',
             panel ? 'pointer-events-auto opacity-100' : 'pointer-events-none opacity-0',
           )}
+          inert={panel ? undefined : ''}
+          aria-hidden={!panel}
         >
           <div className="absolute inset-0 bg-black/60" onClick={closeMobileStudyPanel} />
           <div className="absolute inset-x-0 bottom-0 top-4 rounded-t-2xl bg-bg-secondary shadow-2xl">
@@ -181,7 +200,12 @@ export function PanelLayout({ sidebar, main, panel, leftPanel }: PanelLayoutProp
       </div>
 
       <div className="hidden md:flex h-full w-full overflow-hidden">
-        <aside className="flex-shrink-0 w-sidebar h-full overflow-hidden">
+        <aside
+          className="flex-shrink-0 w-sidebar h-full overflow-hidden"
+          data-region="sidebar"
+          aria-label={t('a11y.regionSidebar')}
+          tabIndex={-1}
+        >
           {sidebar}
         </aside>
 
@@ -190,13 +214,23 @@ export function PanelLayout({ sidebar, main, panel, leftPanel }: PanelLayoutProp
             'flex-shrink-0 h-full overflow-hidden transition-all duration-300 ease-in-out border-r border-border-subtle',
             leftPanel != null ? 'w-panel opacity-100' : 'w-0 opacity-0 border-0',
           )}
+          data-region={leftPanel != null ? 'left-panel' : undefined}
+          aria-label={t('a11y.regionLeftPanel')}
+          tabIndex={leftPanel != null ? -1 : undefined}
+          inert={leftPanel != null ? undefined : ''}
         >
           <div className="w-panel h-full">
             {leftPanel}
           </div>
         </aside>
 
-        <main className="flex-1 min-w-0 h-full overflow-hidden" data-tour="reading">
+        <main
+          className="flex-1 min-w-0 h-full overflow-hidden"
+          data-tour="reading"
+          data-region="reader"
+          aria-label={t('a11y.regionReader')}
+          tabIndex={-1}
+        >
           {main}
         </main>
 
@@ -205,6 +239,10 @@ export function PanelLayout({ sidebar, main, panel, leftPanel }: PanelLayoutProp
             'flex-shrink-0 h-full overflow-hidden transition-all duration-300 ease-in-out',
             panel !== null ? 'w-panel opacity-100' : 'w-0 opacity-0',
           )}
+          data-region={panel !== null ? 'panel' : undefined}
+          aria-label={t('a11y.regionPanel')}
+          tabIndex={panel !== null ? -1 : undefined}
+          inert={panel !== null ? undefined : ''}
         >
           <div className="w-panel h-full">
             {panel}

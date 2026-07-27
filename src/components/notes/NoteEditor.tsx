@@ -60,7 +60,9 @@ export default function NoteEditor({ initialValue, onSave, onCancel }: NoteEdito
         className={cn(
           'w-full resize-none bg-transparent text-sm text-text-primary',
           'placeholder:text-text-muted outline-none min-h-[60px]',
-          'leading-relaxed',
+          // The wrapper already lights up on focus-within; a ring here too
+          // would double up the indicator.
+          'focus-ring-none leading-relaxed',
         )}
         placeholder={t('notes.editorPlaceholder')}
       />

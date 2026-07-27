@@ -5,6 +5,7 @@ import { useFriendStore } from '@/lib/store/useFriendStore'
 import { useUIStore } from '@/lib/store/useUIStore'
 import { UserAvatar } from '@/components/auth/UserAvatar'
 import { cn } from '@/lib/cn'
+import { Dialog } from '@/components/ui/Dialog'
 
 interface NewChatDialogProps {
   open: boolean
@@ -73,16 +74,14 @@ export function NewChatDialog({ open, onClose }: NewChatDialogProps) {
   const canSubmit = mode === 'dm' ? picked.length === 1 : picked.length >= 2
 
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm"
-      onClick={onClose}
+    <Dialog
+      open={open}
+      onClose={onClose}
+      labelledBy="new-chat-title"
+      className="w-full max-w-sm bg-bg-secondary border border-border-subtle rounded-xl shadow-2xl mx-4 overflow-hidden"
     >
-      <div
-        className="w-full max-w-sm bg-bg-secondary border border-border-subtle rounded-xl shadow-2xl mx-4 overflow-hidden"
-        onClick={(e) => e.stopPropagation()}
-      >
         <div className="flex items-center justify-between px-4 py-3 border-b border-border-subtle">
-          <span className="text-sm font-medium text-text-primary">{t('chat.newConversation')}</span>
+          <span id="new-chat-title" className="text-sm font-medium text-text-primary">{t('chat.newConversation')}</span>
           <button
             onClick={onClose}
             aria-label={t('common.close')}
@@ -196,7 +195,6 @@ export function NewChatDialog({ open, onClose }: NewChatDialogProps) {
             {mode === 'dm' ? t('chat.startChat') : `${t('chat.createGroup')}${picked.length >= 2 ? ` (${picked.length})` : ''}`}
           </button>
         </div>
-      </div>
-    </div>
+    </Dialog>
   )
 }
