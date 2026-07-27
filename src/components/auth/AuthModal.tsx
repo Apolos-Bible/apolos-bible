@@ -6,6 +6,7 @@ import { useAuthStore } from '@/lib/store/useAuthStore'
 import { useUIStore } from '@/lib/store/useUIStore'
 import { cn } from '@/lib/cn'
 import { LogoStacked } from '@/components/brand/Logo'
+import { Dialog } from '@/components/ui/Dialog'
 
 const API_BASE = import.meta.env.VITE_API_URL ?? 'https://verbum.test'
 
@@ -111,14 +112,12 @@ export function AuthModal({ open, onClose, initialMode = 'login' }: AuthModalPro
   const isAuth = mode === 'login' || mode === 'register'
 
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm"
-      onClick={handleClose}
+    <Dialog
+      open={open}
+      onClose={handleClose}
+      label={t('auth.dialogLabel')}
+      className="max-w-sm w-full bg-bg-secondary rounded-xl border border-border-subtle shadow-2xl p-6 mx-4"
     >
-      <div
-        className="max-w-sm w-full bg-bg-secondary rounded-xl border border-border-subtle shadow-2xl p-6 mx-4"
-        onClick={e => e.stopPropagation()}
-      >
         {/* Header */}
         {isResetPassword ? (
           <div className="flex items-start justify-between mb-5">
@@ -127,7 +126,9 @@ export function AuthModal({ open, onClose, initialMode = 'login' }: AuthModalPro
               <p className="text-sm text-text-muted mt-0.5">{t('auth.resetPasswordDescription')}</p>
             </div>
             <button
+              type="button"
               onClick={handleClose}
+              aria-label={t('common.close')}
               className="text-text-muted hover:text-text-secondary transition-colors text-lg leading-none ml-4 mt-0.5"
             >
               ×
@@ -140,7 +141,9 @@ export function AuthModal({ open, onClose, initialMode = 'login' }: AuthModalPro
               {!sent && <p className="text-sm text-text-muted mt-0.5">{t('auth.forgotPasswordDescription')}</p>}
             </div>
             <button
+              type="button"
               onClick={handleClose}
+              aria-label={t('common.close')}
               className="text-text-muted hover:text-text-secondary transition-colors text-lg leading-none ml-4 mt-0.5"
             >
               ×
@@ -157,7 +160,9 @@ export function AuthModal({ open, onClose, initialMode = 'login' }: AuthModalPro
               </p>
             </div>
             <button
+              type="button"
               onClick={handleClose}
+              aria-label={t('common.close')}
               className="text-text-muted hover:text-text-secondary transition-colors text-lg leading-none ml-4 mt-0.5"
             >
               ×
@@ -371,8 +376,7 @@ export function AuthModal({ open, onClose, initialMode = 'login' }: AuthModalPro
             </button>
           )}
         </form>
-      </div>
-    </div>
+    </Dialog>
   )
 }
 

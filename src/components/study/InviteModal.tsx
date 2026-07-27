@@ -6,6 +6,7 @@ import { useStudyStore } from '@/lib/store/useStudyStore';
 import { useUIStore } from '@/lib/store/useUIStore';
 import { studyApi } from '@/lib/study/studyApi';
 import { cn } from '@/lib/cn';
+import { Dialog } from '@/components/ui/Dialog';
 
 interface InviteModalProps {
   open: boolean;
@@ -91,15 +92,17 @@ export function InviteModal({ open, onClose }: InviteModalProps) {
       )
     : friends;
 
-  if (!open) return null;
-
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center">
-      <div className="absolute inset-0 bg-black/50" onClick={onClose} />
-      <div className="relative bg-surface border border-border rounded-2xl shadow-xl p-6 max-w-md w-full mx-4">
+    <Dialog
+      open={open}
+      onClose={onClose}
+      labelledBy="invite-title"
+      overlayClassName="bg-black/50"
+      className="relative bg-surface border border-border rounded-2xl shadow-xl p-6 max-w-md w-full mx-4"
+    >
         <div className="flex items-center justify-between mb-4">
-          <h2 className="text-md font-semibold text-text-primary">{t('study.invite.title')}</h2>
-          <button onClick={onClose} className="text-text-muted hover:text-text-primary transition-colors">
+          <h2 id="invite-title" className="text-md font-semibold text-text-primary">{t('study.invite.title')}</h2>
+          <button type="button" onClick={onClose} aria-label={t('common.close')} className="text-text-muted hover:text-text-primary transition-colors">
             <X className="w-4 h-4" />
           </button>
         </div>
@@ -187,7 +190,6 @@ export function InviteModal({ open, onClose }: InviteModalProps) {
           <UserPlus className="w-4 h-4" />
           {sending ? t('study.invite.sending') : t('study.invite.inviteButton', { count: selectedIds.size })}
         </button>
-      </div>
-    </div>
+    </Dialog>
   );
 }

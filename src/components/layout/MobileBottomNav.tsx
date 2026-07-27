@@ -188,6 +188,9 @@ export function MobileBottomNav() {
       )}
       aria-label={t('layout.library')}
       aria-hidden={hidden}
+      // Collapsed to h-0 but still mounted for the transition — `inert` is what
+      // keeps its buttons out of the tab order.
+      inert={hidden ? '' : undefined}
     >
       <NavButton
         icon={<SearchIcon />}

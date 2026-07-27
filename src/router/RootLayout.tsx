@@ -1,7 +1,9 @@
 import { useEffect } from 'react'
-import { Outlet, useLocation, useNavigate } from 'react-router-dom'
+import { Outlet, useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
-import { isPageRoute, paths } from './paths'
+import { paths } from './paths'
+import { KeyboardProvider, useCommands } from '@/lib/keyboard'
+import { RegionNav } from '@/components/a11y/RegionNav'
 import { CommandPalette } from '@/components/ui/CommandPalette'
 import { Toast } from '@/components/ui/Toast'
 import { KeyboardShortcutsPanel } from '@/components/ui/KeyboardShortcutsPanel'
@@ -24,16 +26,21 @@ const VISITED_STORAGE_KEY = 'verbum_has_visited'
 let hasLoggedStartupSettings = false
 
 export function RootLayout() {
+  return (
+    <KeyboardProvider>
+      <RootLayoutSurface />
+    </KeyboardProvider>
+  )
+}
+
+function RootLayoutSurface() {
   const { t } = useTranslation()
   const navigate = useNavigate()
-  const { pathname } = useLocation()
   const openCommandPalette = useUIStore(s => s.openCommandPalette)
   const authModalOpen      = useUIStore(s => s.authModalOpen)
   const closeAuthModal     = useUIStore(s => s.closeAuthModal)
   const authModalMode      = useUIStore(s => s.authModalMode)
   const authModalKey       = useUIStore(s => s.authModalKey)
-  const navigateVerse      = useVerseStore(s => s.navigateVerse)
-  const navigateChapter    = useVerseStore(s => s.navigateChapter)
   const versions           = useVerseStore(s => s.versions)
   const versionId          = useVerseStore(s => s.versionId)
   const selectedBook       = useVerseStore(s => s.selectedBook)
@@ -127,48 +134,20 @@ export function RootLayout() {
     }
   }, [user, loadBookmarks, loadFriends, loadChat, resetChat, listenForChatUpdates, stopChatUpdates])
 
-  useEffect(() => {
-    let gPressedAt = 0 // Linear-style "g then x" chord window
-
-    const handleKey = (e: KeyboardEvent) => {
-      const tag = (e.target as HTMLElement).tagName
-      const isInput = tag === 'INPUT' || tag === 'TEXTAREA' || (e.target as HTMLElement).isContentEditable
-
-      if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
-        e.preventDefault()
-        openCommandPalette()
-        return
-      }
-
-      if (isInput || e.metaKey || e.ctrlKey || e.altKey) return
-
-      // "g p" → profile, "g s" → settings (500ms chord window)
-      const now = Date.now()
-      if (gPressedAt && now - gPressedAt < 500) {
-        if (e.key === 'p') { e.preventDefault(); gPressedAt = 0; navigate(paths.profile()); return }
-        if (e.key === 's') { e.preventDefault(); gPressedAt = 0; navigate(paths.settings()); return }
-      }
-      if (e.key === 'g') { gPressedAt = now; return }
-      gPressedAt = 0
-
-      // Reader-only keys — profile/settings pages are standalone routes with
-      // no reader behind them; firing these there would silently move (and
-      // persist) the reading position.
-      if (isPageRoute(pathname)) return
-
-      if (e.key === 'j') navigateVerse('next')
-      if (e.key === 'k') navigateVerse('prev')
-      if (e.key === 'ArrowLeft')  { e.preventDefault(); navigateChapter('prev') }
-      if (e.key === 'ArrowRight') { e.preventDefault(); navigateChapter('next') }
-      if (e.key === '?') useUIStore.getState().toggleShortcutsPanel()
-    }
-
-    window.addEventListener('keydown', handleKey)
-    return () => window.removeEventListener('keydown', handleKey)
-  }, [openCommandPalette, navigateVerse, navigateChapter, navigate, pathname])
+  // App-wide shortcuts. Reader- and study-specific keys register themselves in
+  // their own scopes, so they can't fire on routes where they'd be meaningless.
+  useCommands({
+    'app.commandPalette': () => openCommandPalette(),
+    'app.search': () => openCommandPalette(),
+    'app.shortcuts': () => useUIStore.getState().toggleShortcutsPanel(),
+    'app.goHome': () => { navigate(paths.root()) },
+    'app.goProfile': () => { navigate(paths.profile()) },
+    'app.goSettings': () => { navigate(paths.settings()) },
+  })
 
   return (
     <>
+      <RegionNav />
       <Outlet />
       <CommandPalette />
       <Toast />
