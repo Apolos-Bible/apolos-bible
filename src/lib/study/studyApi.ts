@@ -7,7 +7,7 @@ export const studyApi = {
     return api.get<StudySession[]>(`/api/studies${qs}`);
   },
 
-  create: (data: { type: string; anchor_ref?: string; title: string }) =>
+  create: (data: { type: string; anchor_ref?: string; title?: string; guided_study_slug?: string }) =>
     api.post<StudyCreateResponse>('/api/studies', data),
 
   get: (id: string) =>
@@ -56,6 +56,8 @@ export interface StudySession {
   id: string;
   type: 'verse' | 'chapter' | 'free';
   anchor_ref: string | null;
+  /** Set when the session follows one of the studies Apolos provides. */
+  guided_study: { slug: string; title: string; step_count: number } | null;
   title: string;
   host_user_id: number;
   conversation_id: number | null;
@@ -66,6 +68,12 @@ export interface StudySession {
   created_at: string;
   updated_at: string;
   participants: StudyParticipant[];
+  /**
+   * Invitations still awaiting an answer. A participant row only exists once
+   * someone has opened the study, so this is what tells "shared, nobody here
+   * yet" apart from "studying alone".
+   */
+  pending_invitation_count: number;
   host: { id: number; name: string } | null;
 }
 

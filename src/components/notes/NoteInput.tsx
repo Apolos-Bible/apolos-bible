@@ -75,6 +75,8 @@ export default function NoteInput({ verseApiId, verseApiIds }: NoteInputProps) {
         <div className="flex-1 min-w-0">
           <textarea
             ref={textareaRef}
+            data-focus-target="note-input"
+            aria-label={t('notes.addNote')}
             value={content}
             readOnly={!user}
             onFocus={() => {

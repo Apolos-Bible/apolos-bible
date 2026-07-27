@@ -1,10 +1,11 @@
 import { useState, useCallback, useEffect, useRef, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
-import { X, Search, BookOpen } from 'lucide-react';
+import { X, Search, BookOpen, ArrowRight } from 'lucide-react';
 import { type ApiSearchResult } from '@/lib/bibleApi';
 import { searchVerses } from '@/lib/verseSearch';
 import { useVerseStore } from '@/lib/store/useVerseStore';
 import { cn } from '@/lib/cn';
+import { Dialog } from '@/components/ui/Dialog';
 
 type FlatItem =
   | { kind: 'chapter'; groupKey: string; results: ApiSearchResult[] }
@@ -13,9 +14,11 @@ type FlatItem =
 interface InsertVerseModalProps {
   open: boolean;
   onClose: () => void;
+  /** Hand off to the Bible tool for browsing instead of one-shot search. */
+  onBrowseBible?: () => void;
 }
 
-export function InsertVerseModal({ open, onClose }: InsertVerseModalProps) {
+export function InsertVerseModal({ open, onClose, onBrowseBible }: InsertVerseModalProps) {
   const { t } = useTranslation();
   const versionId = useVerseStore((s) => s.versionId);
   const [query, setQuery] = useState('');
@@ -123,26 +126,30 @@ export function InsertVerseModal({ open, onClose }: InsertVerseModalProps) {
         } else {
           handleSelect(item.result);
         }
-      } else if (e.key === 'Escape') {
-        onClose();
       }
+      // Escape is handled by Dialog's blocking keyboard scope.
     },
-    [flatItems, activeIdx, handleSelect, handleChapterInsert, onClose],
+    [flatItems, activeIdx, handleSelect, handleChapterInsert],
   );
 
-  if (!open) return null;
-
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center">
-      <div className="absolute inset-0 bg-black/50" onClick={onClose} />
-      <div className="relative bg-surface border border-border rounded-2xl shadow-xl p-5 max-w-lg w-full mx-4">
+    <Dialog
+      open={open}
+      onClose={onClose}
+      labelledBy="insert-verse-title"
+      overlayClassName="bg-black/50"
+      className="relative bg-surface border border-border rounded-2xl shadow-xl p-5 max-w-lg w-full mx-4"
+      initialFocus="input"
+    >
         <div className="flex items-center justify-between mb-4">
-          <h2 className="text-md font-semibold text-text-primary flex items-center gap-2">
-            <BookOpen className="w-4 h-4 text-accent" />
+          <h2 id="insert-verse-title" className="text-md font-semibold text-text-primary flex items-center gap-2">
+            <BookOpen className="w-4 h-4 text-accent" aria-hidden="true" />
             {t('study.insertVerse.title')}
           </h2>
           <button
+            type="button"
             onClick={onClose}
+            aria-label={t('common.close')}
             className="w-7 h-7 flex items-center justify-center rounded-md text-text-muted hover:text-text-primary hover:bg-bg-tertiary transition-colors"
           >
             <X className="w-4 h-4" />
@@ -161,6 +168,28 @@ export function InsertVerseModal({ open, onClose }: InsertVerseModalProps) {
             className="w-full pl-9 pr-3 py-2 bg-bg-primary border border-border rounded-lg text-sm text-text-primary outline-none focus:border-accent/50 placeholder:text-text-muted"
           />
         </div>
+
+        {onBrowseBible && (
+          <button
+            type="button"
+            onClick={() => {
+              onClose();
+              onBrowseBible();
+            }}
+            className="w-full mb-3 flex items-center gap-2 px-3 py-2 rounded-lg border border-border text-left hover:bg-bg-tertiary transition-colors group"
+          >
+            <BookOpen className="w-3.5 h-3.5 text-accent shrink-0" aria-hidden="true" />
+            <span className="min-w-0 flex-1">
+              <span className="block text-xs font-medium text-text-primary truncate">
+                {t('study.insertVerse.browseBible')}
+              </span>
+              <span className="block text-2xs text-text-muted truncate">
+                {t('study.insertVerse.browseBibleHint')}
+              </span>
+            </span>
+            <ArrowRight className="w-3.5 h-3.5 text-text-muted group-hover:text-accent transition-colors shrink-0" aria-hidden="true" />
+          </button>
+        )}
 
         <div className="max-h-64 overflow-y-auto">
           {loading && (
@@ -211,7 +240,6 @@ export function InsertVerseModal({ open, onClose }: InsertVerseModalProps) {
             ),
           )}
         </div>
-      </div>
-    </div>
+    </Dialog>
   );
 }

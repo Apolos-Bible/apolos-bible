@@ -37,6 +37,7 @@ import {
 } from '@/lib/study/yDocHelpers';
 import { pointsBounds, strokeHit, type StrokeData, type StrokeKind } from '@/lib/study/strokes';
 import { StudyDocContext } from '@/lib/study/StudyDocContext';
+import { hasVerseDrag, readVerseDrag, endVerseDrag } from '@/lib/study/verseDrag';
 import { studyNodeTypes } from './nodes';
 import { studyEdgeTypes } from './edges';
 import { RemoteCursors } from './cursor/RemoteCursors';
@@ -61,6 +62,12 @@ interface StudyCanvasProps {
   isGuest: boolean;
   drawSettings: DrawSettings;
   spaceHeld: boolean;
+  /**
+   * Width in px of a panel docked to the right edge (the guided study
+   * walkthrough), so overlays anchored there — the minimap — slide out of
+   * its way instead of hiding behind it.
+   */
+  rightInset?: number;
 }
 
 function stripEphemeralNodeData(data: any) {
@@ -129,6 +136,22 @@ function heightForVerseText(text: string) {
   return Math.min(320, Math.max(90, 52 + lines * 22));
 }
 
+// Sticky notes get the same treatment as verses: a note created with text
+// already in it (pinned from the guided study) opens tall enough to read
+// instead of hiding its content behind a scrollbar.
+const STICKY_WIDTH = 240;
+// Body is `text-sm` with `leading-relaxed` inside px-3 padding: ~30 characters
+// per line at this width, ~23px per line.
+const STICKY_CHARS_PER_LINE = 30;
+
+function heightForStickyText(text: string) {
+  const lines = text
+    .split('\n')
+    .reduce((total, line) => total + Math.max(1, Math.ceil(line.length / STICKY_CHARS_PER_LINE)), 0);
+  // 16px drag bar + 16px vertical padding, then a line at a time.
+  return Math.min(420, Math.max(120, 32 + lines * 23));
+}
+
 function parseChapterAnchor(anchorRef: string) {
   const match = anchorRef.match(/^(.+)-(\d+)$/);
   if (!match) return null;
@@ -167,6 +190,7 @@ function StudyCanvasInner({
   isGuest,
   drawSettings,
   spaceHeld,
+  rightInset = 0,
 }: StudyCanvasProps) {
   const activeSession = useStudyStore((s) => s.activeSession);
   const isMobile = useIsMobile();
@@ -675,28 +699,36 @@ function StudyCanvasInner({
     return screenToFlowPosition({ x: screenX, y: screenY });
   }, [screenToFlowPosition, biblePanelOpen]);
 
-  const addStickyNote = useCallback((pos?: { x: number; y: number }) => {
+  const addStickyNote = useCallback((pos?: { x: number; y: number }, text?: string) => {
     if (isGuest) return;
     const d = docRef.current;
     if (!d) return;
     const id = `sticky-${Date.now()}`;
+    const height = heightForStickyText(text ?? '');
     let position = pos;
     if (!position) {
       const center = getVisibleCenterFlow();
-      position = { x: center.x - 100, y: center.y - 60 };
+      position = { x: center.x - STICKY_WIDTH / 2, y: center.y - height / 2 };
     }
     d.transact(() => {
       const nodesMap = getNodesMap(d);
-      writeNodeToMap(nodesMap, { id, type: 'sticky', position, data: { text: '', color: 'yellow' } });
+      writeNodeToMap(nodesMap, {
+        id,
+        type: 'sticky',
+        position,
+        width: STICKY_WIDTH,
+        height,
+        data: { text: text ?? '', color: 'yellow' },
+      });
     });
   }, [isGuest, getVisibleCenterFlow]);
 
-  const addVerseNode = useCallback((data: { verseId: number; reference: string; version_id: number }) => {
+  const addVerseNode = useCallback((data: { verseId: number; reference: string; version_id: number; text?: string }, at?: { x: number; y: number }) => {
     if (isGuest) return;
     const d = docRef.current;
     if (!d) return;
     const id = `verse-${data.verseId}-${Date.now()}`;
-    const center = getVisibleCenterFlow();
+    const center = at ?? getVisibleCenterFlow();
     const position = { x: center.x - 150, y: center.y - 40 };
     d.transact(() => {
       const nodesMap = getNodesMap(d);
@@ -704,7 +736,7 @@ function StudyCanvasInner({
     });
   }, [getVisibleCenterFlow, isGuest]);
 
-  const addPassageNode = useCallback((data: { bookSlug: string; chapter: number; reference: string; version_id: number; verses: { verseId: number; reference: string; verse: number; text: string }[] }) => {
+  const addPassageNode = useCallback((data: { bookSlug: string; chapter: number; startVerse?: number; endVerse?: number; reference: string; version_id: number; verses: { verseId: number; reference: string; verse: number; text: string }[] }) => {
     if (isGuest) return;
     const d = docRef.current;
     if (!d) return;
@@ -720,19 +752,21 @@ function StudyCanvasInner({
   // Insert a sequence of verses as individual verse nodes stacked vertically
   // and connected bottom→top, so multi-verse selections become a chain rather
   // than a single passage block.
-  const addVerseChain = useCallback((verses: { verseId: number; reference: string; version_id: number; text: string }[]) => {
+  const addVerseChain = useCallback((verses: { verseId: number; reference: string; version_id: number; text: string }[], at?: { x: number; y: number }) => {
     if (isGuest) return;
     if (!verses || verses.length === 0) return;
     const d = docRef.current;
     if (!d) return;
-    const center = getVisibleCenterFlow();
     const nodeW = 320;
     const gap = 40;
     const heights = verses.map((v) => heightForVerseText(v.text));
     const baseTs = Date.now();
-    const startX = center.x - nodeW / 2;
     const totalH = heights.reduce((sum, h) => sum + h, 0) + (verses.length - 1) * gap;
-    const startY = center.y - totalH / 2;
+    // A drop positions the chain's top-left under the pointer; a toolbar insert
+    // centres it in the visible canvas.
+    const anchor = at ?? getVisibleCenterFlow();
+    const startX = at ? anchor.x : anchor.x - nodeW / 2;
+    const startY = at ? anchor.y : anchor.y - totalH / 2;
     d.transact(() => {
       const nodesMap = getNodesMap(d);
       const edgesMap = getEdgesMap(d);
@@ -1324,6 +1358,53 @@ useEffect(() => {
     [flushPendingPositionWrites, getSelectedNodeIds, handleCanvasPointerMove, setLocalDragging, setLocalSelection, isGuest],
   );
 
+  // --- Verses dropped from the Bible panel ---------------------------------
+  const [dropActive, setDropActive] = useState(false);
+  const dropDepthRef = useRef(0);
+
+  const handleDragEnter = useCallback((event: React.DragEvent) => {
+    if (isGuest || !hasVerseDrag(event.dataTransfer)) return;
+    dropDepthRef.current += 1;
+    setDropActive(true);
+  }, [isGuest]);
+
+  const handleDragLeave = useCallback((event: React.DragEvent) => {
+    if (isGuest || !hasVerseDrag(event.dataTransfer)) return;
+    dropDepthRef.current = Math.max(0, dropDepthRef.current - 1);
+    if (dropDepthRef.current === 0) setDropActive(false);
+  }, [isGuest]);
+
+  const handleDragOver = useCallback((event: React.DragEvent) => {
+    if (isGuest || !hasVerseDrag(event.dataTransfer)) return;
+    // Claiming the event is what makes the pane a valid drop target.
+    event.preventDefault();
+    event.dataTransfer.dropEffect = 'copy';
+    if (!dropActive) setDropActive(true);
+  }, [isGuest, dropActive]);
+
+  const handleDrop = useCallback((event: React.DragEvent) => {
+    dropDepthRef.current = 0;
+    setDropActive(false);
+    if (isGuest) return;
+    const payload = readVerseDrag(event.dataTransfer);
+    if (!payload || payload.items.length === 0) return;
+    event.preventDefault();
+    endVerseDrag();
+
+    const position = screenToFlowPosition({ x: event.clientX, y: event.clientY });
+    if (payload.items.length === 1) {
+      const item = payload.items[0];
+      addVerseNode(
+        { verseId: item.verseId, reference: item.reference, version_id: item.version_id, text: item.text },
+        // addVerseNode centres the node on the point it's given; offset so the
+        // node's top-left lands under the pointer instead.
+        { x: position.x + 150, y: position.y + 40 },
+      );
+    } else {
+      addVerseChain(payload.items, position);
+    }
+  }, [isGuest, screenToFlowPosition, addVerseNode, addVerseChain]);
+
   const handleSelectionChange: OnSelectionChangeFunc = useCallback(
     ({ nodes: selectedNodes }) => {
       if (isGuest) return;
@@ -1334,9 +1415,21 @@ useEffect(() => {
 
   return (
     <StudyDocContext.Provider value={doc}>
-      <div className="w-full h-full relative">
+      <div
+        className="w-full h-full relative"
+        onDragEnter={handleDragEnter}
+        onDragOver={handleDragOver}
+        onDragLeave={handleDragLeave}
+        onDrop={handleDrop}
+      >
+        {dropActive && (
+          <div className="absolute inset-0 z-30 pointer-events-none rounded-lg ring-2 ring-inset ring-accent/50 bg-accent/5" />
+        )}
         {!connected && (
-          <div className="absolute top-3 right-3 z-20 bg-orange-500/10 border border-orange-500/30 rounded-lg px-2.5 py-1 text-xs text-orange-400 pointer-events-none">
+          <div
+            className="absolute top-3 z-20 bg-orange-500/10 border border-orange-500/30 rounded-lg px-2.5 py-1 text-xs text-orange-400 pointer-events-none transition-[right] duration-300"
+            style={{ right: rightInset + 12 }}
+          >
             Connecting...
           </div>
         )}
@@ -1408,6 +1501,7 @@ useEffect(() => {
             <MiniMap
               position="top-right"
               className="!bg-surface !border-border !rounded-lg"
+              style={{ right: rightInset, transition: 'right 300ms' }}
               maskColor="var(--color-bg-primary)"
               nodeColor={(n: Node) => {
                 if (n.type === 'sticky') return '#eab308';

@@ -11,7 +11,11 @@ import { StudyToolbar } from './StudyToolbar'
 import { StudyCanvas } from './StudyCanvas'
 import { BiblePanel } from './BiblePanel'
 import { StudyChatWidget } from './StudyChatWidget'
+import { GuidedPanel, GUIDED_PANEL_WIDTH } from './guided/GuidedPanel'
+import { useIsMobile } from '@/lib/useIsMobile'
+import { useGuidedStore } from '@/lib/store/useGuidedStore'
 import { StudyDocContext } from '@/lib/study/StudyDocContext'
+import { KeyboardScope, useCommands, focusWhenReady } from '@/lib/keyboard'
 import type { DrawSettings } from './DrawingLayer'
 
 export type Tool = 'select' | 'hand' | 'sticky' | 'verse' | 'draw' | 'erase'
@@ -20,6 +24,14 @@ export const DRAW_COLORS = ['#e5e7eb', '#ef4444', '#f59e0b', '#10b981', '#3b82f6
 export const DRAW_SIZES = [2, 4, 8] as const
 
 export function StudyMode() {
+  return (
+    <KeyboardScope scope="study">
+      <StudyModeSurface />
+    </KeyboardScope>
+  )
+}
+
+function StudyModeSurface() {
   const navigate = useNavigate()
   const activeSession = useStudyStore(s => s.activeSession)
   const wsToken = useStudyStore(s => s.wsToken)
@@ -30,6 +42,17 @@ export function StudyMode() {
   const [showInsertVerse, setShowInsertVerse] = useState(false)
   const [biblePanelOpen, setBiblePanelOpen] = useState(false)
   const [chatOpen, setChatOpen] = useState(false)
+  // A guided session opens its walkthrough right away: the study is the point.
+  // Guests only get the canvas — the walkthrough keeps personal answers, so it
+  // needs an account.
+  const guidedSlug = isGuest ? null : activeSession?.guided_study?.slug ?? null
+  const [guidedOpen, setGuidedOpen] = useState(Boolean(guidedSlug))
+  const isMobile = useIsMobile()
+
+  // The guide docks to the right edge, so the floating chat has to step aside.
+  // On mobile it takes the whole screen and the chat steps out entirely.
+  const guideDocked = Boolean(guidedSlug) && guidedOpen
+  const guideCoversScreen = guideDocked && isMobile
   const [drawSettings, setDrawSettings] = useState<DrawSettings>({
     kind: 'pen',
     color: DRAW_COLORS[0],
@@ -53,6 +76,26 @@ export function StudyMode() {
 
   const getActions = useCallback(() => (window as any).__studyCanvasActions, [])
 
+  /**
+   * Is this study shared with anyone — online or not?
+   *
+   * Three signals, because none of them covers the others:
+   *
+   *  - `participants`: everyone who has ever opened the study. Persists when
+   *    they leave, so an offline companion still counts. Captured on load, so it
+   *    doesn't grow mid-session.
+   *  - `pending_invitation_count`: someone invited who hasn't arrived yet. They
+   *    have no participant row, but you can still write for them to read (and
+   *    they get notified), so the chat has to be there.
+   *  - awareness `users`: someone joining while we're already here.
+   *
+   * Only a study with nobody but you hides the chat.
+   */
+  const isShared =
+    (activeSession?.participants?.length ?? 0) > 1 ||
+    (activeSession?.pending_invitation_count ?? 0) > 0 ||
+    users.length > 1
+
   useEffect(() => {
     if (user && !isGuest) {
       setLocalUser({
@@ -67,104 +110,81 @@ export function StudyMode() {
     if (!activeSession) navigate('/', { replace: true })
   }, [activeSession, navigate])
 
+  // Opening a different study (or a free one) must not leave the previous
+  // guided walkthrough loaded.
   useEffect(() => {
-    const handleKey = (e: KeyboardEvent) => {
-      const tag = (e.target as HTMLElement).tagName
-      const isInput = tag === 'INPUT' || tag === 'TEXTAREA'
+    setGuidedOpen(Boolean(guidedSlug))
+    if (!guidedSlug) useGuidedStore.getState().clear()
+    return () => useGuidedStore.getState().clear()
+  }, [guidedSlug])
 
-      if (e.key === 'Escape') {
-        if (showInsertVerse) {
-          setShowInsertVerse(false)
-          setTool('select')
-        }
-        return
-      }
-
-      if (isGuest) {
-        if (!isInput) {
-          if (e.key === 'n' || e.key === 'N' || e.key === 'i' || e.key === 'I' ||
-              (e.key === 'z' && (e.metaKey || e.ctrlKey))) {
-            e.preventDefault()
-            openAuthModal('login')
-          }
-        }
-        return
-      }
-
-      if ((e.metaKey || e.ctrlKey) && e.key === 'z' && e.shiftKey) {
-        e.preventDefault()
-        getActions()?.redo?.()
-        return
-      }
-      if ((e.metaKey || e.ctrlKey) && e.key === 'z') {
-        e.preventDefault()
-        getActions()?.undo?.()
-        return
-      }
-
-      // Cmd/Ctrl+J: jump into "Modo Apolos" — open the chat and arm the composer
-      // so you can talk to the AI without typing "/apolos". Works while typing.
-      if ((e.metaKey || e.ctrlKey) && (e.key === 'j' || e.key === 'J')) {
-        e.preventDefault()
-        const convId = useStudyStore.getState().activeSession?.conversation_id
-        if (convId) {
-          setChatOpen(true)
-          useChatStore.getState().setComposerAudience(convId, 'apolos')
-        }
-        return
-      }
-
-      if (isInput) return
-
-      if (e.key === 'v' || e.key === 'V') { setTool('select'); return }
-      if (e.key === 'h' || e.key === 'H') { setTool('hand'); return }
-      if (e.key === 'n' || e.key === 'N') {
-        getActions()?.addStickyNote?.()
-        setTool('select')
-        return
-      }
-      if (e.key === 'i' || e.key === 'I') {
-        setTool('verse')
-        setShowInsertVerse(true)
-        return
-      }
-      if (e.key === 'b' || e.key === 'B') {
-        setBiblePanelOpen(v => !v)
-        return
-      }
-      if (e.key === 'a' || e.key === 'A') {
-        setChatOpen(v => !v)
-        return
-      }
-      if (e.key === 'd' || e.key === 'D') { setTool('draw'); return }
-      if (e.key === 'e' || e.key === 'E') { setTool('erase'); return }
-
-      if (tool === 'draw') {
-        if (e.key === '[') {
-          setDrawSettings(s => {
-            const idx = Math.max(0, DRAW_SIZES.indexOf(s.size as typeof DRAW_SIZES[number]) - 1)
-            return { ...s, size: DRAW_SIZES[idx] }
-          })
-          return
-        }
-        if (e.key === ']') {
-          setDrawSettings(s => {
-            const i = DRAW_SIZES.indexOf(s.size as typeof DRAW_SIZES[number])
-            const idx = Math.min(DRAW_SIZES.length - 1, (i < 0 ? 0 : i) + 1)
-            return { ...s, size: DRAW_SIZES[idx] }
-          })
-          return
-        }
-        const colorIdx = ['1', '2', '3', '4', '5', '6'].indexOf(e.key)
-        if (colorIdx >= 0 && colorIdx < DRAW_COLORS.length) {
-          setDrawSettings(s => ({ ...s, color: DRAW_COLORS[colorIdx] }))
-          return
-        }
-      }
+  // Guests can look but not edit; every mutating shortcut becomes a login
+  // prompt instead of silently doing nothing.
+  const guarded = (run: () => void) => () => {
+    if (isGuest) {
+      openAuthModal('login')
+      return
     }
-    window.addEventListener('keydown', handleKey)
-    return () => window.removeEventListener('keydown', handleKey)
-  }, [showInsertVerse, getActions, isGuest, openAuthModal, tool])
+    run()
+  }
+
+  const adjustDrawSize = (delta: number) => {
+    if (tool !== 'draw') return false
+    setDrawSettings((s) => {
+      const i = DRAW_SIZES.indexOf(s.size as typeof DRAW_SIZES[number])
+      const next = Math.min(DRAW_SIZES.length - 1, Math.max(0, (i < 0 ? 0 : i) + delta))
+      return { ...s, size: DRAW_SIZES[next] }
+    })
+  }
+
+  // Registered separately so it disappears from the cheatsheet when there's no
+  // chat to toggle — a listed shortcut that does nothing is worse than none.
+  useCommands({ 'study.toggleChat': () => setChatOpen((v) => !v) }, { enabled: isShared })
+
+  useCommands({
+    'study.toolSelect': () => setTool('select'),
+    'study.toolHand': () => setTool('hand'),
+    'study.toolDraw': () => setTool('draw'),
+    'study.toolErase': () => setTool('erase'),
+    'study.toggleBible': () => setBiblePanelOpen((v) => !v),
+    'study.toggleGuide': () => {
+      if (!guidedSlug) return false
+      setGuidedOpen((v) => !v)
+    },
+
+    // "/" opens the Bible tool straight into its search field.
+    'study.bibleSearch': () => {
+      setBiblePanelOpen(true)
+      focusWhenReady('[data-bible-search]')
+    },
+
+    'study.addNote': guarded(() => {
+      getActions()?.addStickyNote?.()
+      setTool('select')
+    }),
+    'study.insertVerse': guarded(() => {
+      setTool('verse')
+      setShowInsertVerse(true)
+    }),
+    'study.undo': guarded(() => getActions()?.undo?.()),
+    'study.redo': guarded(() => getActions()?.redo?.()),
+
+    'study.askApolos': () => {
+      const convId = useStudyStore.getState().activeSession?.conversation_id
+      if (!convId) return false
+      setChatOpen(true)
+      useChatStore.getState().setComposerAudience(convId, 'apolos')
+    },
+
+    'study.drawSizeDown': () => adjustDrawSize(-1),
+    'study.drawSizeUp': () => adjustDrawSize(1),
+    'study.drawColor': (e) => {
+      if (tool !== 'draw') return false
+      const idx = Number(e.key) - 1
+      if (idx < 0 || idx >= DRAW_COLORS.length) return false
+      setDrawSettings((s) => ({ ...s, color: DRAW_COLORS[idx] }))
+    },
+  })
 
   useEffect(() => {
     if (tool !== 'draw' && tool !== 'erase') {
@@ -225,8 +245,12 @@ export function StudyMode() {
           onCloseInsertVerse={() => { setShowInsertVerse(false); setTool('select') }}
           biblePanelOpen={biblePanelOpen}
           onToggleBiblePanel={() => setBiblePanelOpen(v => !v)}
+          onOpenBiblePanel={() => setBiblePanelOpen(true)}
           chatOpen={chatOpen}
+          showChat={isShared}
           onToggleChat={() => setChatOpen(v => !v)}
+          guidedOpen={guidedOpen}
+          onToggleGuided={guidedSlug ? () => setGuidedOpen(v => !v) : undefined}
           isGuest={isGuest}
           drawSettings={drawSettings}
           onDrawSettingsChange={setDrawSettings}
@@ -245,9 +269,22 @@ export function StudyMode() {
           isGuest={isGuest}
           drawSettings={drawSettings}
           spaceHeld={spaceHeld}
+          rightInset={guideDocked ? GUIDED_PANEL_WIDTH : 0}
         />
-        <BiblePanel open={biblePanelOpen} onClose={() => setBiblePanelOpen(false)} />
-        {!isGuest && activeSession?.conversation_id && (
+        <BiblePanel open={biblePanelOpen} onClose={() => setBiblePanelOpen(false)} isGuest={isGuest} />
+        {guidedSlug && activeSession && (
+          <GuidedPanel
+            slug={guidedSlug}
+            sessionId={activeSession.id}
+            doc={doc}
+            open={guidedOpen}
+            onClose={() => setGuidedOpen(false)}
+            isGuest={isGuest}
+          />
+        )}
+        {/* `|| chatOpen` keeps Cmd/Ctrl+J working when studying alone: asking
+            Apolos needs the composer, so that shortcut can still summon it. */}
+        {!isGuest && activeSession?.conversation_id && !guideCoversScreen && (isShared || chatOpen) && (
           // Provide the shared Yjs doc so the chat composer can read/write the
           // attached AI context documents (StudyCanvas re-provides the same doc
           // internally for its nodes).
@@ -256,6 +293,7 @@ export function StudyMode() {
               conversationId={activeSession.conversation_id}
               open={chatOpen}
               onOpenChange={setChatOpen}
+              rightInset={guideDocked ? GUIDED_PANEL_WIDTH : 0}
             />
           </StudyDocContext.Provider>
         )}

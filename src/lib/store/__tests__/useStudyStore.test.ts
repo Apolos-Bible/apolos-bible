@@ -38,6 +38,7 @@ const mockSession: StudySession = {
   id: 'session-1',
   type: 'verse',
   anchor_ref: 'john-3-16',
+  guided_study: null,
   title: 'Study on John 3:16',
   host_user_id: 1,
   conversation_id: null,

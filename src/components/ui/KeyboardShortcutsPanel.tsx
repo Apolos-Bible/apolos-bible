@@ -1,77 +1,125 @@
-import { useEffect } from 'react'
+import { Fragment, useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useUIStore } from '@/lib/store/useUIStore'
+import { Dialog } from '@/components/ui/Dialog'
+import {
+  COMMANDS,
+  COMMAND_GROUP_ORDER,
+  formatBinding,
+  useRegisteredCommandIds,
+  type CommandGroup,
+  type CommandSpec,
+  type TranslationKey,
+} from '@/lib/keyboard'
+import { isMac } from '@/lib/platform'
 import { cn } from '@/lib/cn'
-import { modKey } from '@/lib/platform'
-import { useIsMobile } from '@/lib/useIsMobile'
 
+const GROUP_LABEL_KEYS: Record<CommandGroup, TranslationKey> = {
+  navigation: 'shortcuts.groupNavigation',
+  verse: 'shortcuts.groupVerse',
+  panels: 'shortcuts.groupPanels',
+  study: 'shortcuts.groupStudy',
+  app: 'shortcuts.groupApp',
+}
+
+/**
+ * Rendered from the command registry, filtered to the commands that actually
+ * have a handler right now. A shortcut can't be listed unless it works, and it
+ * can't work without appearing here.
+ */
 export function KeyboardShortcutsPanel() {
   const { t } = useTranslation()
-  const { shortcutsPanelOpen, toggleShortcutsPanel } = useUIStore()
-  const isMobile = useIsMobile()
+  const shortcutsPanelOpen = useUIStore((s) => s.shortcutsPanelOpen)
+  const toggleShortcutsPanel = useUIStore((s) => s.toggleShortcutsPanel)
+  const registered = useRegisteredCommandIds()
 
-  const SHORTCUTS = [
-    { key: 'J',          description: t('shortcuts.nextVerse') },
-    { key: 'K',          description: t('shortcuts.prevVerse') },
-    { key: 'N',          description: t('shortcuts.focusNote') },
-    { key: 'H',          description: t('shortcuts.toggleHighlight') },
-    { key: `${modKey}K`, description: t('shortcuts.openCommandPalette') },
-    { key: '?',          description: t('shortcuts.togglePanel') },
-    { key: 'Esc',        description: t('shortcuts.closePanel') },
-  ]
+  const groups = useMemo(() => {
+    const live = COMMANDS.filter((command) => !command.hidden && registered.has(command.id))
 
-  useEffect(() => {
-    if (!shortcutsPanelOpen) return
-    const handler = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') toggleShortcutsPanel()
-    }
-    window.addEventListener('keydown', handler)
-    return () => window.removeEventListener('keydown', handler)
-  }, [shortcutsPanelOpen, toggleShortcutsPanel])
+    // A command that is currently overridden must not be listed: its key belongs
+    // to the overriding command right now, and two rows claiming one key is
+    // exactly the drift this panel exists to prevent.
+    const overridden = new Set(live.flatMap((command) => command.overrides ?? []))
+    const available = live.filter((command) => !overridden.has(command.id))
 
-  if (!shortcutsPanelOpen || isMobile) return null
+    return COMMAND_GROUP_ORDER.map((group) => ({
+      group,
+      commands: available.filter((command) => command.group === group),
+    })).filter((entry) => entry.commands.length > 0)
+  }, [registered])
 
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm"
-      onClick={toggleShortcutsPanel}
+    <Dialog
+      open={shortcutsPanelOpen}
+      onClose={toggleShortcutsPanel}
+      labelledBy="shortcuts-title"
+      className="max-w-lg w-full max-h-[80vh] flex flex-col bg-bg-secondary rounded-xl border border-border-subtle shadow-2xl overflow-hidden mx-4"
     >
-      <div
-        className="max-w-sm w-full bg-bg-secondary rounded-xl border border-border-subtle shadow-2xl overflow-hidden mx-4"
-        onClick={(e) => e.stopPropagation()}
-      >
-        {/* Header */}
-        <div className="flex items-center justify-between px-5 py-4 border-b border-border-subtle">
-          <h2 className="text-md font-medium text-text-primary">{t('shortcuts.title')}</h2>
-          <button
-            onClick={toggleShortcutsPanel}
-            className="text-text-muted hover:text-text-secondary transition-colors text-lg leading-none"
-            aria-label={t('shortcuts.closePanelAria')}
-          >
-            ×
-          </button>
-        </div>
-
-        {/* Shortcuts list */}
-        <ul className="py-3 px-5 flex flex-col gap-0.5">
-          {SHORTCUTS.map(({ key, description }) => (
-            <li
-              key={key}
-              className="flex items-center justify-between py-2 gap-4"
-            >
-              <span className="text-sm text-text-secondary">{description}</span>
-              <kbd
-                className={cn(
-                  'bg-bg-tertiary border border-border-subtle rounded px-1.5 py-0.5',
-                  'text-xs font-mono text-text-secondary shrink-0'
-                )}
-              >
-                {key}
-              </kbd>
-            </li>
-          ))}
-        </ul>
+      <div className="flex items-center justify-between px-5 py-4 border-b border-border-subtle shrink-0">
+        <h2 id="shortcuts-title" className="text-md font-medium text-text-primary">
+          {t('shortcuts.title')}
+        </h2>
+        <button
+          type="button"
+          onClick={toggleShortcutsPanel}
+          className="text-text-muted hover:text-text-secondary transition-colors text-lg leading-none"
+          aria-label={t('shortcuts.closePanelAria')}
+        >
+          ×
+        </button>
       </div>
-    </div>
+
+      <div className="min-h-0 flex-1 overflow-y-auto px-5 py-3">
+        {groups.map(({ group, commands }) => (
+          <section key={group} className="mb-4 last:mb-1">
+            <h3 className="text-2xs font-semibold uppercase tracking-wider text-text-muted py-1.5">
+              {t(GROUP_LABEL_KEYS[group])}
+            </h3>
+            <ul className="flex flex-col gap-0.5">
+              {commands.map((command) => (
+                <li key={command.id} className="flex items-center justify-between py-1.5 gap-4">
+                  <span className="text-sm text-text-secondary">{t(command.descriptionKey)}</span>
+                  <Bindings command={command} />
+                </li>
+              ))}
+            </ul>
+          </section>
+        ))}
+      </div>
+    </Dialog>
+  )
+}
+
+function Bindings({ command }: { command: CommandSpec }) {
+  const { t } = useTranslation()
+
+  return (
+    <span className="flex items-center gap-1.5 shrink-0">
+      {command.keys.map((binding, bindingIndex) => (
+        <Fragment key={binding}>
+          {bindingIndex > 0 && <span className="text-2xs text-text-muted">{t('shortcuts.or')}</span>}
+          <span className="flex items-center gap-1">
+            {formatBinding(binding, isMac).map((step, stepIndex) => (
+              <Fragment key={stepIndex}>
+                {stepIndex > 0 && <span className="text-2xs text-text-muted">{t('shortcuts.then')}</span>}
+                <span className="flex items-center gap-0.5">
+                  {step.map((chip) => (
+                    <kbd
+                      key={chip}
+                      className={cn(
+                        'bg-bg-tertiary border border-border-subtle rounded px-1.5 py-0.5',
+                        'text-xs font-mono text-text-secondary shrink-0',
+                      )}
+                    >
+                      {chip}
+                    </kbd>
+                  ))}
+                </span>
+              </Fragment>
+            ))}
+          </span>
+        </Fragment>
+      ))}
+    </span>
   )
 }
