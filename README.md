@@ -115,7 +115,7 @@ pnpm tauri:build
 
 > On Windows, run Tauri commands in PowerShell — the Rust/cargo PATH isn't picked up in Git Bash.
 
-The backend lives in `../backend/` of this monorepo and is served locally at `https://verbum.test` via [Herd](https://herd.laravel.com/) (macOS). Set `VITE_API_URL=https://verbum.test` in `.env.local` to point at it.
+The backend lives in `../backend/` of this monorepo and is served locally at `https://apolos.test` via [Herd](https://herd.laravel.com/). Set `VITE_API_URL=https://apolos.test` in `.env.local` to point at it.
 
 ---
 

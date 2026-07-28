@@ -1,4 +1,4 @@
-const BASE = import.meta.env.VITE_API_URL ?? 'https://verbum.test'
+const BASE = import.meta.env.VITE_API_URL ?? 'https://apolos.test'
 
 function getToken(): string | null {
   return localStorage.getItem('verbum_token')
@@ -60,6 +60,7 @@ export const api = {
   get:    <T>(path: string)                  => request<T>(path),
   post:   <T>(path: string, body: unknown)   => request<T>(path, { method: 'POST',   body: JSON.stringify(body) }),
   patch:  <T>(path: string, body: unknown)   => request<T>(path, { method: 'POST',   body: JSON.stringify({ ...(body as object), _method: 'PATCH' }) }),
+  put:    <T>(path: string, body: unknown)   => request<T>(path, { method: 'POST',   body: JSON.stringify({ ...(body as object), _method: 'PUT' }) }),
    delete: <T>(path: string, body?: unknown)  => request<T>(path, { method: 'POST', body: JSON.stringify({ ...(body as object), _method: 'DELETE' }) }),
   upload,
 }

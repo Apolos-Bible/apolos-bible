@@ -10,13 +10,13 @@ Named after *Apolos* (Acts 18:24-28) — a Jew from Alexandria, *"poderoso en la
 
 This folder contains both halves of the product. Claude is invoked from here so it can see and edit across both.
 
-- `backend/` — Laravel + Livewire + Alpine + Tailwind. Local: `https://verbum.test` via Herd (symlink in `~/Library/Application Support/Herd/config/valet/Sites/verbum`). Prod: `https://apolos.io`. SQLite at `backend/database/database.sqlite` (absolute path in `.env`).
+- `backend/` — Laravel + Livewire + Alpine + Tailwind. Local: `https://apolos.test` via Herd (junction in `~/.config/herd/config/valet/Sites/apolos` on Windows; `~/Library/Application Support/Herd/config/valet/Sites/apolos` on macOS). Prod: `https://apolos.io`. SQLite at `backend/database/database.sqlite` (absolute path in `.env`).
 - `frontend/` — Tauri 2 desktop/mobile + Vite + React 18 + TypeScript + Tailwind. Package name `apolos`. Web build deploys to Firebase Hosting at `https://apolos.bible` (`pnpm deploy`). Talks to the backend over HTTP and to a Hocuspocus collab server (JWT-authed) for shared study sessions.
 
 ## Common commands
 
 Backend (`backend/`):
-- Browse: `https://verbum.test`
+- Browse: `https://apolos.test`
 - Artisan: use Herd's PHP — Herd sets it on PATH in its shells.
 
 Frontend (`frontend/`):

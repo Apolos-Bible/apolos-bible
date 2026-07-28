@@ -35,6 +35,7 @@ import {
   writeNodeToMap,
   writeEdgeToMap,
 } from '@/lib/study/yDocHelpers';
+import { findFreeSpot, findFreeSpotForStack, type Rect as PlacementRect } from '@/lib/study/canvasPlacement';
 import { pointsBounds, strokeHit, type StrokeData, type StrokeKind } from '@/lib/study/strokes';
 import { StudyDocContext } from '@/lib/study/StudyDocContext';
 import { hasVerseDrag, readVerseDrag, endVerseDrag } from '@/lib/study/verseDrag';
@@ -140,6 +141,37 @@ function heightForVerseText(text: string) {
 // already in it (pinned from the guided study) opens tall enough to read
 // instead of hiding its content behind a scrollbar.
 const STICKY_WIDTH = 240;
+
+/**
+ * Rough sizes for node types that do not store their own, used only to keep new
+ * nodes from landing on top of them.
+ */
+const NODE_FALLBACK_SIZE: Record<string, { width: number; height: number }> = {
+  sticky: { width: STICKY_WIDTH, height: 120 },
+  verse: { width: 320, height: 110 },
+  passage: { width: 400, height: 180 },
+  'ai-note': { width: 300, height: 180 },
+};
+
+/**
+ * What is already on the canvas, as rectangles. Drawing nodes are 1x1 markers
+ * for their strokes, so they are not something to avoid.
+ */
+function obstaclesFrom(
+  nodes: { type?: string; position: { x: number; y: number }; width?: number; height?: number }[],
+): PlacementRect[] {
+  return nodes
+    .filter((n) => n.type !== 'drawing')
+    .map((n) => {
+      const fallback = NODE_FALLBACK_SIZE[n.type ?? 'sticky'] ?? { width: 300, height: 120 };
+      return {
+        x: n.position.x,
+        y: n.position.y,
+        width: typeof n.width === 'number' && n.width > 8 ? n.width : fallback.width,
+        height: typeof n.height === 'number' && n.height > 8 ? n.height : fallback.height,
+      };
+    });
+}
 // Body is `text-sm` with `leading-relaxed` inside px-3 padding: ~30 characters
 // per line at this width, ~23px per line.
 const STICKY_CHARS_PER_LINE = 30;
@@ -710,6 +742,11 @@ function StudyCanvasInner({
       const center = getVisibleCenterFlow();
       position = { x: center.x - STICKY_WIDTH / 2, y: center.y - height / 2 };
     }
+    // Never bury what is already there: slide to the nearest free spot.
+    position = findFreeSpot(
+      { ...position, width: STICKY_WIDTH, height },
+      obstaclesFrom(displayedNodesRef.current),
+    );
     d.transact(() => {
       const nodesMap = getNodesMap(d);
       writeNodeToMap(nodesMap, {
@@ -729,7 +766,10 @@ function StudyCanvasInner({
     if (!d) return;
     const id = `verse-${data.verseId}-${Date.now()}`;
     const center = at ?? getVisibleCenterFlow();
-    const position = { x: center.x - 150, y: center.y - 40 };
+    const position = findFreeSpot(
+      { x: center.x - 150, y: center.y - 40, width: 320, height: 110 },
+      obstaclesFrom(displayedNodesRef.current),
+    );
     d.transact(() => {
       const nodesMap = getNodesMap(d);
       writeNodeToMap(nodesMap, { id, type: 'verse', position, data });
@@ -742,7 +782,10 @@ function StudyCanvasInner({
     if (!d) return;
     const id = `passage-${Date.now()}`;
     const center = getVisibleCenterFlow();
-    const position = { x: center.x - 200, y: center.y - 60 };
+    const position = findFreeSpot(
+      { x: center.x - 200, y: center.y - 60, width: 400, height: 180 },
+      obstaclesFrom(displayedNodesRef.current),
+    );
     d.transact(() => {
       const nodesMap = getNodesMap(d);
       writeNodeToMap(nodesMap, { id, type: 'passage', position, data });
@@ -765,8 +808,20 @@ function StudyCanvasInner({
     // A drop positions the chain's top-left under the pointer; a toolbar insert
     // centres it in the visible canvas.
     const anchor = at ?? getVisibleCenterFlow();
-    const startX = at ? anchor.x : anchor.x - nodeW / 2;
-    const startY = at ? anchor.y : anchor.y - totalH / 2;
+    // The chain is placed as one block, so look for room for the whole column
+    // rather than for its first verse.
+    const spot = findFreeSpotForStack(
+      {
+        x: at ? anchor.x : anchor.x - nodeW / 2,
+        y: at ? anchor.y : anchor.y - totalH / 2,
+        width: nodeW,
+      },
+      heights,
+      gap,
+      obstaclesFrom(displayedNodesRef.current),
+    );
+    const startX = spot.x;
+    const startY = spot.y;
     d.transact(() => {
       const nodesMap = getNodesMap(d);
       const edgesMap = getEdgesMap(d);
@@ -917,10 +972,17 @@ function StudyCanvasInner({
     const distance = 340;
     const nodeW = 280;
     const nodeH = 110;
-    const position = {
-      x: cx + Math.cos(angle) * distance - nodeW / 2,
-      y: cy + Math.sin(angle) * distance - nodeH / 2,
-    };
+    // The fan spreads by count already; this keeps it off whatever else is out
+    // there, including nodes other people added.
+    const position = findFreeSpot(
+      {
+        x: cx + Math.cos(angle) * distance - nodeW / 2,
+        y: cy + Math.sin(angle) * distance - nodeH / 2,
+        width: nodeW,
+        height: nodeH,
+      },
+      obstaclesFrom(displayedNodesRef.current),
+    );
 
     const handles = pickHandlesByGeometry(
       { x: source.position.x, y: source.position.y, w: sw, h: sh },
@@ -1031,10 +1093,15 @@ function StudyCanvasInner({
     const distance = 340;
     const nodeW = 300;
     const nodeH = 180;
-    const position = {
-      x: cx + Math.cos(angle) * distance - nodeW / 2,
-      y: cy + Math.sin(angle) * distance - nodeH / 2,
-    };
+    const position = findFreeSpot(
+      {
+        x: cx + Math.cos(angle) * distance - nodeW / 2,
+        y: cy + Math.sin(angle) * distance - nodeH / 2,
+        width: nodeW,
+        height: nodeH,
+      },
+      obstaclesFrom(displayedNodesRef.current),
+    );
 
     const handles = pickHandlesByGeometry(
       { x: source.position.x, y: source.position.y, w: sw, h: sh },
