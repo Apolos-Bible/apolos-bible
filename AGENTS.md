@@ -1,6 +1,6 @@
 # AGENTS.md
 
-> **Apolos** (web app `apolos.bible`, API/landing `apolos.io`) — collaborative Bible study desktop app. React 18 + Vite 8 + TypeScript 5 + Tailwind 3 + Zustand 5, packaged as a Tauri 2 desktop binary. Backend is a separate Laravel API (`verbum`). The in-app AI study assistant is also called Apolos (Acts 18:24-28).
+> **Apolos** (web app `apolos.bible`, API/landing `apolos.io`) — collaborative Bible study desktop app. React 18 + Vite 8 + TypeScript 5 + Tailwind 3 + Zustand 5, packaged as a Tauri 2 desktop binary. Backend is a separate Laravel API (served locally at `https://apolos.test`). The in-app AI study assistant is also called Apolos (Acts 18:24-28).
 
 > **Note:** `CLAUDE.md` exists for Claude Code users but contains stale claims (e.g. "highlights are client-side", "AuthModal not connected"). This file is the authoritative source.
 
@@ -48,7 +48,7 @@ No lint or typecheck scripts exist.
 
 - Reads `verbum_token` from localStorage, auto-attaches `Authorization: Bearer`.
 - `api.patch()` and `api.delete()` send as POST with `_method: 'PATCH'` / `_method: 'DELETE'` in the JSON body (Laravel convention).
-- Base URL from `VITE_API_URL` env var (default `https://verbum.test`).
+- Base URL from `VITE_API_URL` env var (default `https://apolos.test`).
 
 ### Key facts
 

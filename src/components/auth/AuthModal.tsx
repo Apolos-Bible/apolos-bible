@@ -8,7 +8,7 @@ import { cn } from '@/lib/cn'
 import { LogoStacked } from '@/components/brand/Logo'
 import { Dialog } from '@/components/ui/Dialog'
 
-const API_BASE = import.meta.env.VITE_API_URL ?? 'https://verbum.test'
+const API_BASE = import.meta.env.VITE_API_URL ?? 'https://apolos.test'
 
 interface AuthModalProps {
   open: boolean

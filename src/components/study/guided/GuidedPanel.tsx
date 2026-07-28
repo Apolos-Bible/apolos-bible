@@ -17,6 +17,7 @@ import { useVerseStore } from '@/lib/store/useVerseStore'
 import { fetchGuidedVerses } from '@/lib/study/guidedPassage'
 import { claimGuidedInsert, readGuidedStep, getGuidedMap, writeGuidedStep } from '@/lib/study/yDocHelpers'
 import type { GuidedStep } from '@/lib/study/guidedApi'
+import { stepKind } from '@/lib/study/guidedStepKinds'
 import { cn } from '@/lib/cn'
 import { GuidedPrompt } from './GuidedPrompt'
 
@@ -66,6 +67,7 @@ export function GuidedPanel({ slug, sessionId, doc, open, onClose, isGuest }: Gu
   const step: GuidedStep | undefined = study?.steps[stepIndex]
   const isLast = !!study && stepIndex === study.steps.length - 1
   const completed = Boolean(progress?.completed_at)
+  const bodyStyle = step ? stepKind(step.kind).bodyStyle : 'aside'
 
   // --- Walking together: the current step lives in the shared doc ----------
   useEffect(() => {
@@ -252,13 +254,20 @@ export function GuidedPanel({ slug, sessionId, doc, open, onClose, isGuest }: Gu
 
             {insertError && <p className="mb-2 text-2xs text-red-400">{t('guided.insertFailed')}</p>}
 
-            {step.kind === 'memory' && step.body && (
+            {/* How the body reads depends on the kind: Scripture is quoted, a
+                teaching or a prayer is prose to read, and the imported studies'
+                "read it out loud" stays the quiet aside it has always been. */}
+            {step.body && bodyStyle === 'verse' && (
               <blockquote className="mb-3 rounded-lg border-l-2 border-accent bg-bg-tertiary/40 px-3 py-2.5 text-sm italic text-text-secondary leading-relaxed">
                 {step.body}
               </blockquote>
             )}
 
-            {step.kind !== 'memory' && step.body && (
+            {step.body && bodyStyle === 'prose' && (
+              <p className="mb-3 whitespace-pre-line text-sm text-text-secondary leading-relaxed">{step.body}</p>
+            )}
+
+            {step.body && bodyStyle === 'aside' && (
               <p className="mb-3 text-xs italic text-text-muted">{step.body}</p>
             )}
 
@@ -267,6 +276,9 @@ export function GuidedPanel({ slug, sessionId, doc, open, onClose, isGuest }: Gu
             )}
             {step.kind === 'memory' && (
               <p className="mb-3 text-xs text-text-muted leading-relaxed">{t('guided.memoryHint')}</p>
+            )}
+            {(step.kind === 'discussion' || step.kind === 'prayer' || step.kind === 'practice') && (
+              <p className="mb-3 text-xs text-text-muted leading-relaxed">{t(`guided.hint.${step.kind}`)}</p>
             )}
 
             <div className="space-y-4">

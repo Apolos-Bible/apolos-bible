@@ -8,6 +8,10 @@ import { GoogleFinishRoute } from './routes/GoogleFinishRoute'
 import { AuthBridgeRoute } from './routes/AuthBridgeRoute'
 import { ProfileRoute } from './routes/ProfileRoute'
 import { SettingsRoute } from './routes/SettingsRoute'
+import { MarketplaceRoute } from './routes/MarketplaceRoute'
+import { MarketplacePathRoute } from './routes/MarketplacePathRoute'
+import { MyPathsRoute } from './routes/MyPathsRoute'
+import { PathEditorRoute } from './routes/PathEditorRoute'
 import { NotFound } from './routes/NotFound'
 
 export const router = createBrowserRouter([
@@ -35,6 +39,15 @@ export const router = createBrowserRouter([
       { path: 'perfil', element: <ProfileRoute mode="self" /> },
       { path: 'u/:userId', element: <ProfileRoute mode="other" /> },
       { path: 'ajustes', element: <SettingsRoute /> },
+
+      // Marketplace: a full page of its own, not a panel over the reader
+      { path: 'marketplace', element: <MarketplaceRoute /> },
+      { path: 'marketplace/:slug', element: <MarketplacePathRoute /> },
+
+      // Writing study paths — also full pages: the editor needs the width
+      { path: 'mis-rutas', element: <MyPathsRoute /> },
+      { path: 'mis-rutas/:slug', element: <PathEditorRoute /> },
+      { path: 'mis-rutas/:slug/:studySlug', element: <PathEditorRoute /> },
 
       // Email reset-password deep link (legacy params supported in handler)
       { path: 'auth/reset-password', element: <ResetPasswordRoute /> },
