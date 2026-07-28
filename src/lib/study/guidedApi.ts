@@ -16,7 +16,22 @@ export interface GuidedPrompt {
   answer: string | null
 }
 
-export type GuidedStepKind = 'intro' | 'passage' | 'application' | 'memory'
+/**
+ * Kinds of step. The importer only produces intro/passage/application/memory;
+ * the rest come from paths people write. See `guidedStepKinds.ts` for how each
+ * one behaves, and `GuidedStudyStep::KINDS` for what the server accepts.
+ */
+export type GuidedStepKind =
+  | 'intro'
+  | 'context'
+  | 'passage'
+  | 'teaching'
+  | 'discussion'
+  | 'application'
+  | 'practice'
+  | 'prayer'
+  | 'review'
+  | 'memory'
 
 export interface GuidedStep {
   id: number

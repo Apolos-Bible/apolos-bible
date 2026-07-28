@@ -15,7 +15,7 @@ import { UserAvatar } from '@/components/auth/UserAvatar'
 import { StartStudyModal } from '@/components/study/StartStudyModal'
 import { cn } from '@/lib/cn'
 import { modKey } from '@/lib/platform'
-import { BookOpen } from 'lucide-react'
+import { BookOpen, Compass, Store } from 'lucide-react'
 import { Logo } from '@/components/brand/Logo'
 
 interface NavItemProps {
@@ -208,8 +208,12 @@ export function Sidebar() {
         <NavItem dataTour="favorites" icon={<StarIcon />}    label={t('nav.favorites')} active={!onPage && activePanel === 'favorites'} onClick={() => user ? toggleSidebarPanel('favorites') : openAuthModal()} />
         <NavItem dataTour="my-notes" icon={<NoteIcon />}    label={t('nav.myNotes')}  active={!onPage && activePanel === 'my-notes'} onClick={() => user ? toggleSidebarPanel('my-notes')  : openAuthModal()} />
         <NavItem dataTour="my-studies" icon={<BookOpen className="w-3.5 h-3.5" />} label={t('nav.myStudies')} active={!onPage && activePanel === 'my-studies'} badge={pendingInvitations} onClick={() => user ? toggleSidebarPanel('my-studies') : openAuthModal()} />
+        {/* Pages of their own, not panels — so these navigate. */}
+        <NavItem dataTour="my-paths" icon={<Compass className="w-3.5 h-3.5" />} label={t('nav.myPaths')} active={pathname.startsWith('/mis-rutas')} onClick={() => user ? navigate(paths.myPaths()) : openAuthModal()} />
         <NavItem dataTour="new-study" icon={<BookOpen className="w-3.5 h-3.5" />} label={t('nav.newStudy')} active={false} onClick={() => user ? setShowStartStudy(true) : openAuthModal()} />
         <SectionLabel>{t('nav.social')}</SectionLabel>
+        {/* A page of its own, not a panel — so this navigates. */}
+        <NavItem dataTour="marketplace" icon={<Store className="w-3.5 h-3.5" />} label={t('nav.marketplace')} active={pathname.startsWith('/marketplace')} onClick={() => user ? navigate(paths.marketplace()) : openAuthModal()} />
         <NavItem dataTour="friends" icon={<PeopleIcon />} label={t('nav.friends')} active={!onPage && activePanel === 'friends'} badge={unreadCount} onClick={() => user ? toggleSidebarPanel('friends') : openAuthModal()} />
         <NavItem dataTour="chat" icon={<ChatIcon />} label={t('nav.chat')} active={!onPage && activePanel === 'chat'} badge={chatUnread} onClick={() => user ? toggleSidebarPanel('chat') : openAuthModal()} />
       </div>

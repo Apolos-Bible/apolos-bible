@@ -43,6 +43,24 @@ export const paths = {
   settings(): string {
     return '/ajustes'
   },
+
+  marketplace(): string {
+    return '/marketplace'
+  },
+
+  marketplacePath(slug: string): string {
+    return `/marketplace/${slug}`
+  },
+
+  /** The paths this person wrote. */
+  myPaths(): string {
+    return '/mis-rutas'
+  },
+
+  /** The full-width editor; with a study slug it opens straight on its steps. */
+  pathEditor(slug: string, studySlug?: string | null): string {
+    return studySlug ? `/mis-rutas/${slug}/${studySlug}` : `/mis-rutas/${slug}`
+  },
 }
 
 /** True for routes that are full "pages" (profile/settings) rather than the reader. */
@@ -50,6 +68,8 @@ export function isPageRoute(pathname: string): boolean {
   return (
     pathname.startsWith('/perfil') ||
     pathname.startsWith('/ajustes') ||
+    pathname.startsWith('/marketplace') ||
+    pathname.startsWith('/mis-rutas') ||
     pathname.startsWith('/u/')
   )
 }

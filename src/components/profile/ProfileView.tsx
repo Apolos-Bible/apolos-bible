@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { BookOpen, ChevronRight, GraduationCap, Heart, BadgeCheck } from 'lucide-react'
 import { cn } from '@/lib/cn'
+import { modKey } from '@/lib/platform'
 import { paths } from '@/router/paths'
 import { relativeTime } from '@/lib/relativeTime'
 import { useUIStore } from '@/lib/store/useUIStore'
@@ -350,7 +351,7 @@ export function ProfileView({
             </div>
             {friends.length === 0 ? (
               <div>
-                <EmptyState className="py-8" message={isSelf ? t('perfil.empty.friendsSelf') : t('perfil.empty.friendsOther')} />
+                <EmptyState className="py-8" message={isSelf ? t('perfil.empty.friendsSelf', { modKey }) : t('perfil.empty.friendsOther')} />
                 {isSelf && (
                   <div className="text-center -mt-4">
                     <button type="button" onClick={openCommandPalette} className="text-sm text-accent hover:underline">
