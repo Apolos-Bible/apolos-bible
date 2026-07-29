@@ -6,12 +6,12 @@ import {
 } from 'lucide-react'
 import { AppPageLayout } from '@/components/layout/AppPageLayout'
 import { EmptyState } from '@/components/ui/EmptyState'
-import { StartStudyModal } from '@/components/study/StartStudyModal'
-import type { GuidedPlanSummary } from '@/lib/study/guidedApi'
 import { useMarketplaceStore } from '@/lib/store/useMarketplaceStore'
 import { useAuthStore } from '@/lib/store/useAuthStore'
 import { useUIStore } from '@/lib/store/useUIStore'
 import { StarRating } from '@/components/study/guided/marketplace/StarRating'
+import { MarketplaceStudyModal } from '@/components/study/guided/marketplace/MarketplaceStudyModal'
+import type { PathStudySummary } from '@/lib/study/guidedEditorApi'
 import { hueOf } from '@/components/study/guided/marketplace/hue'
 import { paths } from '@/router/paths'
 import { cn } from '@/lib/cn'
@@ -58,6 +58,9 @@ export function MarketplacePathRoute() {
   }, [user, slug, openPath, closePath])
 
   const showing = detail && detail.slug === slug ? detail : null
+  const selectedStudyEntry: PathStudySummary | null = showing && selectedStudy
+    ? showing.studies.find((entry) => entry.slug === selectedStudy.studySlug) ?? null
+    : null
   const hue = hueOf(slug ?? '')
   const VisibilityIcon = showing ? VISIBILITY_ICON[showing.visibility] : Globe
 
@@ -224,18 +227,14 @@ export function MarketplacePathRoute() {
             </div>
           </div>
 
-          <StartStudyModal
-            open={selectedStudy !== null}
-            initialPlanSlug={selectedStudy?.planSlug}
-            initialStudySlug={selectedStudy?.studySlug}
-            initialPlan={showing ? {
-              slug: showing.slug,
-              title: showing.title,
-              description: showing.description,
-              studies: showing.studies,
-            } satisfies GuidedPlanSummary : undefined}
-            onClose={() => setSelectedStudy(null)}
-          />
+          {selectedStudyEntry && (
+            <MarketplaceStudyModal
+              open
+              plan={showing}
+              study={selectedStudyEntry}
+              onClose={() => setSelectedStudy(null)}
+            />
+          )}
         </>
       )}
     </AppPageLayout>
