@@ -16,6 +16,22 @@ export interface AiUsageSummary {
 export interface AiVerseQuestionRequest {
   verse_id: number
   question: string
+  model?: string
+}
+
+export interface AiModel {
+  slug: string
+  provider: string
+  model: string
+  name: string
+  family?: string | null
+  description?: string | null
+  context_window?: number | null
+  max_output_tokens?: number | null
+  supports_json: boolean
+  supports_tools: boolean
+  supports_vision: boolean
+  supports_reasoning: boolean
 }
 
 export interface AiVerseQuestionResponse {
@@ -55,6 +71,7 @@ export interface AiStudyChatRequest {
   conversation_id: number
   version_id?: number
   prompt: string
+  model?: string
   canvas?: { nodes: AiCanvasContextNode[]; edges: AiCanvasContextEdge[] }
   documents?: AiContextDocument[]
 }
@@ -101,6 +118,7 @@ export interface AiExtractDocumentResponse {
 
 export const aiApi = {
   usage: () => api.get<AiUsageSummary>('/api/ai/usage'),
+  models: () => api.get<{ models: AiModel[] }>('/api/ai/models'),
   verseQuestion: (body: AiVerseQuestionRequest) =>
     api.post<AiVerseQuestionResponse>('/api/ai/verse-question', body),
   studyChat: (body: AiStudyChatRequest) =>
