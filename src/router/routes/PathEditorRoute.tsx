@@ -80,6 +80,19 @@ export function PathEditorRoute() {
     if (user) void loadPaths()
   }, [user, loadPaths])
 
+  // Publication review is asynchronous: the API returns the queued state
+  // first, and the worker updates it after the AI call. Keep the editor in
+  // sync while a review is actually in flight instead of making the user
+  // reload the page to see the result.
+  useEffect(() => {
+    if (!user || !pathsMine.some((path) =>
+      path.visibility === 'public' && ['pending_review', 'ai_reviewing'].includes(path.moderation_status ?? ''),
+    )) return
+
+    const interval = window.setInterval(() => void loadPaths(), 5000)
+    return () => window.clearInterval(interval)
+  }, [user, pathsMine, loadPaths])
+
   // Open whichever study the URL names; fall back to the first one.
   useEffect(() => {
     if (!slug || !current) return
