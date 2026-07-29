@@ -55,6 +55,7 @@ export function PathEditorRoute() {
   const addStudy = useGuidedEditorStore((s) => s.addStudy)
   const deleteStudy = useGuidedEditorStore((s) => s.deleteStudy)
   const setVisibility = useGuidedEditorStore((s) => s.setVisibility)
+  const requestPublication = useGuidedEditorStore((s) => s.requestPublication)
   const renamePath = useGuidedEditorStore((s) => s.renamePath)
   const addStep = useGuidedEditorStore((s) => s.addStep)
   const removeStep = useGuidedEditorStore((s) => s.removeStep)
@@ -66,6 +67,7 @@ export function PathEditorRoute() {
   const [confirmDeleteStudy, setConfirmDeleteStudy] = useState(false)
 
   const current = useMemo(() => pathsMine.find((p) => p.slug === slug) ?? null, [pathsMine, slug])
+  const moderationStatus = current?.moderation_status ?? 'not_required'
 
   useEffect(() => {
     if (!authLoading && !user) {
@@ -222,6 +224,23 @@ export function PathEditorRoute() {
           </div>
 
           {error && <p className="mt-2 text-xs text-red-400">{error}</p>}
+          {current.visibility === 'public' && (
+            <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 rounded-md border border-border-subtle bg-bg-tertiary/50 px-2.5 py-2 text-2xs">
+              <span className="font-medium text-text-secondary">
+                {t(`path.moderationStatus.${moderationStatus}`, { defaultValue: moderationStatus })}
+              </span>
+              {current.moderation_reason && <span className="text-text-muted">{current.moderation_reason}</span>}
+              {!['pending_review', 'ai_reviewing', 'ai_approved', 'admin_approved'].includes(moderationStatus) && (
+                <button
+                  type="button"
+                  onClick={() => void requestPublication(current.slug)}
+                  className="font-semibold text-accent hover:underline"
+                >
+                  {t('path.requestPublication')}
+                </button>
+              )}
+            </div>
+          )}
         </header>
 
         <div className="grid min-h-0 flex-1 grid-cols-1 lg:grid-cols-[14rem_minmax(0,1fr)_22rem]">

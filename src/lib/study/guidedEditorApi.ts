@@ -7,6 +7,16 @@ export type PathVisibility = 'public' | 'private' | 'friends'
 
 /** Official paths come from the markdown importer and are read-only here. */
 export type PathSource = 'official' | 'user'
+export type ModerationStatus =
+  | 'not_required'
+  | 'draft'
+  | 'pending_review'
+  | 'ai_reviewing'
+  | 'ai_approved'
+  | 'admin_approved'
+  | 'changes_requested'
+  | 'rejected'
+  | 'suspended'
 
 export interface PathStudySummary {
   slug: string
@@ -24,6 +34,12 @@ export interface StudyPath {
   description: string | null
   source: PathSource
   visibility: PathVisibility
+  is_published?: boolean
+  moderation_status?: ModerationStatus
+  moderation_source?: string | null
+  moderation_reason?: string | null
+  moderation_requested_at?: string | null
+  moderation_reviewed_at?: string | null
   is_mine: boolean
   author: { id: number; name: string | null } | null
   rating_avg: number
@@ -67,6 +83,9 @@ export const guidedEditorApi = {
     slug: string,
     body: { title?: string; description?: string | null; visibility?: PathVisibility },
   ) => api.patch<StudyPath>(`/api/guided-plans/${slug}`, body),
+
+  requestPublication: (slug: string) =>
+    api.post<StudyPath>(`/api/guided-plans/${slug}/request-publication`, {}),
 
   deletePath: (slug: string) => api.delete<{ deleted: boolean }>(`/api/guided-plans/${slug}`),
 

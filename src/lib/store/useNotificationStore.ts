@@ -30,7 +30,9 @@ export const useNotificationStore = create<NotificationStore>((set, get) => ({
       const notifications = await friendApi.notifications()
       const unreadCount = notifications.filter(
         (n) => n.read_at === null &&
-          (n.type === 'friend_request_received' || n.type === 'friend_request_accepted'),
+          (n.type === 'friend_request_received'
+            || n.type === 'friend_request_accepted'
+            || n.type === 'guided_plan_moderation'),
       ).length
       set({ notifications, unreadCount })
     } catch {

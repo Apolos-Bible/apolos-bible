@@ -58,6 +58,7 @@ type GuidedEditorStore = {
 
   loadPaths: () => Promise<void>
   createPath: (title: string, description?: string) => Promise<StudyPath | null>
+  requestPublication: (slug: string) => Promise<StudyPath | null>
   setVisibility: (slug: string, visibility: PathVisibility) => Promise<void>
   renamePath: (slug: string, title: string, description?: string | null) => Promise<void>
   deletePath: (slug: string) => Promise<void>
@@ -124,9 +125,21 @@ export const useGuidedEditorStore = create<GuidedEditorStore>((set, get) => ({
     const previous = get().paths
     set((s) => ({ paths: s.paths.map((p) => (p.slug === slug ? { ...p, visibility } : p)) }))
     try {
-      await guidedEditorApi.updatePath(slug, { visibility })
+      const updated = await guidedEditorApi.updatePath(slug, { visibility })
+      set((s) => ({ paths: s.paths.map((p) => (p.slug === slug ? updated : p)), error: null }))
     } catch (e: any) {
       set({ paths: previous, error: e?.message ?? 'save failed' })
+    }
+  },
+
+  requestPublication: async (slug) => {
+    try {
+      const updated = await guidedEditorApi.requestPublication(slug)
+      set((s) => ({ paths: s.paths.map((p) => (p.slug === slug ? updated : p)), error: null }))
+      return updated
+    } catch (e: any) {
+      set({ error: e?.message ?? 'publication request failed' })
+      return null
     }
   },
 
