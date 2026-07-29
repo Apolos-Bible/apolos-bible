@@ -1,11 +1,13 @@
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useNavigate, useParams } from 'react-router-dom'
 import {
-  ArrowLeft, BookmarkPlus, BookmarkCheck, Compass, Globe, Lock, Users, PenLine,
+  ArrowLeft, BookmarkPlus, BookmarkCheck, ChevronRight, Compass, Globe, Lock, Users, PenLine,
 } from 'lucide-react'
 import { AppPageLayout } from '@/components/layout/AppPageLayout'
 import { EmptyState } from '@/components/ui/EmptyState'
+import { StartStudyModal } from '@/components/study/StartStudyModal'
+import type { GuidedPlanSummary } from '@/lib/study/guidedApi'
 import { useMarketplaceStore } from '@/lib/store/useMarketplaceStore'
 import { useAuthStore } from '@/lib/store/useAuthStore'
 import { useUIStore } from '@/lib/store/useUIStore'
@@ -20,8 +22,8 @@ const VISIBILITY_ICON = { public: Globe, friends: Users, private: Lock } as cons
  * A path's own page: what it is, who wrote it, what is inside, and the two
  * things a visitor can do — rate it and put it on their study list.
  *
- * The studies are listed but not startable from here: a guided study is walked
- * inside a session, so the honest path is the study list and then the picker.
+ * The studies can be started from here; the picker opens with the clicked study
+ * already selected so the path from discovery to session is one click shorter.
  */
 export function MarketplacePathRoute() {
   const { t } = useTranslation()
@@ -39,6 +41,7 @@ export function MarketplacePathRoute() {
   const closePath = useMarketplaceStore((s) => s.closePath)
   const rate = useMarketplaceStore((s) => s.rate)
   const toggleList = useMarketplaceStore((s) => s.toggleList)
+  const [selectedStudy, setSelectedStudy] = useState<{ planSlug: string; studySlug: string } | null>(null)
 
   useEffect(() => {
     if (!authLoading && !user) {
@@ -137,20 +140,28 @@ export function MarketplacePathRoute() {
                   {showing.studies.map((study, index) => (
                     <li
                       key={study.slug}
-                      className="flex items-start gap-3 border-b border-border-subtle p-3 last:border-0"
+                      className="border-b border-border-subtle last:border-0"
                     >
-                      <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-md bg-bg-tertiary text-2xs font-semibold text-text-muted">
-                        {index + 1}
-                      </span>
-                      <span className="min-w-0">
-                        <span className="block text-sm text-text-primary">{study.title}</span>
-                        {study.theme && (
-                          <span className="mt-0.5 block text-2xs leading-relaxed text-text-muted">{study.theme}</span>
-                        )}
-                        <span className="mt-0.5 block text-2xs text-text-muted">
-                          {t('path.steps', { count: study.step_count })}
+                      <button
+                        type="button"
+                        onClick={() => setSelectedStudy({ planSlug: showing.slug, studySlug: study.slug })}
+                        className="flex w-full items-start gap-3 p-3 text-left transition-colors hover:bg-bg-tertiary"
+                        aria-label={`${t('study.start.start')}: ${study.title}`}
+                      >
+                        <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-md bg-bg-tertiary text-2xs font-semibold text-text-muted">
+                          {index + 1}
                         </span>
-                      </span>
+                        <span className="min-w-0 flex-1">
+                          <span className="block text-sm text-text-primary">{study.title}</span>
+                          {study.theme && (
+                            <span className="mt-0.5 block text-2xs leading-relaxed text-text-muted">{study.theme}</span>
+                          )}
+                          <span className="mt-0.5 block text-2xs text-text-muted">
+                            {t('path.steps', { count: study.step_count })}
+                          </span>
+                        </span>
+                        <ChevronRight className="mt-1 h-4 w-4 shrink-0 text-text-muted" aria-hidden="true" />
+                      </button>
                     </li>
                   ))}
 
@@ -212,6 +223,19 @@ export function MarketplacePathRoute() {
               </aside>
             </div>
           </div>
+
+          <StartStudyModal
+            open={selectedStudy !== null}
+            initialPlanSlug={selectedStudy?.planSlug}
+            initialStudySlug={selectedStudy?.studySlug}
+            initialPlan={showing ? {
+              slug: showing.slug,
+              title: showing.title,
+              description: showing.description,
+              studies: showing.studies,
+            } satisfies GuidedPlanSummary : undefined}
+            onClose={() => setSelectedStudy(null)}
+          />
         </>
       )}
     </AppPageLayout>
