@@ -77,30 +77,30 @@ export const guidedEditorApi = {
   myPaths: () => api.get<StudyPath[]>(withFrontendLocale('/api/my/guided-plans')),
 
   createPath: (body: { title: string; description?: string; visibility?: PathVisibility }) =>
-    api.post<StudyPath>('/api/guided-plans', body),
+    api.post<StudyPath>(withFrontendLocale('/api/guided-plans'), body),
 
   updatePath: (
     slug: string,
     body: { title?: string; description?: string | null; visibility?: PathVisibility },
-  ) => api.patch<StudyPath>(`/api/guided-plans/${slug}`, body),
+  ) => api.patch<StudyPath>(withFrontendLocale(`/api/guided-plans/${slug}`), body),
 
   requestPublication: (slug: string) =>
-    api.post<StudyPath>(`/api/guided-plans/${slug}/request-publication`, {}),
+    api.post<StudyPath>(withFrontendLocale(`/api/guided-plans/${slug}/request-publication`), {}),
 
-  deletePath: (slug: string) => api.delete<{ deleted: boolean }>(`/api/guided-plans/${slug}`),
+  deletePath: (slug: string) => api.delete<{ deleted: boolean }>(withFrontendLocale(`/api/guided-plans/${slug}`)),
 
   createStudy: (pathSlug: string, body: StudyMetadata) =>
-    api.post<GuidedStudy>(`/api/guided-plans/${pathSlug}/studies`, body),
+    api.post<GuidedStudy>(withFrontendLocale(`/api/guided-plans/${pathSlug}/studies`), body),
 
   updateStudy: (pathSlug: string, studySlug: string, body: Partial<StudyMetadata>) =>
-    api.patch<GuidedStudy>(`/api/guided-plans/${pathSlug}/studies/${studySlug}`, body),
+    api.patch<GuidedStudy>(withFrontendLocale(`/api/guided-plans/${pathSlug}/studies/${studySlug}`), body),
 
   deleteStudy: (pathSlug: string, studySlug: string) =>
-    api.delete<{ deleted: boolean }>(`/api/guided-plans/${pathSlug}/studies/${studySlug}`),
+    api.delete<{ deleted: boolean }>(withFrontendLocale(`/api/guided-plans/${pathSlug}/studies/${studySlug}`)),
 
   /** The whole ordered list, as it now stands — the server replaces what it had. */
   replaceSteps: (pathSlug: string, studySlug: string, steps: DraftStep[]) =>
-    api.put<GuidedStudy>(`/api/guided-plans/${pathSlug}/studies/${studySlug}/steps`, { steps }),
+    api.put<GuidedStudy>(withFrontendLocale(`/api/guided-plans/${pathSlug}/studies/${studySlug}/steps`), { steps }),
 
   resolveReference: (reference: string) =>
     api.post<ReferencePreview>('/api/guided-references/resolve', { reference }),
