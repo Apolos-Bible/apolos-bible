@@ -1,4 +1,5 @@
 import { api } from '@/lib/api'
+import { withFrontendLocale } from '@/lib/localizedApi'
 import type { PathStudySummary, PathVisibility } from '@/lib/study/guidedEditorApi'
 
 export type MarketplaceSort = 'recent' | 'rating' | 'added'
@@ -45,16 +46,16 @@ export const marketplaceApi = {
     const suffix = query.toString() ? `?${query}` : ''
 
     return api.get<{ paths: StudyPathCard[]; next_cursor: string | null }>(
-      `/api/marketplace/paths${suffix}`,
+      withFrontendLocale(`/api/marketplace/paths${suffix}`),
     )
   },
 
   /** The ten paths on the front page, best first. */
-  featured: () => api.get<StudyPathCard[]>('/api/marketplace/featured'),
+  featured: () => api.get<StudyPathCard[]>(withFrontendLocale('/api/marketplace/featured')),
 
-  path: (slug: string) => api.get<StudyPathDetail>(`/api/marketplace/paths/${slug}`),
+  path: (slug: string) => api.get<StudyPathDetail>(withFrontendLocale(`/api/marketplace/paths/${slug}`)),
 
-  myList: () => api.get<StudyPathCard[]>('/api/my/study-list'),
+  myList: () => api.get<StudyPathCard[]>(withFrontendLocale('/api/my/study-list')),
 
   rate: (slug: string, stars: number) =>
     api.put<RatingState>(`/api/guided-plans/${slug}/rating`, { stars }),

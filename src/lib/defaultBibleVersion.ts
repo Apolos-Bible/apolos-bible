@@ -1,4 +1,5 @@
 import type { ApiVersion } from '@/lib/bibleApi'
+import { getFrontendLocale } from '@/lib/defaultAppLocale'
 
 export const BIBLE_VERSION_STORAGE_KEY = 'tulia_version_id'
 
@@ -13,26 +14,42 @@ export function getBrowserLanguage(): string {
   return navigator.languages?.[0] ?? navigator.language ?? ''
 }
 
+/** The language currently used by the interface, including its persisted setting. */
+export function getFrontendLanguage(): string {
+  return getFrontendLocale()
+}
+
 export function selectDefaultBibleVersionId(
   versions: ApiVersion[],
-  browserLanguage: string,
+  frontendLanguage: string,
   fallbackVersionId = 1,
 ): number {
   if (versions.length === 0) return fallbackVersionId
 
-  const language = browserLanguage.toLowerCase()
+  const language = frontendLanguage.toLowerCase()
   const languageCode = language.split('-')[0]
   const byLanguage = versions.filter(versionMatchesLanguage(languageCode))
 
   if (languageCode === 'es') {
-    return byLanguage.find(isReinaValera1960)?.id ?? byLanguage[0]?.id ?? versions[0].id
+    return byLanguage.find(isReinaValera1960)?.id ?? byLanguage[0]?.id ?? englishFallback(versions, fallbackVersionId)
   }
 
   if (languageCode === 'en') {
-    return byLanguage.find(isKingJamesVersion)?.id ?? byLanguage[0]?.id ?? versions[0].id
+    return byLanguage.find(isKingJamesVersion)?.id ?? byLanguage[0]?.id ?? englishFallback(versions, fallbackVersionId)
   }
 
-  return byLanguage[0]?.id ?? versions[0].id
+  return englishFallback(versions, fallbackVersionId)
+}
+
+function englishFallback(versions: ApiVersion[], fallbackVersionId: number): number {
+  const englishVersions = versions.filter(versionMatchesLanguage('en'))
+
+  return (
+    englishVersions.find(isKingJamesVersion)?.id
+    ?? englishVersions[0]?.id
+    ?? versions.find(version => version.id === fallbackVersionId)?.id
+    ?? versions[0].id
+  )
 }
 
 function versionMatchesLanguage(languageCode: string) {

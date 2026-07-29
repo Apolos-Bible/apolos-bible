@@ -24,7 +24,20 @@ describe('selectDefaultBibleVersionId', () => {
     expect(selectDefaultBibleVersionId(noKjv, 'en-US')).toBe(1)
   })
 
-  it('falls back to the first available version for unsupported languages', () => {
-    expect(selectDefaultBibleVersionId(versions, 'fr-FR')).toBe(1)
+  it('falls back to English for unsupported languages', () => {
+    expect(selectDefaultBibleVersionId(versions, 'fr-FR')).toBe(4)
+  })
+
+  it('does not fall back to a Spanish version when English is available later', () => {
+    const spanishFirst = [versions[1], versions[3]]
+
+    expect(selectDefaultBibleVersionId(spanishFirst, 'fr-FR')).toBe(4)
+    expect(selectDefaultBibleVersionId(spanishFirst, 'es-ES')).toBe(2)
+  })
+
+  it('uses English when the interface language has no matching version', () => {
+    const onlyEnglish = versions.filter((version) => version.language === 'en')
+
+    expect(selectDefaultBibleVersionId(onlyEnglish, 'es-ES')).toBe(4)
   })
 })
