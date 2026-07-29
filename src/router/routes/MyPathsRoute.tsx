@@ -43,6 +43,18 @@ export function MyPathsRoute() {
     if (user) void loadPaths()
   }, [user, loadPaths])
 
+  // Publication review is asynchronous: poll only while one of the user's
+  // public paths is waiting for the worker or the AI, then stop automatically
+  // as soon as it reaches a terminal state.
+  useEffect(() => {
+    if (!user || !mine.some((path) =>
+      path.visibility === 'public' && ['pending_review', 'ai_reviewing'].includes(path.moderation_status ?? ''),
+    )) return
+
+    const interval = window.setInterval(() => void loadPaths(), 5000)
+    return () => window.clearInterval(interval)
+  }, [user, mine, loadPaths])
+
   return (
     <AppPageLayout
       title={t('path.title')}
