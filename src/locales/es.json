@@ -807,6 +807,7 @@
   "market.editMine": "Editar mi ruta",
   "market.notFound": "No encontré esa ruta, o su autor no la comparte contigo.",
   "market.backToMarket": "Volver al marketplace",
+  "market.breadcrumbLabel": "Ruta de navegación",
   "nav.myPaths": "Mis rutas",
   "path.title": "Mis rutas",
   "path.subtitle": "Rutas de estudio que escribes tú",

@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useNavigate, useParams } from 'react-router-dom'
 import {
-  ArrowLeft, BookmarkPlus, BookmarkCheck, ChevronRight, Compass, Globe, Lock, Users, PenLine,
+  BookmarkPlus, BookmarkCheck, ChevronRight, Compass, Globe, Lock, Users, PenLine,
 } from 'lucide-react'
 import { AppPageLayout } from '@/components/layout/AppPageLayout'
 import { EmptyState } from '@/components/ui/EmptyState'
@@ -94,14 +94,20 @@ export function MarketplacePathRoute() {
             <div aria-hidden className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/25 to-transparent" />
 
             <div className="relative mx-auto w-full max-w-5xl px-4 pb-7 pt-5 md:px-8 md:pb-9 md:pt-7">
-              <button
-                type="button"
-                onClick={() => navigate(paths.marketplace())}
-                className="mb-5 inline-flex items-center gap-1.5 text-xs font-medium text-white/75 transition-colors hover:text-white"
+              <nav
+                aria-label={t('market.breadcrumbLabel')}
+                className="mb-5 flex items-center gap-1.5 text-xs"
               >
-                <ArrowLeft className="h-3.5 w-3.5" />
-                {t('market.backToMarket')}
-              </button>
+                <button
+                  type="button"
+                  onClick={() => navigate(paths.marketplace())}
+                  className="font-medium text-white/75 transition-colors hover:text-white"
+                >
+                  {t('market.title')}
+                </button>
+                <ChevronRight className="h-3.5 w-3.5 text-white/45" aria-hidden="true" />
+                <span className="truncate text-white/90" aria-current="page">{showing.title}</span>
+              </nav>
 
               <h1 className="text-2xl font-semibold leading-tight text-white md:text-4xl">{showing.title}</h1>
 

@@ -807,6 +807,7 @@
   "market.editMine": "Edit my path",
   "market.notFound": "I couldn't find that path, or its author doesn't share it with you.",
   "market.backToMarket": "Back to the marketplace",
+  "market.breadcrumbLabel": "Breadcrumbs",
   "nav.myPaths": "My paths",
   "path.title": "My paths",
   "path.subtitle": "Study paths you write yourself",
