@@ -27,6 +27,7 @@ export function MyPathsRoute() {
   const error = useGuidedEditorStore((s) => s.error)
   const loadPaths = useGuidedEditorStore((s) => s.loadPaths)
   const deletePath = useGuidedEditorStore((s) => s.deletePath)
+  const requestPublication = useGuidedEditorStore((s) => s.requestPublication)
 
   const [creating, setCreating] = useState(false)
   const [confirmDelete, setConfirmDelete] = useState<string | null>(null)
@@ -114,6 +115,7 @@ export function MyPathsRoute() {
           {mine.map((item) => {
             const hue = hueOf(item.slug)
             const VisibilityIcon = VISIBILITY_ICON[item.visibility]
+            const moderationStatus = item.moderation_status ?? 'not_required'
 
             return (
               <article
@@ -140,6 +142,26 @@ export function MyPathsRoute() {
                     {t('path.studyCount', { count: item.studies.length })}
                     {item.list_count > 0 && ` · ${t('path.addedBy', { count: item.list_count })}`}
                   </p>
+
+                  {item.visibility === 'public' && (
+                    <div className="rounded-md border border-border-subtle bg-bg-tertiary/50 px-2.5 py-2">
+                      <p className="text-2xs font-medium text-text-secondary">
+                        {t(`path.moderationStatus.${moderationStatus}`, { defaultValue: moderationStatus })}
+                      </p>
+                      {item.moderation_reason && (
+                        <p className="mt-1 text-2xs leading-relaxed text-text-muted">{item.moderation_reason}</p>
+                      )}
+                      {!['pending_review', 'ai_reviewing', 'ai_approved', 'admin_approved'].includes(moderationStatus) && (
+                        <button
+                          type="button"
+                          onClick={() => void requestPublication(item.slug)}
+                          className="mt-2 text-2xs font-semibold text-accent hover:underline"
+                        >
+                          {t('path.requestPublication')}
+                        </button>
+                      )}
+                    </div>
+                  )}
 
                   {item.description && (
                     <p className="line-clamp-2 text-2xs leading-relaxed text-text-secondary">{item.description}</p>
