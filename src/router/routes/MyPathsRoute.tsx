@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useNavigate } from 'react-router-dom'
-import { Plus, Compass, Globe, Lock, Users, Trash2, Store, Pencil } from 'lucide-react'
+import { Plus, ChevronRight, Compass, Globe, Lock, Users, Trash2, Store, Pencil } from 'lucide-react'
 import { AppPageLayout } from '@/components/layout/AppPageLayout'
 import { useGuidedEditorStore } from '@/lib/store/useGuidedEditorStore'
 import { useAuthStore } from '@/lib/store/useAuthStore'
@@ -57,6 +57,21 @@ export function MyPathsRoute() {
       }
     >
       <div className="mx-auto w-full max-w-5xl px-4 py-5 md:px-8 md:py-8">
+        <nav
+          aria-label={t('market.breadcrumbLabel')}
+          className="mb-5 flex items-center gap-1.5 text-xs"
+        >
+          <button
+            type="button"
+            onClick={() => navigate(paths.marketplace())}
+            className="font-medium text-text-muted transition-colors hover:text-text-primary"
+          >
+            {t('market.title')}
+          </button>
+          <ChevronRight className="h-3.5 w-3.5 text-text-muted" aria-hidden="true" />
+          <span className="text-text-secondary" aria-current="page">{t('path.title')}</span>
+        </nav>
+
         <header className="mb-6 flex flex-wrap items-start justify-between gap-3">
           <div>
             <h1 className="flex items-center gap-2 text-xl font-semibold text-text-primary">
