@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom'
 import { X, BookOpen, StickyNote, Compass, Check, Loader2 } from 'lucide-react'
 import { useStudyStore } from '@/lib/store/useStudyStore'
 import { useGuidedStore } from '@/lib/store/useGuidedStore'
+import type { GuidedPlanSummary } from '@/lib/study/guidedApi'
 import { useVerseStore } from '@/lib/store/useVerseStore'
 import { cn } from '@/lib/cn'
 import { bibleApi } from '@/lib/bibleApi'
@@ -13,11 +14,22 @@ import { Dialog } from '@/components/ui/Dialog'
 interface StartStudyModalProps {
   open: boolean
   onClose: () => void
+  /** Preselect a guided study when the modal was opened from a path. */
+  initialPlanSlug?: string
+  initialStudySlug?: string
+  /** Keep a marketplace path visible even before it is on the study list. */
+  initialPlan?: GuidedPlanSummary
 }
 
 type StudyType = 'guided' | 'verse' | 'chapter' | 'free'
 
-export function StartStudyModal({ open, onClose }: StartStudyModalProps) {
+export function StartStudyModal({
+  open,
+  onClose,
+  initialPlanSlug,
+  initialStudySlug,
+  initialPlan,
+}: StartStudyModalProps) {
   const { t } = useTranslation()
   const navigate = useNavigate()
   const start = useStudyStore(s => s.start)
@@ -44,6 +56,12 @@ export function StartStudyModal({ open, onClose }: StartStudyModalProps) {
 
   const currentBook = useMemo(() => books.find(b => b.slug === bookSlug), [books, bookSlug])
   const totalChapters = currentBook?.chapters ?? 1
+  const displayPlans = useMemo(
+    () => initialPlan && !plans.some(plan => plan.slug === initialPlan.slug)
+      ? [initialPlan, ...plans]
+      : plans,
+    [initialPlan, plans],
+  )
 
   // Pre-fill from current reading context once when the modal opens.
   useEffect(() => {
@@ -57,9 +75,11 @@ export function StartStudyModal({ open, onClose }: StartStudyModalProps) {
       .map(v => v.verse)
       .sort((a, b) => a - b)
 
-    // Verses already selected in the reader means the person came here to study
-    // *those*; otherwise offer the guided studies first.
-    setType(versesInChapter.length > 0 ? 'verse' : 'guided')
+    // A study selected from the marketplace wins over the reader context;
+    // otherwise verses already selected in the reader take priority.
+    setType(initialStudySlug ? 'guided' : versesInChapter.length > 0 ? 'verse' : 'guided')
+    setPlanSlug(initialPlanSlug ?? '')
+    setGuidedSlug(initialStudySlug ?? '')
     if (versesInChapter.length > 0) {
       setVerseStart(versesInChapter[0])
       setVerseEnd(versesInChapter[versesInChapter.length - 1])
@@ -102,17 +122,29 @@ export function StartStudyModal({ open, onClose }: StartStudyModalProps) {
   }, [open, type, plans.length, loadPlans])
 
   const currentPlan = useMemo(
-    () => plans.find(p => p.slug === planSlug) ?? plans[0] ?? null,
-    [plans, planSlug],
+    () => displayPlans.find(p => p.slug === planSlug) ?? displayPlans[0] ?? null,
+    [displayPlans, planSlug],
   )
+
+  // A marketplace click is a deliberate choice. Wait for the catalogue and
+  // apply it once, without letting the normal "first unfinished" behavior
+  // replace it during the first render.
+  useEffect(() => {
+    if (!open || !initialStudySlug) return
+    const requestedPlan = displayPlans.find(p => p.slug === initialPlanSlug)
+    if (!requestedPlan || !requestedPlan.studies.some(s => s.slug === initialStudySlug)) return
+    setPlanSlug(requestedPlan.slug)
+    setGuidedSlug(initialStudySlug)
+  }, [open, initialPlanSlug, initialStudySlug, displayPlans])
 
   // Land on the plan's first unfinished study — where the person left off.
   useEffect(() => {
     if (!currentPlan) return
+    if (initialStudySlug) return
     if (currentPlan.studies.some(s => s.slug === guidedSlug)) return
     const next = currentPlan.studies.find(s => !s.progress?.completed_at) ?? currentPlan.studies[0]
     setGuidedSlug(next?.slug ?? '')
-  }, [currentPlan, guidedSlug])
+  }, [currentPlan, guidedSlug, initialStudySlug])
 
   if (!open) return null
 
@@ -227,7 +259,7 @@ export function StartStudyModal({ open, onClose }: StartStudyModalProps) {
               </div>
             )}
 
-            {plans.length > 0 && (
+            {displayPlans.length > 0 && (
               <>
                 <label className="block text-xs font-medium text-text-secondary">{t('guided.plan')}</label>
                 <select
@@ -235,7 +267,7 @@ export function StartStudyModal({ open, onClose }: StartStudyModalProps) {
                   onChange={(e) => { setPlanSlug(e.target.value); setGuidedSlug('') }}
                   className={`${selectClass} w-full`}
                 >
-                  {plans.map(plan => (
+                  {displayPlans.map(plan => (
                     <option key={plan.slug} value={plan.slug}>{plan.title}</option>
                   ))}
                 </select>
