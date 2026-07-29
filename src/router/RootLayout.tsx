@@ -43,6 +43,7 @@ function RootLayoutSurface() {
   const authModalKey       = useUIStore(s => s.authModalKey)
   const versions           = useVerseStore(s => s.versions)
   const versionId          = useVerseStore(s => s.versionId)
+  const setDefaultVersionForLocale = useVerseStore(s => s.setDefaultVersionForLocale)
   const selectedBook       = useVerseStore(s => s.selectedBook)
   const locale             = useUIStore(s => s.locale)
   const authInit           = useAuthStore(s => s.init)
@@ -58,6 +59,10 @@ function RootLayoutSurface() {
   useEffect(() => {
     void authInit()
   }, [authInit])
+
+  useEffect(() => {
+    void setDefaultVersionForLocale(locale)
+  }, [locale, setDefaultVersionForLocale])
 
   // Handle ?email_verified=1 / =invalid query coming back from the backend
   // verification redirect. Show a toast, refresh the user, then strip the

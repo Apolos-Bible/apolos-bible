@@ -1,4 +1,5 @@
 import { api } from '@/lib/api'
+import { withFrontendLocale } from '@/lib/localizedApi'
 
 /** A resolved slice of Scripture a guided step points at. */
 export interface GuidedRange {
@@ -94,9 +95,9 @@ export interface GuidedStudyDetail {
 }
 
 export const guidedApi = {
-  plans: () => api.get<GuidedPlanSummary[]>('/api/guided-plans'),
+  plans: () => api.get<GuidedPlanSummary[]>(withFrontendLocale('/api/guided-plans')),
 
-  study: (slug: string) => api.get<GuidedStudyDetail>(`/api/guided-studies/${slug}`),
+  study: (slug: string) => api.get<GuidedStudyDetail>(withFrontendLocale(`/api/guided-studies/${slug}`)),
 
   setProgress: (slug: string, body: { current_step: number; session_id?: string; completed?: boolean }) =>
     api.post<GuidedProgress>(`/api/guided-studies/${slug}/progress`, body),

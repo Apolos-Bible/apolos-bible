@@ -1,4 +1,5 @@
 import { api } from '@/lib/api'
+import { withFrontendLocale } from '@/lib/localizedApi'
 import type { GuidedRange, GuidedStepKind, GuidedStudy } from '@/lib/study/guidedApi'
 
 /** Who may see a path. Private until its author decides otherwise. */
@@ -57,7 +58,7 @@ export interface ReferencePreview {
 }
 
 export const guidedEditorApi = {
-  myPaths: () => api.get<StudyPath[]>('/api/my/guided-plans'),
+  myPaths: () => api.get<StudyPath[]>(withFrontendLocale('/api/my/guided-plans')),
 
   createPath: (body: { title: string; description?: string; visibility?: PathVisibility }) =>
     api.post<StudyPath>('/api/guided-plans', body),

@@ -27,6 +27,7 @@ vi.mock('@/lib/bibleApi', () => ({
 vi.mock('@/lib/defaultBibleVersion', () => ({
   BIBLE_VERSION_STORAGE_KEY: 'bibleVersionId',
   getBrowserLanguage: vi.fn(() => 'en-US'),
+  getFrontendLanguage: vi.fn(() => 'en'),
   getStoredBibleVersionId: vi.fn(() => 1),
   selectDefaultBibleVersionId: vi.fn(() => 1),
 }))

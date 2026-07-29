@@ -2,7 +2,7 @@ import { create } from 'zustand'
 import { bibleApi, ApiBook, ApiVersion } from '@/lib/bibleApi'
 import {
   BIBLE_VERSION_STORAGE_KEY,
-  getBrowserLanguage,
+  getFrontendLanguage,
   getStoredBibleVersionId,
   selectDefaultBibleVersionId,
 } from '@/lib/defaultBibleVersion'
@@ -56,6 +56,7 @@ interface VerseState {
   loadingVerses: boolean
   loadVersions: () => Promise<void>
   setVersion: (id: number, options?: { sync?: boolean }) => Promise<void>
+  setDefaultVersionForLocale: (locale: string) => Promise<void>
   loadBooks: (initialRoute?: { book: string; chapter: number; verse?: number }) => Promise<void>
   ensureBooks: () => Promise<void>
   selectBook: (slug: string) => void
@@ -103,7 +104,7 @@ export const useVerseStore = create<VerseState>((set, get) => ({
       const storedVersionId = getStoredBibleVersionId()
       set({
         versions,
-        versionId: storedVersionId ?? selectDefaultBibleVersionId(versions, getBrowserLanguage(), get().versionId),
+        versionId: storedVersionId ?? selectDefaultBibleVersionId(versions, getFrontendLanguage(), get().versionId),
       })
     } catch (e) {
       console.error('Failed to load versions', e)
@@ -119,12 +120,43 @@ export const useVerseStore = create<VerseState>((set, get) => ({
     await get().loadBooks()
   },
 
+  setDefaultVersionForLocale: async (locale) => {
+    // A deliberate version choice wins over the UI language. The setting is
+    // persisted by setVersion, while this action only manages the default.
+    if (getStoredBibleVersionId()) return
+
+    try {
+      let { versions, versionId } = get()
+      if (versions.length === 0) {
+        versions = await bibleApi.versions()
+      }
+
+      const nextVersionId = selectDefaultBibleVersionId(versions, locale, versionId)
+      set({ versions })
+      if (nextVersionId === versionId) return
+
+      set({
+        versionId: nextVersionId,
+        books: [],
+        verses: [],
+        selectedVerseId: null,
+        selectedVerseIds: [],
+        cursorVerseId: null,
+        selectionAnchorId: null,
+        studyVerseId: null,
+      })
+      await get().loadBooks()
+    } catch (e) {
+      console.error('Failed to set the default Bible version', e)
+    }
+  },
+
   loadBooks: async (initialRoute?: { book: string; chapter: number; verse?: number }) => {
     let { versionId, versions } = get()
     try {
       if (!getStoredBibleVersionId() && versions.length === 0) {
         versions = await bibleApi.versions()
-        versionId = selectDefaultBibleVersionId(versions, getBrowserLanguage(), versionId)
+        versionId = selectDefaultBibleVersionId(versions, getFrontendLanguage(), versionId)
         set({ versions, versionId })
       }
 
@@ -195,7 +227,7 @@ export const useVerseStore = create<VerseState>((set, get) => ({
     try {
       if (!getStoredBibleVersionId() && versions.length === 0) {
         versions = await bibleApi.versions()
-        versionId = selectDefaultBibleVersionId(versions, getBrowserLanguage(), versionId)
+        versionId = selectDefaultBibleVersionId(versions, getFrontendLanguage(), versionId)
         set({ versions, versionId })
       }
 

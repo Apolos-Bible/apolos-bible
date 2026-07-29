@@ -16,6 +16,11 @@ export function selectDefaultAppLocale(browserLocale: string): AppLocale {
   return browserLocale.toLowerCase().startsWith('es') ? 'es' : 'en'
 }
 
+/** The locale currently used by the frontend, including its persisted setting. */
+export function getFrontendLocale(): AppLocale {
+  return getStoredAppLocale() ?? selectDefaultAppLocale(getBrowserLocale())
+}
+
 function isAppLocale(locale: string | null): locale is AppLocale {
   return locale === 'en' || locale === 'es'
 }
