@@ -229,14 +229,14 @@ export const COMMANDS: CommandSpec[] = [
   },
   {
     id: 'reader.copyText',
-    keys: ['c'],
+    keys: ['mod+c'],
     scope: 'reader',
     group: 'verse',
     descriptionKey: 'shortcuts.copyText',
   },
   {
     id: 'reader.copyReference',
-    keys: ['r'],
+    keys: ['mod+shift+c'],
     scope: 'reader',
     group: 'verse',
     descriptionKey: 'shortcuts.copyReference',
@@ -254,6 +254,20 @@ export const COMMANDS: CommandSpec[] = [
     scope: 'reader',
     group: 'verse',
     descriptionKey: 'shortcuts.compareVersions',
+  },
+  {
+    id: 'reader.shareVerses',
+    keys: ['mod+shift+s'],
+    scope: 'reader',
+    group: 'verse',
+    descriptionKey: 'shortcuts.shareVerses',
+  },
+  {
+    id: 'reader.similarVerses',
+    keys: ['s'],
+    scope: 'reader',
+    group: 'verse',
+    descriptionKey: 'shortcuts.similarVerses',
   },
 
   // ── Reader: view & panels ───────────────────────────────────────────────

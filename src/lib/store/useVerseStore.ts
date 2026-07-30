@@ -1,4 +1,5 @@
 import { create } from 'zustand'
+import { createContext, createElement, useContext, type ReactNode } from 'react'
 import { bibleApi, ApiBook, ApiVersion } from '@/lib/bibleApi'
 import {
   BIBLE_VERSION_STORAGE_KEY,
@@ -30,7 +31,7 @@ export interface Verse {
   text: string
 }
 
-interface VerseState {
+export interface VerseState {
   versionId: number
   versions: ApiVersion[]
   books: Book[]
@@ -83,7 +84,19 @@ function testament(bookNumber: number): 'old' | 'new' {
   return bookNumber <= 39 ? 'old' : 'new'
 }
 
-export const useVerseStore = create<VerseState>((set, get) => ({
+function storedActiveVersionId(versions: ApiVersion[]): number | null {
+  const storedVersionId = getStoredBibleVersionId()
+  if (storedVersionId == null) return null
+  if (versions.some((version) => version.id === storedVersionId)) return storedVersionId
+
+  // A previously selected version may have been unpublished since the last
+  // session. Remove that stale preference instead of requesting hidden content.
+  localStorage.removeItem(BIBLE_VERSION_STORAGE_KEY)
+  return null
+}
+
+export function createVerseStore() {
+  return create<VerseState>((set, get) => ({
   versionId: getStoredBibleVersionId() ?? 1,
   versions: [],
   books: [],
@@ -101,7 +114,7 @@ export const useVerseStore = create<VerseState>((set, get) => ({
   loadVersions: async () => {
     try {
       const versions = await bibleApi.versions()
-      const storedVersionId = getStoredBibleVersionId()
+      const storedVersionId = storedActiveVersionId(versions)
       set({
         versions,
         versionId: storedVersionId ?? selectDefaultBibleVersionId(versions, getFrontendLanguage(), get().versionId),
@@ -123,12 +136,14 @@ export const useVerseStore = create<VerseState>((set, get) => ({
   setDefaultVersionForLocale: async (locale) => {
     // A deliberate version choice wins over the UI language. The setting is
     // persisted by setVersion, while this action only manages the default.
-    if (getStoredBibleVersionId()) return
-
     try {
       let { versions, versionId } = get()
       if (versions.length === 0) {
         versions = await bibleApi.versions()
+      }
+      if (storedActiveVersionId(versions) != null) {
+        set({ versions })
+        return
       }
 
       const nextVersionId = selectDefaultBibleVersionId(versions, locale, versionId)
@@ -154,11 +169,12 @@ export const useVerseStore = create<VerseState>((set, get) => ({
   loadBooks: async (initialRoute?: { book: string; chapter: number; verse?: number }) => {
     let { versionId, versions } = get()
     try {
-      if (!getStoredBibleVersionId() && versions.length === 0) {
+      if (versions.length === 0) {
         versions = await bibleApi.versions()
-        versionId = selectDefaultBibleVersionId(versions, getFrontendLanguage(), versionId)
-        set({ versions, versionId })
       }
+      versionId = storedActiveVersionId(versions)
+        ?? selectDefaultBibleVersionId(versions, getFrontendLanguage(), versionId)
+      set({ versions, versionId })
 
       const apiBooks: ApiBook[] = await bibleApi.books(versionId)
       if (!Array.isArray(apiBooks)) {
@@ -225,11 +241,12 @@ export const useVerseStore = create<VerseState>((set, get) => ({
     if (get().books.length > 0) return
     let { versionId, versions } = get()
     try {
-      if (!getStoredBibleVersionId() && versions.length === 0) {
+      if (versions.length === 0) {
         versions = await bibleApi.versions()
-        versionId = selectDefaultBibleVersionId(versions, getFrontendLanguage(), versionId)
-        set({ versions, versionId })
       }
+      versionId = storedActiveVersionId(versions)
+        ?? selectDefaultBibleVersionId(versions, getFrontendLanguage(), versionId)
+      set({ versions, versionId })
 
       const apiBooks: ApiBook[] = await bibleApi.books(versionId)
       if (!Array.isArray(apiBooks)) {
@@ -418,9 +435,9 @@ export const useVerseStore = create<VerseState>((set, get) => ({
   },
 
   navigateVerse: (dir) => {
-    const { verses, selectedVerseId } = get()
+    const { verses, cursorVerseId, selectedVerseId } = get()
     if (!verses.length) return
-    const idx = verses.findIndex(v => v.id === selectedVerseId)
+    const idx = verses.findIndex(v => v.id === (cursorVerseId ?? selectedVerseId))
     const next = dir === 'next'
       ? verses[idx + 1] ?? verses[0]
       : verses[idx - 1] ?? verses[verses.length - 1]
@@ -457,4 +474,38 @@ export const useVerseStore = create<VerseState>((set, get) => ({
       }
     }
   },
-}))
+  }))
+}
+
+/** The legacy/global reader store used by mobile and non-workspace routes. */
+export const useVerseStore = createVerseStore()
+
+export type VerseStore = typeof useVerseStore
+
+const workspaceVerseStores = new Map<string, VerseStore>()
+
+/** Lazily creates a completely independent Bible state for an editor tab. */
+export function getVerseStoreForTab(tabId: string): VerseStore {
+  let store = workspaceVerseStores.get(tabId)
+  if (!store) {
+    store = createVerseStore()
+    workspaceVerseStores.set(tabId, store)
+  }
+  return store
+}
+
+const VerseStoreContext = createContext<VerseStore | null>(null)
+
+export function VerseStoreProvider({ store, children }: { store: VerseStore; children: ReactNode }) {
+  return createElement(VerseStoreContext.Provider, { value: store }, children)
+}
+
+/** Reads the Bible store belonging to the current workspace pane. */
+export function useActiveVerseStore<T>(selector: (state: VerseState) => T): T {
+  const store = useContext(VerseStoreContext) ?? useVerseStore
+  return store(selector)
+}
+
+export function useVerseStoreApi(): VerseStore {
+  return useContext(VerseStoreContext) ?? useVerseStore
+}

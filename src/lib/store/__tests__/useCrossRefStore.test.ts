@@ -7,6 +7,7 @@ vi.mock('@/lib/bibleApi', () => ({
     chapter: vi.fn(),
     search: vi.fn(),
     crossRefs: vi.fn(),
+    semanticSimilar: vi.fn(),
     crossRefVerseIds: vi.fn(),
   },
 }))
@@ -21,6 +22,7 @@ const mockBibleApi = bibleApi as unknown as {
   chapter: ReturnType<typeof vi.fn>
   search: ReturnType<typeof vi.fn>
   crossRefs: ReturnType<typeof vi.fn>
+  semanticSimilar: ReturnType<typeof vi.fn>
   crossRefVerseIds: ReturnType<typeof vi.fn>
 }
 
@@ -41,6 +43,11 @@ beforeEach(() => {
     results: [],
     groups: [],
     loading: false,
+    tab: 'cross',
+    primarySource: null,
+    similarResults: [],
+    similarLoading: false,
+    similarError: false,
     verseIdsWithRefs: new Set(),
   })
 })
@@ -94,12 +101,46 @@ describe('useCrossRefStore', () => {
     expect(state.groups[1].results).toHaveLength(0)
   })
 
+  it('passes the active version when loading localized references', async () => {
+    mockBibleApi.crossRefs.mockResolvedValueOnce([mockCrossRef])
+
+    await useCrossRefStore.getState().openPanel(100, 7)
+
+    expect(mockBibleApi.crossRefs).toHaveBeenCalledWith(100, 7)
+  })
+
   it('openPanel skips re-fetching if same verse and already open', async () => {
     mockBibleApi.crossRefs.mockResolvedValue([mockCrossRef])
     await useCrossRefStore.getState().openPanel(100)
     mockBibleApi.crossRefs.mockClear()
     await useCrossRefStore.getState().openPanel(100)
     expect(mockBibleApi.crossRefs).not.toHaveBeenCalled()
+  })
+
+  it('openSimilar fetches semantic neighbours for the selected version', async () => {
+    mockBibleApi.semanticSimilar.mockResolvedValueOnce({
+      seed_verse_id: 100,
+      model: 'test',
+      results: [{
+        verse_id: 200,
+        book: 'John',
+        book_slug: 'john',
+        chapter: 3,
+        verse: 16,
+        text: 'For God so loved the world',
+        score: 0.92,
+      }],
+    })
+
+    await useCrossRefStore.getState().openSimilar(
+      { verseApiId: 100, label: 'John 3:16' },
+      7,
+    )
+
+    expect(mockBibleApi.semanticSimilar).toHaveBeenCalledWith(100, 30, 7)
+    expect(useCrossRefStore.getState().tab).toBe('similar')
+    expect(useCrossRefStore.getState().similarResults).toHaveLength(1)
+    expect(useCrossRefStore.getState().similarLoading).toBe(false)
   })
 
   it('closePanel sets open to false', () => {

@@ -3,6 +3,7 @@ import { createContext, useContext, type ReactNode } from 'react'
 type WorkspacePaneContextValue = {
   groupId: string
   tabId: string
+  isActive: boolean
   reportTitle: (title: string) => void
 }
 

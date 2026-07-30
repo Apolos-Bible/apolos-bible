@@ -2,12 +2,17 @@
 import { useEffect, useRef, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
-import { useVerseStore } from '@/lib/store/useVerseStore'
+import { useActiveVerseStore } from '@/lib/store/useVerseStore'
 import type { Book } from '@/lib/store/useVerseStore'
 import { useUIStore } from '@/lib/store/useUIStore'
 import { useIsMobile } from '@/lib/useIsMobile'
-import { isPageRoute, paths } from '@/router/paths'
+import { paths } from '@/router/paths'
 import { cn } from '@/lib/cn'
+import { BookOpen, ExternalLink, GraduationCap } from 'lucide-react'
+import { useContextMenuStore } from '@/lib/store/useContextMenuStore'
+import { createWorkspaceTab, useWorkspaceStore } from '@/lib/store/useWorkspaceStore'
+import { StartStudyModal } from '@/components/study/StartStudyModal'
+import { useWorkspacePane } from '@/components/layout/WorkspacePaneContext'
 
 interface BookGroupProps {
   label: string
@@ -16,11 +21,12 @@ interface BookGroupProps {
   openBook: string
   selectedChapter: number
   onOpenBook: (id: string) => void
-  onSelectChapter: (bookId: string, chapter: number) => void
+  onSelectChapter: (bookId: string, chapter: number, event?: React.MouseEvent) => void
+  onChapterContextMenu: (event: React.MouseEvent, bookId: string, chapter: number) => void
   isMobile?: boolean
 }
 
-function BookGroup({ label, books, selectedBook, openBook, selectedChapter, onOpenBook, onSelectChapter, isMobile = false }: BookGroupProps) {
+function BookGroup({ label, books, selectedBook, openBook, selectedChapter, onOpenBook, onSelectChapter, onChapterContextMenu, isMobile = false }: BookGroupProps) {
   return (
     <div>
       <p className="text-2xs uppercase tracking-wider text-text-muted px-4 py-1 select-none">
@@ -78,7 +84,8 @@ function BookGroup({ label, books, selectedBook, openBook, selectedChapter, onOp
                       <button
                         key={chapter}
                         data-chapter-id={`${book.id}-${chapter}`}
-                        onClick={() => onSelectChapter(book.id, chapter)}
+                        onClick={(event) => onSelectChapter(book.id, chapter, event)}
+                        onContextMenu={(event) => onChapterContextMenu(event, book.id, chapter)}
                         tabIndex={isOpen ? 0 : -1}
                         className={cn(
                           'rounded transition-colors duration-100',
@@ -106,27 +113,62 @@ export function BookSelector() {
   const { t } = useTranslation()
   const navigate = useNavigate()
   const { pathname } = useLocation()
-  const books = useVerseStore((s) => s.books)
-  const selectedBook = useVerseStore((s) => s.selectedBook)
-  const selectedChapter = useVerseStore((s) => s.selectedChapter)
-  const loadChapter = useVerseStore((s) => s.loadChapter)
+  const books = useActiveVerseStore((s) => s.books)
+  const selectedBook = useActiveVerseStore((s) => s.selectedBook)
+  const selectedChapter = useActiveVerseStore((s) => s.selectedChapter)
+  const loadChapter = useActiveVerseStore((s) => s.loadChapter)
   const locale = useUIStore((s) => s.locale)
   const closeMobileSidebar = useUIStore((s) => s.closeMobileSidebar)
   const closeMobileBookPicker = useUIStore((s) => s.closeMobileBookPicker)
+  const openMenu = useContextMenuStore((s) => s.openMenu)
+  const openTab = useWorkspaceStore((s) => s.openTab)
+  const activateGroup = useWorkspaceStore((s) => s.activateGroup)
+  const workspacePane = useWorkspacePane()
   const isMobile = useIsMobile()
   const [openBook, setOpenBook] = useState(selectedBook)
+  const [showStartStudy, setShowStartStudy] = useState(false)
   const scrollRef = useRef<HTMLDivElement>(null)
 
-  const handleSelectChapter = (bookId: string, chapter: number) => {
+  const openChapterInNewTab = (bookId: string, chapter: number) => {
+    if (workspacePane) activateGroup(workspacePane.groupId)
+    const path = paths.bible({ lang: locale, book: bookId, chapter })
+    const tab = createWorkspaceTab(path, path, `${bookId} ${chapter}`)
+    // Bible tabs normally share the canonical `bible` identity. A chapter
+    // opened explicitly in a new window needs its own editor tab identity.
+    tab.id = `bible:${bookId}:${chapter}:${Date.now()}`
+    openTab(tab, useWorkspaceStore.getState().activeGroupId)
+    closeMobileSidebar()
+    closeMobileBookPicker()
+    navigate(path)
+  }
+
+  const handleSelectChapter = (bookId: string, chapter: number, event?: React.MouseEvent) => {
+    if (workspacePane) activateGroup(workspacePane.groupId)
+    if (event?.button === 0 && (event.metaKey || event.ctrlKey) && !isMobile) {
+      event.preventDefault()
+      openChapterInNewTab(bookId, chapter)
+      return
+    }
     loadChapter(bookId, chapter)
     closeMobileSidebar()
     closeMobileBookPicker()
-    // From a full page (profile / settings) the reader isn't mounted — go to
-    // it so the chapter actually shows. BibleRoute sees the store already
-    // matches the URL and won't re-fetch.
-    if (isPageRoute(pathname)) {
-      navigate(paths.bible({ lang: locale, book: bookId, chapter }))
-    }
+    // Keep the active workspace tab and browser route in sync with the
+    // chapter selected from the sidebar. This also works when the sidebar is
+    // being shown over a full-page route.
+    const path = paths.bible({ lang: locale, book: bookId, chapter })
+    if (pathname !== path) navigate(path)
+  }
+
+  const handleChapterContextMenu = (event: React.MouseEvent, bookId: string, chapter: number) => {
+    event.preventDefault()
+    event.stopPropagation()
+    const open = () => handleSelectChapter(bookId, chapter)
+    openMenu(event.clientX, event.clientY, [
+      { type: 'action', label: t('sidebar.chapter.open'), icon: <BookOpen className="h-4 w-4" />, onClick: open },
+      { type: 'action', label: t('sidebar.chapter.openNewWindow'), icon: <ExternalLink className="h-4 w-4" />, shortcut: '⌘/Ctrl ↵', onClick: () => openChapterInNewTab(bookId, chapter) },
+      { type: 'separator' },
+      { type: 'action', label: t('sidebar.chapter.startStudy'), icon: <GraduationCap className="h-4 w-4" />, onClick: () => { loadChapter(bookId, chapter); setShowStartStudy(true) } },
+    ])
   }
 
   useEffect(() => {
@@ -164,6 +206,7 @@ export function BookSelector() {
         selectedChapter={selectedChapter}
         onOpenBook={setOpenBook}
         onSelectChapter={handleSelectChapter}
+        onChapterContextMenu={handleChapterContextMenu}
         isMobile={isMobile}
       />
       <div className="mt-2">
@@ -175,9 +218,11 @@ export function BookSelector() {
           selectedChapter={selectedChapter}
           onOpenBook={setOpenBook}
           onSelectChapter={handleSelectChapter}
+          onChapterContextMenu={handleChapterContextMenu}
           isMobile={isMobile}
-        />
-      </div>
+      />
+      <StartStudyModal open={showStartStudy} onClose={() => setShowStartStudy(false)} />
+    </div>
     </div>
   )
 }

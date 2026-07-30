@@ -1,9 +1,12 @@
 import { useTranslation } from 'react-i18next'
-import { useVerseStore } from '@/lib/store/useVerseStore'
-import { useCompareStore } from '@/lib/store/useCompareStore'
-import { useCrossRefStore } from '@/lib/store/useCrossRefStore'
+import { comparableBibleVersions } from '@/lib/bibleVersionOptions'
+import { useActiveVerseStore, useVerseStoreApi } from '@/lib/store/useVerseStore'
+import { useActiveCompareStore } from '@/lib/store/useCompareStore'
+import { useActiveCrossRefStore } from '@/lib/store/useCrossRefStore'
 import { useUIStore } from '@/lib/store/useUIStore'
+import { useActiveBiblePaneStore } from '@/lib/store/useBiblePaneStore'
 import { Tooltip } from '@/components/ui/Tooltip'
+import { VerseActionsToolbar } from '@/components/reading/VerseActionsToolbar'
 import { cn } from '@/lib/cn'
 
 function IconCompare() {
@@ -27,38 +30,29 @@ function IconCommentary() {
   )
 }
 
-function IconXRef() {
-  return (
-    <svg width="14" height="14" viewBox="0 0 14 14" fill="none"
-      stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round">
-      <circle cx="3" cy="4" r="1.5" />
-      <circle cx="11" cy="4" r="1.5" />
-      <circle cx="7" cy="11" r="1.5" />
-      <path d="M4.3 4.8C5 7 7 9.5 7 9.5M9.7 4.8C9 7 7 9.5 7 9.5" />
-    </svg>
-  )
-}
-
 interface ReadingToolbarProps {
   showCommentary?: boolean
   showVerseActions?: boolean
 }
 
 export function ReadingToolbar({ showCommentary = true, showVerseActions = true }: ReadingToolbarProps) {
-  const versions        = useVerseStore(s => s.versions)
-  const selectedBook    = useVerseStore(s => s.selectedBook)
-  const selectedChapter = useVerseStore(s => s.selectedChapter)
-  const loadVersions    = useVerseStore(s => s.loadVersions)
-  const selectedVerseId = useVerseStore(s => s.selectedVerseId)
-  const selectedVerseIds = useVerseStore(s => s.selectedVerseIds)
-  const verses          = useVerseStore(s => s.verses)
+  const versions        = useActiveVerseStore(s => s.versions)
+  const verseStore       = useVerseStoreApi()
+  const selectedBook    = useActiveVerseStore(s => s.selectedBook)
+  const selectedChapter = useActiveVerseStore(s => s.selectedChapter)
+  const loadVersions    = useActiveVerseStore(s => s.loadVersions)
+  const closeStudyPanel = useActiveVerseStore(s => s.closeStudyPanel)
+  const selectedVerseId = useActiveVerseStore(s => s.selectedVerseId)
+  const selectedVerseIds = useActiveVerseStore(s => s.selectedVerseIds)
+  const verses          = useActiveVerseStore(s => s.verses)
 
-  const openCompare      = useCompareStore(s => s.openCompare)
-  const compareOpen      = useCompareStore(s => s.open)
-  const openXRef         = useCrossRefStore(s => s.openPanel)
-  const xrefOpen         = useCrossRefStore(s => s.open)
-  const commentaryOpen   = useUIStore(s => s.commentaryOpen)
-  const toggleCommentary = useUIStore(s => s.toggleCommentary)
+  const openCompare      = useActiveCompareStore(s => s.openCompare)
+  const closeCompare     = useActiveCompareStore(s => s.closeCompare)
+  const compareOpen      = useActiveCompareStore(s => s.open)
+  const closeInsights    = useActiveCrossRefStore(s => s.closePanel)
+  const commentaryOpen   = useActiveBiblePaneStore(s => s.commentaryOpen)
+  const toggleCommentary = useActiveBiblePaneStore(s => s.toggleCommentary)
+  const addToast         = useUIStore(s => s.addToast)
 
   const { t } = useTranslation()
   const selectedVerse = verses.find(v => v.id === selectedVerseId) ?? null
@@ -72,20 +66,34 @@ export function ReadingToolbar({ showCommentary = true, showVerseActions = true 
       : []
 
   const handleCompare = async () => {
+    if (compareOpen) {
+      closeCompare()
+      return
+    }
     let vers = versions
     if (!vers.length) {
       await loadVersions()
-      vers = useVerseStore.getState().versions
+      vers = verseStore.getState().versions
     }
-    openCompare(vers, selectedBook, selectedChapter, targetVerses.map((verse) => verse.verse))
+    const currentVersionId = verseStore.getState().versionId
+    const comparisonVersion = comparableBibleVersions(vers, currentVersionId)[0]
+    if (!comparisonVersion) {
+      addToast(t('compareVersions.noAlternatives'), 'info')
+      return
+    }
+    closeInsights()
+    closeStudyPanel()
+    void openCompare(
+      comparisonVersion,
+      selectedBook,
+      selectedChapter,
+      targetVerses.map((verse) => verse.verse),
+    )
   }
 
-  const handleXRef = () => {
-    if (!targetVerses.length) return
-    openXRef(targetVerses.map((verse) => ({
-      verseApiId: verse.apiId,
-      label: `${verse.book} ${verse.chapter}:${verse.verse}`,
-    })))
+  const handleCommentary = () => {
+    if (!commentaryOpen) closeInsights()
+    toggleCommentary()
   }
 
   const btnClass = (active: boolean) => cn(
@@ -96,11 +104,13 @@ export function ReadingToolbar({ showCommentary = true, showVerseActions = true 
   )
 
   return (
-    <div className="flex gap-0.5 bg-bg-tertiary border border-border-subtle rounded-md p-0.5 pointer-events-auto shadow-sm" data-tour="toolbar">
-      {showCommentary && (
+    <div className="flex min-w-0 max-w-full items-center gap-2 pointer-events-auto" data-tour="toolbar">
+      <VerseActionsToolbar />
+      <div className="flex shrink-0 gap-0.5 rounded-md border border-border-subtle bg-bg-tertiary p-0.5 shadow-sm">
+        {showCommentary && (
         <Tooltip label={t('toolbar.commentary')} side="bottom">
           <button
-            onClick={toggleCommentary}
+            onClick={handleCommentary}
             aria-label={t('toolbar.commentary')}
             aria-pressed={commentaryOpen}
             className={btnClass(commentaryOpen)}
@@ -108,9 +118,8 @@ export function ReadingToolbar({ showCommentary = true, showVerseActions = true 
             <IconCommentary />
           </button>
         </Tooltip>
-      )}
-      {showVerseActions && (
-        <>
+        )}
+        {showVerseActions && (
           <Tooltip label={t('toolbar.compareVersions')} side="bottom">
             <button
               onClick={handleCompare}
@@ -121,19 +130,8 @@ export function ReadingToolbar({ showCommentary = true, showVerseActions = true 
               <IconCompare />
             </button>
           </Tooltip>
-          <Tooltip label={targetVerses.length ? t('toolbar.crossReferences') : t('toolbar.selectVerseFirst')} side="bottom">
-            <button
-              onClick={handleXRef}
-              disabled={!targetVerses.length}
-              aria-label={targetVerses.length ? t('toolbar.crossReferences') : t('toolbar.selectVerseFirst')}
-              aria-pressed={xrefOpen}
-              className={cn(btnClass(xrefOpen), !targetVerses.length && 'opacity-40 cursor-not-allowed')}
-            >
-              <IconXRef />
-            </button>
-          </Tooltip>
-        </>
-      )}
+        )}
+      </div>
     </div>
   )
 }

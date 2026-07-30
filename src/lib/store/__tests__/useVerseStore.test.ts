@@ -37,6 +37,7 @@ vi.mock('@/lib/userSettingsApi', () => ({
 }))
 
 import { bibleApi } from '@/lib/bibleApi'
+import { getStoredBibleVersionId } from '@/lib/defaultBibleVersion'
 import { useVerseStore } from '../useVerseStore'
 import type { ApiBook, ApiChapterResponse } from '@/lib/bibleApi'
 
@@ -68,6 +69,10 @@ const mockChapterResponse: ApiChapterResponse = {
 beforeEach(() => {
   vi.clearAllMocks()
   localStorage.clear()
+  vi.mocked(getStoredBibleVersionId).mockReturnValue(1)
+  mockBibleApi.versions.mockResolvedValue([
+    { id: 1, name: 'King James Version', abbreviation: 'KJV', language: 'en' },
+  ])
   useVerseStore.setState({
     versionId: 1,
     versions: [],
@@ -76,6 +81,8 @@ beforeEach(() => {
     selectedChapter: 1,
     selectedVerseId: null,
     selectedVerseIds: [],
+    cursorVerseId: null,
+    selectionAnchorId: null,
     studyVerseId: null,
     chapterId: null,
     verses: [],
@@ -91,6 +98,16 @@ describe('useVerseStore', () => {
     expect(state.selectedBook).toBe('')
     expect(state.selectedChapter).toBe(1)
     expect(state.verses).toEqual([])
+  })
+
+  it('falls back when the stored version is no longer published', async () => {
+    localStorage.setItem('bibleVersionId', '99')
+    vi.mocked(getStoredBibleVersionId).mockReturnValue(99)
+
+    await useVerseStore.getState().loadVersions()
+
+    expect(useVerseStore.getState().versionId).toBe(1)
+    expect(localStorage.getItem('bibleVersionId')).toBeNull()
   })
 
   it('loadBooks fetches books and selects first book by default', async () => {
@@ -183,6 +200,54 @@ describe('useVerseStore', () => {
     expect(useVerseStore.getState().selectedVerseIds).toEqual(['john-3-16'])
   })
 
+  it('moves the keyboard cursor without committing a selection', () => {
+    useVerseStore.setState({
+      selectedVerseId: 'john-3-16',
+      selectedVerseIds: ['john-3-16'],
+      cursorVerseId: 'john-3-16',
+    })
+
+    useVerseStore.getState().setCursorVerse('john-3-17')
+
+    expect(useVerseStore.getState().cursorVerseId).toBe('john-3-17')
+    expect(useVerseStore.getState().selectedVerseId).toBe('john-3-16')
+    expect(useVerseStore.getState().selectedVerseIds).toEqual(['john-3-16'])
+  })
+
+  it('selects a contiguous range in either direction from a stable anchor', () => {
+    useVerseStore.setState({
+      verses: [
+        { id: 'john-3-16', apiId: 100, book: 'John', chapter: 3, verse: 16, text: 'a' },
+        { id: 'john-3-17', apiId: 101, book: 'John', chapter: 3, verse: 17, text: 'b' },
+        { id: 'john-3-18', apiId: 102, book: 'John', chapter: 3, verse: 18, text: 'c' },
+      ],
+    })
+    useVerseStore.getState().selectVerse('john-3-17')
+
+    useVerseStore.getState().selectVerseRangeTo('john-3-18')
+    expect(useVerseStore.getState().selectedVerseIds).toEqual([
+      'john-3-17',
+      'john-3-18',
+    ])
+
+    useVerseStore.getState().selectVerseRangeTo('john-3-16')
+    expect(useVerseStore.getState().selectedVerseIds).toEqual([
+      'john-3-16',
+      'john-3-17',
+    ])
+    expect(useVerseStore.getState().selectionAnchorId).toBe('john-3-17')
+  })
+
+  it('clears every selected verse while preserving the keyboard cursor', () => {
+    useVerseStore.getState().selectVerse('john-3-16')
+
+    useVerseStore.getState().selectVerse(null)
+
+    expect(useVerseStore.getState().selectedVerseId).toBeNull()
+    expect(useVerseStore.getState().selectedVerseIds).toEqual([])
+    expect(useVerseStore.getState().cursorVerseId).toBe('john-3-16')
+  })
+
   it('toggleVerseSelection adds and removes', () => {
     useVerseStore.getState().toggleVerseSelection('john-3-16')
     expect(useVerseStore.getState().selectedVerseIds).toContain('john-3-16')
@@ -216,6 +281,24 @@ describe('useVerseStore', () => {
 
     useVerseStore.getState().navigateVerse('prev')
     expect(useVerseStore.getState().selectedVerseId).toBe('john-3-16')
+  })
+
+  it('navigates from the focused cursor before committing a new selection', () => {
+    useVerseStore.setState({
+      verses: [
+        { id: 'john-3-16', apiId: 100, book: 'John', chapter: 3, verse: 16, text: 'a' },
+        { id: 'john-3-17', apiId: 101, book: 'John', chapter: 3, verse: 17, text: 'b' },
+        { id: 'john-3-18', apiId: 102, book: 'John', chapter: 3, verse: 18, text: 'c' },
+      ],
+      selectedVerseId: 'john-3-16',
+      selectedVerseIds: ['john-3-16'],
+      cursorVerseId: 'john-3-17',
+    })
+
+    useVerseStore.getState().navigateVerse('next')
+
+    expect(useVerseStore.getState().selectedVerseId).toBe('john-3-18')
+    expect(useVerseStore.getState().selectedVerseIds).toEqual(['john-3-18'])
   })
 
   it('navigateVerse wraps around', () => {
