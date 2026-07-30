@@ -1,14 +1,14 @@
 import { useTranslation } from 'react-i18next'
-import { useVerseStore } from '@/lib/store/useVerseStore'
+import { useActiveVerseStore } from '@/lib/store/useVerseStore'
 import { useUIStore } from '@/lib/store/useUIStore'
 import { cn } from '@/lib/cn'
 
 export function MobileTopBar() {
   const { t } = useTranslation()
-  const books = useVerseStore((s) => s.books)
-  const selectedBook = useVerseStore((s) => s.selectedBook)
-  const selectedChapter = useVerseStore((s) => s.selectedChapter)
-  const navigateChapter = useVerseStore((s) => s.navigateChapter)
+  const books = useActiveVerseStore((s) => s.books)
+  const selectedBook = useActiveVerseStore((s) => s.selectedBook)
+  const selectedChapter = useActiveVerseStore((s) => s.selectedChapter)
+  const navigateChapter = useActiveVerseStore((s) => s.navigateChapter)
   const openMobileBookPicker = useUIStore((s) => s.openMobileBookPicker)
   const collapsed = useUIStore((s) => s.mobileChromeCollapsed)
 

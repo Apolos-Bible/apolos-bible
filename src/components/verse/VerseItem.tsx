@@ -1,7 +1,7 @@
 
 
 import { useTranslation } from 'react-i18next'
-import { useVerseStore } from '@/lib/store/useVerseStore'
+import { useActiveVerseStore } from '@/lib/store/useVerseStore'
 import type { Verse } from '@/lib/store/useVerseStore'
 import { useBookmarkStore } from '@/lib/store/useBookmarkStore'
 import { useAuthStore } from '@/lib/store/useAuthStore'
@@ -20,7 +20,7 @@ interface VerseItemProps {
 
 export function VerseItem({ verse, isSelected, noteCount, highlightCount }: VerseItemProps) {
   const { t }       = useTranslation()
-  const selectVerse = useVerseStore((s) => s.selectVerse)
+  const selectVerse = useActiveVerseStore((s) => s.selectVerse)
   const user        = useAuthStore((s) => s.user)
   const fontSize    = useUIStore((s) => s.fontSize)
   const toggleBookmark = useBookmarkStore((s) => s.toggle)

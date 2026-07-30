@@ -1,10 +1,13 @@
 import { useEffect, useRef, useState, type PointerEvent as ReactPointerEvent, type ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
 import { cn } from '@/lib/cn'
-import { useVerseStore } from '@/lib/store/useVerseStore'
+import { useActiveVerseStore } from '@/lib/store/useVerseStore'
 import { useUIStore } from '@/lib/store/useUIStore'
+import { useActiveBiblePaneStore } from '@/lib/store/useBiblePaneStore'
 import { useContextMenuStore } from '@/lib/store/useContextMenuStore'
 import { useVerseActions } from '@/lib/verseActions'
+import { useActiveCompareStore } from '@/lib/store/useCompareStore'
+import { useActiveCrossRefStore } from '@/lib/store/useCrossRefStore'
 import { KeyboardScope, useCommands } from '@/lib/keyboard'
 import { MobileTopBar } from './MobileTopBar'
 import { MobileBottomNav } from './MobileBottomNav'
@@ -27,8 +30,9 @@ interface PanelLayoutProps {
  * profile/settings routes — no pathname checks needed.
  */
 export function PanelLayout(props: PanelLayoutProps) {
+  const pane = useWorkspacePane()
   return (
-    <KeyboardScope scope="reader">
+    <KeyboardScope scope="reader" enabled={pane?.isActive ?? true}>
       <PanelLayoutSurface {...props} />
     </KeyboardScope>
   )
@@ -37,24 +41,36 @@ export function PanelLayout(props: PanelLayoutProps) {
 function PanelLayoutSurface({ sidebar, main, panel, leftPanel }: PanelLayoutProps) {
   const { t } = useTranslation()
   const workspacePane = useWorkspacePane()
-  const studyVerseId = useVerseStore((s) => s.studyVerseId)
-  const closeStudyPanel = useVerseStore((s) => s.closeStudyPanel)
-  const selectedBook = useVerseStore((s) => s.selectedBook)
-  const selectedChapter = useVerseStore((s) => s.selectedChapter)
-  const books = useVerseStore((s) => s.books)
-  const commentaryOpen = useUIStore((s) => s.commentaryOpen)
-  const toggleCommentary = useUIStore((s) => s.toggleCommentary)
+  const studyVerseId = useActiveVerseStore((s) => s.studyVerseId)
+  const closeStudyPanel = useActiveVerseStore((s) => s.closeStudyPanel)
+  const selectedBook = useActiveVerseStore((s) => s.selectedBook)
+  const selectedChapter = useActiveVerseStore((s) => s.selectedChapter)
+  const books = useActiveVerseStore((s) => s.books)
+  const commentaryOpen = useActiveBiblePaneStore((s) => s.commentaryOpen)
+  const toggleCommentary = useActiveBiblePaneStore((s) => s.toggleCommentary)
+  const comparisonOpen = useActiveCompareStore((s) => s.open)
+  const closeCompare = useActiveCompareStore((s) => s.closeCompare)
+  const insightsOpen = useActiveCrossRefStore((s) => s.open)
+  const closeInsights = useActiveCrossRefStore((s) => s.closePanel)
   const mobileBookPickerOpen = useUIStore((s) => s.mobileBookPickerOpen)
   const openMobileBookPicker = useUIStore((s) => s.openMobileBookPicker)
   const closeMobileBookPicker = useUIStore((s) => s.closeMobileBookPicker)
   const mobileSearchOpen = useUIStore((s) => s.mobileSearchOpen)
   const togglePanel = useUIStore((s) => s.togglePanel)
-  const readingMode = useUIStore((s) => s.readingMode)
-  const setReadingMode = useUIStore((s) => s.setReadingMode)
+  const readingMode = useActiveBiblePaneStore((s) => s.readingMode)
+  const setReadingMode = useActiveBiblePaneStore((s) => s.setReadingMode)
 
   const closeMobileStudyPanel = () => {
     if (studyVerseId) {
       closeStudyPanel()
+      return
+    }
+    if (comparisonOpen) {
+      closeCompare()
+      return
+    }
+    if (insightsOpen) {
+      closeInsights()
       return
     }
     if (commentaryOpen) {
@@ -62,9 +78,9 @@ function PanelLayoutSurface({ sidebar, main, panel, leftPanel }: PanelLayoutProp
     }
   }
 
-  const selectedVerseIds = useVerseStore((s) => s.selectedVerseIds)
-  const selectVerse = useVerseStore((s) => s.selectVerse)
-  const verses = useVerseStore((s) => s.verses)
+  const selectedVerseIds = useActiveVerseStore((s) => s.selectedVerseIds)
+  const selectVerse = useActiveVerseStore((s) => s.selectVerse)
+  const verses = useActiveVerseStore((s) => s.verses)
   const openMenu = useContextMenuStore((s) => s.openMenu)
   const { buildMenu } = useVerseActions()
 
@@ -323,6 +339,16 @@ function EmbeddedBibleWorkspace({
 
   return (
     <div ref={containerRef} className="workspace-bible-context flex h-full min-h-0 min-w-0 overflow-hidden bg-bg-secondary">
+      <aside
+        className="hidden w-[220px] shrink-0 flex-col overflow-hidden border-r border-border-subtle bg-bg-secondary lg:flex"
+        data-region="bible-tab-selector"
+        aria-label={t('nav.library')}
+      >
+        <div className="border-b border-border-subtle px-3 py-2 text-2xs font-semibold uppercase tracking-wider text-text-muted">
+          {t('nav.library')}
+        </div>
+        <BookSelector />
+      </aside>
       <main
         className="workspace-bible-reader min-w-0 flex-1 overflow-hidden"
         data-tour="reading"
