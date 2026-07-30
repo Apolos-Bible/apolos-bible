@@ -1,8 +1,18 @@
 import { useState, useEffect, type ReactNode } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
-import { paths, isPageRoute } from '@/router/paths'
-import { Settings } from 'lucide-react'
+import { paths } from '@/router/paths'
+import {
+  BookPlus,
+  GraduationCap,
+  MessagesSquare,
+  NotebookPen,
+  Search,
+  Settings,
+  Star,
+  Store,
+  type LucideIcon,
+} from 'lucide-react'
 import { useUIStore } from '@/lib/store/useUIStore'
 import { useVerseStore } from '@/lib/store/useVerseStore'
 import { useAuthStore } from '@/lib/store/useAuthStore'
@@ -15,11 +25,10 @@ import { UserAvatar } from '@/components/auth/UserAvatar'
 import { StartStudyModal } from '@/components/study/StartStudyModal'
 import { cn } from '@/lib/cn'
 import { modKey } from '@/lib/platform'
-import { BookOpen, Store } from 'lucide-react'
 import { Logo } from '@/components/brand/Logo'
 
 interface NavItemProps {
-  icon: ReactNode
+  icon: LucideIcon
   label: string
   active?: boolean
   badge?: number
@@ -27,7 +36,7 @@ interface NavItemProps {
   dataTour?: string
 }
 
-function NavItem({ icon, label, active = false, badge, onClick, dataTour }: NavItemProps) {
+function NavItem({ icon: Icon, label, active = false, badge, onClick, dataTour }: NavItemProps) {
   return (
     <button
       onClick={onClick}
@@ -40,7 +49,7 @@ function NavItem({ icon, label, active = false, badge, onClick, dataTour }: NavI
       )}
     >
       <span className="w-4 h-4 flex items-center justify-center shrink-0 opacity-70">
-        {icon}
+        <Icon className="h-3.5 w-3.5" strokeWidth={1.75} aria-hidden />
       </span>
       <span className="min-w-0 flex-1 truncate text-left">{label}</span>
       {badge != null && badge > 0 && (
@@ -60,59 +69,12 @@ function SectionLabel({ children }: { children: ReactNode }) {
   )
 }
 
-function StarIcon() {
-  return (
-    <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" className="w-3.5 h-3.5">
-      <path d="M8 1.5l1.545 3.13 3.455.502-2.5 2.437.59 3.44L8 9.385l-3.09 1.624.59-3.44L3 5.132l3.455-.502L8 1.5z" />
-    </svg>
-  )
-}
-
-function NoteIcon() {
-  return (
-    <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" className="w-3.5 h-3.5">
-      <rect x="2.5" y="2.5" width="11" height="11" rx="1.5" />
-      <path d="M5 6h6M5 8.5h4" strokeLinecap="round" />
-    </svg>
-  )
-}
-
-
-function PeopleIcon() {
-  return (
-    <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" className="w-3.5 h-3.5">
-      <circle cx="6" cy="5" r="2.5" />
-      <path d="M1 13c0-2.8 2.2-4.5 5-4.5s5 1.7 5 4.5" strokeLinecap="round" />
-      <circle cx="12" cy="5" r="1.5" />
-      <path d="M12 9.5c1.5.2 3 1.2 3 3.5" strokeLinecap="round" />
-    </svg>
-  )
-}
-
-function ChatIcon() {
-  return (
-    <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" className="w-3.5 h-3.5">
-      <path d="M2.5 4.5a1.5 1.5 0 0 1 1.5-1.5h8a1.5 1.5 0 0 1 1.5 1.5v5a1.5 1.5 0 0 1-1.5 1.5H6.5l-3 2.5v-2.5H4a1.5 1.5 0 0 1-1.5-1.5z" strokeLinejoin="round"/>
-    </svg>
-  )
-}
-
-function SearchIcon() {
-  return (
-    <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" className="w-3.5 h-3.5">
-      <circle cx="7" cy="7" r="4.25" />
-      <path d="M10.5 10.5L13.5 13.5" strokeLinecap="round" />
-    </svg>
-  )
-}
-
 export function Sidebar() {
   const { t }          = useTranslation()
   const navigate           = useNavigate()
   const { pathname }       = useLocation()
   const openCommandPalette = useUIStore(s => s.openCommandPalette)
   const togglePanel        = useUIStore(s => s.togglePanel)
-  const openPanel          = useUIStore(s => s.openPanel)
   const openAuthModal      = useUIStore(s => s.openAuthModal)
   const closeMobileSidebar = useUIStore(s => s.closeMobileSidebar)
   const activePanel        = useUIStore(s => s.activePanel)
@@ -129,10 +91,6 @@ export function Sidebar() {
   const selectedBook = useVerseStore(s => s.selectedBook)
   const selectedChapter = useVerseStore(s => s.selectedChapter)
 
-  // Panels render only in the reader's layout — never highlight them while on
-  // a full page route (profile / settings).
-  const onPage = isPageRoute(pathname)
-
   const goHome = () => {
     closeMobileSidebar()
     navigate(selectedBook ? paths.bible({ lang: locale, book: selectedBook, chapter: selectedChapter }) : paths.root())
@@ -140,13 +98,6 @@ export function Sidebar() {
 
   const toggleSidebarPanel = (panel: Parameters<typeof togglePanel>[0]) => {
     closeMobileSidebar()
-    // Panels live in the reader's layout. If we're on a full page (profile /
-    // settings), return to the reader and open the panel there.
-    if (onPage) {
-      openPanel(panel)
-      navigate(paths.root())
-      return
-    }
     togglePanel(panel)
   }
 
@@ -187,7 +138,7 @@ export function Sidebar() {
           className="flex w-full items-center gap-2 rounded-md border border-border-subtle bg-bg-primary px-3 py-2 text-left text-sm text-text-muted transition-colors hover:text-text-secondary hover:bg-bg-tertiary"
         >
           <span className="w-4 h-4 flex items-center justify-center opacity-70">
-            <SearchIcon />
+            <Search className="h-3.5 w-3.5" strokeWidth={1.75} aria-hidden />
           </span>
           <span className="flex-1">{t('nav.searchBible')}</span>
           <kbd className="hidden font-mono text-2xs text-text-muted md:inline">
@@ -204,15 +155,15 @@ export function Sidebar() {
 
       <div className="shrink-0 border-t border-border-subtle px-2 pb-2">
         <SectionLabel>{t('nav.personal')}</SectionLabel>
-        <NavItem dataTour="favorites" icon={<StarIcon />}    label={t('nav.favorites')} active={!onPage && activePanel === 'favorites'} onClick={() => user ? toggleSidebarPanel('favorites') : openAuthModal()} />
-        <NavItem dataTour="my-notes" icon={<NoteIcon />}    label={t('nav.myNotes')}  active={!onPage && activePanel === 'my-notes'} onClick={() => user ? toggleSidebarPanel('my-notes')  : openAuthModal()} />
-        <NavItem dataTour="my-studies" icon={<BookOpen className="w-3.5 h-3.5" />} label={t('nav.myStudies')} active={!onPage && activePanel === 'my-studies'} badge={pendingInvitations} onClick={() => user ? toggleSidebarPanel('my-studies') : openAuthModal()} />
-        {/* Pages of their own, not panels — so these navigate. */}
-        <NavItem dataTour="new-study" icon={<BookOpen className="w-3.5 h-3.5" />} label={t('nav.newStudy')} active={false} onClick={() => user ? setShowStartStudy(true) : openAuthModal()} />
+        <NavItem dataTour="favorites" icon={Star} label={t('nav.favorites')} active={activePanel === 'favorites'} onClick={() => user ? toggleSidebarPanel('favorites') : openAuthModal()} />
+        <NavItem dataTour="my-notes" icon={NotebookPen} label={t('nav.myNotes')} active={activePanel === 'my-notes'} onClick={() => user ? toggleSidebarPanel('my-notes') : openAuthModal()} />
+        <NavItem dataTour="my-studies" icon={GraduationCap} label={t('nav.myStudies')} active={activePanel === 'my-studies'} badge={pendingInvitations} onClick={() => user ? toggleSidebarPanel('my-studies') : openAuthModal()} />
+        {/* Central destinations navigate into their own workspace tabs. */}
+        <NavItem dataTour="new-study" icon={BookPlus} label={t('nav.newStudy')} active={false} onClick={() => user ? setShowStartStudy(true) : openAuthModal()} />
         <SectionLabel>{t('nav.social')}</SectionLabel>
-        {/* A page of its own, not a panel — so this navigates. */}
-        <NavItem dataTour="marketplace" icon={<Store className="w-3.5 h-3.5" />} label={t('nav.marketplace')} active={pathname.startsWith('/marketplace')} onClick={() => user ? navigate(paths.marketplace()) : openAuthModal()} />
-        <NavItem dataTour="chats" icon={<PeopleIcon />} label={t('nav.chats')} active={!onPage && (activePanel === 'friends' || activePanel === 'chat')} badge={chatUnread} onClick={() => user ? toggleSidebarPanel('friends') : openAuthModal()} />
+        {/* Marketplace opens or focuses its workspace tab. */}
+        <NavItem dataTour="marketplace" icon={Store} label={t('nav.marketplace')} active={pathname.startsWith('/marketplace')} onClick={() => user ? navigate(paths.marketplace()) : openAuthModal()} />
+        <NavItem dataTour="chats" icon={MessagesSquare} label={t('nav.chats')} active={activePanel === 'friends' || activePanel === 'chat'} badge={chatUnread} onClick={() => user ? toggleSidebarPanel('friends') : openAuthModal()} />
       </div>
 
       {/* Footer */}

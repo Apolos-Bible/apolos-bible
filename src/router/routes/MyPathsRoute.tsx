@@ -69,7 +69,7 @@ export function MyPathsRoute() {
         </button>
       }
     >
-      <div className="mx-auto w-full max-w-5xl px-4 py-5 md:px-8 md:py-8">
+      <div className="workspace-page-frame mx-auto w-full max-w-5xl px-4 py-5 md:px-8 md:py-8">
         <nav
           aria-label={t('market.breadcrumbLabel')}
           className="mb-5 flex items-center gap-1.5 text-xs"
@@ -85,7 +85,7 @@ export function MyPathsRoute() {
           <span className="text-text-secondary" aria-current="page">{t('path.title')}</span>
         </nav>
 
-        <header className="mb-6 flex flex-wrap items-start justify-between gap-3">
+        <header className="workspace-page-heading mb-6 flex flex-wrap items-start justify-between gap-3">
           <div>
             <h1 className="flex items-center gap-2 text-xl font-semibold text-text-primary">
               <Compass className="h-5 w-5 text-accent" />
@@ -123,7 +123,7 @@ export function MyPathsRoute() {
           </div>
         )}
 
-        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="workspace-card-grid grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
           {mine.map((item) => {
             const hue = hueOf(item.slug)
             const VisibilityIcon = VISIBILITY_ICON[item.visibility]

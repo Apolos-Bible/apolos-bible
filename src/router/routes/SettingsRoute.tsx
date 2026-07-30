@@ -47,8 +47,8 @@ function isSectionId(value: string): value is SectionId {
 
 function SettingRow({ label, children, help }: { label: string; children: ReactNode; help?: string }) {
   return (
-    <div className="flex flex-col gap-1">
-      <div className="flex items-center justify-between gap-4 min-h-[44px]">
+    <div className="workspace-setting-row flex flex-col gap-1">
+      <div className="workspace-setting-row-main flex items-center justify-between gap-4 min-h-[44px]">
         <span className="text-sm text-text-secondary">{label}</span>
         <div className="shrink-0">{children}</div>
       </div>
@@ -61,7 +61,7 @@ const INPUT =
   'w-full rounded-xl border border-border-subtle bg-bg-secondary px-3.5 py-2.5 text-sm text-text-primary outline-none transition-colors placeholder:text-text-muted focus:border-accent/60 focus:ring-2 focus:ring-accent/10'
 const SAVE_BTN =
   'inline-flex h-9 items-center justify-center rounded-full bg-accent px-4 text-sm font-medium text-white shadow-sm transition-opacity hover:opacity-90 disabled:opacity-40'
-const SETTINGS_CARD = 'rounded-2xl border border-border-subtle bg-bg-secondary p-4 sm:p-5'
+const SETTINGS_CARD = 'workspace-settings-card rounded-2xl border border-border-subtle bg-bg-secondary p-4 sm:p-5'
 
 export function SettingsRoute() {
   const { t } = useTranslation()
@@ -299,9 +299,9 @@ export function SettingsRoute() {
 
   return (
     <AppPageLayout title={t('settings.title')}>
-      <div ref={wrapperRef} className="mx-auto w-full max-w-5xl px-4 py-0 md:flex md:gap-10 md:px-8 md:py-8">
+      <div ref={wrapperRef} className="workspace-settings-layout mx-auto w-full max-w-5xl px-4 py-0 md:flex md:gap-10 md:px-8 md:py-8">
         {/* Desktop rail */}
-        <aside className="sticky top-8 hidden w-48 shrink-0 self-start md:block">
+        <aside className="workspace-settings-rail sticky top-8 hidden w-48 shrink-0 self-start md:block">
           <nav className="flex flex-col gap-1 rounded-2xl border border-border-subtle bg-bg-secondary p-2">
             {NAV.map((n, i) => (
               <button
@@ -324,7 +324,7 @@ export function SettingsRoute() {
         </aside>
 
         {/* Mobile chip strip */}
-        <nav className="md:hidden sticky top-0 z-10 -mx-4 flex gap-2 overflow-x-auto border-b border-border-subtle bg-bg-secondary/95 px-4 py-2 backdrop-blur no-scrollbar">
+        <nav className="workspace-settings-strip md:hidden sticky top-0 z-10 -mx-4 flex gap-2 overflow-x-auto border-b border-border-subtle bg-bg-secondary/95 px-4 py-2 backdrop-blur no-scrollbar">
           {NAV.map((n) => (
             <button
               key={n.id}
@@ -342,7 +342,7 @@ export function SettingsRoute() {
         </nav>
 
         {/* Sections */}
-        <div className="flex-1 min-w-0 flex flex-col gap-10 py-6 md:py-0">
+        <div className="workspace-settings-content flex-1 min-w-0 flex flex-col gap-10 py-6 md:py-0">
           {/* ── Cuenta ─────────────────────────────────────────── */}
           {activeNav === 'cuenta' && (
             <section id="cuenta" tabIndex={-1} className="flex flex-col gap-5 outline-none">
@@ -356,7 +356,7 @@ export function SettingsRoute() {
               </header>
 
               {/* Identity and avatar */}
-              <div className={cn(SETTINGS_CARD, 'flex flex-col items-center gap-5 text-center sm:flex-row sm:text-left')}>
+              <div className={cn(SETTINGS_CARD, 'workspace-settings-identity flex flex-col items-center gap-5 text-center sm:flex-row sm:text-left')}>
                 <div className="relative">
                   <UserAvatar
                     name={user.name}
