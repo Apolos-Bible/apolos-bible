@@ -93,7 +93,7 @@ export function MarketplacePathRoute() {
           >
             <div aria-hidden className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/25 to-transparent" />
 
-            <div className="relative mx-auto w-full max-w-5xl px-4 pb-7 pt-5 md:px-8 md:pb-9 md:pt-7">
+            <div className="workspace-page-frame relative mx-auto w-full max-w-5xl px-4 pb-7 pt-5 md:px-8 md:pb-9 md:pt-7">
               <nav
                 aria-label={t('market.breadcrumbLabel')}
                 className="mb-5 flex items-center gap-1.5 text-xs"
@@ -109,7 +109,7 @@ export function MarketplacePathRoute() {
                 <span className="truncate text-white/90" aria-current="page">{showing.title}</span>
               </nav>
 
-              <h1 className="text-2xl font-semibold leading-tight text-white md:text-4xl">{showing.title}</h1>
+              <h1 className="workspace-detail-title text-2xl font-semibold leading-tight text-white md:text-4xl">{showing.title}</h1>
 
               <p className="mt-2 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-white/75">
                 <span>
@@ -134,8 +134,8 @@ export function MarketplacePathRoute() {
             </div>
           </div>
 
-          <div className="mx-auto w-full max-w-5xl px-4 py-6 md:px-8 md:py-8">
-            <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_18rem]">
+          <div className="workspace-page-frame mx-auto w-full max-w-5xl px-4 py-6 md:px-8 md:py-8">
+            <div className="workspace-detail-grid grid gap-6 lg:grid-cols-[minmax(0,1fr)_18rem]">
               <div>
                 {showing.description && (
                   <p className="text-sm leading-relaxed text-text-secondary">{showing.description}</p>
@@ -180,7 +180,7 @@ export function MarketplacePathRoute() {
                 </ol>
               </div>
 
-              <aside className="space-y-4 lg:sticky lg:top-6 lg:self-start">
+              <aside className="workspace-detail-aside space-y-4 lg:sticky lg:top-6 lg:self-start">
                 <div className="rounded-xl border border-border-subtle p-4">
                   <p className="mb-2 text-2xs font-semibold uppercase tracking-[0.12em] text-text-muted">
                     {t('market.rating')}

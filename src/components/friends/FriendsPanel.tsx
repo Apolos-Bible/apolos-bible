@@ -15,7 +15,7 @@ export function FriendsPanel() {
   const [composerOpen, setComposerOpen] = useState(false)
 
   return (
-    <div className="w-full md:w-panel h-full bg-bg-secondary border-r border-border-subtle flex flex-col overflow-hidden">
+    <div className="flex h-full w-full min-w-0 flex-col overflow-hidden border-r border-border-subtle bg-bg-secondary">
       <PanelHeader
         title={t('nav.chats')}
         onClose={closePanel}

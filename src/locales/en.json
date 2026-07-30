@@ -957,5 +957,19 @@
   "path.kindHint.review": "Looking back: what stayed with you from last time.",
   "path.kindHint.memory": "The verse to carry in your memory.",
   "path.memoryHint": "Write the reference — \"John 3:14\" — and I'll look the words up for you.",
-  "path.memoryUnresolved": "I couldn't find that reference, so the text will be empty. Check the book and the numbers."
+  "path.memoryUnresolved": "I couldn't find that reference, so the text will be empty. Check the book and the numbers.",
+  "workspace.tabs": "Open workspace tabs",
+  "workspace.closeTab": "Close {{title}}",
+  "workspace.untitled": "Untitled",
+  "workspace.emptyGroup": "Empty editor group",
+  "workspace.emptyGroupHint": "Drag a tab here or open a destination from the sidebar.",
+  "workspace.splitRight": "Move active tab to a new column",
+  "workspace.splitDown": "Move active tab to a new row",
+  "workspace.splitNeedsTabs": "Open another tab in this group before splitting it",
+  "workspace.groupLimit": "Maximum of 4 editor groups",
+  "workspace.closeGroup": "Close editor group",
+  "workspace.resizePanel": "Resize side panel",
+  "workspace.resizeGroup": "Resize editor groups",
+  "workspace.resizeBibleContext": "Resize Bible context panel",
+  "workspace.editorGroup": "Editor group"
 }

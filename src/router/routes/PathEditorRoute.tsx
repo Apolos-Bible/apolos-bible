@@ -168,8 +168,8 @@ export function PathEditorRoute() {
 
   return (
     <AppPageLayout title={current.title}>
-      <div className="flex h-full min-h-0 flex-col">
-        <header className="shrink-0 border-b border-border-subtle px-4 py-3 md:px-6">
+      <div className="workspace-path-editor flex h-full min-h-0 flex-col">
+        <header className="workspace-path-editor-header shrink-0 border-b border-border-subtle px-4 py-3 md:px-6">
           <div className="flex flex-wrap items-center gap-2">
             <button
               type="button"
@@ -256,9 +256,9 @@ export function PathEditorRoute() {
           )}
         </header>
 
-        <div className="grid min-h-0 flex-1 grid-cols-1 lg:grid-cols-[14rem_minmax(0,1fr)_22rem]">
+        <div className="workspace-path-editor-grid grid min-h-0 flex-1 grid-cols-1 lg:grid-cols-[14rem_minmax(0,1fr)_22rem]">
           {/* Studies in this path */}
-          <aside className="min-h-0 overflow-y-auto border-b border-border-subtle lg:border-b-0 lg:border-r">
+          <aside className="workspace-path-editor-studies min-h-0 overflow-y-auto border-b border-border-subtle lg:border-b-0 lg:border-r">
             <p className="px-4 pb-1 pt-3 text-2xs font-semibold uppercase tracking-[0.12em] text-text-muted">
               {t('path.studies')}
             </p>
@@ -298,7 +298,7 @@ export function PathEditorRoute() {
           </aside>
 
           {/* Steps of the open study */}
-          <section className="min-h-0 overflow-y-auto border-b border-border-subtle lg:border-b-0 lg:border-r">
+          <section className="workspace-path-editor-steps min-h-0 overflow-y-auto border-b border-border-subtle lg:border-b-0 lg:border-r">
             {!study ? (
               <p className="px-4 py-8 text-center text-xs text-text-muted">{t('path.pickStudy')}</p>
             ) : (
@@ -398,7 +398,7 @@ export function PathEditorRoute() {
           </section>
 
           {/* The selected step, or the study's own metadata */}
-          <aside className="min-h-0 overflow-y-auto">
+          <aside className="workspace-path-editor-fields min-h-0 overflow-y-auto">
             {study && (
               <>
                 <div className="flex items-center gap-1 border-b border-border-subtle px-4 py-2">

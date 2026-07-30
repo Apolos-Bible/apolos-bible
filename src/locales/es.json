@@ -957,5 +957,19 @@
   "path.kindHint.review": "Mirar atrás: qué quedó de la sentada anterior.",
   "path.kindHint.memory": "El versículo para llevarse en la memoria.",
   "path.memoryHint": "Escribe la cita —«Juan 3:14»— y busco el texto por ti.",
-  "path.memoryUnresolved": "No pude encontrar esa cita, así que el texto irá vacío. Revisa el libro y los números."
+  "path.memoryUnresolved": "No pude encontrar esa cita, así que el texto irá vacío. Revisa el libro y los números.",
+  "workspace.tabs": "Pestañas abiertas del espacio de trabajo",
+  "workspace.closeTab": "Cerrar {{title}}",
+  "workspace.untitled": "Sin título",
+  "workspace.emptyGroup": "Grupo de edición vacío",
+  "workspace.emptyGroupHint": "Arrastra una pestaña aquí o abre un destino desde la barra lateral.",
+  "workspace.splitRight": "Mover la pestaña activa a una nueva columna",
+  "workspace.splitDown": "Mover la pestaña activa a una nueva fila",
+  "workspace.splitNeedsTabs": "Abre otra pestaña en este grupo para poder dividirlo",
+  "workspace.groupLimit": "Máximo de 4 grupos de edición",
+  "workspace.closeGroup": "Cerrar grupo de edición",
+  "workspace.resizePanel": "Redimensionar panel lateral",
+  "workspace.resizeGroup": "Redimensionar grupos de edición",
+  "workspace.resizeBibleContext": "Redimensionar panel de contexto bíblico",
+  "workspace.editorGroup": "Grupo de edición"
 }

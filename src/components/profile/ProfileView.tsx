@@ -19,9 +19,9 @@ const HL_BAR: Record<string, string> = {
   green: 'bg-[#98c379]',
 }
 
-const CARD = 'rounded-2xl border border-border-subtle bg-bg-secondary p-4 sm:p-5'
+const CARD = 'workspace-profile-card rounded-2xl border border-border-subtle bg-bg-secondary p-4 sm:p-5'
 const ROW =
-  'group flex rounded-xl px-3 transition-colors hover:bg-bg-tertiary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/50'
+  'workspace-profile-row group flex rounded-xl px-3 transition-colors hover:bg-bg-tertiary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/50'
 const REF = 'text-2xs font-semibold uppercase tracking-[0.08em] text-accent'
 
 const STATUS_KEY = {
@@ -158,19 +158,19 @@ export function ProfileView({
 
   return (
     <div className="min-h-full bg-bg-secondary">
-      <div className="mx-auto w-full max-w-5xl px-4 py-5 sm:px-6 md:px-8 md:py-8">
-        <header className="flex flex-col items-center gap-5 border-b border-border-subtle pb-7 text-center sm:flex-row sm:items-start sm:text-left md:gap-6 md:pb-8">
+      <div className="workspace-page-frame mx-auto w-full max-w-5xl px-4 py-5 sm:px-6 md:px-8 md:py-8">
+        <header className="workspace-profile-header flex flex-col items-center gap-5 border-b border-border-subtle pb-7 text-center sm:flex-row sm:items-start sm:text-left md:gap-6 md:pb-8">
           <UserAvatar
             name={user.name}
             email={user.email}
             src={user.avatar_url}
             size="2xl"
-            className="h-24 w-24 text-3xl ring-4 ring-bg-secondary shadow-sm md:h-28 md:w-28"
+            className="workspace-profile-avatar h-24 w-24 text-3xl ring-4 ring-bg-secondary shadow-sm md:h-28 md:w-28"
           />
 
           <div className="min-w-0 flex-1 pt-1">
-            <div className="flex flex-wrap items-center justify-center gap-2 sm:justify-start">
-              <h1 className="max-w-full truncate text-2xl font-semibold tracking-tight text-text-primary md:text-3xl">
+            <div className="workspace-profile-identity flex flex-wrap items-center justify-center gap-2 sm:justify-start">
+              <h1 className="workspace-profile-title max-w-full truncate text-2xl font-semibold tracking-tight text-text-primary md:text-3xl">
                 {user.name}
               </h1>
               {isSelf && user.email_verified && (
@@ -266,11 +266,11 @@ export function ProfileView({
           </section>
         )}
 
-        <div className="mt-7 grid items-start gap-7 lg:grid-cols-[minmax(0,1fr)_300px] lg:gap-8">
-          <aside className="space-y-5 lg:order-2">
+        <div className="workspace-profile-grid mt-7 grid items-start gap-7 lg:grid-cols-[minmax(0,1fr)_300px] lg:gap-8">
+          <aside className="workspace-profile-aside space-y-5 lg:order-2">
             <section aria-labelledby="stats-lbl" className={CARD}>
               <SectionLabel id="stats-lbl">{t('perfil.stats.title')}</SectionLabel>
-              <ul className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-5 lg:grid-cols-2">
+              <ul className="workspace-profile-stats mt-3 grid grid-cols-2 gap-2 sm:grid-cols-5 lg:grid-cols-2">
                 {statDefs.map((s) => {
                   const cell = (
                     <span className="flex min-h-[68px] w-full flex-col items-center justify-center gap-0.5 rounded-xl bg-bg-tertiary/70 px-2 py-3">
@@ -282,7 +282,7 @@ export function ProfileView({
                   )
 
                   return (
-                    <li key={s.key} className="last:col-span-2 sm:last:col-span-1 lg:last:col-span-2">
+                    <li key={s.key} className="workspace-profile-stat last:col-span-2 sm:last:col-span-1 lg:last:col-span-2">
                       {s.anchor ? (
                         <button
                           type="button"
@@ -385,7 +385,7 @@ export function ProfileView({
             )}
           </aside>
 
-          <main className="min-w-0 space-y-5 lg:order-1">
+          <main className="workspace-profile-main min-w-0 space-y-5 lg:order-1">
             {otherAllEmpty ? (
               <div className={CARD}>
                 <EmptyState
@@ -579,19 +579,19 @@ export function ProfileView({
                           <li key={study.id}>
                             <Link
                               to={paths.study({ sessionId: String(study.id) })}
-                              className={cn(ROW, 'items-center gap-3 py-3')}
+                              className={cn(ROW, 'workspace-profile-study-row items-center gap-3 py-3')}
                             >
-                              <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-accent/10 text-accent">
+                              <span className="workspace-profile-study-icon flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-accent/10 text-accent">
                                 <GraduationCap size={17} strokeWidth={1.5} />
                               </span>
-                              <div className="min-w-0 flex-1">
+                              <div className="workspace-profile-study-copy min-w-0 flex-1">
                                 <p className="truncate text-base font-medium text-text-primary">{study.title}</p>
                                 <p className="text-2xs text-text-muted">
                                   {t('perfil.participants', { count: study.participants_count })} ·{' '}
                                   {relativeTime(study.updated_at)}
                                 </p>
                               </div>
-                              <span className="shrink-0 rounded-full border border-border-subtle px-2 py-0.5 text-2xs uppercase tracking-[0.08em] text-text-muted">
+                              <span className="workspace-profile-study-status shrink-0 rounded-full border border-border-subtle px-2 py-0.5 text-2xs uppercase tracking-[0.08em] text-text-muted">
                                 {study.status in STATUS_KEY
                                   ? t(STATUS_KEY[study.status as keyof typeof STATUS_KEY])
                                   : study.status}
