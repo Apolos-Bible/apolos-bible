@@ -24,7 +24,7 @@ export function FavoritesPanel() {
   )
 
   return (
-    <div className="flex flex-col h-full bg-bg-secondary md:bg-transparent">
+    <div className="flex flex-col h-full bg-bg-secondary">
       <PanelHeader
         title={t('nav.favorites')}
         onClose={closePanel}

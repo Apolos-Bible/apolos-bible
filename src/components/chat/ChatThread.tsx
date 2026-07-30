@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
+import { Link } from 'react-router-dom'
 import { UsersRound } from 'lucide-react'
 import { useChatStore } from '@/lib/store/useChatStore'
 import { useAuthStore } from '@/lib/store/useAuthStore'
@@ -10,6 +11,7 @@ import { TypingDots } from './TypingDots'
 import { ManageConversationDialog } from './ManageConversationDialog'
 import { PanelHeader, PanelHeaderButton } from '@/components/layout/PanelHeader'
 import type { Conversation, ChatMessage } from '@/lib/chatApi'
+import { paths } from '@/router/paths'
 
 const EMPTY_MESSAGES: ChatMessage[] = []
 const EMPTY_TYPING: { userId: number; userName: string; expiresAt: number }[] = []
@@ -17,6 +19,9 @@ const EMPTY_TYPING: { userId: number; userName: string; expiresAt: number }[] = 
 interface ChatThreadProps {
   conversation: Conversation
   onBack: () => void
+  backLabel?: string
+  onClose?: () => void
+  closeLabel?: string
 }
 
 function conversationTitle(c: Conversation, selfId: number | undefined, fallback: string): string {
@@ -25,7 +30,7 @@ function conversationTitle(c: Conversation, selfId: number | undefined, fallback
   return other?.name ?? fallback
 }
 
-export function ChatThread({ conversation, onBack }: ChatThreadProps) {
+export function ChatThread({ conversation, onBack, backLabel, onClose, closeLabel }: ChatThreadProps) {
   const { t }          = useTranslation()
   const messages       = useChatStore(s => s.messages[conversation.id] ?? EMPTY_MESSAGES)
   const messagesLoaded = useChatStore(s => s.messages[conversation.id] !== undefined)
@@ -129,35 +134,63 @@ export function ChatThread({ conversation, onBack }: ChatThreadProps) {
   })
 
   const isGroup = conversation.type === 'group'
-  const otherEmail = conversation.participants.find(p => p.id !== selfId)?.email
-    ?? conversation.participants[0]?.email
-    ?? '?'
+  const otherParticipant = conversation.participants.find(p => p.id !== selfId)
+    ?? conversation.participants[0]
   const headerTitle = conversationTitle(conversation, selfId, t('chat.directMessage'))
+  const headerHref = isGroup
+    ? paths.conversation(conversation.id)
+    : otherParticipant ? paths.userProfile(otherParticipant.id) : null
+  const avatar = isGroup ? (
+    conversation.avatar_url ? (
+      <UserAvatar
+        name={conversation.name}
+        src={conversation.avatar_url}
+        size="md"
+        className="h-8 w-8 md:h-7 md:w-7 text-sm"
+      />
+    ) : (
+      <span className="flex h-8 w-8 md:h-7 md:w-7 items-center justify-center rounded-full bg-accent/15 text-accent">
+        <UsersRound className="h-4 w-4 md:h-3.5 md:w-3.5" strokeWidth={1.75} />
+      </span>
+    )
+  ) : (
+    <UserAvatar
+      name={otherParticipant?.name}
+      email={otherParticipant?.email}
+      src={otherParticipant?.avatar_url}
+      size="md"
+      className="h-8 w-8 md:h-7 md:w-7 text-sm"
+    />
+  )
 
   return (
     <>
       <PanelHeader
         leading={
           <div className="flex items-center gap-1.5">
-            <PanelHeaderButton onClick={onBack} aria-label={t('chat.backToConversations')}>
+            <PanelHeaderButton onClick={onBack} aria-label={backLabel ?? t('chat.backToConversations')}>
               <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.75" className="h-5 w-5 md:h-4 md:w-4">
                 <path d="M10 3l-5 5 5 5" strokeLinecap="round" strokeLinejoin="round" />
               </svg>
             </PanelHeaderButton>
-            {/* Mobile-only: avatar anchors the header so you feel inside a conversation */}
-            <span className="md:hidden ml-1 shrink-0">
-              {isGroup ? (
-                <span className="w-9 h-9 rounded-full bg-accent/15 text-accent flex items-center justify-center">
-                  <UsersRound className="w-4 h-4" strokeWidth={1.75} />
-                </span>
-              ) : (
-                <UserAvatar email={otherEmail} size="md" className="w-9 h-9 text-sm" />
-              )}
-            </span>
+            {headerHref ? (
+              <Link
+                to={headerHref}
+                className="ml-1 shrink-0 rounded-full outline-none transition-transform hover:scale-105 focus-visible:ring-2 focus-visible:ring-accent/60"
+                aria-label={isGroup ? t('chat.openGroup') : t('chat.openProfile', { name: otherParticipant?.name ?? '' })}
+                title={isGroup ? t('chat.openGroup') : t('chat.openProfile', { name: otherParticipant?.name ?? '' })}
+              >
+                {avatar}
+              </Link>
+            ) : (
+              <span className="ml-1 shrink-0">{avatar}</span>
+            )}
           </div>
         }
         title={headerTitle}
         description={isGroup ? t('chat.member', { count: conversation.participants.length }) : undefined}
+        onClose={onClose}
+        closeLabel={closeLabel}
         actions={
           isGroup && !conversation.study_session_id ? (
             <PanelHeaderButton onClick={() => setManageOpen(true)} aria-label={t('chat.manageGroup')} title={t('chat.manageGroup')}>

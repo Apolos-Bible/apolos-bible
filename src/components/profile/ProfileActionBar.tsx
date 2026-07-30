@@ -1,14 +1,14 @@
 import { Link } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
-import { Pencil, UserPlus, MessageSquare } from 'lucide-react'
+import { MessageSquare, Pencil, Share2, UserPlus } from 'lucide-react'
 import { cn } from '@/lib/cn'
 import { paths } from '@/router/paths'
 import type { FriendshipStatus, ProfileMode } from '@/types'
 
 const PRIMARY =
-  'inline-flex h-9 items-center justify-center gap-1.5 rounded-md bg-accent px-4 text-sm font-medium text-bg-primary hover:opacity-90 disabled:opacity-50 transition-opacity focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/50'
+  'inline-flex h-9 items-center justify-center gap-1.5 rounded-full bg-accent px-4 text-sm font-medium text-white shadow-sm hover:opacity-90 disabled:opacity-50 transition-opacity focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/50'
 const GHOST =
-  'inline-flex h-9 items-center justify-center gap-1.5 rounded-md border border-border-subtle px-4 text-sm text-text-secondary hover:bg-bg-tertiary hover:text-text-primary disabled:opacity-50 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/50'
+  'inline-flex h-9 items-center justify-center gap-1.5 rounded-full border border-border-subtle px-4 text-sm text-text-secondary hover:bg-bg-tertiary hover:text-text-primary disabled:opacity-50 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/50'
 
 export interface ProfileActionBarProps {
   mode: ProfileMode
@@ -20,6 +20,7 @@ export interface ProfileActionBarProps {
   onDecline: () => void
   onRemove: () => void
   onMessage: () => void
+  onShare: () => void
 }
 
 export function ProfileActionBar({
@@ -32,6 +33,7 @@ export function ProfileActionBar({
   onDecline,
   onRemove,
   onMessage,
+  onShare,
 }: ProfileActionBarProps) {
   const { t } = useTranslation()
 
@@ -42,9 +44,10 @@ export function ProfileActionBar({
           <Pencil size={14} strokeWidth={1.5} />
           {t('perfil.editProfile')}
         </Link>
-        <Link to={paths.settings()} className={GHOST}>
-          {t('perfil.settings')}
-        </Link>
+        <button type="button" onClick={onShare} className={GHOST}>
+          <Share2 size={14} strokeWidth={1.5} />
+          {t('perfil.share')}
+        </button>
       </div>
     )
   }

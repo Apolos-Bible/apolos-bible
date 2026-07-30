@@ -4,7 +4,8 @@ import { useTranslation } from 'react-i18next'
 import type { PresenceUser } from '@/types'
 import { cn } from '@/lib/cn'
 import { useChatStore } from '@/lib/store/useChatStore'
-import { useUIStore } from '@/lib/store/useUIStore'
+import { useFriendStore } from '@/lib/store/useFriendStore'
+import { UserAvatar } from '@/components/auth/UserAvatar'
 
 interface PresenceAvatarsProps {
   users: PresenceUser[]
@@ -18,9 +19,10 @@ const GAP = 8
 interface TooltipPos { top: number; left: number }
 
 function UserTooltip({
-  user, anchor, closing, onClose, onMouseEnter, onMouseLeave,
+  user, email, anchor, closing, onClose, onMouseEnter, onMouseLeave,
 }: {
   user: PresenceUser
+  email?: string
   anchor: DOMRect
   closing: boolean
   onClose: () => void
@@ -29,13 +31,11 @@ function UserTooltip({
 }) {
   const { t }   = useTranslation()
   const startDm   = useChatStore(s => s.startDm)
-  const openPanel = useUIStore(s => s.openPanel)
-  const select    = useChatStore(s => s.select)
+  const openFloating = useChatStore(s => s.openFloating)
 
   async function handleMessage() {
     const convo = await startDm(user.id)
-    openPanel('chat')
-    select(convo.id)
+    await openFloating(convo.id)
     onClose()
   }
 
@@ -61,12 +61,7 @@ function UserTooltip({
       onMouseEnter={onMouseEnter}
       onMouseLeave={onMouseLeave}
     >
-      <span
-        style={{ backgroundColor: user.color + '33', color: user.color, borderColor: user.color + '66' }}
-        className="w-10 h-10 rounded-full text-base font-semibold flex items-center justify-center ring-1"
-      >
-        {user.name.charAt(0).toUpperCase()}
-      </span>
+      <UserAvatar name={user.name} email={email} size="lg" className="ring-1" />
       <p className="text-xs font-medium text-text-primary text-center leading-tight">{user.name}</p>
       <button
         onClick={handleMessage}
@@ -82,6 +77,7 @@ function UserTooltip({
 
 export function PresenceAvatars({ users }: PresenceAvatarsProps) {
   const { t } = useTranslation()
+  const friends = useFriendStore((s) => s.friends)
 
   const [hovered,  setHovered]  = useState<{ id: number; rect: DOMRect } | null>(null)
   const [closing,  setClosing]  = useState(false)
@@ -113,6 +109,7 @@ export function PresenceAvatars({ users }: PresenceAvatarsProps) {
   const visible  = users.slice(0, MAX_VISIBLE)
   const overflow = users.length - MAX_VISIBLE
   const label    = users.map((u) => u.name).join(', ') + t('presence.readingChapter')
+  const emailById = new Map(friends.map((friend) => [friend.id, friend.email]))
 
   function enterUser(id: number, e: React.MouseEvent<HTMLDivElement>) {
     if (leaveTimer.current)  clearTimeout(leaveTimer.current)
@@ -138,19 +135,12 @@ export function PresenceAvatars({ users }: PresenceAvatarsProps) {
           onMouseEnter={(e) => enterUser(user.id, e)}
           onMouseLeave={leaveUser}
         >
-          <span
-            style={{
-              backgroundColor: user.color + '33',
-              color:           user.color,
-              borderColor:     user.color + '66',
-            }}
-            className={cn(
-              'w-5 h-5 rounded-full text-2xs font-medium flex items-center justify-center shrink-0',
-              'ring-1 ring-bg-primary border select-none cursor-default',
-            )}
-          >
-            {user.name.charAt(0).toUpperCase()}
-          </span>
+          <UserAvatar
+            name={user.name}
+            email={emailById.get(user.id)}
+            size="xs"
+            className={cn('ring-1 ring-bg-primary border cursor-default', 'select-none')}
+          />
         </div>
       ))}
       {overflow > 0 && (
@@ -171,6 +161,7 @@ export function PresenceAvatars({ users }: PresenceAvatarsProps) {
         return (
           <UserTooltip
             user={user}
+            email={emailById.get(user.id)}
             anchor={hovered.rect}
             closing={closing}
             onClose={dismiss}

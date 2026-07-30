@@ -1,9 +1,12 @@
 import { useEffect, useState } from 'react'
+import { BellRing, Loader2, MonitorSmartphone } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { api } from '@/lib/api'
 import { cn } from '@/lib/cn'
 import { relativeTime } from '@/lib/relativeTime'
 import { enablePush, pushPermissionState } from '@/lib/push'
+import { SectionLabel } from './SectionLabel'
+import { Switch } from './Switch'
 
 type Subscription = {
   id: number
@@ -24,24 +27,15 @@ type Preferences = {
 }
 
 const PREF_KEYS: Record<keyof Preferences, string> = {
-  chat_message:        'settings.notifications.pref.chatMessage',
-  note_reply:          'settings.notifications.pref.noteReply',
-  note_like:           'settings.notifications.pref.noteLike',
-  friend_request:      'settings.notifications.pref.friendRequest',
-  friend_accepted:     'settings.notifications.pref.friendAccepted',
+  chat_message: 'settings.notifications.pref.chatMessage',
+  note_reply: 'settings.notifications.pref.noteReply',
+  note_like: 'settings.notifications.pref.noteLike',
+  friend_request: 'settings.notifications.pref.friendRequest',
+  friend_accepted: 'settings.notifications.pref.friendAccepted',
   activity_in_chapter: 'settings.notifications.pref.activityInChapter',
 }
 
-function Section({ title, children }: { title: string; children: React.ReactNode }) {
-  return (
-    <div className="flex flex-col">
-      <p className="px-4 md:px-5 pt-5 pb-2 text-[11px] font-semibold uppercase tracking-[0.12em] text-text-muted select-none">
-        {title}
-      </p>
-      <div className="flex flex-col">{children}</div>
-    </div>
-  )
-}
+const CARD = 'rounded-2xl border border-border-subtle bg-bg-secondary p-4 sm:p-5'
 
 export function NotificationsSection() {
   const { t } = useTranslation()
@@ -57,14 +51,19 @@ export function NotificationsSection() {
       api.get<Subscription[]>('/api/push/subscriptions'),
       api.get<Preferences>('/api/push/preferences'),
     ])
-      .then(([s, p]) => {
+      .then(([subscriptions, preferences]) => {
         if (!alive) return
-        setSubs(s)
-        setPrefs(p)
+        setSubs(subscriptions)
+        setPrefs(preferences)
       })
-      .catch(() => { /* keep nulls */ })
+      .catch(() => {
+        // The section stays usable even if notification services are unavailable.
+      })
       .finally(() => alive && setLoading(false))
-    return () => { alive = false }
+
+    return () => {
+      alive = false
+    }
   }, [])
 
   async function refreshSubs() {
@@ -75,9 +74,9 @@ export function NotificationsSection() {
   async function handleEnable() {
     setEnabling(true)
     try {
-      const res = await enablePush()
+      const result = await enablePush()
       setPermission(pushPermissionState())
-      if (res.ok) await refreshSubs()
+      if (result.ok) await refreshSubs()
     } finally {
       setEnabling(false)
     }
@@ -90,82 +89,111 @@ export function NotificationsSection() {
 
   async function togglePref(key: keyof Preferences, value: boolean) {
     if (!prefs) return
-    const next = { ...prefs, [key]: value }
-    setPrefs(next)
+    const previous = prefs
+    setPrefs({ ...prefs, [key]: value })
     await api.patch('/api/push/preferences', { [key]: value }).catch(() => {
-      setPrefs(prefs) // revert on failure
+      setPrefs(previous)
     })
   }
 
   return (
-    <Section title={t('settings.nav.notifications')}>
+    <div className="flex flex-col gap-5">
+      <header className="border-b border-border-subtle pb-5">
+        <h1 className="text-2xl font-semibold tracking-tight text-text-primary">
+          {t('settings.nav.notifications')}
+        </h1>
+        <p className="mt-1 max-w-[58ch] text-sm leading-relaxed text-text-muted">
+          {t('settings.notifications.subtitle')}
+        </p>
+      </header>
+
       {permission !== 'granted' && (
-        <div className="mx-4 md:mx-5 mb-3 p-3 rounded-lg border border-border-subtle bg-bg-tertiary">
-          <p className="text-sm md:text-xs text-text-secondary mb-2">
-            {permission === 'denied'
-              ? t('settings.notifications.blocked')
-              : t('settings.notifications.activatePrompt')}
-          </p>
+        <section className={cn(CARD, 'flex flex-col gap-4 sm:flex-row sm:items-center')}>
+          <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-accent/10 text-accent">
+            <BellRing size={20} strokeWidth={1.6} />
+          </span>
+          <div className="min-w-0 flex-1">
+            <p className="text-sm font-medium text-text-primary">
+              {t('settings.notifications.pushTitle')}
+            </p>
+            <p className="mt-1 text-xs leading-relaxed text-text-muted">
+              {permission === 'denied'
+                ? t('settings.notifications.blocked')
+                : t('settings.notifications.activatePrompt')}
+            </p>
+          </div>
           <button
             type="button"
             disabled={permission === 'denied' || enabling}
             onClick={handleEnable}
-            className={cn(
-              'h-10 md:h-auto text-sm md:text-xs rounded-md px-3.5 md:px-3 md:py-1.5 font-medium transition-colors',
-              'bg-accent/20 text-accent hover:bg-accent/30',
-              'disabled:opacity-50 disabled:cursor-not-allowed',
-            )}
+            className="inline-flex h-9 shrink-0 items-center justify-center gap-2 rounded-full bg-accent px-4 text-sm font-medium text-white shadow-sm transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
           >
+            {enabling && <Loader2 size={14} className="animate-spin" />}
             {enabling ? t('settings.notifications.enabling') : t('settings.notifications.enable')}
           </button>
-        </div>
+        </section>
       )}
 
+      <section className={CARD}>
+        <SectionLabel>{t('settings.notifications.preferences')}</SectionLabel>
+        {loading && (
+          <div className="flex items-center gap-2 py-8 text-sm text-text-muted">
+            <Loader2 size={15} className="animate-spin" />
+            {t('common.loading')}
+          </div>
+        )}
+        {prefs && (
+          <div className="mt-2 divide-y divide-border-subtle">
+            {(Object.keys(PREF_KEYS) as (keyof Preferences)[]).map((key) => {
+              const label = t(PREF_KEYS[key] as never)
+              return (
+                <div key={key} className="flex min-h-[54px] items-center justify-between gap-4 py-2.5">
+                  <span className="text-sm text-text-secondary">{label}</span>
+                  <Switch
+                    checked={prefs[key]}
+                    onCheckedChange={(checked) => {
+                      void togglePref(key, checked)
+                    }}
+                    ariaLabel={label}
+                  />
+                </div>
+              )
+            })}
+          </div>
+        )}
+      </section>
+
       {!loading && subs.length > 0 && (
-        <div className="px-4 md:px-5 mb-3">
-          <p className="text-xs md:text-2xs text-text-muted mb-2 md:mb-1.5">{t('settings.notifications.devices')}</p>
-          <ul className="flex flex-col">
-            {subs.map((s) => (
-              <li
-                key={s.id}
-                className="flex items-center justify-between gap-2 text-sm md:text-xs text-text-secondary py-2 md:py-1"
-              >
-                <span className="truncate">
-                  <span className="text-text-primary">{s.device_label || s.platform}</span>
-                  <span className="text-text-muted ml-2">· {s.platform}</span>
-                  <span className="text-text-muted ml-2">· {relativeTime(s.last_used_at)}</span>
+        <section className={CARD}>
+          <SectionLabel>{t('settings.notifications.devices')}</SectionLabel>
+          <ul className="mt-2 divide-y divide-border-subtle">
+            {subs.map((subscription) => (
+              <li key={subscription.id} className="flex items-center gap-3 py-3">
+                <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-bg-tertiary text-text-muted">
+                  <MonitorSmartphone size={17} strokeWidth={1.5} />
+                </span>
+                <span className="min-w-0 flex-1">
+                  <span className="block truncate text-sm font-medium text-text-primary">
+                    {subscription.device_label || subscription.platform}
+                  </span>
+                  <span className="block truncate text-xs text-text-muted">
+                    {subscription.platform} · {relativeTime(subscription.last_used_at)}
+                  </span>
                 </span>
                 <button
                   type="button"
-                  onClick={() => handleRevoke(s.token)}
-                  className="text-text-muted hover:text-red-400 shrink-0 cursor-pointer"
+                  onClick={() => {
+                    void handleRevoke(subscription.token)
+                  }}
+                  className="shrink-0 text-xs font-medium text-text-muted transition-colors hover:text-red-400"
                 >
                   {t('settings.notifications.revoke')}
                 </button>
               </li>
             ))}
           </ul>
-        </div>
+        </section>
       )}
-
-      {prefs && (
-        <div className="px-4 md:px-5 flex flex-col">
-          {(Object.keys(PREF_KEYS) as (keyof Preferences)[]).map((key) => (
-            <label
-              key={key}
-              className="flex items-center justify-between gap-3 min-h-[52px] md:min-h-0 py-2.5 md:py-1 cursor-pointer"
-            >
-              <span className="text-[15px] md:text-sm text-text-secondary">{t(PREF_KEYS[key] as never)}</span>
-              <input
-                type="checkbox"
-                checked={prefs[key]}
-                onChange={(e) => togglePref(key, e.target.checked)}
-                className="cursor-pointer accent-accent w-5 h-5 md:w-auto md:h-auto"
-              />
-            </label>
-          ))}
-        </div>
-      )}
-    </Section>
+    </div>
   )
 }

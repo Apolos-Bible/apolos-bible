@@ -66,14 +66,24 @@ export function MarketplaceRoute() {
     <AppPageLayout
       title={t('market.title')}
       mobileActions={
-        <button
-          type="button"
-          onClick={() => setCreating(true)}
-          aria-label={t('market.publishCta')}
-          className="inline-flex h-9 w-9 items-center justify-center rounded-md text-accent transition-colors hover:bg-bg-tertiary"
-        >
-          <PenLine className="h-4 w-4" />
-        </button>
+        <div className="flex items-center gap-1">
+          <button
+            type="button"
+            onClick={() => navigate(paths.myPaths())}
+            aria-label={t('nav.myPaths')}
+            className="inline-flex h-9 w-9 items-center justify-center rounded-md text-text-secondary transition-colors hover:bg-bg-tertiary hover:text-text-primary"
+          >
+            <Compass className="h-4 w-4" />
+          </button>
+          <button
+            type="button"
+            onClick={() => setCreating(true)}
+            aria-label={t('market.publishCta')}
+            className="inline-flex h-9 w-9 items-center justify-center rounded-md text-accent transition-colors hover:bg-bg-tertiary"
+          >
+            <PenLine className="h-4 w-4" />
+          </button>
+        </div>
       }
     >
       <div className="mx-auto w-full max-w-6xl px-4 py-5 md:px-8 md:py-8">

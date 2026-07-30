@@ -1,7 +1,7 @@
 import { type ReactNode } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
-import { BookOpen, GraduationCap } from 'lucide-react'
+import { BookOpen, GraduationCap, UsersRound } from 'lucide-react'
 import { paths, isPageRoute } from '@/router/paths'
 import { useUIStore } from '@/lib/store/useUIStore'
 import { useAuthStore } from '@/lib/store/useAuthStore'
@@ -81,14 +81,6 @@ function SearchIcon() {
     <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" className="h-[22px] w-[22px]">
       <circle cx="7" cy="7" r="4.25" />
       <path d="M10.5 10.5L13.5 13.5" strokeLinecap="round" />
-    </svg>
-  )
-}
-
-function ChatIcon() {
-  return (
-    <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" className="h-[22px] w-[22px]">
-      <path d="M2.5 4.5a1.5 1.5 0 0 1 1.5-1.5h8a1.5 1.5 0 0 1 1.5 1.5v5a1.5 1.5 0 0 1-1.5 1.5H6.5l-3 2.5v-2.5H4a1.5 1.5 0 0 1-1.5-1.5z" strokeLinejoin="round" />
     </svg>
   )
 }
@@ -211,11 +203,11 @@ export function MobileBottomNav() {
         onClick={goToBible}
       />
       <NavButton
-        icon={<ChatIcon />}
-        label={t('nav.chat')}
-        active={!onPage && activePanel === 'chat'}
-        badge={chatUnread}
-        onClick={goToPanel('chat')}
+        icon={<UsersRound className="h-[22px] w-[22px]" strokeWidth={1.6} />}
+        label={t('nav.chats')}
+        active={!onPage && (activePanel === 'friends' || activePanel === 'chat')}
+        badge={chatUnread + friendsUnread}
+        onClick={goToPanel('friends')}
       />
       <NavButton
         icon={<ProfileIcon />}

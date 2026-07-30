@@ -9,7 +9,6 @@ import { FavoritesPanel } from '@/components/sidebar/FavoritesPanel'
 import { MyNotesPanel } from '@/components/sidebar/MyNotesPanel'
 import { MyStudiesPanel } from '@/components/study/MyStudiesPanel'
 import { FriendsPanel } from '@/components/friends/FriendsPanel'
-import { ChatPanel } from '@/components/chat/ChatPanel'
 import { CommentaryPanel } from '@/components/reading/CommentaryPanel'
 import { useUIStore } from '@/lib/store/useUIStore'
 import { useVerseStore } from '@/lib/store/useVerseStore'
@@ -143,8 +142,7 @@ function BibleView({ lang, book, chapter, verse }: BibleViewProps) {
   const leftPanelContent = activePanel === 'favorites' ? <FavoritesPanel />
     : activePanel === 'my-notes' ? <MyNotesPanel />
     : activePanel === 'my-studies' ? <MyStudiesPanel />
-    : activePanel === 'friends' ? <FriendsPanel />
-    : activePanel === 'chat' ? <ChatPanel />
+    : activePanel === 'friends' || activePanel === 'chat' ? <FriendsPanel />
     : null
 
   return (

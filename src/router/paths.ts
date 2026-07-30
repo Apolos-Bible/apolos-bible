@@ -40,6 +40,10 @@ export const paths = {
     return `/u/${userId}`
   },
 
+  conversation(conversationId: number | string): string {
+    return `/chat/${conversationId}`
+  },
+
   settings(): string {
     return '/ajustes'
   },
@@ -71,6 +75,7 @@ export function isPageRoute(pathname: string): boolean {
     pathname.startsWith('/marketplace') ||
     pathname.startsWith('/mis-rutas') ||
     pathname.startsWith('/u/')
+    || pathname.startsWith('/chat/')
   )
 }
 
