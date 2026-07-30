@@ -7,6 +7,7 @@ import { useAuthStore } from '@/lib/store/useAuthStore'
 import { cn } from '@/lib/cn'
 import { modKey } from '@/lib/platform'
 import { useIsMobile } from '@/lib/useIsMobile'
+import { UserAvatar } from '@/components/auth/UserAvatar'
 
 interface NoteInputProps {
   verseApiId?: number
@@ -27,10 +28,6 @@ export default function NoteInput({ verseApiId, verseApiIds }: NoteInputProps) {
   const isMobile = useIsMobile()
   const targetVerseApiIds = verseApiIds ?? (verseApiId ? [verseApiId] : [])
   const isGroupNote = targetVerseApiIds.length > 1
-
-  const initials = user?.name
-    ? user.name.split(' ').slice(0, 2).map((s) => s[0].toUpperCase()).join('')
-    : user?.email?.[0]?.toUpperCase() ?? '?'
 
   function handleChange(e: React.ChangeEvent<HTMLTextAreaElement>) {
     setContent(e.target.value)
@@ -69,9 +66,11 @@ export default function NoteInput({ verseApiId, verseApiIds }: NoteInputProps) {
   return (
     <div className="border-t border-border-subtle px-4 py-3 bg-bg-secondary">
       <div className="flex gap-2.5 items-start">
-        <span className="shrink-0 w-7 h-7 rounded-full bg-accent/20 flex items-center justify-center text-[10px] font-semibold text-accent select-none">
-          {user ? initials : '?'}
-        </span>
+        {user ? (
+          <UserAvatar name={user.name} email={user.email} size="md" />
+        ) : (
+          <span className="shrink-0 w-7 h-7 rounded-full bg-accent/20 flex items-center justify-center text-[10px] font-semibold text-accent select-none">?</span>
+        )}
         <div className="flex-1 min-w-0">
           <textarea
             ref={textareaRef}

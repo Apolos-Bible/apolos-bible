@@ -17,6 +17,9 @@ interface TypingEntry {
 type ChatState = {
   conversations: Conversation[]
   selectedId:    number | null
+  /** Conversations currently shown in the Messenger-style dock. */
+  floatingIds:   number[]
+  floatingMinimized: Record<number, boolean>
   messages:      Record<number, ChatMessage[]>
   loadingList:   boolean
   loadingThread: Record<number, boolean>
@@ -33,6 +36,10 @@ type ChatState = {
 
   load: () => Promise<void>
   select: (id: number | null) => Promise<void>
+  openFloating: (id: number) => Promise<void>
+  minimizeFloating: (id: number) => void
+  closeFloating: (id: number) => void
+  replaceConversation: (conversation: Conversation) => void
   loadMessages: (id: number) => Promise<void>
   loadOlder: (id: number) => Promise<void>
   send: (id: number, body: string) => Promise<void>
@@ -43,7 +50,7 @@ type ChatState = {
   listenForUpdates: (userId: number) => void
   stopListeningForUpdates: () => void
   startDm: (userId: number) => Promise<Conversation>
-  createGroup: (name: string, userIds: number[]) => Promise<Conversation>
+  createGroup: (name: string, userIds: number[], description?: string) => Promise<Conversation>
   addParticipants: (id: number, userIds: number[]) => Promise<void>
   leave: (id: number) => Promise<void>
   reset: () => void
@@ -81,7 +88,9 @@ function subscribeToConversation(id: number, set: (fn: (s: ChatState) => Partial
         id:              payload.id,
         conversation_id: payload.conversation_id,
         user_id:         payload.user_id,
-        user:            payload.user_name ? { id: payload.user_id, name: payload.user_name, email: '' } : null,
+        user:            payload.user_name
+          ? { id: payload.user_id, name: payload.user_name, email: payload.user_email ?? '', avatar_url: payload.avatar_url ?? null }
+          : null,
         is_ai:           payload.is_ai === true,
         body:            payload.body,
         created_at:      payload.created_at,
@@ -169,6 +178,8 @@ function subscribeToConversation(id: number, set: (fn: (s: ChatState) => Partial
 export const useChatStore = create<ChatState>((set, get) => ({
   conversations: [],
   selectedId:    null,
+  floatingIds:   [],
+  floatingMinimized: {},
   messages:      {},
   loadingList:   false,
   loadingThread: {},
@@ -194,6 +205,36 @@ export const useChatStore = create<ChatState>((set, get) => ({
     if (get().messages[id] === undefined) await get().loadMessages(id)
     await get().markRead(id)
   },
+
+  openFloating: async (id) => {
+    set((s) => ({
+      // Keep the dock compact and bring the conversation just opened to the front.
+      floatingIds: [...s.floatingIds.filter((floatingId) => floatingId !== id), id].slice(-3),
+      floatingMinimized: { ...s.floatingMinimized, [id]: false },
+    }))
+    clearChatNotifications(id)
+    if (get().messages[id] === undefined) await get().loadMessages(id)
+    await get().markRead(id)
+  },
+
+  minimizeFloating: (id) =>
+    set((s) => ({ floatingMinimized: { ...s.floatingMinimized, [id]: true } })),
+
+  closeFloating: (id) =>
+    set((s) => ({
+      floatingIds: s.floatingIds.filter((floatingId) => floatingId !== id),
+      floatingMinimized: Object.fromEntries(
+        Object.entries(s.floatingMinimized).filter(([floatingId]) => Number(floatingId) !== id),
+      ),
+    })),
+
+  replaceConversation: (conversation) =>
+    set((s) => ({
+      conversations: sortConversations([
+        conversation,
+        ...s.conversations.filter((item) => item.id !== conversation.id),
+      ]),
+    })),
 
   loadMessages: async (id) => {
     const state = get()
@@ -391,8 +432,8 @@ export const useChatStore = create<ChatState>((set, get) => ({
     return c
   },
 
-  createGroup: async (name, userIds) => {
-    const c = await chatApi.createGroup(name, userIds)
+  createGroup: async (name, userIds, description) => {
+    const c = await chatApi.createGroup(name, userIds, description)
     set((s) => ({ conversations: sortConversations([c, ...s.conversations]) }))
     subscribeToConversation(c.id, set, get)
     return c
@@ -422,6 +463,6 @@ export const useChatStore = create<ChatState>((set, get) => ({
     }
     subscribed.clear()
     privateChannelName = null
-    set({ conversations: [], selectedId: null, messages: {}, typing: {}, aiThinking: {}, composerAudience: {} })
+    set({ conversations: [], selectedId: null, floatingIds: [], floatingMinimized: {}, messages: {}, typing: {}, aiThinking: {}, composerAudience: {} })
   },
 }))

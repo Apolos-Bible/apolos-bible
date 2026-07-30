@@ -49,7 +49,7 @@ export function MyNotesPanel() {
   }
 
   return (
-    <div className="flex flex-col h-full bg-bg-secondary md:bg-transparent">
+    <div className="flex flex-col h-full bg-bg-secondary">
       <PanelHeader
         title={t('nav.myNotes')}
         onClose={closePanel}

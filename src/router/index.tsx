@@ -7,6 +7,7 @@ import { ResetPasswordRoute } from './routes/ResetPasswordRoute'
 import { GoogleFinishRoute } from './routes/GoogleFinishRoute'
 import { AuthBridgeRoute } from './routes/AuthBridgeRoute'
 import { ProfileRoute } from './routes/ProfileRoute'
+import { ConversationRoute } from './routes/ConversationRoute'
 import { SettingsRoute } from './routes/SettingsRoute'
 import { MarketplaceRoute } from './routes/MarketplaceRoute'
 import { MarketplacePathRoute } from './routes/MarketplacePathRoute'
@@ -38,6 +39,7 @@ export const router = createBrowserRouter([
       // Profile + settings (auth-gated inside the route)
       { path: 'perfil', element: <ProfileRoute mode="self" /> },
       { path: 'u/:userId', element: <ProfileRoute mode="other" /> },
+      { path: 'chat/:conversationId', element: <ConversationRoute /> },
       { path: 'ajustes', element: <SettingsRoute /> },
 
       // Marketplace: a full page of its own, not a panel over the reader

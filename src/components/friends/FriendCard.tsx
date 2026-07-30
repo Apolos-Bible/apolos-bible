@@ -1,15 +1,17 @@
 import { Link } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { UserAvatar } from '@/components/auth/UserAvatar'
+import { MessageCircle } from 'lucide-react'
 import { paths } from '@/router/paths'
 import type { Friend } from '@/types'
 
 interface FriendCardProps {
   friend: Friend
   onRemove: () => void
+  onMessage?: () => void
 }
 
-export function FriendCard({ friend, onRemove }: FriendCardProps) {
+export function FriendCard({ friend, onRemove, onMessage }: FriendCardProps) {
   const { t } = useTranslation()
 
   return (
@@ -24,6 +26,17 @@ export function FriendCard({ friend, onRemove }: FriendCardProps) {
           <p className="text-xs md:text-2xs text-text-muted truncate">{friend.email}</p>
         </div>
       </Link>
+      {onMessage && (
+        <button
+          type="button"
+          onClick={onMessage}
+          aria-label={t('friends.messageAria', { name: friend.name })}
+          title={t('friends.messageTitle')}
+          className="inline-flex h-10 w-10 md:h-7 md:w-7 items-center justify-center rounded-md text-text-muted hover:text-accent hover:bg-bg-primary transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-accent"
+        >
+          <MessageCircle aria-hidden="true" className="w-5 h-5 md:w-3.5 md:h-3.5" strokeWidth={1.75} />
+        </button>
+      )}
       <button
         onClick={onRemove}
         aria-label={t('friends.removeAria', { name: friend.name })}

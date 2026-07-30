@@ -61,7 +61,13 @@ export function MessageItem({ message, isMine, compact, showReceipt, conversatio
               <Sparkles className="w-4 h-4 md:w-3.5 md:h-3.5" />
             </span>
           ) : message.user && (
-            <UserAvatar email={message.user.email || message.user.name} size="md" className="w-8 h-8 md:w-7 md:h-7 text-sm md:text-xs" />
+            <UserAvatar
+              name={message.user.name}
+              email={message.user.email || message.user.name}
+              src={message.user.avatar_url}
+              size="md"
+              className="w-8 h-8 md:w-7 md:h-7 text-sm md:text-xs"
+            />
           )
         )}
       </div>

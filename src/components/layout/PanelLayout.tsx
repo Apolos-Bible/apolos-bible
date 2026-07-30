@@ -10,6 +10,7 @@ import { MobileTopBar } from './MobileTopBar'
 import { MobileBottomNav } from './MobileBottomNav'
 import { MobileSearchView } from './MobileSearchView'
 import { BookSelector } from '@/components/sidebar/BookSelector'
+import { FloatingChatDock } from '@/components/chat/FloatingChatDock'
 
 interface PanelLayoutProps {
   sidebar: ReactNode
@@ -249,6 +250,8 @@ function PanelLayoutSurface({ sidebar, main, panel, leftPanel }: PanelLayoutProp
           </div>
         </aside>
       </div>
+
+      <FloatingChatDock rightPanelOpen={panel !== null} />
     </div>
   )
 }

@@ -2,6 +2,7 @@ import { useState, useEffect, useRef, useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useFriendStore } from '@/lib/store/useFriendStore'
 import { useUIStore } from '@/lib/store/useUIStore'
+import { UserAvatar } from '@/components/auth/UserAvatar'
 
 export function FriendSearch() {
   const { t } = useTranslation()
@@ -71,9 +72,7 @@ export function FriendSearch() {
             const isPending = sentIds.has(user.id)
             return (
               <div key={user.id} className="flex items-center gap-3 md:gap-2.5 px-2 py-3 md:py-1.5 rounded hover:bg-bg-tertiary transition-colors">
-                <div className="w-10 h-10 md:w-6 md:h-6 rounded-full bg-bg-tertiary border border-border-subtle flex items-center justify-center text-sm md:text-2xs text-text-secondary font-medium shrink-0 select-none">
-                  {(user.name.charAt(0) || '?').toUpperCase()}
-                </div>
+                <UserAvatar name={user.name} email={user.email} src={user.avatar_url} size="md" className="w-10 h-10 md:w-6 md:h-6" />
                 <div className="flex-1 min-w-0">
                   <p className="text-[15px] md:text-xs text-text-primary truncate">{user.name}</p>
                   <p className="text-xs md:text-2xs text-text-muted truncate">{user.email}</p>

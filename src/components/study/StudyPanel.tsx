@@ -12,6 +12,7 @@ import { VerseReference } from '@/components/verse/VerseReference'
 import NoteThread from '@/components/notes/NoteThread'
 import NoteInput from '@/components/notes/NoteInput'
 import { EmptyState } from '@/components/ui/EmptyState'
+import { Switch } from '@/components/ui/Switch'
 import { isAuthError } from '@/lib/auth'
 import { cn } from '@/lib/cn'
 import type { HighlightColor } from '@/types'
@@ -166,23 +167,12 @@ export function StudyPanel() {
               <>
                 <div className="px-4 py-2 flex items-center gap-2">
                   <span className="text-[11px] text-text-muted">{t('notes.showOthers')}</span>
-                  <button
-                    type="button"
-                    onClick={toggleShowOthersNotes}
-                    className={cn(
-                      'relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out',
-                      showOthersNotes ? 'bg-accent' : 'bg-bg-tertiary border-border-subtle',
-                    )}
-                    role="switch"
-                    aria-checked={showOthersNotes}
-                  >
-                    <span
-                      className={cn(
-                        'pointer-events-none inline-block h-3.5 w-3.5 translate-y-0 transform rounded-full bg-white shadow-sm ring-0 transition duration-200 ease-in-out',
-                        showOthersNotes ? 'translate-x-4' : 'translate-x-0.5',
-                      )}
-                    />
-                  </button>
+                  <Switch
+                    checked={showOthersNotes}
+                    onCheckedChange={toggleShowOthersNotes}
+                    ariaLabel={t('notes.showOthers')}
+                    size="sm"
+                  />
                 </div>
                 <NoteThread verseApiId={panelVerses[0].apiId} />
               </>

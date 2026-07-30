@@ -9,6 +9,7 @@ import { cn } from '@/lib/cn'
 import { NOTE_TYPE_LIST, getNoteTypeDef } from '@/lib/noteTypes'
 import type { NoteType } from '@/lib/noteTypes'
 import NoteEditor from '@/components/notes/NoteEditor'
+import { UserAvatar } from '@/components/auth/UserAvatar'
 
 interface NoteItemProps {
   note: Note
@@ -17,21 +18,6 @@ interface NoteItemProps {
   replyParentId?: number
   showReplyToggle?: boolean
   hiddenParentIds?: Set<number>
-}
-
-function Avatar({ name, email }: { name: string; email?: string }) {
-  const initials = (name || email || '?')
-    .split(/[\s.@]/)
-    .filter(Boolean)
-    .slice(0, 2)
-    .map((s) => s[0].toUpperCase())
-    .join('')
-
-  return (
-    <span className="shrink-0 w-7 h-7 rounded-full bg-accent/20 flex items-center justify-center text-[10px] font-semibold text-accent select-none">
-      {initials}
-    </span>
-  )
 }
 
 function formatRelativeTime(isoString: string): string {
@@ -193,7 +179,7 @@ export default function NoteItem({ note, verseApiId, depth = 0, replyParentId, s
         typeDef.borderClass,
         settingsOpen && 'bg-bg-tertiary/50',
       )}>
-        <Avatar name={authorName} email={note.user?.email} />
+        <UserAvatar name={note.user?.name} email={note.user?.email} size="md" />
 
         <div className="flex-1 min-w-0">
           {isEditing ? (
