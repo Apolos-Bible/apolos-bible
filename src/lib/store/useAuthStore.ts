@@ -4,6 +4,7 @@ import { applyUserSettings, fetchUserSettings, persistClientSettings } from '@/l
 import { hydrateUserSession, resetUserSession } from '@/lib/userSession'
 import { profileApi } from '@/lib/profileApi'
 import { saveUserSettings } from '@/lib/userSettingsApi'
+import { useWorkspaceStore } from '@/lib/store/useWorkspaceStore'
 
 interface AuthUser {
   id: number
@@ -145,6 +146,7 @@ export const useAuthStore = create<AuthState>((set) => ({
     clearToken()
     localStorage.removeItem('verbum_last_reading')
     resetUserSession()
+    useWorkspaceStore.getState().resetWorkspace()
     set({ user: null })
   },
 
@@ -153,6 +155,7 @@ export const useAuthStore = create<AuthState>((set) => ({
     clearToken()
     localStorage.removeItem('verbum_last_reading')
     resetUserSession()
+    useWorkspaceStore.getState().resetWorkspace()
     set({ user: null })
   },
 }))

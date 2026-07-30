@@ -86,8 +86,8 @@ export function MarketplaceRoute() {
         </div>
       }
     >
-      <div className="mx-auto w-full max-w-6xl px-4 py-5 md:px-8 md:py-8">
-        <header className="mb-6 hidden items-start justify-between gap-4 md:flex">
+      <div className="workspace-page-frame mx-auto w-full max-w-6xl px-4 py-5 md:px-8 md:py-8">
+        <header className="workspace-page-heading mb-6 hidden items-start justify-between gap-4 md:flex">
           <div>
             <h1 className="flex items-center gap-2 text-xl font-semibold text-text-primary">
               <Store className="h-5 w-5 text-accent" />
@@ -96,7 +96,7 @@ export function MarketplaceRoute() {
             <p className="mt-1 text-xs text-text-muted">{t('market.pageSubtitle')}</p>
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="workspace-page-actions flex items-center gap-2">
             {myList.length > 0 && (
               <span className="inline-flex items-center gap-1.5 rounded-lg border border-border-subtle px-2.5 py-2 text-2xs text-text-muted">
                 <Bookmark className="h-3 w-3" />
@@ -152,7 +152,7 @@ export function MarketplaceRoute() {
         {/* Call to action. Sits between the shelf and the open listing, where
             someone has just seen what a good path looks like. */}
         <section className="mt-7 overflow-hidden rounded-2xl border border-accent/30 bg-accent/5">
-          <div className="flex flex-col gap-3 p-5 md:flex-row md:items-center md:justify-between md:p-6">
+          <div className="workspace-page-cta flex flex-col gap-3 p-5 md:flex-row md:items-center md:justify-between md:p-6">
             <div>
               <h2 className="text-base font-semibold text-text-primary">{t('market.ctaTitle')}</h2>
               <p className="mt-1 max-w-xl text-xs leading-relaxed text-text-secondary">{t('market.ctaBody')}</p>
@@ -170,12 +170,12 @@ export function MarketplaceRoute() {
         </section>
 
         <section aria-labelledby="all-paths" className="mt-8">
-          <div className="mb-3 flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
+          <div className="workspace-page-filter mb-3 flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
             <h2 id="all-paths" className="text-xs font-semibold uppercase tracking-[0.12em] text-text-secondary">
               {t('market.fromPeople')}
             </h2>
 
-            <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+            <div className="workspace-page-filter-controls flex flex-col gap-2 sm:flex-row sm:items-center">
               <div className="relative">
                 <Search className="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-text-muted" />
                 <input
@@ -231,7 +231,7 @@ export function MarketplaceRoute() {
             </div>
           )}
 
-          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+          <div className="workspace-card-grid grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
             {listing.map((item) => (
               <PathTile key={item.slug} item={item} />
             ))}

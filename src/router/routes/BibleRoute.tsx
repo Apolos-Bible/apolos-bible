@@ -2,14 +2,12 @@ import { useEffect, useRef } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import type { AppLocale } from '@/lib/defaultAppLocale'
 import { PanelLayout } from '@/components/layout/PanelLayout'
+import { activeBibleContextPanel } from '@/components/layout/bibleContextPanel'
 import { Sidebar } from '@/components/sidebar/Sidebar'
 import { VerseList } from '@/components/verse/VerseList'
 import { StudyPanel } from '@/components/study/StudyPanel'
-import { FavoritesPanel } from '@/components/sidebar/FavoritesPanel'
-import { MyNotesPanel } from '@/components/sidebar/MyNotesPanel'
-import { MyStudiesPanel } from '@/components/study/MyStudiesPanel'
-import { FriendsPanel } from '@/components/friends/FriendsPanel'
 import { CommentaryPanel } from '@/components/reading/CommentaryPanel'
+import { WorkspaceSidePanel } from '@/components/layout/WorkspaceSidePanel'
 import { useUIStore } from '@/lib/store/useUIStore'
 import { useVerseStore } from '@/lib/store/useVerseStore'
 import { isAppLocale, parseChapter, parseVerse, paths, verseIdToNumber } from '@/router/paths'
@@ -139,17 +137,20 @@ function BibleView({ lang, book, chapter, verse }: BibleViewProps) {
     navigate(target, { replace: true })
   }, [locale, navigate])
 
-  const leftPanelContent = activePanel === 'favorites' ? <FavoritesPanel />
-    : activePanel === 'my-notes' ? <MyNotesPanel />
-    : activePanel === 'my-studies' ? <MyStudiesPanel />
-    : activePanel === 'friends' || activePanel === 'chat' ? <FriendsPanel />
-    : null
+  const leftPanelContent = activePanel ? <WorkspaceSidePanel panel={activePanel} /> : null
+  const contextPanel = activeBibleContextPanel(studyVerseId, commentaryOpen)
 
   return (
     <PanelLayout
       sidebar={<Sidebar />}
       main={<VerseList />}
-      panel={commentaryOpen ? <CommentaryPanel /> : studyVerseId ? <StudyPanel /> : null}
+      panel={
+        contextPanel === 'notes'
+          ? <StudyPanel />
+          : contextPanel === 'commentary'
+            ? <CommentaryPanel />
+            : null
+      }
       leftPanel={leftPanelContent}
     />
   )
