@@ -7,9 +7,14 @@ import { Sidebar } from '@/components/sidebar/Sidebar'
 import { VerseList } from '@/components/verse/VerseList'
 import { StudyPanel } from '@/components/study/StudyPanel'
 import { CommentaryPanel } from '@/components/reading/CommentaryPanel'
+import { CompareVersionPanel } from '@/components/reading/CompareVersionPanel'
+import { CrossReferencesPanel } from '@/components/reading/CrossReferencesPanel'
 import { WorkspaceSidePanel } from '@/components/layout/WorkspaceSidePanel'
+import { useActiveCompareStore } from '@/lib/store/useCompareStore'
+import { useActiveCrossRefStore } from '@/lib/store/useCrossRefStore'
 import { useUIStore } from '@/lib/store/useUIStore'
-import { useVerseStore } from '@/lib/store/useVerseStore'
+import { useActiveBiblePaneStore } from '@/lib/store/useBiblePaneStore'
+import { useActiveVerseStore, useVerseStoreApi } from '@/lib/store/useVerseStore'
 import { isAppLocale, parseChapter, parseVerse, paths, verseIdToNumber } from '@/router/paths'
 import { NotFound } from './NotFound'
 
@@ -49,8 +54,11 @@ function BibleView({ lang, book, chapter, verse }: BibleViewProps) {
   const locale = useUIStore(s => s.locale)
   const setLocale = useUIStore(s => s.setLocale)
   const activePanel = useUIStore(s => s.activePanel)
-  const commentaryOpen = useUIStore(s => s.commentaryOpen)
-  const studyVerseId = useVerseStore(s => s.studyVerseId)
+  const commentaryOpen = useActiveBiblePaneStore(s => s.commentaryOpen)
+  const studyVerseId = useActiveVerseStore(s => s.studyVerseId)
+  const verseStore = useVerseStoreApi()
+  const comparisonOpen = useActiveCompareStore(s => s.open)
+  const insightsOpen = useActiveCrossRefStore(s => s.open)
 
   // URL → locale (when navigating to a localized URL).
   // Important: depend only on `lang` so that locale changes coming from the
@@ -69,7 +77,7 @@ function BibleView({ lang, book, chapter, verse }: BibleViewProps) {
     if (lastSyncedKey.current === key) return
     lastSyncedKey.current = key
 
-    const state = useVerseStore.getState()
+    const state = verseStore.getState()
 
     if (state.books.length === 0) {
       void state.loadBooks({ book, chapter, verse: verse ?? undefined })
@@ -92,12 +100,12 @@ function BibleView({ lang, book, chapter, verse }: BibleViewProps) {
     } else if (!sameLocation) {
       void state.loadChapter(book, safeChapter)
     }
-  }, [book, chapter, verse])
+  }, [book, chapter, verse, verseStore])
 
   // Store → URL sync (when in-app actions mutate the store, mirror to URL)
   useEffect(() => {
     const writeUrl = () => {
-      const state = useVerseStore.getState()
+      const state = verseStore.getState()
       const { selectedBook, selectedChapter, selectedVerseId } = state
       if (!selectedBook) return
       const verseNum = verseIdToNumber(selectedVerseId)
@@ -112,7 +120,7 @@ function BibleView({ lang, book, chapter, verse }: BibleViewProps) {
       navigate(target, { replace: true })
     }
 
-    return useVerseStore.subscribe((state, prev) => {
+    return verseStore.subscribe((state, prev) => {
       if (
         state.selectedBook === prev.selectedBook &&
         state.selectedChapter === prev.selectedChapter &&
@@ -120,11 +128,11 @@ function BibleView({ lang, book, chapter, verse }: BibleViewProps) {
       ) return
       writeUrl()
     })
-  }, [navigate])
+  }, [navigate, verseStore])
 
   // Locale change → rewrite URL with new prefix
   useEffect(() => {
-    const state = useVerseStore.getState()
+    const state = verseStore.getState()
     if (!state.selectedBook) return
     const verseNum = verseIdToNumber(state.selectedVerseId)
     const target = paths.bible({
@@ -138,7 +146,12 @@ function BibleView({ lang, book, chapter, verse }: BibleViewProps) {
   }, [locale, navigate])
 
   const leftPanelContent = activePanel ? <WorkspaceSidePanel panel={activePanel} /> : null
-  const contextPanel = activeBibleContextPanel(studyVerseId, commentaryOpen)
+  const contextPanel = activeBibleContextPanel(
+    studyVerseId,
+    insightsOpen,
+    comparisonOpen,
+    commentaryOpen,
+  )
 
   return (
     <PanelLayout
@@ -147,6 +160,10 @@ function BibleView({ lang, book, chapter, verse }: BibleViewProps) {
       panel={
         contextPanel === 'notes'
           ? <StudyPanel />
+          : contextPanel === 'insights'
+            ? <CrossReferencesPanel />
+          : contextPanel === 'comparison'
+            ? <CompareVersionPanel />
           : contextPanel === 'commentary'
             ? <CommentaryPanel />
             : null

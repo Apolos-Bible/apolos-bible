@@ -4,6 +4,7 @@ import { Handle, Position, type NodeProps, type Node } from '@xyflow/react';
 import { useTranslation } from 'react-i18next';
 import { ChevronDown, Languages, Loader2, Network, Sparkles } from 'lucide-react';
 import { cn } from '@/lib/cn';
+import { bibleVersionsInSameLanguage } from '@/lib/bibleVersionOptions';
 import { useVerseStore } from '@/lib/store/useVerseStore';
 import { ResizableNode } from './ResizableNode';
 import { useNoWheelOnOverflow } from './useNoWheelOnOverflow';
@@ -24,6 +25,7 @@ export function VerseNode({ id, data, selected }: NodeProps<VerseNodeType>) {
   const versions = useVerseStore((s) => s.versions);
   const readerVersionId = useVerseStore((s) => s.versionId);
   const versionName = versions.find((v) => v.id === data.version_id)?.abbreviation ?? '';
+  const selectableVersions = bibleVersionsInSameLanguage(versions, data.version_id);
   const { ref: scrollRef, className: scrollClass } = useNoWheelOnOverflow<HTMLDivElement>();
   const xrefBtnRef = useRef<HTMLButtonElement>(null);
   const [xrefOpen, setXrefOpen] = useState(false);
@@ -216,7 +218,7 @@ export function VerseNode({ id, data, selected }: NodeProps<VerseNodeType>) {
           />
         )}
 
-        {versionMenuOpen && menuPos && versions.length > 0 && createPortal(
+        {versionMenuOpen && menuPos && selectableVersions.length > 0 && createPortal(
           <div
             ref={versionMenuElRef}
             style={{ position: 'fixed', left: menuPos.left, top: menuPos.top, zIndex: 1000 }}
@@ -225,7 +227,7 @@ export function VerseNode({ id, data, selected }: NodeProps<VerseNodeType>) {
               'py-1 min-w-[140px] max-h-64 overflow-y-auto',
             )}
           >
-            {versions.map((v) => (
+            {selectableVersions.map((v) => (
               <button
                 key={v.id}
                 type="button"
