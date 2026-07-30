@@ -6,13 +6,15 @@ import { useUIStore } from '@/lib/store/useUIStore'
 import { UserAvatar } from '@/components/auth/UserAvatar'
 import { cn } from '@/lib/cn'
 import { Dialog } from '@/components/ui/Dialog'
+import type { Conversation } from '@/lib/chatApi'
 
 interface NewChatDialogProps {
   open: boolean
   onClose: () => void
+  onCreated?: (conversation: Conversation) => void | Promise<void>
 }
 
-export function NewChatDialog({ open, onClose }: NewChatDialogProps) {
+export function NewChatDialog({ open, onClose, onCreated }: NewChatDialogProps) {
   const { t }       = useTranslation()
   const friends     = useFriendStore(s => s.friends)
   const loadFriends = useFriendStore(s => s.load)
@@ -25,6 +27,7 @@ export function NewChatDialog({ open, onClose }: NewChatDialogProps) {
   const [query, setQuery]     = useState('')
   const [picked, setPicked]   = useState<number[]>([])
   const [name, setName]       = useState('')
+  const [description, setDescription] = useState('')
   const [busy, setBusy]       = useState(false)
 
   useEffect(() => {
@@ -34,6 +37,7 @@ export function NewChatDialog({ open, onClose }: NewChatDialogProps) {
     setQuery('')
     setPicked([])
     setName('')
+    setDescription('')
   }, [open, loadFriends])
 
   const filtered = useMemo(() => {
@@ -61,8 +65,9 @@ export function NewChatDialog({ open, onClose }: NewChatDialogProps) {
     try {
       const c = mode === 'dm'
         ? await startDm(picked[0])
-        : await createGroup(name.trim() || t('chat.newGroupFallback'), picked)
-      select(c.id)
+        : await createGroup(name.trim() || t('chat.newGroupFallback'), picked, description)
+      if (onCreated) await onCreated(c)
+      else select(c.id)
       onClose()
     } catch {
       addToast(t('chat.createFailed'), 'error')
@@ -116,13 +121,21 @@ export function NewChatDialog({ open, onClose }: NewChatDialogProps) {
         </div>
 
         {mode === 'group' && (
-          <div className="px-4 py-3 border-b border-border-subtle">
+          <div className="space-y-2 px-4 py-3 border-b border-border-subtle">
             <input
               type="text"
               value={name}
               onChange={(e) => setName(e.target.value)}
               placeholder={t('chat.groupNamePlaceholder')}
               className="w-full bg-bg-primary border border-border-subtle rounded-md px-3 py-1.5 text-sm text-text-primary placeholder:text-text-muted outline-none focus:border-border-hover"
+            />
+            <textarea
+              value={description}
+              maxLength={1000}
+              rows={2}
+              onChange={(e) => setDescription(e.target.value)}
+              placeholder={t('chat.groupDescriptionPlaceholder')}
+              className="w-full resize-none bg-bg-primary border border-border-subtle rounded-md px-3 py-1.5 text-sm text-text-primary placeholder:text-text-muted outline-none focus:border-border-hover"
             />
           </div>
         )}
@@ -154,7 +167,7 @@ export function NewChatDialog({ open, onClose }: NewChatDialogProps) {
                     isPicked ? 'bg-bg-tertiary' : 'hover:bg-bg-primary',
                   )}
                 >
-                  <UserAvatar email={f.email} size="md" />
+                  <UserAvatar name={f.name} email={f.email} src={f.avatar_url} size="md" />
                   <div className="flex-1 min-w-0">
                     <p className="text-sm text-text-primary truncate">{f.name}</p>
                     <p className="text-2xs text-text-muted truncate">{f.email}</p>

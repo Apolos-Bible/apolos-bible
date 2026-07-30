@@ -107,7 +107,7 @@ export function ManageConversationDialog({ conversation, open, onClose }: Manage
           <div className="flex flex-wrap gap-2">
             {conversation.participants.map((p) => (
               <div key={p.id} className="flex items-center gap-2 rounded-full bg-bg-primary border border-border-subtle px-2.5 py-1">
-                <UserAvatar email={p.email} size="sm" />
+                <UserAvatar name={p.name} email={p.email} src={p.avatar_url} size="sm" />
                 <span className="text-xs text-text-primary">{p.name}</span>
               </div>
             ))}
@@ -145,7 +145,7 @@ export function ManageConversationDialog({ conversation, open, onClose }: Manage
                     isPicked ? 'bg-bg-tertiary' : 'hover:bg-bg-primary',
                   )}
                 >
-                  <UserAvatar email={friend.email} size="md" />
+                  <UserAvatar name={friend.name} email={friend.email} src={friend.avatar_url} size="md" />
                   <div className="flex-1 min-w-0">
                     <p className="text-sm text-text-primary truncate">{friend.name}</p>
                     <p className="text-2xs text-text-muted truncate">{friend.email}</p>

@@ -1,13 +1,14 @@
 import { useEffect, useLayoutEffect, useRef, useState, type ReactNode } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
-import { Moon, Sun, Camera, Loader2 } from 'lucide-react'
+import { BadgeCheck, Camera, KeyRound, Loader2, Mail, Moon, Sun } from 'lucide-react'
 import { AppPageLayout } from '@/components/layout/AppPageLayout'
 import { UserAvatar } from '@/components/auth/UserAvatar'
 import { SectionLabel } from '@/components/ui/SectionLabel'
 import { SegmentedControl } from '@/components/ui/SegmentedControl'
 import { NotificationsSection } from '@/components/ui/NotificationsSection'
 import { ColorPicker } from '@/components/ui/ColorPicker'
+import { Select } from '@/components/ui/Select'
 import { cn } from '@/lib/cn'
 import { paths } from '@/router/paths'
 import { useUIStore, DEFAULT_ACCENT_COLOR, type FontSize, type Locale, type ReadingMode, type Theme } from '@/lib/store/useUIStore'
@@ -57,9 +58,10 @@ function SettingRow({ label, children, help }: { label: string; children: ReactN
 }
 
 const INPUT =
-  'w-full bg-bg-tertiary border border-border-subtle rounded-md px-3 py-2 text-sm text-text-primary outline-none focus:border-accent/50 transition-colors'
+  'w-full rounded-xl border border-border-subtle bg-bg-secondary px-3.5 py-2.5 text-sm text-text-primary outline-none transition-colors placeholder:text-text-muted focus:border-accent/60 focus:ring-2 focus:ring-accent/10'
 const SAVE_BTN =
-  'inline-flex h-8 items-center justify-center rounded-md bg-accent px-3 text-sm font-medium text-bg-primary hover:opacity-90 disabled:opacity-40 transition-opacity'
+  'inline-flex h-9 items-center justify-center rounded-full bg-accent px-4 text-sm font-medium text-white shadow-sm transition-opacity hover:opacity-90 disabled:opacity-40'
+const SETTINGS_CARD = 'rounded-2xl border border-border-subtle bg-bg-secondary p-4 sm:p-5'
 
 export function SettingsRoute() {
   const { t } = useTranslation()
@@ -297,10 +299,10 @@ export function SettingsRoute() {
 
   return (
     <AppPageLayout title={t('settings.title')}>
-      <div ref={wrapperRef} className="mx-auto w-full max-w-[880px] px-4 md:px-8 py-0 md:py-8 md:flex md:gap-8">
+      <div ref={wrapperRef} className="mx-auto w-full max-w-5xl px-4 py-0 md:flex md:gap-10 md:px-8 md:py-8">
         {/* Desktop rail */}
-        <aside className="hidden md:block w-44 shrink-0 sticky top-8 self-start">
-          <nav className="flex flex-col gap-0.5">
+        <aside className="sticky top-8 hidden w-48 shrink-0 self-start md:block">
+          <nav className="flex flex-col gap-1 rounded-2xl border border-border-subtle bg-bg-secondary p-2">
             {NAV.map((n, i) => (
               <button
                 key={n.id}
@@ -308,8 +310,10 @@ export function SettingsRoute() {
                 onClick={() => selectSection(n.id)}
                 aria-current={activeNav === n.id ? 'true' : undefined}
                 className={cn(
-                  'flex items-center justify-between rounded-md px-2.5 py-1.5 text-left text-sm transition-colors duration-100',
-                  activeNav === n.id ? 'bg-bg-tertiary text-text-primary' : 'text-text-muted hover:text-text-secondary',
+                  'flex items-center justify-between rounded-xl px-3 py-2.5 text-left text-sm transition-colors duration-100',
+                  activeNav === n.id
+                    ? 'bg-accent/10 font-medium text-accent'
+                    : 'text-text-muted hover:bg-bg-tertiary hover:text-text-secondary',
                 )}
               >
                 <span>{t(n.label)}</span>
@@ -341,319 +345,440 @@ export function SettingsRoute() {
         <div className="flex-1 min-w-0 flex flex-col gap-10 py-6 md:py-0">
           {/* ── Cuenta ─────────────────────────────────────────── */}
           {activeNav === 'cuenta' && (
-          <section id="cuenta" tabIndex={-1} className="flex flex-col gap-4 outline-none">
-            <SectionLabel>{t('settings.nav.account')}</SectionLabel>
+            <section id="cuenta" tabIndex={-1} className="flex flex-col gap-5 outline-none">
+              <header className="border-b border-border-subtle pb-5">
+                <h1 className="text-2xl font-semibold tracking-tight text-text-primary">
+                  {t('settings.nav.account')}
+                </h1>
+                <p className="mt-1 max-w-[58ch] text-sm leading-relaxed text-text-muted">
+                  {t('settings.account.subtitle')}
+                </p>
+              </header>
 
-            {/* Avatar */}
-            <div className="flex items-center gap-4">
-              <UserAvatar name={user.name} email={user.email} src={user.avatar_url} size="xl" />
-              <div className="flex flex-col gap-1.5">
-                <div className="flex items-center gap-3">
+              {/* Identity and avatar */}
+              <div className={cn(SETTINGS_CARD, 'flex flex-col items-center gap-5 text-center sm:flex-row sm:text-left')}>
+                <div className="relative">
+                  <UserAvatar
+                    name={user.name}
+                    email={user.email}
+                    src={user.avatar_url}
+                    size="2xl"
+                    className="h-24 w-24 text-3xl shadow-sm"
+                  />
                   <button
                     type="button"
                     onClick={() => fileRef.current?.click()}
                     disabled={avatarBusy}
-                    className="inline-flex items-center gap-1.5 text-sm text-accent hover:underline disabled:opacity-50"
+                    aria-label={t('settings.avatar.change')}
+                    className="absolute bottom-0 right-0 inline-flex h-8 w-8 items-center justify-center rounded-full border-2 border-bg-secondary bg-accent text-white shadow-sm transition-opacity hover:opacity-90 disabled:opacity-50"
                   >
-                    {avatarBusy ? <Loader2 size={14} className="animate-spin" /> : <Camera size={14} strokeWidth={1.6} />}
-                    {avatarBusy ? t('settings.avatar.uploading') : t('settings.avatar.change')}
+                    {avatarBusy ? <Loader2 size={14} className="animate-spin" /> : <Camera size={14} strokeWidth={1.8} />}
                   </button>
-                  {user.avatar_url && !avatarBusy && (
+                </div>
+
+                <div className="min-w-0 flex-1">
+                  <h2 className="truncate text-xl font-semibold text-text-primary">{user.name}</h2>
+                  <p className="truncate text-sm text-text-muted">{user.email}</p>
+                  <div className="mt-3 flex flex-wrap items-center justify-center gap-3 sm:justify-start">
                     <button
                       type="button"
-                      onClick={onRemoveAvatar}
-                      className="text-sm text-text-muted hover:text-red-400 transition-colors"
+                      onClick={() => fileRef.current?.click()}
+                      disabled={avatarBusy}
+                      className="text-sm font-medium text-accent hover:underline disabled:opacity-50"
                     >
-                      {t('settings.avatar.remove')}
+                      {avatarBusy ? t('settings.avatar.uploading') : t('settings.avatar.change')}
                     </button>
+                    {user.avatar_url && !avatarBusy && (
+                      <button
+                        type="button"
+                        onClick={onRemoveAvatar}
+                        className="text-sm text-text-muted transition-colors hover:text-red-400"
+                      >
+                        {t('settings.avatar.remove')}
+                      </button>
+                    )}
+                  </div>
+                  <p className="mt-1.5 text-2xs text-text-muted">{t('settings.avatar.hint')}</p>
+                </div>
+
+                <input
+                  ref={fileRef}
+                  type="file"
+                  accept="image/png,image/jpeg,image/webp"
+                  className="hidden"
+                  onChange={(e) => {
+                    const file = e.target.files?.[0]
+                    if (file) void onPickAvatar(file)
+                  }}
+                />
+              </div>
+
+              {/* Public profile fields */}
+              <div className={SETTINGS_CARD}>
+                <SectionLabel>{t('settings.profileInformation')}</SectionLabel>
+                <div className="mt-4 space-y-5">
+                  <div className="flex flex-col gap-1.5">
+                    <label htmlFor="settings-name" className="text-sm font-medium text-text-primary">
+                      {t('settings.name')}
+                    </label>
+                    <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+                      <input
+                        id="settings-name"
+                        value={name}
+                        maxLength={50}
+                        onChange={(e) => setName(e.target.value)}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter') saveName()
+                        }}
+                        className={INPUT}
+                      />
+                      <button
+                        type="button"
+                        onClick={saveName}
+                        disabled={!nameDirty || savingName}
+                        className={cn(SAVE_BTN, 'sm:shrink-0')}
+                      >
+                        {t('settings.save')}
+                      </button>
+                    </div>
+                  </div>
+
+                  <div className="flex flex-col gap-1.5">
+                    <div className="flex items-center justify-between">
+                      <label htmlFor="settings-bio" className="text-sm font-medium text-text-primary">
+                        {t('settings.bio')}
+                      </label>
+                      <span className="text-2xs tabular-nums text-text-muted">
+                        {t('settings.bio.counter', { count: bio.length })}
+                      </span>
+                    </div>
+                    <textarea
+                      id="settings-bio"
+                      value={bio}
+                      rows={4}
+                      maxLength={280}
+                      placeholder={t('settings.bio.placeholder')}
+                      onChange={(e) => setBio(e.target.value)}
+                      className={cn(INPUT, 'resize-none')}
+                    />
+                    <div className="flex justify-end pt-0.5">
+                      <button type="button" onClick={saveBio} disabled={!bioDirty || savingBio} className={SAVE_BTN}>
+                        {t('settings.save')}
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Access and security */}
+              <div className={SETTINGS_CARD}>
+                <SectionLabel>{t('settings.security')}</SectionLabel>
+                <div className="mt-3 divide-y divide-border-subtle">
+                  <div className="flex flex-col gap-3 py-3 sm:flex-row sm:items-center">
+                    <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-accent/10 text-accent">
+                      <Mail size={18} strokeWidth={1.6} />
+                    </span>
+                    <div className="min-w-0 flex-1">
+                      <p className="text-sm font-medium text-text-primary">{t('settings.email')}</p>
+                      <p className="truncate text-sm text-text-muted">{user.email}</p>
+                    </div>
+                    <div className="flex shrink-0 flex-wrap items-center gap-2">
+                      {user.email_verified_at ? (
+                        <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-500/10 px-2.5 py-1 text-2xs font-medium text-emerald-500">
+                          <BadgeCheck size={13} strokeWidth={1.8} />
+                          {t('settings.emailVerified')}
+                        </span>
+                      ) : (
+                        <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-500/10 px-2.5 py-1 text-2xs font-medium text-amber-500">
+                          <span className="inline-block h-1.5 w-1.5 rounded-full bg-amber-500" />
+                          {t('settings.emailUnverified')}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+
+                  {!user.email_verified_at && (
+                    <div className="flex flex-wrap items-center gap-3 py-3 sm:pl-[52px]">
+                      <button
+                        type="button"
+                        disabled={resendState === 'sending'}
+                        onClick={async () => {
+                          if (resendState === 'sending') return
+                          setResendState('sending')
+                          try {
+                            const res = await resendVerification()
+                            if (res.verified) await refreshUser()
+                            setResendState('sent')
+                          } catch {
+                            setResendState('idle')
+                          }
+                        }}
+                        className="text-xs font-medium text-accent hover:underline disabled:opacity-50"
+                      >
+                        {resendState === 'sending'
+                          ? t('settings.emailResending')
+                          : resendState === 'sent'
+                            ? t('settings.emailResent')
+                            : t('settings.emailResend')}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => void refreshUser()}
+                        className="text-xs text-text-muted hover:text-text-primary"
+                      >
+                        {t('settings.emailCheckAgain')}
+                      </button>
+                    </div>
                   )}
-                </div>
-                <p className="text-2xs text-text-muted">{t('settings.avatar.hint')}</p>
-              </div>
-              <input
-                ref={fileRef}
-                type="file"
-                accept="image/png,image/jpeg,image/webp"
-                className="hidden"
-                onChange={(e) => {
-                  const f = e.target.files?.[0]
-                  if (f) void onPickAvatar(f)
-                }}
-              />
-            </div>
 
-            {/* Name */}
-            <div className="flex flex-col gap-1.5">
-              <SectionLabel className="normal-case tracking-normal text-xs">{t('settings.name')}</SectionLabel>
-              <div className="flex items-center gap-2">
-                <input
-                  value={name}
-                  maxLength={50}
-                  onChange={(e) => setName(e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter') saveName()
-                  }}
-                  className={INPUT}
-                />
-                <button type="button" onClick={saveName} disabled={!nameDirty || savingName} className={SAVE_BTN}>
-                  {t('settings.save')}
-                </button>
-              </div>
-            </div>
+                  <div className="py-3">
+                    <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+                      <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-accent/10 text-accent">
+                        <KeyRound size={18} strokeWidth={1.6} />
+                      </span>
+                      <div className="min-w-0 flex-1">
+                        <p className="text-sm font-medium text-text-primary">
+                          {hasPassword ? t('settings.password') : t('settings.password.set')}
+                        </p>
+                        <p className="text-xs text-text-muted">{t('settings.password.help')}</p>
+                      </div>
+                      {!showPw && (
+                        <button
+                          type="button"
+                          onClick={() => setShowPw(true)}
+                          className="inline-flex h-9 shrink-0 items-center justify-center rounded-full border border-border-subtle px-4 text-sm font-medium text-text-secondary transition-colors hover:bg-bg-tertiary hover:text-text-primary"
+                        >
+                          {hasPassword ? t('settings.password') : t('settings.password.set')}
+                        </button>
+                      )}
+                    </div>
 
-            {/* Bio */}
-            <div className="flex flex-col gap-1.5">
-              <SectionLabel className="normal-case tracking-normal text-xs">{t('settings.bio')}</SectionLabel>
-              <textarea
-                value={bio}
-                rows={3}
-                maxLength={280}
-                placeholder={t('settings.bio.placeholder')}
-                onChange={(e) => setBio(e.target.value)}
-                className={cn(INPUT, 'resize-none')}
-              />
-              <div className="flex items-center justify-between">
-                <span className="text-2xs text-text-muted tabular-nums">{t('settings.bio.counter', { count: bio.length })}</span>
-                <button type="button" onClick={saveBio} disabled={!bioDirty || savingBio} className={SAVE_BTN}>
-                  {t('settings.save')}
-                </button>
-              </div>
-            </div>
-
-            {/* Email + verification */}
-            <SettingRow label={t('settings.email')}>
-              <div className="flex items-center gap-2">
-                <span className="text-sm text-text-muted">{user.email}</span>
-                {user.email_verified_at ? (
-                  <span className="inline-flex items-center gap-1 text-2xs text-emerald-500">
-                    <span className="inline-block h-1.5 w-1.5 rounded-full bg-emerald-500" />
-                    {t('settings.emailVerified')}
-                  </span>
-                ) : (
-                  <span className="inline-flex items-center gap-1 text-2xs text-amber-500">
-                    <span className="inline-block h-1.5 w-1.5 rounded-full bg-amber-500" />
-                    {t('settings.emailUnverified')}
-                  </span>
-                )}
-              </div>
-            </SettingRow>
-            {!user.email_verified_at && (
-              <div className="-mt-2 flex items-center gap-3">
-                <button
-                  type="button"
-                  disabled={resendState === 'sending'}
-                  onClick={async () => {
-                    if (resendState === 'sending') return
-                    setResendState('sending')
-                    try {
-                      const res = await resendVerification()
-                      if (res.verified) await refreshUser()
-                      setResendState('sent')
-                    } catch {
-                      setResendState('idle')
-                    }
-                  }}
-                  className="text-xs text-accent hover:underline disabled:opacity-50"
-                >
-                  {resendState === 'sending'
-                    ? t('settings.emailResending')
-                    : resendState === 'sent'
-                      ? t('settings.emailResent')
-                      : t('settings.emailResend')}
-                </button>
-                <button type="button" onClick={() => void refreshUser()} className="text-xs text-text-muted hover:text-text-primary">
-                  {t('settings.emailCheckAgain')}
-                </button>
-              </div>
-            )}
-
-            {/* Password */}
-            {!showPw ? (
-              <button type="button" onClick={() => setShowPw(true)} className="self-start text-sm text-accent hover:underline">
-                {hasPassword ? t('settings.password') : t('settings.password.set')}
-              </button>
-            ) : (
-              <div className="flex flex-col gap-2.5 rounded-lg border border-border-subtle p-4">
-                {hasPassword && (
-                  <input
-                    type="password"
-                    autoComplete="current-password"
-                    placeholder={t('settings.password.current')}
-                    value={pwCurrent}
-                    onChange={(e) => { setPwCurrent(e.target.value); setPwError('') }}
-                    className={INPUT}
-                  />
-                )}
-                <input
-                  type="password"
-                  autoComplete="new-password"
-                  placeholder={t('settings.password.new')}
-                  value={pwNew}
-                  onChange={(e) => { setPwNew(e.target.value); setPwError('') }}
-                  className={INPUT}
-                />
-                <input
-                  type="password"
-                  autoComplete="new-password"
-                  placeholder={t('settings.password.confirm')}
-                  value={pwConfirm}
-                  onChange={(e) => { setPwConfirm(e.target.value); setPwError('') }}
-                  onKeyDown={(e) => { if (e.key === 'Enter' && pwValid) savePassword() }}
-                  className={INPUT}
-                />
-                {pwError && <p className="text-xs text-red-400">{pwError}</p>}
-                <div className="flex gap-2">
-                  <button type="button" onClick={savePassword} disabled={!pwValid || pwSaving} className={SAVE_BTN}>
-                    {t('settings.password.save')}
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => { setShowPw(false); setPwCurrent(''); setPwNew(''); setPwConfirm(''); setPwError('') }}
-                    className="inline-flex h-8 items-center rounded-md border border-border-subtle px-3 text-sm text-text-secondary hover:bg-bg-tertiary transition-colors"
-                  >
-                    {t('settings.deleteAccount.cancel')}
-                  </button>
+                    {showPw && (
+                      <div className="mt-4 flex flex-col gap-2.5 rounded-2xl bg-bg-tertiary/60 p-4 sm:ml-[52px]">
+                        {hasPassword && (
+                          <input
+                            type="password"
+                            autoComplete="current-password"
+                            placeholder={t('settings.password.current')}
+                            value={pwCurrent}
+                            onChange={(e) => {
+                              setPwCurrent(e.target.value)
+                              setPwError('')
+                            }}
+                            className={INPUT}
+                          />
+                        )}
+                        <input
+                          type="password"
+                          autoComplete="new-password"
+                          placeholder={t('settings.password.new')}
+                          value={pwNew}
+                          onChange={(e) => {
+                            setPwNew(e.target.value)
+                            setPwError('')
+                          }}
+                          className={INPUT}
+                        />
+                        <input
+                          type="password"
+                          autoComplete="new-password"
+                          placeholder={t('settings.password.confirm')}
+                          value={pwConfirm}
+                          onChange={(e) => {
+                            setPwConfirm(e.target.value)
+                            setPwError('')
+                          }}
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter' && pwValid) savePassword()
+                          }}
+                          className={INPUT}
+                        />
+                        {pwError && <p className="text-xs text-red-400">{pwError}</p>}
+                        <div className="flex flex-wrap gap-2 pt-1">
+                          <button
+                            type="button"
+                            onClick={savePassword}
+                            disabled={!pwValid || pwSaving}
+                            className={SAVE_BTN}
+                          >
+                            {t('settings.password.save')}
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setShowPw(false)
+                              setPwCurrent('')
+                              setPwNew('')
+                              setPwConfirm('')
+                              setPwError('')
+                            }}
+                            className="inline-flex h-9 items-center rounded-full border border-border-subtle bg-bg-secondary px-4 text-sm text-text-secondary transition-colors hover:bg-bg-tertiary"
+                          >
+                            {t('settings.deleteAccount.cancel')}
+                          </button>
+                        </div>
+                      </div>
+                    )}
+                  </div>
                 </div>
               </div>
-            )}
-          </section>
+            </section>
           )}
 
           {/* ── Apariencia ─────────────────────────────────────── */}
           {activeNav === 'apariencia' && (
-          <section id="apariencia" tabIndex={-1} className="flex flex-col gap-3 outline-none">
-            <SectionLabel>{t('settings.nav.appearance')}</SectionLabel>
-            <SettingRow label={t('settings.theme')}>
-              <SegmentedControl<Theme>
-                ariaLabel={t('settings.theme')}
-                value={theme}
-                onChange={setTheme}
-                options={[
-                  { value: 'dark', label: <><Moon size={13} strokeWidth={1.6} />{t('settings.theme.dark')}</> },
-                  { value: 'light', label: <><Sun size={13} strokeWidth={1.6} />{t('settings.theme.light')}</> },
-                ]}
-              />
-            </SettingRow>
-            <SettingRow label={t('settings.accentColor')}>
-              <div className="flex items-center gap-1.5">
-                {ACCENT_PRESETS.map((color) => (
-                  <button
-                    key={color}
-                    type="button"
-                    onClick={() => setAccentColor(color)}
-                    aria-label={color}
-                    aria-current={accentColor.toLowerCase() === color.toLowerCase() ? 'true' : undefined}
-                    className={cn(
-                      'h-6 w-6 rounded-full border-2 transition-transform',
-                      accentColor.toLowerCase() === color.toLowerCase()
-                        ? 'border-text-primary scale-110'
-                        : 'border-transparent hover:scale-110',
-                    )}
-                    style={{ backgroundColor: color }}
+            <section id="apariencia" tabIndex={-1} className="flex flex-col gap-5 outline-none">
+              <header className="border-b border-border-subtle pb-5">
+                <h1 className="text-2xl font-semibold tracking-tight text-text-primary">
+                  {t('settings.nav.appearance')}
+                </h1>
+              </header>
+              <div className={cn(SETTINGS_CARD, 'divide-y divide-border-subtle [&>div]:py-3 [&>div:first-child]:pt-0 [&>div:last-child]:pb-0')}>
+                <SettingRow label={t('settings.theme')}>
+                  <SegmentedControl<Theme>
+                    ariaLabel={t('settings.theme')}
+                    value={theme}
+                    onChange={setTheme}
+                    options={[
+                      { value: 'dark', label: <><Moon size={13} strokeWidth={1.6} />{t('settings.theme.dark')}</> },
+                      { value: 'light', label: <><Sun size={13} strokeWidth={1.6} />{t('settings.theme.light')}</> },
+                    ]}
                   />
-                ))}
-                <div className="relative" ref={customPickerRef}>
-                  <button
-                    type="button"
-                    onClick={() => setCustomPickerOpen((v) => !v)}
-                    aria-label={t('settings.accentColor.custom')}
-                    title={t('settings.accentColor.custom')}
-                    className="ml-1 h-6 w-6 shrink-0 cursor-pointer rounded-full border border-dashed border-border-hover"
-                    style={{ backgroundColor: customPreview }}
-                  />
-                  {customPickerOpen && (
-                    <div className="absolute right-0 top-8 z-20 rounded-lg border border-border-subtle bg-surface p-3 shadow-lg">
-                      <ColorPicker
-                        value={accentColor}
-                        onChange={setCustomPreview}
-                        onChangeEnd={(hex) => {
-                          setCustomPreview(hex)
-                          setAccentColor(hex)
-                        }}
+                </SettingRow>
+                <SettingRow label={t('settings.accentColor')}>
+                  <div className="flex items-center gap-1.5">
+                    {ACCENT_PRESETS.map((color) => (
+                      <button
+                        key={color}
+                        type="button"
+                        onClick={() => setAccentColor(color)}
+                        aria-label={color}
+                        aria-current={accentColor.toLowerCase() === color.toLowerCase() ? 'true' : undefined}
+                        className={cn(
+                          'h-6 w-6 rounded-full border-2 transition-transform',
+                          accentColor.toLowerCase() === color.toLowerCase()
+                            ? 'border-text-primary scale-110'
+                            : 'border-transparent hover:scale-110',
+                        )}
+                        style={{ backgroundColor: color }}
                       />
+                    ))}
+                    <div className="relative" ref={customPickerRef}>
+                      <button
+                        type="button"
+                        onClick={() => setCustomPickerOpen((v) => !v)}
+                        aria-label={t('settings.accentColor.custom')}
+                        title={t('settings.accentColor.custom')}
+                        className="ml-1 h-6 w-6 shrink-0 cursor-pointer rounded-full border border-dashed border-border-hover"
+                        style={{ backgroundColor: customPreview }}
+                      />
+                      {customPickerOpen && (
+                        <div className="absolute right-0 top-8 z-20 rounded-lg border border-border-subtle bg-surface p-3 shadow-lg">
+                          <ColorPicker
+                            value={accentColor}
+                            onChange={setCustomPreview}
+                            onChangeEnd={(hex) => {
+                              setCustomPreview(hex)
+                              setAccentColor(hex)
+                            }}
+                          />
+                        </div>
+                      )}
                     </div>
-                  )}
-                </div>
+                  </div>
+                </SettingRow>
+                <SettingRow label={t('settings.language')}>
+                  <SegmentedControl<Locale>
+                    ariaLabel={t('settings.language')}
+                    value={locale}
+                    onChange={setLocale}
+                    options={[{ value: 'es', label: 'ES' }, { value: 'en', label: 'EN' }]}
+                  />
+                </SettingRow>
+                <SettingRow label={t('settings.fontSize')}>
+                  <div className="flex gap-1.5">
+                    {FONT_OPTIONS.map((o) => (
+                      <button
+                        key={o.value}
+                        type="button"
+                        onClick={() => setFontSize(o.value)}
+                        className={cn(
+                          'h-9 w-9 rounded-lg border text-sm font-medium transition-colors',
+                          fontSize === o.value
+                            ? 'bg-accent/15 border-accent/40 text-accent'
+                            : 'bg-bg-tertiary border-border-subtle text-text-secondary hover:text-text-primary',
+                        )}
+                      >
+                        {o.label}
+                      </button>
+                    ))}
+                  </div>
+                </SettingRow>
+                <SettingRow label={t('settings.readingMode')}>
+                  <SegmentedControl<ReadingMode>
+                    ariaLabel={t('settings.readingMode')}
+                    value={readingMode}
+                    onChange={setReadingMode}
+                    options={[
+                      { value: 'verse', label: t('settings.readingMode.verse') },
+                      { value: 'flow', label: t('settings.readingMode.flow') },
+                    ]}
+                  />
+                </SettingRow>
               </div>
-            </SettingRow>
-            <SettingRow label={t('settings.language')}>
-              <SegmentedControl<Locale>
-                ariaLabel={t('settings.language')}
-                value={locale}
-                onChange={setLocale}
-                options={[{ value: 'es', label: 'ES' }, { value: 'en', label: 'EN' }]}
-              />
-            </SettingRow>
-            <SettingRow label={t('settings.fontSize')}>
-              <div className="flex gap-1.5">
-                {FONT_OPTIONS.map((o) => (
-                  <button
-                    key={o.value}
-                    type="button"
-                    onClick={() => setFontSize(o.value)}
-                    className={cn(
-                      'h-9 w-9 rounded-lg border text-sm font-medium transition-colors',
-                      fontSize === o.value
-                        ? 'bg-accent/15 border-accent/40 text-accent'
-                        : 'bg-bg-tertiary border-border-subtle text-text-secondary hover:text-text-primary',
-                    )}
-                  >
-                    {o.label}
-                  </button>
-                ))}
-              </div>
-            </SettingRow>
-            <SettingRow label={t('settings.readingMode')}>
-              <SegmentedControl<ReadingMode>
-                ariaLabel={t('settings.readingMode')}
-                value={readingMode}
-                onChange={setReadingMode}
-                options={[
-                  { value: 'verse', label: t('settings.readingMode.verse') },
-                  { value: 'flow', label: t('settings.readingMode.flow') },
-                ]}
-              />
-            </SettingRow>
-          </section>
+            </section>
           )}
 
           {/* ── Biblia ─────────────────────────────────────────── */}
           {activeNav === 'biblia' && (
-          <section id="biblia" tabIndex={-1} className="flex flex-col gap-3 outline-none">
-            <SectionLabel>{t('settings.nav.bible')}</SectionLabel>
-            <SettingRow label={t('settings.bible.version')} help={t('settings.bible.versionHelp')}>
-              <select
-                value={versionId}
-                onChange={(e) => setVersion(Number(e.target.value))}
-                className="max-w-[60vw] md:max-w-[260px] cursor-pointer truncate rounded-lg border border-border-subtle bg-bg-tertiary px-3 py-1.5 text-sm text-text-primary outline-none transition-colors focus:border-accent/50"
-              >
-                {versions.length === 0 && <option value={versionId}>{t('common.loading')}</option>}
-                {versions.map((v) => (
-                  <option key={v.id} value={v.id}>
-                    {v.abbreviation} — {v.name}
-                  </option>
-                ))}
-              </select>
-            </SettingRow>
-          </section>
+            <section id="biblia" tabIndex={-1} className="flex flex-col gap-5 outline-none">
+              <header className="border-b border-border-subtle pb-5">
+                <h1 className="text-2xl font-semibold tracking-tight text-text-primary">
+                  {t('settings.nav.bible')}
+                </h1>
+                <p className="mt-1 text-sm text-text-muted">{t('settings.bible.versionHelp')}</p>
+              </header>
+              <div className={SETTINGS_CARD}>
+                <label className="text-sm font-medium text-text-primary">{t('settings.bible.version')}</label>
+                <p className="mt-1 text-xs text-text-muted">{t('settings.bible.versionHelp')}</p>
+                <Select
+                  value={versionId}
+                  onChange={setVersion}
+                  ariaLabel={t('settings.bible.version')}
+                  disabled={versions.length === 0}
+                  placeholder={t('common.loading')}
+                  options={versions.map((version) => ({
+                    value: version.id,
+                    label: `${version.abbreviation} — ${version.name}`,
+                  }))}
+                  className="mt-4 w-full sm:max-w-md"
+                />
+              </div>
+            </section>
           )}
 
           {/* ── Privacidad ─────────────────────────────────────── */}
           {activeNav === 'privacidad' && (
-          <section id="privacidad" tabIndex={-1} className="flex flex-col gap-3 outline-none">
-            <SectionLabel>{t('settings.nav.privacy')}</SectionLabel>
-            <SettingRow label={t('settings.privacy.defaultVisibility')} help={t('settings.privacy.help')}>
-              <SegmentedControl<'public' | 'private'>
-                ariaLabel={t('settings.privacy.defaultVisibility')}
-                value={user.content_public_default ? 'public' : 'private'}
-                onChange={(v) => void setContentPublicDefault(v === 'public')}
-                options={[
-                  { value: 'private', label: t('settings.privacy.private') },
-                  { value: 'public', label: t('settings.privacy.public') },
-                ]}
-              />
-            </SettingRow>
-          </section>
+            <section id="privacidad" tabIndex={-1} className="flex flex-col gap-5 outline-none">
+              <header className="border-b border-border-subtle pb-5">
+                <h1 className="text-2xl font-semibold tracking-tight text-text-primary">
+                  {t('settings.nav.privacy')}
+                </h1>
+              </header>
+              <div className={SETTINGS_CARD}>
+                <SettingRow label={t('settings.privacy.defaultVisibility')} help={t('settings.privacy.help')}>
+                  <SegmentedControl<'public' | 'private'>
+                    ariaLabel={t('settings.privacy.defaultVisibility')}
+                    value={user.content_public_default ? 'public' : 'private'}
+                    onChange={(v) => void setContentPublicDefault(v === 'public')}
+                    options={[
+                      { value: 'private', label: t('settings.privacy.private') },
+                      { value: 'public', label: t('settings.privacy.public') },
+                    ]}
+                  />
+                </SettingRow>
+              </div>
+            </section>
           )}
 
           {/* ── Notificaciones ─────────────────────────────────── */}
@@ -665,60 +790,76 @@ export function SettingsRoute() {
 
           {/* ── Cuenta y peligro ───────────────────────────────── */}
           {activeNav === 'peligro' && (
-          <section id="peligro" tabIndex={-1} className="flex flex-col gap-3 pb-10 outline-none">
-            <SectionLabel>{t('settings.nav.danger')}</SectionLabel>
-            <button
-              type="button"
-              onClick={async () => {
-                await logout()
-                navigate(paths.root())
-              }}
-              className="self-start text-sm text-red-400 hover:text-red-300 transition-colors"
-            >
-              {t('settings.signOut')}
-            </button>
+            <section id="peligro" tabIndex={-1} className="flex flex-col gap-5 pb-10 outline-none">
+              <header className="border-b border-border-subtle pb-5">
+                <h1 className="text-2xl font-semibold tracking-tight text-text-primary">
+                  {t('settings.nav.danger')}
+                </h1>
+              </header>
+              <div className={cn(SETTINGS_CARD, 'flex flex-col gap-4 border-red-500/20')}>
+                <button
+                  type="button"
+                  onClick={async () => {
+                    await logout()
+                    navigate(paths.root())
+                  }}
+                  className="self-start text-sm font-medium text-red-400 transition-colors hover:text-red-300"
+                >
+                  {t('settings.signOut')}
+                </button>
 
-            {!deleteConfirm ? (
-              <button
-                type="button"
-                onClick={() => setDeleteConfirm(true)}
-                className="self-start text-sm text-text-muted hover:text-red-400 transition-colors"
-              >
-                {t('settings.deleteAccount')}
-              </button>
-            ) : (
-              <div className="rounded-lg border border-red-500/30 bg-red-500/5 p-3">
-                <p className="mb-3 text-xs text-text-secondary">{t('settings.deleteAccount.confirm')}</p>
-                <input
-                  type="password"
-                  value={deletePassword}
-                  onChange={(e) => { setDeletePassword(e.target.value); setDeleteError('') }}
-                  placeholder={t('settings.deleteAccount.passwordPlaceholder')}
-                  onKeyDown={(e) => { if (e.key === 'Enter') handleDelete(); if (e.key === 'Escape') setDeleteConfirm(false) }}
-                  className={cn(INPUT, deleteError ? 'border-red-500' : '')}
-                />
-                {deleteError && <p className="mt-1.5 text-xs text-red-400">{deleteError}</p>}
-                <div className="mt-3 flex gap-2">
+                {!deleteConfirm ? (
                   <button
                     type="button"
-                    onClick={handleDelete}
-                    disabled={deleting || !deletePassword}
-                    className="flex-1 rounded-lg bg-red-600 py-2 text-sm font-medium text-white transition-colors hover:bg-red-500 disabled:opacity-50"
+                    onClick={() => setDeleteConfirm(true)}
+                    className="self-start text-sm text-text-muted transition-colors hover:text-red-400"
                   >
-                    {deleting ? t('settings.deleteAccount.deleting') : t('settings.deleteAccount.yesDelete')}
+                    {t('settings.deleteAccount')}
                   </button>
-                  <button
-                    type="button"
-                    onClick={() => { setDeleteConfirm(false); setDeletePassword(''); setDeleteError('') }}
-                    disabled={deleting}
-                    className="flex-1 rounded-lg border border-border-subtle py-2 text-sm font-medium text-text-secondary transition-colors hover:bg-bg-tertiary"
-                  >
-                    {t('settings.deleteAccount.cancel')}
-                  </button>
-                </div>
+                ) : (
+                  <div className="rounded-xl border border-red-500/30 bg-red-500/5 p-3">
+                    <p className="mb-3 text-xs text-text-secondary">{t('settings.deleteAccount.confirm')}</p>
+                    <input
+                      type="password"
+                      value={deletePassword}
+                      onChange={(e) => {
+                        setDeletePassword(e.target.value)
+                        setDeleteError('')
+                      }}
+                      placeholder={t('settings.deleteAccount.passwordPlaceholder')}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') handleDelete()
+                        if (e.key === 'Escape') setDeleteConfirm(false)
+                      }}
+                      className={cn(INPUT, deleteError ? 'border-red-500' : '')}
+                    />
+                    {deleteError && <p className="mt-1.5 text-xs text-red-400">{deleteError}</p>}
+                    <div className="mt-3 flex gap-2">
+                      <button
+                        type="button"
+                        onClick={handleDelete}
+                        disabled={deleting || !deletePassword}
+                        className="flex-1 rounded-full bg-red-600 py-2 text-sm font-medium text-white transition-colors hover:bg-red-500 disabled:opacity-50"
+                      >
+                        {deleting ? t('settings.deleteAccount.deleting') : t('settings.deleteAccount.yesDelete')}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setDeleteConfirm(false)
+                          setDeletePassword('')
+                          setDeleteError('')
+                        }}
+                        disabled={deleting}
+                        className="flex-1 rounded-full border border-border-subtle py-2 text-sm font-medium text-text-secondary transition-colors hover:bg-bg-tertiary"
+                      >
+                        {t('settings.deleteAccount.cancel')}
+                      </button>
+                    </div>
+                  </div>
+                )}
               </div>
-            )}
-          </section>
+            </section>
           )}
         </div>
       </div>

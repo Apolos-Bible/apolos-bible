@@ -26,7 +26,6 @@ export function ProfileRoute({ mode }: ProfileRouteProps) {
   const user = useAuthStore((s) => s.user)
   const authLoading = useAuthStore((s) => s.loading)
   const openAuthModal = useUIStore((s) => s.openAuthModal)
-  const openPanel = useUIStore((s) => s.openPanel)
   const addToast = useUIStore((s) => s.addToast)
   const reloadFriends = useFriendStore((s) => s.load)
 
@@ -119,8 +118,7 @@ export function ProfileRoute({ mode }: ProfileRouteProps) {
     if (!targetId) return
     try {
       const conv = await useChatStore.getState().startDm(targetId)
-      await useChatStore.getState().select(conv.id)
-      openPanel('chat')
+      await useChatStore.getState().openFloating(conv.id)
       navigate(paths.root())
     } catch {
       addToast(t('friend.error.message'), 'error')
@@ -170,7 +168,7 @@ export function ProfileRoute({ mode }: ProfileRouteProps) {
         ) : (
           <>
             {mode === 'other' && (
-              <div className="hidden md:block mx-auto w-full max-w-[760px] px-8 pt-6 -mb-3">
+              <div className="mx-auto hidden w-full max-w-5xl px-8 pt-6 -mb-3 md:block">
                 <button
                   type="button"
                   onClick={() => navigate(-1)}
@@ -182,6 +180,7 @@ export function ProfileRoute({ mode }: ProfileRouteProps) {
               </div>
             )}
             <ProfileView
+              key={data.user.id}
               mode={mode}
               data={data}
               pendingAction={pendingAction}

@@ -7,6 +7,7 @@ import { useUIStore } from '@/lib/store/useUIStore';
 import { studyApi } from '@/lib/study/studyApi';
 import { cn } from '@/lib/cn';
 import { Dialog } from '@/components/ui/Dialog';
+import { UserAvatar } from '@/components/auth/UserAvatar';
 
 interface InviteModalProps {
   open: boolean;
@@ -137,9 +138,7 @@ export function InviteModal({ open, onClose }: InviteModalProps) {
                     status ? 'opacity-60' : selected ? 'bg-accent/10' : 'hover:bg-bg-tertiary',
                   )}
                 >
-                  <div className="w-8 h-8 rounded-full bg-bg-tertiary border border-border flex items-center justify-center text-sm font-medium text-text-secondary shrink-0">
-                    {user.name.charAt(0).toUpperCase()}
-                  </div>
+                  <UserAvatar name={user.name} email={user.email} src={user.avatar_url} size="md" className="border border-border" />
                   <div className="flex-1 min-w-0">
                     <p className="text-sm text-text-primary truncate">{user.name}</p>
                   </div>

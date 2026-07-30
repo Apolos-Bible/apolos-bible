@@ -9,6 +9,7 @@ import type { Conversation } from '@/lib/chatApi'
 
 interface ConversationListProps {
   onNewChat?: () => void
+  onSelect?: (conversation: Conversation) => void
 }
 
 function relativeTime(iso: string | null): string {
@@ -27,12 +28,12 @@ function conversationTitle(c: Conversation, selfId: number | undefined): string 
   return other?.name ?? i18n.t('chat.directMessage')
 }
 
-function conversationAvatarEmail(c: Conversation, selfId: number | undefined): string {
+function conversationAvatar(c: Conversation, selfId: number | undefined) {
   const other = c.participants.find(p => p.id !== selfId)
-  return other?.email ?? c.participants[0]?.email ?? '?'
+  return other ?? c.participants[0]
 }
 
-export function ConversationList({ onNewChat }: ConversationListProps = {}) {
+export function ConversationList({ onNewChat, onSelect }: ConversationListProps = {}) {
   const { t }        = useTranslation()
   const conversations = useChatStore(s => s.conversations)
   const selectedId    = useChatStore(s => s.selectedId)
@@ -95,7 +96,7 @@ export function ConversationList({ onNewChat }: ConversationListProps = {}) {
         return (
           <button
             key={c.id}
-            onClick={() => select(c.id)}
+            onClick={() => onSelect ? onSelect(c) : select(c.id)}
             className={cn(
               'group relative w-full text-left flex gap-3 md:gap-2.5 items-center md:items-start transition-colors',
               'px-4 md:px-3 py-3 md:py-2.5',
@@ -118,12 +119,23 @@ export function ConversationList({ onNewChat }: ConversationListProps = {}) {
             {/* Avatar */}
             <span className="relative shrink-0">
               {isGroup ? (
-                <span className="w-14 h-14 md:w-7 md:h-7 rounded-full bg-accent/15 text-accent flex items-center justify-center">
-                  <UsersRound className="w-6 h-6 md:w-3.5 md:h-3.5" strokeWidth={1.75} />
-                </span>
+                c.avatar_url ? (
+                  <UserAvatar
+                    name={title}
+                    src={c.avatar_url}
+                    size="xl"
+                    className="w-14 h-14 text-lg md:w-7 md:h-7 md:text-xs"
+                  />
+                ) : (
+                  <span className="w-14 h-14 md:w-7 md:h-7 rounded-full bg-accent/15 text-accent flex items-center justify-center">
+                    <UsersRound className="w-6 h-6 md:w-3.5 md:h-3.5" strokeWidth={1.75} />
+                  </span>
+                )
               ) : (
                 <UserAvatar
-                  email={conversationAvatarEmail(c, selfId)}
+                  name={conversationAvatar(c, selfId)?.name}
+                  email={conversationAvatar(c, selfId)?.email}
+                  src={conversationAvatar(c, selfId)?.avatar_url}
                   size="md"
                   className="w-14 h-14 text-lg md:w-7 md:h-7 md:text-xs"
                 />
