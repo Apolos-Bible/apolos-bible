@@ -1,7 +1,13 @@
-import { type ReactNode } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
-import { BookOpen, GraduationCap, UsersRound } from 'lucide-react'
+import {
+  BookOpen,
+  GraduationCap,
+  MessagesSquare,
+  Search,
+  UserRound,
+  type LucideIcon,
+} from 'lucide-react'
 import { paths, isPageRoute } from '@/router/paths'
 import { useUIStore } from '@/lib/store/useUIStore'
 import { useAuthStore } from '@/lib/store/useAuthStore'
@@ -11,14 +17,14 @@ import { useStudyStore } from '@/lib/store/useStudyStore'
 import { cn } from '@/lib/cn'
 
 interface NavButtonProps {
-  icon: ReactNode
+  icon: LucideIcon
   label: string
   active?: boolean
   badge?: number
   onClick: () => void
 }
 
-function NavButton({ icon, label, active = false, badge, onClick }: NavButtonProps) {
+function NavButton({ icon: Icon, label, active = false, badge, onClick }: NavButtonProps) {
   return (
     <button
       type="button"
@@ -31,7 +37,7 @@ function NavButton({ icon, label, active = false, badge, onClick }: NavButtonPro
       )}
     >
       <span className="relative inline-flex h-6 w-6 items-center justify-center">
-        {icon}
+        <Icon className="h-5 w-5" strokeWidth={1.75} aria-hidden />
         {badge != null && badge > 0 && (
           <span className="absolute -right-2 -top-1 min-w-[16px] h-[16px] px-1 rounded-full bg-accent text-bg-primary text-[10px] font-semibold leading-[16px] text-center">
             {badge > 9 ? '9+' : badge}
@@ -76,30 +82,11 @@ function BibleButton({ label, active, onClick }: BibleButtonProps) {
   )
 }
 
-function SearchIcon() {
-  return (
-    <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" className="h-[22px] w-[22px]">
-      <circle cx="7" cy="7" r="4.25" />
-      <path d="M10.5 10.5L13.5 13.5" strokeLinecap="round" />
-    </svg>
-  )
-}
-
-function ProfileIcon() {
-  return (
-    <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" className="h-[22px] w-[22px]">
-      <circle cx="8" cy="6" r="2.5" />
-      <path d="M2 13c0-3.3 2.7-5 6-5s6 1.7 6 5" strokeLinecap="round" />
-    </svg>
-  )
-}
-
 export function MobileBottomNav() {
   const { t } = useTranslation()
   const navigate = useNavigate()
   const { pathname } = useLocation()
   const togglePanel = useUIStore((s) => s.togglePanel)
-  const openPanel = useUIStore((s) => s.openPanel)
   const closePanel = useUIStore((s) => s.closePanel)
   const activePanel = useUIStore((s) => s.activePanel)
   const closeMobileSidebar = useUIStore((s) => s.closeMobileSidebar)
@@ -124,12 +111,6 @@ export function MobileBottomNav() {
   }
 
   const goToSearch = () => {
-    if (onPage) {
-      clearOthers()
-      openMobileSearch()
-      navigate(paths.root())
-      return
-    }
     if (mobileSearchOpen) {
       closeMobileSearch()
       return
@@ -142,13 +123,6 @@ export function MobileBottomNav() {
     if (!user) {
       clearOthers()
       openAuthModal()
-      return
-    }
-    // Panels render in the reader's layout — bounce back there if we're on a page.
-    if (onPage) {
-      clearOthers()
-      openPanel(panel)
-      navigate(paths.root())
       return
     }
     if (activePanel === panel && !mobileSearchOpen) {
@@ -170,6 +144,13 @@ export function MobileBottomNav() {
   }
 
   const isReader = !onPage && !mobileSearchOpen && activePanel === null
+  const isProfile = activePanel === null
+    && !mobileSearchOpen
+    && (
+      pathname.startsWith('/perfil')
+      || pathname.startsWith('/ajustes')
+      || pathname.startsWith('/u/')
+    )
   const hidden = collapsed && isReader
 
   return (
@@ -185,15 +166,15 @@ export function MobileBottomNav() {
       inert={hidden ? '' : undefined}
     >
       <NavButton
-        icon={<SearchIcon />}
+        icon={Search}
         label={t('layout.search')}
-        active={!onPage && mobileSearchOpen}
+        active={mobileSearchOpen}
         onClick={goToSearch}
       />
       <NavButton
-        icon={<GraduationCap className="h-[22px] w-[22px]" strokeWidth={1.6} />}
+        icon={GraduationCap}
         label={t('nav.studies')}
-        active={!onPage && activePanel === 'my-studies'}
+        active={activePanel === 'my-studies'}
         badge={pendingInvitations}
         onClick={goToPanel('my-studies')}
       />
@@ -203,16 +184,16 @@ export function MobileBottomNav() {
         onClick={goToBible}
       />
       <NavButton
-        icon={<UsersRound className="h-[22px] w-[22px]" strokeWidth={1.6} />}
+        icon={MessagesSquare}
         label={t('nav.chats')}
-        active={!onPage && (activePanel === 'friends' || activePanel === 'chat')}
+        active={activePanel === 'friends' || activePanel === 'chat'}
         badge={chatUnread + friendsUnread}
         onClick={goToPanel('friends')}
       />
       <NavButton
-        icon={<ProfileIcon />}
+        icon={UserRound}
         label={t('nav.profile')}
-        active={pathname.startsWith('/perfil') || pathname.startsWith('/ajustes') || pathname.startsWith('/u/')}
+        active={isProfile}
         badge={friendsUnread}
         onClick={goToProfile}
       />

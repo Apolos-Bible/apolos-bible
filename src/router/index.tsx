@@ -1,19 +1,12 @@
 import { createBrowserRouter } from 'react-router-dom'
 import { RootLayout } from './RootLayout'
 import { RootRedirect } from './routes/RootRedirect'
-import { BibleRoute } from './routes/BibleRoute'
 import { StudyRoute } from './routes/StudyRoute'
 import { ResetPasswordRoute } from './routes/ResetPasswordRoute'
 import { GoogleFinishRoute } from './routes/GoogleFinishRoute'
 import { AuthBridgeRoute } from './routes/AuthBridgeRoute'
-import { ProfileRoute } from './routes/ProfileRoute'
-import { ConversationRoute } from './routes/ConversationRoute'
-import { SettingsRoute } from './routes/SettingsRoute'
-import { MarketplaceRoute } from './routes/MarketplaceRoute'
-import { MarketplacePathRoute } from './routes/MarketplacePathRoute'
-import { MyPathsRoute } from './routes/MyPathsRoute'
-import { PathEditorRoute } from './routes/PathEditorRoute'
 import { NotFound } from './routes/NotFound'
+import { workspaceRoutes } from './workspaceRoutes'
 
 export const router = createBrowserRouter([
   {
@@ -21,35 +14,11 @@ export const router = createBrowserRouter([
     errorElement: <NotFound />,
     children: [
       { index: true, element: <RootRedirect /> },
-
-      // Bible (no locale prefix — defaults to current locale)
-      { path: 'bible/:book', element: <BibleRoute /> },
-      { path: 'bible/:book/:chapter', element: <BibleRoute /> },
-      { path: 'bible/:book/:chapter/:verse', element: <BibleRoute /> },
-
-      // Bible (localized — :lang must be a known app locale or this 404s)
-      { path: ':lang/bible/:book', element: <BibleRoute /> },
-      { path: ':lang/bible/:book/:chapter', element: <BibleRoute /> },
-      { path: ':lang/bible/:book/:chapter/:verse', element: <BibleRoute /> },
+      ...workspaceRoutes.filter((route) => route.path !== '*'),
 
       // Study sessions: owner (no token), guest (with token)
       { path: 'study/:sessionId', element: <StudyRoute /> },
       { path: 'study/:sessionId/:shareToken', element: <StudyRoute /> },
-
-      // Profile + settings (auth-gated inside the route)
-      { path: 'perfil', element: <ProfileRoute mode="self" /> },
-      { path: 'u/:userId', element: <ProfileRoute mode="other" /> },
-      { path: 'chat/:conversationId', element: <ConversationRoute /> },
-      { path: 'ajustes', element: <SettingsRoute /> },
-
-      // Marketplace: a full page of its own, not a panel over the reader
-      { path: 'marketplace', element: <MarketplaceRoute /> },
-      { path: 'marketplace/:slug', element: <MarketplacePathRoute /> },
-
-      // Writing study paths — also full pages: the editor needs the width
-      { path: 'mis-rutas', element: <MyPathsRoute /> },
-      { path: 'mis-rutas/:slug', element: <PathEditorRoute /> },
-      { path: 'mis-rutas/:slug/:studySlug', element: <PathEditorRoute /> },
 
       // Email reset-password deep link (legacy params supported in handler)
       { path: 'auth/reset-password', element: <ResetPasswordRoute /> },

@@ -39,7 +39,7 @@ export function FeaturedHero({ items }: { items: StudyPathCard[] }) {
   return (
     <section
       aria-label={t('market.featuredTitle')}
-      className="grid gap-3 lg:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]"
+      className="workspace-featured-hero grid gap-3 lg:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]"
     >
       <article className="relative overflow-hidden rounded-2xl border border-border-subtle">
         <div
@@ -51,14 +51,14 @@ export function FeaturedHero({ items }: { items: StudyPathCard[] }) {
         />
         <div aria-hidden className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent" />
 
-        <div className="relative flex h-full min-h-[19rem] flex-col justify-end gap-3 p-6 md:p-8">
+        <div className="workspace-featured-content relative flex h-full min-h-[19rem] flex-col justify-end gap-3 p-6 md:p-8">
           <span className="inline-flex w-fit items-center gap-1.5 rounded-full bg-white/15 px-2.5 py-1 text-[11px] font-semibold uppercase tracking-[0.12em] text-white backdrop-blur">
             <Sparkles className="h-3 w-3" />
             {t('market.featuredBadge')}
           </span>
 
           <button type="button" onClick={() => navigate(paths.marketplacePath(hero.slug))} className="text-left">
-            <h2 className="text-2xl font-semibold leading-tight text-white decoration-white/40 hover:underline md:text-4xl">
+            <h2 className="workspace-featured-title text-2xl font-semibold leading-tight text-white decoration-white/40 hover:underline md:text-4xl">
               {hero.title}
             </h2>
           </button>
@@ -114,7 +114,7 @@ export function FeaturedHero({ items }: { items: StudyPathCard[] }) {
       </article>
 
       {rest.length > 0 && (
-        <div className="flex flex-col gap-2">
+        <div className="workspace-featured-list flex flex-col gap-2">
           {rest.map((item) => {
             const h = hueOf(item.slug)
             return (
@@ -122,7 +122,7 @@ export function FeaturedHero({ items }: { items: StudyPathCard[] }) {
                 key={item.slug}
                 type="button"
                 onClick={() => setActiveSlug(item.slug)}
-                className="group flex flex-1 items-center gap-3 rounded-xl border border-border-subtle bg-bg-primary p-2.5 text-left transition-colors hover:border-accent/50 hover:bg-bg-tertiary"
+                className="workspace-featured-item group flex flex-1 items-center gap-3 rounded-xl border border-border-subtle bg-bg-primary p-2.5 text-left transition-colors hover:border-accent/50 hover:bg-bg-tertiary"
               >
                 <span
                   aria-hidden

@@ -4,8 +4,8 @@ import { Skeleton } from '@/components/ui/Skeleton'
 export function ProfileSkeleton() {
   return (
     <div className="min-h-full bg-bg-secondary">
-      <div className="mx-auto w-full max-w-5xl px-4 py-5 sm:px-6 md:px-8 md:py-8">
-        <div className="flex flex-col items-center gap-5 border-b border-border-subtle pb-7 sm:flex-row sm:items-start md:gap-6 md:pb-8">
+      <div className="workspace-page-frame mx-auto w-full max-w-5xl px-4 py-5 sm:px-6 md:px-8 md:py-8">
+        <div className="workspace-profile-header flex flex-col items-center gap-5 border-b border-border-subtle pb-7 sm:flex-row sm:items-start md:gap-6 md:pb-8">
           <div className="h-24 w-24 shrink-0 animate-pulse rounded-full bg-bg-tertiary md:h-28 md:w-28" />
           <div className="flex w-full max-w-sm flex-1 flex-col items-center gap-2 pt-2 sm:items-start">
             <Skeleton className="h-7 w-40" />
@@ -19,7 +19,7 @@ export function ProfileSkeleton() {
           </div>
         </div>
 
-        <div className="mt-7 grid items-start gap-7 lg:grid-cols-[minmax(0,1fr)_300px] lg:gap-8">
+        <div className="workspace-profile-grid mt-7 grid items-start gap-7 lg:grid-cols-[minmax(0,1fr)_300px] lg:gap-8">
           <aside className="rounded-2xl border border-border-subtle bg-bg-secondary p-5 lg:order-2">
             <Skeleton className="h-2.5 w-24" />
             <div className="mt-3 grid grid-cols-2 gap-2">

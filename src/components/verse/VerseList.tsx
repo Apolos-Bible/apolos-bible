@@ -440,7 +440,7 @@ export function VerseList() {
     <div className="bg-bg-secondary flex h-full flex-col relative">
       <SEOMeta />
       {/* Floating chapter navigation */}
-      <div className="pointer-events-none absolute inset-x-0 top-16 bottom-0 z-20 hidden md:flex items-center">
+      <div className="workspace-reader-chapter-nav pointer-events-none absolute inset-x-0 top-16 bottom-0 z-20 hidden md:flex items-center">
         <div className="w-full max-w-[684px] mx-auto flex justify-between px-0">
         <Tooltip label={bookIdx === 0 && selectedChapter === 1 ? '' : t('verse.previousChapter')} side="top">
           <button
@@ -494,15 +494,15 @@ export function VerseList() {
               mobileChromeCollapsed && 'max-h-0 -translate-y-full opacity-0 overflow-hidden',
             )}
           >
-            <div className="flex flex-wrap items-center justify-between gap-2 border-b border-border-subtle px-3 py-2 md:border-b-0 md:bg-transparent md:px-4 md:py-2">
-              <div className="hidden md:block pointer-events-auto">
+            <div className="workspace-reader-toolbar flex flex-wrap items-center justify-between gap-2 border-b border-border-subtle px-3 py-2 md:border-b-0 md:bg-transparent md:px-4 md:py-2">
+              <div className="workspace-reader-presence hidden md:block pointer-events-auto">
                 <PresenceAvatars users={others} />
               </div>
               <div className="flex gap-2 items-center ml-auto">
-                <div className="hidden md:block">
+                <div className="workspace-reader-toolbar-wide hidden md:block">
                   <ReadingToolbar />
                 </div>
-                <div className="md:hidden">
+                <div className="workspace-reader-toolbar-compact md:hidden">
                   <ReadingToolbar showVerseActions={false} />
                 </div>
                 <div
@@ -541,11 +541,11 @@ export function VerseList() {
             </div>
           </div>
 
-          <div className="max-w-[660px] mx-auto px-4 md:px-10 pt-4 pb-16">
+          <div className="workspace-reader-content max-w-[660px] mx-auto px-4 md:px-10 pt-4 pb-16">
 
             {/* Chapter heading */}
-            <div className="mb-6 md:mb-8 text-center">
-              <h1 className="font-reading text-xl md:text-2xl font-medium tracking-tight text-text-primary">{bookName}</h1>
+            <div className="workspace-reader-heading mb-6 md:mb-8 text-center">
+              <h1 className="workspace-reader-title font-reading text-xl md:text-2xl font-medium tracking-tight text-text-primary">{bookName}</h1>
               <p className="mt-1 text-[10px] font-sans font-semibold uppercase tracking-[0.18em] text-accent/70">
                 {t('layout.chapter', { n: selectedChapter })}
               </p>
@@ -694,6 +694,7 @@ export function VerseList() {
                           openVerseMenuFromButton(e.currentTarget, verse)
                         }}
                         className={cn(
+                          'workspace-reader-action',
                           'shrink-0 self-start mt-0.5 inline-flex h-10 w-10 md:h-8 md:w-8 items-center justify-center rounded-md',
                           'text-text-muted hover:text-text-primary hover:bg-bg-tertiary transition-opacity',
                           'md:opacity-0 md:group-hover:opacity-100 md:group-focus-within:opacity-100 md:focus-visible:opacity-100',
@@ -721,6 +722,7 @@ export function VerseList() {
                             })
                         }}
                         className={cn(
+                          'workspace-reader-bookmark',
                           'hidden md:inline-flex shrink-0 self-start mt-0.5 h-8 w-8 items-center justify-center rounded-md transition-opacity',
                           'hover:bg-bg-tertiary',
                           isBookmarked

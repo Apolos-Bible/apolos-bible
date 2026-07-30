@@ -55,7 +55,7 @@ export function CommentaryPanel() {
   }, [commentary])
 
   return (
-    <div className="flex flex-col h-full bg-bg-secondary border-l border-border-subtle">
+    <div className="flex h-full w-full min-w-0 flex-col border-l border-border-subtle bg-bg-secondary">
       <PanelHeader
         subtitle={t('commentary.title')}
         title={`${bookName} ${selectedChapter}`}

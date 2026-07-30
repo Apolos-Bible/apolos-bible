@@ -42,14 +42,14 @@ export function ConversationList({ onNewChat, onSelect }: ConversationListProps 
   const selfId        = useAuthStore(s => s.user?.id)
 
   if (loading && conversations.length === 0) {
-    return <p className="text-sm md:text-xs text-text-muted px-4 py-6">{t('common.loading')}</p>
+    return <p className="workspace-chat-loading text-sm md:text-xs text-text-muted px-4 py-6">{t('common.loading')}</p>
   }
 
   if (conversations.length === 0) {
     return (
       <>
         {/* Mobile: editorial empty state */}
-        <div className="md:hidden flex-1 flex flex-col items-center justify-center px-8 text-center">
+        <div className="workspace-chat-empty-rich md:hidden flex-1 flex flex-col items-center justify-center px-8 text-center">
           <div className="w-14 h-14 rounded-full bg-accent/10 text-accent flex items-center justify-center mb-5">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.4" className="w-7 h-7" aria-hidden="true">
               <path d="M4 6.5C4 5.7 4.7 5 5.5 5h13c.8 0 1.5.7 1.5 1.5v8c0 .8-.7 1.5-1.5 1.5H10l-4 3.5v-3.5h-.5C4.7 16 4 15.3 4 14.5v-8z" strokeLinejoin="round" />
@@ -73,7 +73,7 @@ export function ConversationList({ onNewChat, onSelect }: ConversationListProps 
           )}
         </div>
         {/* Desktop: keep existing minimal note */}
-        <p className="hidden md:block text-xs text-text-muted px-4 py-6">
+        <p className="workspace-chat-empty-compact hidden md:block text-xs text-text-muted px-4 py-6">
           {t('chat.conversationsEmpty')}
         </p>
       </>
@@ -81,7 +81,7 @@ export function ConversationList({ onNewChat, onSelect }: ConversationListProps 
   }
 
   return (
-    <div className="flex-1 overflow-y-auto md:py-1">
+    <div className="workspace-conversation-list flex-1 overflow-y-auto md:py-1">
       {conversations.map((c) => {
         const isActive = c.id === selectedId
         const title    = conversationTitle(c, selfId)
@@ -98,6 +98,7 @@ export function ConversationList({ onNewChat, onSelect }: ConversationListProps 
             key={c.id}
             onClick={() => onSelect ? onSelect(c) : select(c.id)}
             className={cn(
+              'workspace-conversation-row',
               'group relative w-full text-left flex gap-3 md:gap-2.5 items-center md:items-start transition-colors',
               'px-4 md:px-3 py-3 md:py-2.5',
               'md:rounded-none',
@@ -124,10 +125,10 @@ export function ConversationList({ onNewChat, onSelect }: ConversationListProps 
                     name={title}
                     src={c.avatar_url}
                     size="xl"
-                    className="w-14 h-14 text-lg md:w-7 md:h-7 md:text-xs"
+                    className="workspace-conversation-list-avatar w-14 h-14 text-lg md:w-7 md:h-7 md:text-xs"
                   />
                 ) : (
-                  <span className="w-14 h-14 md:w-7 md:h-7 rounded-full bg-accent/15 text-accent flex items-center justify-center">
+                  <span className="workspace-conversation-list-avatar w-14 h-14 md:w-7 md:h-7 rounded-full bg-accent/15 text-accent flex items-center justify-center">
                     <UsersRound className="w-6 h-6 md:w-3.5 md:h-3.5" strokeWidth={1.75} />
                   </span>
                 )
@@ -137,7 +138,7 @@ export function ConversationList({ onNewChat, onSelect }: ConversationListProps 
                   email={conversationAvatar(c, selfId)?.email}
                   src={conversationAvatar(c, selfId)?.avatar_url}
                   size="md"
-                  className="w-14 h-14 text-lg md:w-7 md:h-7 md:text-xs"
+                  className="workspace-conversation-list-avatar w-14 h-14 text-lg md:w-7 md:h-7 md:text-xs"
                 />
               )}
               {/* Subtle accent ring on unread */}
@@ -152,6 +153,7 @@ export function ConversationList({ onNewChat, onSelect }: ConversationListProps 
             <div className="flex-1 min-w-0">
               <div className="flex items-baseline justify-between gap-2">
                 <span className={cn(
+                  'workspace-conversation-list-title',
                   'truncate',
                   'text-[15px] md:text-sm',
                   isUnread ? 'font-semibold text-text-primary' : 'font-medium text-text-primary',
@@ -159,6 +161,7 @@ export function ConversationList({ onNewChat, onSelect }: ConversationListProps 
                   {title}
                 </span>
                 <span className={cn(
+                  'workspace-conversation-time',
                   'shrink-0 tabular-nums',
                   'text-xs md:text-2xs',
                   isUnread ? 'text-accent md:text-text-muted' : 'text-text-muted',
@@ -166,8 +169,9 @@ export function ConversationList({ onNewChat, onSelect }: ConversationListProps 
                   {relativeTime(c.last_message_at)}
                 </span>
               </div>
-              <div className="flex items-center justify-between gap-2 mt-1 md:mt-0.5">
+              <div className="workspace-conversation-preview-row flex items-center justify-between gap-2 mt-1 md:mt-0.5">
                 <span className={cn(
+                  'workspace-conversation-preview',
                   'truncate',
                   'text-sm md:text-xs',
                   noPreview && 'italic',

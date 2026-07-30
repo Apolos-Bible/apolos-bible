@@ -95,7 +95,6 @@ function ConversationPage({ conversationId }: { conversationId: number }) {
           onBack={() => navigate(paths.root())}
           onOpenChat={() => {
             void openFloating(conversation.id)
-            navigate(paths.root())
           }}
           onLeave={async () => {
             await leave(conversation.id)
@@ -223,8 +222,8 @@ function GroupConversationPage({
 
   return (
     <div className="min-h-full bg-bg-secondary">
-      <div className="mx-auto max-w-5xl px-4 py-5 md:px-8 md:py-8">
-        <div className="mb-6 flex items-center justify-between gap-3">
+      <div className="workspace-page-frame mx-auto max-w-5xl px-4 py-5 md:px-8 md:py-8">
+        <div className="workspace-conversation-actions mb-6 flex items-center justify-between gap-3">
           <button
             type="button"
             onClick={onBack}
@@ -244,7 +243,7 @@ function GroupConversationPage({
         </div>
 
         <header className="border-b border-border-subtle pb-8">
-          <div className="flex flex-col items-center text-center sm:flex-row sm:items-end sm:text-left">
+          <div className="workspace-conversation-header flex flex-col items-center text-center sm:flex-row sm:items-end sm:text-left">
             <div className="relative shrink-0">
               <GroupAvatar conversation={conversation} />
               {isAdmin && (
@@ -270,8 +269,8 @@ function GroupConversationPage({
               )}
             </div>
 
-            <div className="mt-4 min-w-0 flex-1 sm:ml-6 sm:mt-0">
-              <div className="flex flex-wrap items-center justify-center gap-2 sm:justify-start">
+            <div className="workspace-conversation-identity mt-4 min-w-0 flex-1 sm:ml-6 sm:mt-0">
+              <div className="workspace-conversation-title flex flex-wrap items-center justify-center gap-2 sm:justify-start">
                 <h1 className="max-w-full truncate text-2xl font-semibold tracking-tight text-text-primary md:text-3xl">
                   {conversation.name ?? t('chat.groupChat')}
                 </h1>
@@ -297,7 +296,7 @@ function GroupConversationPage({
           </div>
         </header>
 
-        <div className="mt-8 grid gap-8 lg:grid-cols-[minmax(0,1fr)_300px]">
+        <div className="workspace-conversation-grid mt-8 grid gap-8 lg:grid-cols-[minmax(0,1fr)_300px]">
           <main className="min-w-0 space-y-8">
             <section>
               <div className="mb-3 flex items-end justify-between">
@@ -315,6 +314,7 @@ function GroupConversationPage({
                     <div
                       key={participant.id}
                       className={cn(
+                        'workspace-conversation-member',
                         'flex items-center gap-3 px-4 py-3.5',
                         index > 0 && 'border-t border-border-subtle',
                       )}
@@ -332,7 +332,7 @@ function GroupConversationPage({
                         </span>
                       </div>
                       {isAdmin && participant.id !== userId && (
-                        <div className="flex items-center gap-1">
+                        <div className="workspace-conversation-member-actions flex items-center gap-1">
                           <button
                             type="button"
                             disabled={busy}
@@ -369,7 +369,7 @@ function GroupConversationPage({
                   <h2 className="text-base font-semibold text-text-primary">{t('chat.addFriends')}</h2>
                 </div>
                 <div className="rounded-xl border border-border-subtle p-4">
-                  <div className="flex gap-2">
+                  <div className="workspace-conversation-invite flex gap-2">
                     <input
                       value={query}
                       onChange={(event) => setQuery(event.target.value)}
@@ -536,14 +536,14 @@ function GroupConversationPage({
 function GroupAvatar({ conversation }: { conversation: Conversation }) {
   if (conversation.avatar_url) {
     return (
-      <span className="block h-24 w-24 overflow-hidden rounded-full border-4 border-bg-secondary bg-bg-tertiary shadow-sm md:h-28 md:w-28">
+      <span className="workspace-conversation-avatar block h-24 w-24 overflow-hidden rounded-full border-4 border-bg-secondary bg-bg-tertiary shadow-sm md:h-28 md:w-28">
         <img src={conversation.avatar_url} alt={conversation.name ?? ''} className="h-full w-full object-cover" />
       </span>
     )
   }
 
   return (
-    <span className="flex h-24 w-24 items-center justify-center rounded-full border-4 border-bg-secondary bg-accent/10 text-accent shadow-sm md:h-28 md:w-28">
+    <span className="workspace-conversation-avatar flex h-24 w-24 items-center justify-center rounded-full border-4 border-bg-secondary bg-accent/10 text-accent shadow-sm md:h-28 md:w-28">
       <UsersRound className="h-10 w-10 md:h-12 md:w-12" strokeWidth={1.4} />
     </span>
   )

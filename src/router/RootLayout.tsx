@@ -1,5 +1,5 @@
 import { useEffect } from 'react'
-import { Outlet, useNavigate } from 'react-router-dom'
+import { Outlet, useLocation, useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { paths } from './paths'
 import { KeyboardProvider, useCommands } from '@/lib/keyboard'
@@ -21,6 +21,9 @@ import { useFriendStore } from '@/lib/store/useFriendStore'
 import { useChatStore } from '@/lib/store/useChatStore'
 import { checkForAppUpdates } from '@/lib/updater'
 import { registerAuthDeepLink } from '@/lib/deepLink'
+import { useIsMobile } from '@/lib/useIsMobile'
+import { isWorkspaceRoute } from './paths'
+import { WorkspaceDesktopShell } from '@/components/layout/WorkspaceDesktopShell'
 
 const VISITED_STORAGE_KEY = 'verbum_has_visited'
 let hasLoggedStartupSettings = false
@@ -36,6 +39,8 @@ export function RootLayout() {
 function RootLayoutSurface() {
   const { t } = useTranslation()
   const navigate = useNavigate()
+  const location = useLocation()
+  const isMobile = useIsMobile()
   const openCommandPalette = useUIStore(s => s.openCommandPalette)
   const authModalOpen      = useUIStore(s => s.authModalOpen)
   const closeAuthModal     = useUIStore(s => s.closeAuthModal)
@@ -153,7 +158,9 @@ function RootLayoutSurface() {
   return (
     <>
       <RegionNav />
-      <Outlet />
+      {!isMobile && isWorkspaceRoute(location.pathname)
+        ? <WorkspaceDesktopShell />
+        : <Outlet />}
       <CommandPalette />
       <Toast />
       <KeyboardShortcutsPanel />

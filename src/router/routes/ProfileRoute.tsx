@@ -119,7 +119,6 @@ export function ProfileRoute({ mode }: ProfileRouteProps) {
     try {
       const conv = await useChatStore.getState().startDm(targetId)
       await useChatStore.getState().openFloating(conv.id)
-      navigate(paths.root())
     } catch {
       addToast(t('friend.error.message'), 'error')
     }

@@ -39,7 +39,7 @@ export function ProfileActionBar({
 
   if (mode === 'self') {
     return (
-      <div className="mt-4 flex flex-wrap justify-center md:justify-start gap-2">
+      <div className="workspace-profile-actions mt-4 flex flex-wrap justify-center md:justify-start gap-2">
         <Link to={`${paths.settings()}#cuenta`} className={PRIMARY}>
           <Pencil size={14} strokeWidth={1.5} />
           {t('perfil.editProfile')}
@@ -108,5 +108,5 @@ export function ProfileActionBar({
 
   if (!content) return null
 
-  return <div className="mt-4 flex flex-wrap justify-center md:justify-start gap-2">{content}</div>
+  return <div className="workspace-profile-actions mt-4 flex flex-wrap justify-center md:justify-start gap-2">{content}</div>
 }

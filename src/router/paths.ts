@@ -79,6 +79,14 @@ export function isPageRoute(pathname: string): boolean {
   )
 }
 
+/** Routes that participate in the desktop editor-group workspace. */
+export function isWorkspaceRoute(pathname: string): boolean {
+  const segments = pathname.split('/').filter(Boolean)
+  const bibleRoute = segments[0] === 'bible'
+    || (isAppLocale(segments[0]) && segments[1] === 'bible')
+  return bibleRoute || isPageRoute(pathname)
+}
+
 export function verseIdToNumber(verseId: string | null | undefined): number | undefined {
   if (!verseId) return undefined
   const parts = verseId.split('-')

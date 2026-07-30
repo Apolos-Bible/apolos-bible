@@ -1,4 +1,4 @@
-import { type ReactNode } from 'react'
+import { useEffect, useRef, useState, type PointerEvent as ReactPointerEvent, type ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
 import { cn } from '@/lib/cn'
 import { useVerseStore } from '@/lib/store/useVerseStore'
@@ -11,6 +11,8 @@ import { MobileBottomNav } from './MobileBottomNav'
 import { MobileSearchView } from './MobileSearchView'
 import { BookSelector } from '@/components/sidebar/BookSelector'
 import { FloatingChatDock } from '@/components/chat/FloatingChatDock'
+import { WorkspaceTabs } from './WorkspaceTabs'
+import { useWorkspacePane } from './WorkspacePaneContext'
 
 interface PanelLayoutProps {
   sidebar: ReactNode
@@ -34,8 +36,12 @@ export function PanelLayout(props: PanelLayoutProps) {
 
 function PanelLayoutSurface({ sidebar, main, panel, leftPanel }: PanelLayoutProps) {
   const { t } = useTranslation()
+  const workspacePane = useWorkspacePane()
   const studyVerseId = useVerseStore((s) => s.studyVerseId)
   const closeStudyPanel = useVerseStore((s) => s.closeStudyPanel)
+  const selectedBook = useVerseStore((s) => s.selectedBook)
+  const selectedChapter = useVerseStore((s) => s.selectedChapter)
+  const books = useVerseStore((s) => s.books)
   const commentaryOpen = useUIStore((s) => s.commentaryOpen)
   const toggleCommentary = useUIStore((s) => s.toggleCommentary)
   const mobileBookPickerOpen = useUIStore((s) => s.mobileBookPickerOpen)
@@ -47,11 +53,12 @@ function PanelLayoutSurface({ sidebar, main, panel, leftPanel }: PanelLayoutProp
   const setReadingMode = useUIStore((s) => s.setReadingMode)
 
   const closeMobileStudyPanel = () => {
-    if (commentaryOpen) {
-      toggleCommentary()
-    }
     if (studyVerseId) {
       closeStudyPanel()
+      return
+    }
+    if (commentaryOpen) {
+      toggleCommentary()
     }
   }
 
@@ -83,6 +90,18 @@ function PanelLayoutSurface({ sidebar, main, panel, leftPanel }: PanelLayoutProp
   })
 
   const multiSelectedVerses = verses.filter((v) => selectedVerseIds.includes(v.id))
+  const activeBook = books.find((book) => book.slug === selectedBook)
+  const workspaceTitle = activeBook
+    ? `${activeBook.name} ${selectedChapter}`
+    : t('nav.bible')
+
+  useEffect(() => {
+    workspacePane?.reportTitle(workspaceTitle)
+  }, [workspacePane, workspaceTitle])
+
+  if (workspacePane) {
+    return <EmbeddedBibleWorkspace main={main} panel={panel} />
+  }
 
   return (
     <div className="app-viewport w-full overflow-hidden bg-bg-primary">
@@ -226,13 +245,16 @@ function PanelLayoutSurface({ sidebar, main, panel, leftPanel }: PanelLayoutProp
         </aside>
 
         <main
-          className="flex-1 min-w-0 h-full overflow-hidden"
+          className="flex min-w-0 flex-1 flex-col h-full overflow-hidden"
           data-tour="reading"
           data-region="reader"
           aria-label={t('a11y.regionReader')}
           tabIndex={-1}
         >
-          {main}
+          <WorkspaceTabs title={workspaceTitle} />
+          <div className="min-h-0 flex-1 overflow-hidden">
+            {main}
+          </div>
         </main>
 
         <aside
@@ -252,6 +274,95 @@ function PanelLayoutSurface({ sidebar, main, panel, leftPanel }: PanelLayoutProp
       </div>
 
       <FloatingChatDock rightPanelOpen={panel !== null} />
+    </div>
+  )
+}
+
+const BIBLE_CONTEXT_WIDTH_KEY = 'apolos_bible_context_width'
+
+function storedBibleContextWidth(): number {
+  const value = Number(localStorage.getItem(BIBLE_CONTEXT_WIDTH_KEY))
+  return Number.isFinite(value) ? Math.min(640, Math.max(260, value)) : 420
+}
+
+function EmbeddedBibleWorkspace({
+  main,
+  panel,
+}: {
+  main: ReactNode
+  panel: ReactNode | null
+}) {
+  const { t } = useTranslation()
+  const containerRef = useRef<HTMLDivElement>(null)
+  const [panelWidth, setPanelWidth] = useState(storedBibleContextWidth)
+
+  const beginResize = (event: ReactPointerEvent<HTMLDivElement>) => {
+    event.preventDefault()
+    const rect = containerRef.current?.getBoundingClientRect()
+    if (!rect) return
+    document.body.style.cursor = 'col-resize'
+    document.body.style.userSelect = 'none'
+
+    const move = (moveEvent: PointerEvent) => {
+      const max = Math.max(260, rect.width * 0.65)
+      setPanelWidth(Math.min(max, Math.max(260, rect.right - moveEvent.clientX)))
+    }
+    const finish = (upEvent: PointerEvent) => {
+      const max = Math.max(260, rect.width * 0.65)
+      const width = Math.min(max, Math.max(260, rect.right - upEvent.clientX))
+      setPanelWidth(width)
+      localStorage.setItem(BIBLE_CONTEXT_WIDTH_KEY, String(width))
+      document.body.style.cursor = ''
+      document.body.style.userSelect = ''
+      window.removeEventListener('pointermove', move)
+      window.removeEventListener('pointerup', finish)
+    }
+    window.addEventListener('pointermove', move)
+    window.addEventListener('pointerup', finish)
+  }
+
+  return (
+    <div ref={containerRef} className="workspace-bible-context flex h-full min-h-0 min-w-0 overflow-hidden bg-bg-secondary">
+      <main
+        className="workspace-bible-reader min-w-0 flex-1 overflow-hidden"
+        data-tour="reading"
+        data-region="reader"
+        aria-label={t('a11y.regionReader')}
+        tabIndex={-1}
+      >
+        {main}
+      </main>
+
+      {panel && (
+        <>
+          <div
+            role="separator"
+            aria-orientation="vertical"
+            aria-label={t('workspace.resizeBibleContext')}
+            tabIndex={0}
+            onPointerDown={beginResize}
+            onKeyDown={(event) => {
+              if (event.key !== 'ArrowLeft' && event.key !== 'ArrowRight') return
+              event.preventDefault()
+              const delta = event.key === 'ArrowLeft' ? 16 : -16
+              const width = Math.min(640, Math.max(260, panelWidth + delta))
+              setPanelWidth(width)
+              localStorage.setItem(BIBLE_CONTEXT_WIDTH_KEY, String(width))
+            }}
+            className="workspace-bible-context-separator group relative z-20 w-1 shrink-0 cursor-col-resize bg-border-subtle outline-none hover:bg-accent/50 focus-visible:bg-accent"
+          >
+            <span className="absolute inset-y-0 -left-1 -right-1" aria-hidden />
+          </div>
+          <aside
+            className="workspace-bible-context-panel h-full min-w-[260px] shrink-0 overflow-hidden"
+            style={{ width: `min(${panelWidth}px, 65%)` }}
+            data-region="panel"
+            aria-label={t('a11y.regionPanel')}
+          >
+            {panel}
+          </aside>
+        </>
+      )}
     </div>
   )
 }
