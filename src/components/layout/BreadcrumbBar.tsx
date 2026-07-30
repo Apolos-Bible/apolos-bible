@@ -1,15 +1,15 @@
 
 import { useTranslation } from 'react-i18next'
-import { useVerseStore } from '@/lib/store/useVerseStore'
+import { useActiveVerseStore } from '@/lib/store/useVerseStore'
 import { useUIStore } from '@/lib/store/useUIStore'
 import { usePresenceStore } from '@/lib/store/usePresenceStore'
 import { PresenceAvatars } from '@/components/realtime/PresenceAvatars'
 
 export function BreadcrumbBar() {
   const { t }           = useTranslation()
-  const books           = useVerseStore((s) => s.books)
-  const selectedBook    = useVerseStore((s) => s.selectedBook)
-  const selectedChapter = useVerseStore((s) => s.selectedChapter)
+  const books           = useActiveVerseStore((s) => s.books)
+  const selectedBook    = useActiveVerseStore((s) => s.selectedBook)
+  const selectedChapter = useActiveVerseStore((s) => s.selectedChapter)
   const openCommandPalette = useUIStore((s) => s.openCommandPalette)
   const others          = usePresenceStore((s) => s.others)
 

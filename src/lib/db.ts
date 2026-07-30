@@ -7,7 +7,7 @@ import type {
 } from './bibleApi'
 
 interface VersionsRow {
-  key: 'all'
+  key: string
   data: ApiVersion[]
 }
 

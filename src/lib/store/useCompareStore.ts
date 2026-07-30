@@ -1,8 +1,9 @@
 import { create } from 'zustand'
+import { createContext, createElement, useContext, type ReactNode } from 'react'
 import { bibleApi } from '@/lib/bibleApi'
 import type { ApiVersion, ApiChapterResponse } from '@/lib/bibleApi'
 
-interface VersionChapter {
+export interface ComparedVersionChapter {
   version: ApiVersion
   data: ApiChapterResponse | null
   loading: boolean
@@ -10,44 +11,116 @@ interface VersionChapter {
   notAvailable: boolean
 }
 
-interface CompareState {
+export interface CompareState {
   open: boolean
-  results: VersionChapter[]
+  result: ComparedVersionChapter | null
+  bookSlug: string
+  chapter: number
   targetVerseNumbers: number[]
-  openCompare: (versions: ApiVersion[], slug: string, chapter: number, verseNumbers?: number | number[]) => Promise<void>
+  hoveredVerseNumber: number | null
+  openCompare: (version: ApiVersion, slug: string, chapter: number, verseNumbers?: number | number[]) => Promise<void>
+  setHoveredVerse: (verseNumber: number | null) => void
   closeCompare: () => void
 }
 
-export const useCompareStore = create<CompareState>((set) => ({
+export function createCompareStore() {
+  let requestSequence = 0
+  return create<CompareState>((set) => ({
   open: false,
-  results: [],
+  result: null,
+  bookSlug: '',
+  chapter: 1,
   targetVerseNumbers: [],
+  hoveredVerseNumber: null,
 
-  openCompare: async (versions, slug, chapter, verseNumbers) => {
-    const initial: VersionChapter[] = versions.map(v => ({ version: v, data: null, loading: true, error: false, notAvailable: false }))
+  openCompare: async (version, slug, chapter, verseNumbers) => {
+    const requestId = ++requestSequence
     const targets = Array.isArray(verseNumbers)
       ? verseNumbers
       : verseNumbers != null
         ? [verseNumbers]
         : []
 
-    set({ open: true, results: initial, targetVerseNumbers: targets })
-
-    const settled = await Promise.allSettled(
-      versions.map(v => bibleApi.chapter(v.id, slug, chapter))
-    )
-
     set({
-      results: versions.map((v, i) => {
-        const r = settled[i]
-        if (r.status === 'fulfilled') {
-          return { version: v, data: r.value, loading: false, error: false, notAvailable: false }
-        }
-        const is404 = (r.reason as { status?: number })?.status === 404
-        return { version: v, data: null, loading: false, error: !is404, notAvailable: is404 }
-      }),
+      open: true,
+      result: {
+        version,
+        data: null,
+        loading: true,
+        error: false,
+        notAvailable: false,
+      },
+      bookSlug: slug,
+      chapter,
+      targetVerseNumbers: targets,
     })
+
+    try {
+      const data = await bibleApi.chapter(version.id, slug, chapter)
+      if (requestId !== requestSequence) return
+      set({
+        result: {
+          version,
+          data,
+          loading: false,
+          error: false,
+          notAvailable: false,
+        },
+      })
+    } catch (error) {
+      if (requestId !== requestSequence) return
+      const notAvailable = (error as { status?: number })?.status === 404
+      set({
+        result: {
+          version,
+          data: null,
+          loading: false,
+          error: !notAvailable,
+          notAvailable,
+        },
+      })
+    }
   },
 
-  closeCompare: () => set({ open: false, results: [], targetVerseNumbers: [] }),
-}))
+  setHoveredVerse: (hoveredVerseNumber) => set({ hoveredVerseNumber }),
+
+  closeCompare: () => {
+    requestSequence += 1
+    set({
+      open: false,
+      result: null,
+      bookSlug: '',
+      chapter: 1,
+      targetVerseNumbers: [],
+      hoveredVerseNumber: null,
+    })
+  },
+  }))
+}
+
+export const useCompareStore = createCompareStore()
+type CompareStore = typeof useCompareStore
+
+const workspaceCompareStores = new Map<string, CompareStore>()
+const CompareStoreContext = createContext<CompareStore | null>(null)
+
+export function getCompareStoreForTab(tabId: string): CompareStore {
+  let store = workspaceCompareStores.get(tabId)
+  if (!store) {
+    store = createCompareStore()
+    workspaceCompareStores.set(tabId, store)
+  }
+  return store
+}
+
+export function CompareStoreProvider({ store, children }: { store: CompareStore; children: ReactNode }) {
+  return createElement(CompareStoreContext.Provider, { value: store }, children)
+}
+
+export function useActiveCompareStore(): CompareState
+export function useActiveCompareStore<T>(selector: (state: CompareState) => T): T
+export function useActiveCompareStore<T>(selector?: (state: CompareState) => T): T | CompareState {
+  const store = useContext(CompareStoreContext) ?? useCompareStore
+  if (!selector) return store()
+  return store(selector)
+}

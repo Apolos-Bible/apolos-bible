@@ -8,8 +8,6 @@ import { CommandPalette } from '@/components/ui/CommandPalette'
 import { Toast } from '@/components/ui/Toast'
 import { KeyboardShortcutsPanel } from '@/components/ui/KeyboardShortcutsPanel'
 import { ContextMenu } from '@/components/ui/ContextMenu'
-import { CompareVersionsModal } from '@/components/reading/CompareVersionsModal'
-import { CrossReferencesPanel } from '@/components/reading/CrossReferencesPanel'
 import { AuthModal } from '@/components/auth/AuthModal'
 import { TutorialInvite } from '@/components/tutorial/TutorialInvite'
 import { TutorialOverlay } from '@/components/tutorial/TutorialOverlay'
@@ -166,8 +164,6 @@ function RootLayoutSurface() {
       <KeyboardShortcutsPanel />
       <AuthModal key={authModalKey} open={authModalOpen} onClose={closeAuthModal} initialMode={authModalMode} />
       <ContextMenu />
-      <CompareVersionsModal />
-      <CrossReferencesPanel />
       <TutorialInvite />
       <TutorialOverlay />
     </>

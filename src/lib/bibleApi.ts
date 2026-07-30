@@ -87,9 +87,12 @@ const chapterKey = (versionId: number, slug: string, n: number) => `${versionId}
 
 export const bibleApi = {
   versions: () => cacheFirst<ApiVersion[]>(
-    async () => (await db.versions.get('all'))?.data,
+    // The API only returns published versions. Use a new cache key whenever
+    // that publication contract changes so stale, formerly-visible versions
+    // cannot survive indefinitely in IndexedDB.
+    async () => (await db.versions.get('published:v1'))?.data,
     () => api.get<ApiVersion[]>('/api/versions'),
-    (data) => db.versions.put({ key: 'all', data }),
+    (data) => db.versions.put({ key: 'published:v1', data }),
     isArray,
   ),
   books: (versionId: number) => cacheFirst<ApiBook[]>(

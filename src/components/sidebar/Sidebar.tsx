@@ -3,7 +3,9 @@ import { useNavigate, useLocation } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { paths } from '@/router/paths'
 import {
+  BookOpen,
   BookPlus,
+  ExternalLink,
   GraduationCap,
   MessagesSquare,
   NotebookPen,
@@ -14,18 +16,19 @@ import {
   type LucideIcon,
 } from 'lucide-react'
 import { useUIStore } from '@/lib/store/useUIStore'
-import { useVerseStore } from '@/lib/store/useVerseStore'
+import { useActiveVerseStore } from '@/lib/store/useVerseStore'
 import { useAuthStore } from '@/lib/store/useAuthStore'
 import { useNotificationStore } from '@/lib/store/useNotificationStore'
 import { useChatStore } from '@/lib/store/useChatStore'
 import { useStudyStore } from '@/lib/store/useStudyStore'
 import { destroyEcho } from '@/lib/echo'
-import { BookSelector } from './BookSelector'
 import { UserAvatar } from '@/components/auth/UserAvatar'
 import { StartStudyModal } from '@/components/study/StartStudyModal'
 import { cn } from '@/lib/cn'
 import { modKey } from '@/lib/platform'
 import { Logo } from '@/components/brand/Logo'
+import { useContextMenuStore } from '@/lib/store/useContextMenuStore'
+import { createWorkspaceTab, useWorkspaceStore } from '@/lib/store/useWorkspaceStore'
 
 interface NavItemProps {
   icon: LucideIcon
@@ -33,13 +36,44 @@ interface NavItemProps {
   active?: boolean
   badge?: number
   onClick?: () => void
+  onOpenNew?: () => void
   dataTour?: string
 }
 
-function NavItem({ icon: Icon, label, active = false, badge, onClick, dataTour }: NavItemProps) {
+function NavItem({ icon: Icon, label, active = false, badge, onClick, onOpenNew, dataTour }: NavItemProps) {
+  const { t } = useTranslation()
+  const openMenu = useContextMenuStore((state) => state.openMenu)
+
   return (
     <button
-      onClick={onClick}
+      onClick={(event) => {
+        if ((event.metaKey || event.ctrlKey) && onOpenNew) {
+          onOpenNew()
+          return
+        }
+        onClick?.()
+      }}
+      onContextMenu={(event) => {
+        event.preventDefault()
+        event.stopPropagation()
+        const items = [
+          {
+            type: 'action' as const,
+            label: t('sidebar.chapter.open'),
+            icon: <Icon className="h-4 w-4" />,
+            onClick: () => onClick?.(),
+          },
+        ]
+        if (onOpenNew) {
+          items.push({
+            type: 'action' as const,
+            label: t('sidebar.chapter.openNewWindow'),
+            icon: <ExternalLink className="h-4 w-4" />,
+            onClick: onOpenNew,
+          })
+        }
+        openMenu(event.clientX, event.clientY, items)
+      }}
       data-tour={dataTour}
       aria-pressed={active}
       className={cn(
@@ -74,10 +108,13 @@ export function Sidebar() {
   const navigate           = useNavigate()
   const { pathname }       = useLocation()
   const openCommandPalette = useUIStore(s => s.openCommandPalette)
+  const openContextMenu    = useContextMenuStore(s => s.openMenu)
   const togglePanel        = useUIStore(s => s.togglePanel)
   const openAuthModal      = useUIStore(s => s.openAuthModal)
   const closeMobileSidebar = useUIStore(s => s.closeMobileSidebar)
   const activePanel        = useUIStore(s => s.activePanel)
+  const openTab            = useWorkspaceStore(s => s.openTab)
+  const workspaceTabs      = useWorkspaceStore(s => s.tabs)
   const user               = useAuthStore(s => s.user)
   const startPolling  = useNotificationStore(s => s.startPolling)
   const stopPolling   = useNotificationStore(s => s.stopPolling)
@@ -88,8 +125,34 @@ export function Sidebar() {
   const loadInvitations = useStudyStore(s => s.loadInvitations)
   const [showStartStudy, setShowStartStudy] = useState(false)
   const locale = useUIStore(s => s.locale)
-  const selectedBook = useVerseStore(s => s.selectedBook)
-  const selectedChapter = useVerseStore(s => s.selectedChapter)
+  const selectedBook = useActiveVerseStore(s => s.selectedBook)
+  const selectedChapter = useActiveVerseStore(s => s.selectedChapter)
+
+  const openRoute = (path: string, title: string, newWindow = false) => {
+    closeMobileSidebar()
+    if (newWindow) {
+      const tab = createWorkspaceTab(path, path, title)
+      tab.id = `${tab.id}:${Date.now()}:${Math.random().toString(36).slice(2, 7)}`
+      openTab(tab, useWorkspaceStore.getState().activeGroupId)
+    }
+    navigate(path)
+  }
+
+  const openDestinationMenu = (
+    event: React.MouseEvent,
+    open: () => void,
+  ) => {
+    event.preventDefault()
+    event.stopPropagation()
+    openContextMenu(event.clientX, event.clientY, [
+      { type: 'action', label: t('sidebar.chapter.open'), onClick: open },
+    ])
+  }
+
+  const biblePath = selectedBook
+    ? paths.bible({ lang: locale, book: selectedBook, chapter: selectedChapter })
+    : Object.values(workspaceTabs).find((tab) => tab.kind === 'bible')?.path
+      ?? paths.bible({ lang: locale, book: 'genesis', chapter: 1 })
 
   const goHome = () => {
     closeMobileSidebar()
@@ -147,14 +210,16 @@ export function Sidebar() {
         </button>
       </div>
 
-      <SectionLabel>{t('nav.library')}</SectionLabel>
-
-      <div data-tour="library" className="flex-1 min-h-0 flex flex-col">
-        <BookSelector />
-      </div>
-
-      <div className="shrink-0 border-t border-border-subtle px-2 pb-2">
+      <div className="shrink-0 px-2 pb-2">
         <SectionLabel>{t('nav.personal')}</SectionLabel>
+        <NavItem
+          dataTour="bible"
+          icon={BookOpen}
+          label={t('nav.bible')}
+          active={pathname.includes('/bible/') || pathname.startsWith('/bible/')}
+          onClick={() => openRoute(biblePath, t('nav.bible'))}
+          onOpenNew={() => openRoute(biblePath, t('nav.bible'), true)}
+        />
         <NavItem dataTour="favorites" icon={Star} label={t('nav.favorites')} active={activePanel === 'favorites'} onClick={() => user ? toggleSidebarPanel('favorites') : openAuthModal()} />
         <NavItem dataTour="my-notes" icon={NotebookPen} label={t('nav.myNotes')} active={activePanel === 'my-notes'} onClick={() => user ? toggleSidebarPanel('my-notes') : openAuthModal()} />
         <NavItem dataTour="my-studies" icon={GraduationCap} label={t('nav.myStudies')} active={activePanel === 'my-studies'} badge={pendingInvitations} onClick={() => user ? toggleSidebarPanel('my-studies') : openAuthModal()} />
@@ -162,17 +227,21 @@ export function Sidebar() {
         <NavItem dataTour="new-study" icon={BookPlus} label={t('nav.newStudy')} active={false} onClick={() => user ? setShowStartStudy(true) : openAuthModal()} />
         <SectionLabel>{t('nav.social')}</SectionLabel>
         {/* Marketplace opens or focuses its workspace tab. */}
-        <NavItem dataTour="marketplace" icon={Store} label={t('nav.marketplace')} active={pathname.startsWith('/marketplace')} onClick={() => user ? navigate(paths.marketplace()) : openAuthModal()} />
+        <NavItem dataTour="marketplace" icon={Store} label={t('nav.marketplace')} active={pathname.startsWith('/marketplace')} onClick={() => user ? openRoute(paths.marketplace(), t('nav.marketplace')) : openAuthModal()} onOpenNew={() => user ? openRoute(paths.marketplace(), t('nav.marketplace'), true) : openAuthModal()} />
         <NavItem dataTour="chats" icon={MessagesSquare} label={t('nav.chats')} active={activePanel === 'friends' || activePanel === 'chat'} badge={chatUnread} onClick={() => user ? toggleSidebarPanel('friends') : openAuthModal()} />
       </div>
 
       {/* Footer */}
-      <div className="shrink-0 border-t border-border-subtle" data-tour="profile">
+      <div className="mt-auto shrink-0 border-t border-border-subtle" data-tour="profile">
         {/* Profile row — opens the profile page; the gear opens settings */}
         {user ? (
           <div className="flex items-stretch">
             <button
               onClick={() => navigate(paths.profile())}
+              onContextMenu={(event) => openDestinationMenu(
+                event,
+                () => openRoute(paths.profile(), t('perfil.title.self')),
+              )}
               aria-current={pathname.startsWith('/perfil') ? 'page' : undefined}
               className={cn(
                 'flex flex-1 min-w-0 items-center gap-2.5 px-4 py-3 transition-colors',
@@ -187,6 +256,10 @@ export function Sidebar() {
             </button>
             <button
               onClick={() => navigate(paths.settings())}
+              onContextMenu={(event) => openDestinationMenu(
+                event,
+                () => openRoute(paths.settings(), t('settings.title')),
+              )}
               aria-label={t('settings.title')}
               title={t('settings.title')}
               aria-current={pathname.startsWith('/ajustes') ? 'page' : undefined}

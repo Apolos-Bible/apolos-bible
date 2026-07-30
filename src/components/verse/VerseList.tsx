@@ -1,18 +1,20 @@
 
 import { useCallback, useEffect, useMemo, useRef } from 'react'
 import { useTranslation } from 'react-i18next'
-import { useVerseStore } from '@/lib/store/useVerseStore'
+import { useActiveVerseStore } from '@/lib/store/useVerseStore'
 import type { Verse } from '@/lib/store/useVerseStore'
 import { useNoteStore } from '@/lib/store/useNoteStore'
 import { useHighlightStore } from '@/lib/store/useHighlightStore'
 import { useBookmarkStore } from '@/lib/store/useBookmarkStore'
 import { useAuthStore } from '@/lib/store/useAuthStore'
 import { useUIStore } from '@/lib/store/useUIStore'
+import { useActiveBiblePaneStore } from '@/lib/store/useBiblePaneStore'
 import { usePresenceStore } from '@/lib/store/usePresenceStore'
 import { useActivityStore } from '@/lib/store/useActivityStore'
 import { useFriendStore } from '@/lib/store/useFriendStore'
 import { useContextMenuStore } from '@/lib/store/useContextMenuStore'
-import { useCrossRefStore } from '@/lib/store/useCrossRefStore'
+import { useActiveCrossRefStore } from '@/lib/store/useCrossRefStore'
+import { useActiveCompareStore } from '@/lib/store/useCompareStore'
 import { useVerseActions, HIGHLIGHT_SWATCHES } from '@/lib/verseActions'
 import { useCommands } from '@/lib/keyboard'
 import { isFocusIdle } from '@/lib/keyboard/focus'
@@ -20,6 +22,7 @@ import { ReadingToolbar } from '@/components/reading/ReadingToolbar'
 import { PresenceAvatars } from '@/components/realtime/PresenceAvatars'
 import { Tooltip } from '@/components/ui/Tooltip'
 import { VerseText } from '@/components/verse/VerseText'
+import { useVersePointerSelection } from '@/components/verse/useVersePointerSelection'
 import { EmptyState } from '@/components/ui/EmptyState'
 import { SEOMeta } from '@/components/seo/SEOMeta'
 import { cn } from '@/lib/cn'
@@ -87,27 +90,27 @@ function NoteIcon({ size = 10 }: { size?: number }) {
 
 export function VerseList() {
   const { t }            = useTranslation()
-  const verses           = useVerseStore((s) => s.verses)
-  const selectedVerseId   = useVerseStore((s) => s.selectedVerseId)
-  const selectedVerseIds  = useVerseStore((s) => s.selectedVerseIds)
-  const selectVerse       = useVerseStore((s) => s.selectVerse)
-  const openStudyPanel    = useVerseStore((s) => s.openStudyPanel)
-  const toggleVerseSelection = useVerseStore((s) => s.toggleVerseSelection)
-  const selectVerseRangeTo = useVerseStore((s) => s.selectVerseRangeTo)
-  const extendVerseSelection = useVerseStore((s) => s.extendVerseSelection)
-  const selectAllVerses  = useVerseStore((s) => s.selectAllVerses)
-  const navigateVerse    = useVerseStore((s) => s.navigateVerse)
-  const cursorVerseId    = useVerseStore((s) => s.cursorVerseId)
-  const setCursorVerse   = useVerseStore((s) => s.setCursorVerse)
-  const books            = useVerseStore((s) => s.books)
-  const selectedBook     = useVerseStore((s) => s.selectedBook)
-  const selectedChapter  = useVerseStore((s) => s.selectedChapter)
-  const navigateChapter  = useVerseStore((s) => s.navigateChapter)
-  const loadingVerses    = useVerseStore((s) => s.loadingVerses)
+  const verses           = useActiveVerseStore((s) => s.verses)
+  const selectedVerseId   = useActiveVerseStore((s) => s.selectedVerseId)
+  const selectedVerseIds  = useActiveVerseStore((s) => s.selectedVerseIds)
+  const selectVerse       = useActiveVerseStore((s) => s.selectVerse)
+  const openStudyPanel    = useActiveVerseStore((s) => s.openStudyPanel)
+  const toggleVerseSelection = useActiveVerseStore((s) => s.toggleVerseSelection)
+  const selectVerseRangeTo = useActiveVerseStore((s) => s.selectVerseRangeTo)
+  const extendVerseSelection = useActiveVerseStore((s) => s.extendVerseSelection)
+  const selectAllVerses  = useActiveVerseStore((s) => s.selectAllVerses)
+  const navigateVerse    = useActiveVerseStore((s) => s.navigateVerse)
+  const cursorVerseId    = useActiveVerseStore((s) => s.cursorVerseId)
+  const setCursorVerse   = useActiveVerseStore((s) => s.setCursorVerse)
+  const books            = useActiveVerseStore((s) => s.books)
+  const selectedBook     = useActiveVerseStore((s) => s.selectedBook)
+  const selectedChapter  = useActiveVerseStore((s) => s.selectedChapter)
+  const navigateChapter  = useActiveVerseStore((s) => s.navigateChapter)
+  const loadingVerses    = useActiveVerseStore((s) => s.loadingVerses)
 
   const fontSize       = useUIStore((s) => s.fontSize)
-  const readingMode    = useUIStore((s) => s.readingMode)
-  const setReadingMode = useUIStore((s) => s.setReadingMode)
+  const readingMode    = useActiveBiblePaneStore((s) => s.readingMode)
+  const setReadingMode = useActiveBiblePaneStore((s) => s.setReadingMode)
   const addToast       = useUIStore((s) => s.addToast)
   const openAuthModal  = useUIStore((s) => s.openAuthModal)
   const mobileChromeCollapsed = useUIStore((s) => s.mobileChromeCollapsed)
@@ -123,7 +126,7 @@ export function VerseList() {
   const toggleBookmark = useBookmarkStore((s) => s.toggle)
   const user           = useAuthStore((s) => s.user)
 
-  const chapterId       = useVerseStore((s) => s.chapterId)
+  const chapterId       = useActiveVerseStore((s) => s.chapterId)
   const joinChapter     = usePresenceStore((s) => s.joinChapter)
   const leaveChapter    = usePresenceStore((s) => s.leaveChapter)
   const others          = usePresenceStore((s) => s.others)
@@ -131,14 +134,23 @@ export function VerseList() {
   const friendIds       = useFriendStore((s) => s.friends.map((f) => f.id).join(','))
 
   const openMenu            = useContextMenuStore((s) => s.openMenu)
-  const verseIdsWithRefs    = useCrossRefStore((s) => s.verseIdsWithRefs)
-  const loadChapterRefs     = useCrossRefStore((s) => s.loadChapterRefs)
+  const verseIdsWithRefs    = useActiveCrossRefStore((s) => s.verseIdsWithRefs)
+  const loadChapterRefs     = useActiveCrossRefStore((s) => s.loadChapterRefs)
+  const comparisonOpen      = useActiveCompareStore((s) => s.open)
+  const comparedHoverVerse  = useActiveCompareStore((s) => s.hoveredVerseNumber)
+  const setComparedHover    = useActiveCompareStore((s) => s.setHoveredVerse)
 
   const actions = useVerseActions()
 
   const scrollRef = useRef<HTMLDivElement>(null)
   const lastScrollTop = useRef(0)
   const scrollAcc = useRef(0)
+  const pointerSelection = useVersePointerSelection({
+    scrollRef,
+    selectVerse,
+    selectVerseRangeTo,
+    toggleVerseSelection,
+  })
 
   /**
    * The roving-tabindex anchor. Same rule the verse commands use to pick their
@@ -342,6 +354,8 @@ export function VerseList() {
     'reader.toggleFavorite': onTarget((targets) => actions.toggleFavorite(targets)),
     'reader.copyText': onTarget((targets) => actions.copyText(targets)),
     'reader.copyReference': onTarget((targets) => actions.copyReference(targets)),
+    'reader.shareVerses': onTarget((targets) => actions.share(targets)),
+    'reader.similarVerses': onTarget((targets) => actions.openSimilar(targets)),
     'reader.crossReferences': onTarget((targets) => {
       const withRefs = targets.filter((v) => verseIdsWithRefs.has(v.apiId))
       if (withRefs.length === 0) {
@@ -374,6 +388,8 @@ export function VerseList() {
   function verseOptionProps(verse: Verse, isSelected: boolean) {
     return {
       'data-verse-id': verse.id,
+      'data-reader-verse': verse.verse,
+      'data-selectable-verse-id': verse.id,
       role: 'option',
       'aria-selected': isSelected,
       tabIndex: verse.id === tabbableVerseId ? 0 : -1,
@@ -384,25 +400,21 @@ export function VerseList() {
         if (e.shiftKey) e.preventDefault()
       },
       onClick: (e: React.MouseEvent) => {
-        if (e.shiftKey) {
-          selectVerseRangeTo(verse.id)
-          return
-        }
-        if (e.metaKey || e.ctrlKey) {
-          toggleVerseSelection(verse.id)
-          return
-        }
-        selectVerse(verse.id)
+        pointerSelection.onVerseClick(e, verse.id)
       },
       onFocus: () => {
+        // Focus can arrive on pointer-down, before the matching click. Keep it
+        // as a keyboard cursor only; selection is committed by onClick on both
+        // the reader and comparison rows.
         setCursorVerse(verse.id)
-        // Tabbing or clicking into a row makes it the cursor, so the next j/k
-        // continues from where the user actually is.
-        if (verse.id !== selectedVerseId && !selectedVerseIds.includes(verse.id)) {
-          useVerseStore.setState({ selectedVerseId: verse.id })
-        }
       },
       onContextMenu: (e: React.MouseEvent) => handleContextMenu(e, verse),
+      onMouseEnter: () => {
+        if (comparisonOpen) setComparedHover(verse.verse)
+      },
+      onMouseLeave: () => {
+        if (comparisonOpen) setComparedHover(null)
+      },
     }
   }
 
@@ -485,7 +497,14 @@ export function VerseList() {
       {verses.length === 0 ? (
         <EmptyState message={t('verse.empty')} />
       ) : (
-        <div ref={scrollRef} onScroll={handleScroll} className="flex-1 overflow-y-auto no-scrollbar relative">
+        <div
+          ref={scrollRef}
+          onScroll={handleScroll}
+          onPointerDown={pointerSelection.onPointerDown}
+          onClick={pointerSelection.onBackgroundClick}
+          className="flex-1 overflow-y-auto no-scrollbar relative"
+          data-reader-scroll
+        >
 
           {/* Mobile keeps navigation/display primary; study tools appear after selecting a verse. */}
           <div
@@ -578,6 +597,8 @@ export function VerseList() {
                         '[box-decoration-break:clone] [-webkit-box-decoration-break:clone]',
                         isSelected
                           ? 'bg-accent/[0.12]'
+                          : comparedHoverVerse === verse.verse
+                            ? 'bg-accent/[0.08]'
                           : isBookmarked
                             ? 'bg-[#e06c7520]'
                             : 'hover:bg-black/[0.04]',
@@ -636,7 +657,11 @@ export function VerseList() {
                       {...verseOptionProps(verse, isSelected)}
                       className={cn(
                         'group flex gap-3 cursor-pointer rounded-md px-2 py-2 md:py-1 -mx-2 transition-all duration-150 border-l-2 border-l-transparent',
-                        isSelected ? 'bg-accent/[0.08] border-l-accent' : 'hover:bg-black/[0.03]',
+                        isSelected
+                          ? 'bg-accent/[0.08] border-l-accent'
+                          : comparedHoverVerse === verse.verse
+                            ? 'bg-accent/[0.06] border-l-accent/40'
+                            : 'hover:bg-black/[0.03]',
                       )}
                     >
                       <div className="relative shrink-0 w-6 flex items-start justify-end gap-[2px] pt-[3px]">
@@ -684,9 +709,9 @@ export function VerseList() {
                           <NoteIcon size={12} />
                         </button>
                       )}
-                      {/* Actions menu. Visible on every viewport now: hiding it on
-                          desktop left right-click as the only path, which the
-                          keyboard cannot take. */}
+                      {/* Desktop uses the row context menu (right click). Keep the
+                          compact action affordance only where there is no context
+                          menu gesture: mobile. */}
                       <button
                         type="button"
                         onClick={(e) => {
@@ -695,9 +720,8 @@ export function VerseList() {
                         }}
                         className={cn(
                           'workspace-reader-action',
-                          'shrink-0 self-start mt-0.5 inline-flex h-10 w-10 md:h-8 md:w-8 items-center justify-center rounded-md',
+                          'shrink-0 self-start mt-0.5 flex h-10 w-10 items-center justify-center rounded-md md:hidden',
                           'text-text-muted hover:text-text-primary hover:bg-bg-tertiary transition-opacity',
-                          'md:opacity-0 md:group-hover:opacity-100 md:group-focus-within:opacity-100 md:focus-visible:opacity-100',
                           selectedVerseIds.length > 1 && 'hidden',
                         )}
                         tabIndex={-1}
@@ -746,36 +770,6 @@ export function VerseList() {
         </div>
       )}
 
-      {/* Only worth showing for a real multi-selection. With one verse the row's
-          own highlight already says it, and Esc clears it. */}
-      {selectedVerseIds.length > 1 && (
-        <div className="hidden md:flex fixed bottom-4 right-4 z-20 items-center gap-2 bg-bg-tertiary border border-border-subtle rounded-lg px-3 py-2 shadow-lg text-xs">
-          <span className="text-text-secondary tabular-nums">
-            {t('verse.selectedVerses', { count: selectedVerseIds.length })}
-          </span>
-          <button
-            type="button"
-            onClick={(e) => {
-              const rect = e.currentTarget.getBoundingClientRect()
-              openMenu(rect.right - 12, rect.bottom + 8, actions.buildMenu(actions.targetVerses))
-            }}
-            className="flex items-center gap-1 text-text-muted hover:text-text-primary transition-colors"
-            aria-label={t('verse.openActions', { verse: selectedVerseIds.length })}
-          >
-            <IconMore />
-          </button>
-          <button
-            type="button"
-            onClick={() => selectVerse(null)}
-            className="flex items-center gap-1 text-text-muted hover:text-text-primary transition-colors"
-            aria-label={t('verse.clear')}
-          >
-            <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" aria-hidden="true">
-              <path d="M3 3l6 6M9 3l-6 6" />
-            </svg>
-          </button>
-        </div>
-      )}
     </div>
   )
 }

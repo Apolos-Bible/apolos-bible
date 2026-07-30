@@ -1,16 +1,19 @@
 import { useCallback, useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
-import { useVerseStore, type Verse } from '@/lib/store/useVerseStore'
+import { comparableBibleVersions } from '@/lib/bibleVersionOptions'
+import { useActiveVerseStore, useVerseStoreApi, type Verse } from '@/lib/store/useVerseStore'
 import { useHighlightStore } from '@/lib/store/useHighlightStore'
 import { useBookmarkStore } from '@/lib/store/useBookmarkStore'
-import { useCrossRefStore } from '@/lib/store/useCrossRefStore'
-import { useCompareStore } from '@/lib/store/useCompareStore'
+import { useActiveCrossRefStore } from '@/lib/store/useCrossRefStore'
+import { useActiveCompareStore } from '@/lib/store/useCompareStore'
 import { useAuthStore } from '@/lib/store/useAuthStore'
 import { useUIStore } from '@/lib/store/useUIStore'
+import { Sparkles } from 'lucide-react'
 import type { MenuItem } from '@/lib/store/useContextMenuStore'
 import { isAuthError } from '@/lib/auth'
 import { focusWhenReady, type TranslationKey } from '@/lib/keyboard'
 import type { HighlightColor } from '@/types'
+import { isMac } from '@/lib/platform'
 
 // ── Icons ──────────────────────────────────────────────────────────────────
 
@@ -66,6 +69,10 @@ function ColorDot({ color }: { color: string }) {
   return <span className="w-3 h-3 rounded-full shrink-0 inline-block" style={{ backgroundColor: color }} />
 }
 
+function platformShortcut(key: string, shift = false) {
+  return `${isMac ? '⌘' : 'Ctrl+'}${shift ? (isMac ? '⇧' : 'Shift+') : ''}${key}`
+}
+
 export const HIGHLIGHT_SWATCHES: { color: HighlightColor; hex: string; labelKey: TranslationKey }[] = [
   { color: 'yellow', hex: '#e5c07b', labelKey: 'study.colorYellow' },
   { color: 'blue', hex: '#61afef', labelKey: 'study.colorBlue' },
@@ -83,16 +90,18 @@ export const NOTE_INPUT_SELECTOR = '[data-focus-target="note-input"]'
 export function useVerseActions() {
   const { t } = useTranslation()
 
-  const verses = useVerseStore((s) => s.verses)
-  const books = useVerseStore((s) => s.books)
-  const selectedBook = useVerseStore((s) => s.selectedBook)
-  const selectedChapter = useVerseStore((s) => s.selectedChapter)
-  const selectedVerseId = useVerseStore((s) => s.selectedVerseId)
-  const selectedVerseIds = useVerseStore((s) => s.selectedVerseIds)
-  const cursorVerseId = useVerseStore((s) => s.cursorVerseId)
-  const openStudyPanel = useVerseStore((s) => s.openStudyPanel)
-  const loadVersions = useVerseStore((s) => s.loadVersions)
-  const versions = useVerseStore((s) => s.versions)
+  const verses = useActiveVerseStore((s) => s.verses)
+  const books = useActiveVerseStore((s) => s.books)
+  const selectedBook = useActiveVerseStore((s) => s.selectedBook)
+  const selectedChapter = useActiveVerseStore((s) => s.selectedChapter)
+  const selectedVerseId = useActiveVerseStore((s) => s.selectedVerseId)
+  const selectedVerseIds = useActiveVerseStore((s) => s.selectedVerseIds)
+  const cursorVerseId = useActiveVerseStore((s) => s.cursorVerseId)
+  const openStudyPanel = useActiveVerseStore((s) => s.openStudyPanel)
+  const closeStudyPanel = useActiveVerseStore((s) => s.closeStudyPanel)
+  const loadVersions = useActiveVerseStore((s) => s.loadVersions)
+  const versions = useActiveVerseStore((s) => s.versions)
+  const verseStore = useVerseStoreApi()
 
   const highlights = useHighlightStore((s) => s.highlights)
   const addHighlight = useHighlightStore((s) => s.addHighlight)
@@ -101,9 +110,12 @@ export function useVerseActions() {
   const bookmarkedIds = useBookmarkStore((s) => s.bookmarkedIds)
   const toggleBookmark = useBookmarkStore((s) => s.toggle)
 
-  const verseIdsWithRefs = useCrossRefStore((s) => s.verseIdsWithRefs)
-  const openCrossRefPanel = useCrossRefStore((s) => s.openPanel)
-  const openCompare = useCompareStore((s) => s.openCompare)
+  const verseIdsWithRefs = useActiveCrossRefStore((s) => s.verseIdsWithRefs)
+  const openCrossRefPanel = useActiveCrossRefStore((s) => s.openPanel)
+  const openSimilarPanel = useActiveCrossRefStore((s) => s.openSimilar)
+  const closeCrossRefPanel = useActiveCrossRefStore((s) => s.closePanel)
+  const openCompare = useActiveCompareStore((s) => s.openCompare)
+  const closeCompare = useActiveCompareStore((s) => s.closeCompare)
 
   const user = useAuthStore((s) => s.user)
   const addToast = useUIStore((s) => s.addToast)
@@ -257,11 +269,31 @@ export function useVerseActions() {
   const openCrossRefs = useCallback(
     (list: Verse[]) => {
       if (!list.length) return
+      closeCompare()
+      closeStudyPanel()
       void openCrossRefPanel(
         list.map((verse) => ({ verseApiId: verse.apiId, label: referenceFor(verse) })),
+        verseStore.getState().versionId,
       )
     },
-    [openCrossRefPanel, referenceFor],
+    [closeCompare, closeStudyPanel, openCrossRefPanel, referenceFor],
+  )
+
+  const openSimilar = useCallback(
+    (list: Verse[]) => {
+      if (list.length !== 1) {
+        addToast(t('toolbar.similarRequiresOne'), 'info')
+        return
+      }
+      const verse = list[0]
+      closeCompare()
+      closeStudyPanel()
+      void openSimilarPanel(
+        { verseApiId: verse.apiId, label: referenceFor(verse) },
+        verseStore.getState().versionId,
+      )
+    },
+    [addToast, closeCompare, closeStudyPanel, openSimilarPanel, referenceFor, t],
   )
 
   const compareVersions = useCallback(
@@ -269,11 +301,34 @@ export function useVerseActions() {
       let available = versions
       if (!available.length) {
         await loadVersions()
-        available = useVerseStore.getState().versions
+        available = verseStore.getState().versions
       }
-      openCompare(available, selectedBook, selectedChapter, list.map((verse) => verse.verse))
+      const currentVersionId = verseStore.getState().versionId
+      const comparisonVersion = comparableBibleVersions(available, currentVersionId)[0]
+      if (!comparisonVersion) {
+        addToast(t('compareVersions.noAlternatives'), 'info')
+        return
+      }
+      closeCrossRefPanel()
+      closeStudyPanel()
+      void openCompare(
+        comparisonVersion,
+        selectedBook,
+        selectedChapter,
+        list.map((verse) => verse.verse),
+      )
     },
-    [versions, loadVersions, openCompare, selectedBook, selectedChapter],
+    [
+      addToast,
+      closeStudyPanel,
+      closeCrossRefPanel,
+      loadVersions,
+      openCompare,
+      selectedBook,
+      selectedChapter,
+      t,
+      versions,
+    ],
   )
 
   // ── Menu ─────────────────────────────────────────────────────────────────
@@ -285,9 +340,9 @@ export function useVerseActions() {
       const hasCrossRefs = list.some((verse) => verseIdsWithRefs.has(verse.apiId))
 
       const items: MenuItem[] = [
-        { type: 'action', label: t('study.copyVerseText'), icon: <IconCopy />, shortcut: 'C', onClick: () => copyText(list) },
-        { type: 'action', label: t('verse.copyReference'), icon: <IconCopy />, shortcut: 'R', onClick: () => copyReference(list) },
-        { type: 'action', label: t('verse.shareVerse'), icon: <IconShare />, onClick: () => share(list) },
+        { type: 'action', label: t('study.copyVerseText'), icon: <IconCopy />, shortcut: platformShortcut('C'), onClick: () => copyText(list) },
+        { type: 'action', label: t('verse.copyReference'), icon: <IconCopy />, shortcut: platformShortcut('C', true), onClick: () => copyReference(list) },
+        { type: 'action', label: t('verse.shareVerse'), icon: <IconShare />, shortcut: platformShortcut('S', true), onClick: () => share(list) },
         { type: 'separator' },
         { type: 'label', text: t('verse.highlightVerse') },
         ...HIGHLIGHT_SWATCHES.map((swatch, i) => ({
@@ -312,6 +367,16 @@ export function useVerseActions() {
         })
       }
 
+      if (list.length === 1) {
+        items.push({
+          type: 'action',
+          label: t('toolbar.similarVerses'),
+          icon: <Sparkles className="h-3 w-3" strokeWidth={1.7} />,
+          shortcut: 'S',
+          onClick: () => openSimilar(list),
+        })
+      }
+
       items.push({
         type: 'action',
         label: allBookmarked ? t('verse.removeFromFavorites') : t('verse.addToFavorites'),
@@ -322,7 +387,7 @@ export function useVerseActions() {
 
       return items
     },
-    [t, bookmarkedIds, verseIdsWithRefs, copyText, copyReference, share, highlight, addNote, openCrossRefs, toggleFavorite],
+    [t, bookmarkedIds, verseIdsWithRefs, copyText, copyReference, share, highlight, addNote, openCrossRefs, openSimilar, toggleFavorite],
   )
 
   return {
@@ -338,6 +403,7 @@ export function useVerseActions() {
     addNote,
     toggleFavorite,
     openCrossRefs,
+    openSimilar,
     compareVersions,
     buildMenu,
   }

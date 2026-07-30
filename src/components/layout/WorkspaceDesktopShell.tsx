@@ -8,6 +8,7 @@ import {
   type CSSProperties,
   type PointerEvent as ReactPointerEvent,
   type RefObject,
+  type ReactNode,
 } from 'react'
 import { useLocation, useNavigate, useRoutes } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
@@ -18,6 +19,7 @@ import { useUIStore } from '@/lib/store/useUIStore'
 import {
   canSplitWorkspaceTab,
   createWorkspaceTab,
+  findWorkspaceGroup,
   useWorkspaceStore,
   type WorkspaceDropEdge,
   type WorkspaceGroupNode,
@@ -25,6 +27,10 @@ import {
   type WorkspaceSplitNode,
   type WorkspaceTab,
 } from '@/lib/store/useWorkspaceStore'
+import { getVerseStoreForTab, VerseStoreProvider } from '@/lib/store/useVerseStore'
+import { getCompareStoreForTab, CompareStoreProvider } from '@/lib/store/useCompareStore'
+import { getCrossRefStoreForTab, CrossRefStoreProvider } from '@/lib/store/useCrossRefStore'
+import { getBiblePaneStoreForTab, BiblePaneStoreProvider } from '@/lib/store/useBiblePaneStore'
 import { workspaceRoutes } from '@/router/workspaceRoutes'
 import { WorkspacePaneProvider } from './WorkspacePaneContext'
 import { WorkspaceSidePanel } from './WorkspaceSidePanel'
@@ -41,6 +47,20 @@ import {
 const PANEL_WIDTH_STORAGE_KEY = 'apolos_workspace_panel_width'
 const MIN_GROUP_WIDTH = 240
 const MIN_GROUP_HEIGHT = 180
+
+function BibleTabStateProvider({ tabId, children }: { tabId: string; children: ReactNode }) {
+  return (
+    <VerseStoreProvider store={getVerseStoreForTab(tabId)}>
+      <CompareStoreProvider store={getCompareStoreForTab(tabId)}>
+        <CrossRefStoreProvider store={getCrossRefStoreForTab(tabId)}>
+          <BiblePaneStoreProvider store={getBiblePaneStoreForTab(tabId)}>
+            {children}
+          </BiblePaneStoreProvider>
+        </CrossRefStoreProvider>
+      </CompareStoreProvider>
+    </VerseStoreProvider>
+  )
+}
 
 function storedPanelWidth(): number {
   const value = Number(localStorage.getItem(PANEL_WIDTH_STORAGE_KEY))
@@ -63,22 +83,38 @@ export function WorkspaceDesktopShell() {
   const location = useLocation()
   const navigate = useNavigate()
   const layout = useWorkspaceStore((state) => state.layout)
+  const activeGroupId = useWorkspaceStore((state) => state.activeGroupId)
+  const tabs = useWorkspaceStore((state) => state.tabs)
   const openTab = useWorkspaceStore((state) => state.openTab)
+  const updateTab = useWorkspaceStore((state) => state.updateTab)
   const activePanel = useUIStore((state) => state.activePanel)
   const [panelWidth, setPanelWidth] = useState(storedPanelWidth)
   const [resizingPanel, setResizingPanel] = useState(false)
   const fullPath = `${location.pathname}${location.search}${location.hash}`
+  const activeGroup = findWorkspaceGroup(layout, activeGroupId)
+  const activeTab = activeGroup?.activeTabId ? tabs[activeGroup.activeTabId] : undefined
 
   useLayoutEffect(() => {
+    const state = useWorkspaceStore.getState()
+    const activeGroup = findWorkspaceGroup(state.layout, state.activeGroupId)
+    const activeTab = activeGroup?.activeTabId ? state.tabs[activeGroup.activeTabId] : undefined
+    const routeTab = createWorkspaceTab(
+      location.pathname,
+      fullPath,
+      t(fallbackTitleKey(location.pathname)),
+    )
+    // Route changes belong to the focused tab when it represents the same
+    // destination kind. This preserves explicit "new window" identities for
+    // Bible, marketplace, profile, settings and panel tabs.
+    if (activeTab?.kind === routeTab.kind) {
+      if (activeTab.path !== fullPath) updateTab(activeTab.id, { path: fullPath })
+      return
+    }
     openTab(
-      createWorkspaceTab(
-        location.pathname,
-        fullPath,
-        t(fallbackTitleKey(location.pathname)),
-      ),
+      routeTab,
       useWorkspaceStore.getState().activeGroupId,
     )
-  }, [fullPath, location.pathname, openTab, t])
+  }, [fullPath, location.pathname, openTab, t, updateTab])
 
   const beginPanelResize = (event: ReactPointerEvent<HTMLDivElement>) => {
     event.preventDefault()
@@ -106,7 +142,8 @@ export function WorkspaceDesktopShell() {
   }
 
   return (
-    <div className="app-viewport flex w-full overflow-hidden bg-bg-primary">
+    <BibleTabStateProvider tabId={activeTab?.kind === 'bible' ? activeTab.id : 'workspace-global'}>
+      <div className="app-viewport flex w-full overflow-hidden bg-bg-primary">
       <aside
         className="h-full w-sidebar shrink-0 overflow-hidden"
         data-region="sidebar"
@@ -156,7 +193,8 @@ export function WorkspaceDesktopShell() {
       </main>
 
       <FloatingChatDock rightPanelOpen={false} />
-    </div>
+      </div>
+    </BibleTabStateProvider>
   )
 }
 
@@ -303,8 +341,9 @@ function WorkspaceGroupView({ group }: { group: WorkspaceGroupNode }) {
   const paneValue = useMemo(() => activeTab ? ({
     groupId: group.id,
     tabId: activeTab.id,
+    isActive: group.id === activeGroupId,
     reportTitle: (title: string) => updateTab(activeTab.id, { title }),
-  }) : null, [activeTab, group.id, updateTab])
+  }) : null, [activeTab, activeGroupId, group.id, updateTab])
 
   const focusGroup = () => {
     activateGroup(group.id)
@@ -397,7 +436,10 @@ function WorkspaceGroupView({ group }: { group: WorkspaceGroupNode }) {
 
 function WorkspaceRouteContent({ tab }: { tab: WorkspaceTab }) {
   const element = useRoutes(workspaceRoutes, tab.path)
-  return <div className="h-full min-h-0 overflow-hidden">{element}</div>
+  const content = <div className="h-full min-h-0 overflow-hidden">{element}</div>
+  return tab.kind === 'bible'
+    ? <BibleTabStateProvider tabId={tab.id}>{content}</BibleTabStateProvider>
+    : content
 }
 
 function WorkspaceDropPreview({ target }: { target: WorkspaceDropTarget }) {

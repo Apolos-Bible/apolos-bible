@@ -1,16 +1,16 @@
 import { useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { openUrl } from '@tauri-apps/plugin-opener'
-import { useVerseStore } from '@/lib/store/useVerseStore'
-import { useUIStore } from '@/lib/store/useUIStore'
+import { useActiveVerseStore } from '@/lib/store/useVerseStore'
+import { useActiveBiblePaneStore } from '@/lib/store/useBiblePaneStore'
 import { commentaryApi, type Commentary } from '@/lib/commentaryApi'
 import { PanelHeader } from '@/components/layout/PanelHeader'
 
 export function CommentaryPanel() {
-  const selectedBook    = useVerseStore((s) => s.selectedBook)
-  const selectedChapter = useVerseStore((s) => s.selectedChapter)
-  const books           = useVerseStore((s) => s.books)
-  const toggleCommentary = useUIStore((s) => s.toggleCommentary)
+  const selectedBook    = useActiveVerseStore((s) => s.selectedBook)
+  const selectedChapter = useActiveVerseStore((s) => s.selectedChapter)
+  const books           = useActiveVerseStore((s) => s.books)
+  const toggleCommentary = useActiveBiblePaneStore((s) => s.toggleCommentary)
 
   const [commentary, setCommentary] = useState<Commentary | null>(null)
   const [loading, setLoading]       = useState(false)
