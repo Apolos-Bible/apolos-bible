@@ -2,6 +2,7 @@ import { Handle, Position, type NodeProps, type Node } from '@xyflow/react';
 import { cn } from '@/lib/cn';
 import { ResizableNode } from './ResizableNode';
 import { useNoWheelOnOverflow } from './useNoWheelOnOverflow';
+import { UserAvatar } from '@/components/auth/UserAvatar';
 
 export type CommentNodeData = {
   authorName: string;
@@ -25,9 +26,7 @@ export function CommentNode({ id, data, selected }: NodeProps<CommentNodeType>) 
         <Handle id="right" type="source" position={Position.Right} className="!bg-border" />
         <Handle id="left" type="source" position={Position.Left} className="!bg-border" />
         <div className="flex items-center gap-2 mb-1.5 shrink-0">
-          <div className="w-5 h-5 rounded-full bg-accent/20 flex items-center justify-center text-2xs font-medium text-accent shrink-0">
-            {data.authorName.charAt(0).toUpperCase()}
-          </div>
+          <UserAvatar name={data.authorName} size="xs" />
           <span className="text-xs font-medium text-text-primary">{data.authorName}</span>
           <span className="text-2xs text-text-muted ml-auto">{data.createdAt}</span>
         </div>

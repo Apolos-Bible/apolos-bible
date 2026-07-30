@@ -119,7 +119,6 @@ export function Sidebar() {
   const user               = useAuthStore(s => s.user)
   const startPolling  = useNotificationStore(s => s.startPolling)
   const stopPolling   = useNotificationStore(s => s.stopPolling)
-  const unreadCount   = useNotificationStore(s => s.unreadCount)
   const listenForPush = useNotificationStore(s => s.listenForPush)
   const stopPush      = useNotificationStore(s => s.stopPush)
   const chatUnread    = useChatStore(s => s.conversations.reduce((acc, c) => acc + (c.unread_count || 0), 0))
@@ -213,8 +212,7 @@ export function Sidebar() {
         <SectionLabel>{t('nav.social')}</SectionLabel>
         {/* A page of its own, not a panel — so this navigates. */}
         <NavItem dataTour="marketplace" icon={<Store className="w-3.5 h-3.5" />} label={t('nav.marketplace')} active={pathname.startsWith('/marketplace')} onClick={() => user ? navigate(paths.marketplace()) : openAuthModal()} />
-        <NavItem dataTour="friends" icon={<PeopleIcon />} label={t('nav.friends')} active={!onPage && activePanel === 'friends'} badge={unreadCount} onClick={() => user ? toggleSidebarPanel('friends') : openAuthModal()} />
-        <NavItem dataTour="chat" icon={<ChatIcon />} label={t('nav.chat')} active={!onPage && activePanel === 'chat'} badge={chatUnread} onClick={() => user ? toggleSidebarPanel('chat') : openAuthModal()} />
+        <NavItem dataTour="chats" icon={<PeopleIcon />} label={t('nav.chats')} active={!onPage && (activePanel === 'friends' || activePanel === 'chat')} badge={chatUnread} onClick={() => user ? toggleSidebarPanel('friends') : openAuthModal()} />
       </div>
 
       {/* Footer */}

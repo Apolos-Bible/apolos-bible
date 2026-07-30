@@ -4,6 +4,7 @@ import { MousePointer2, Hand, StickyNote, BookOpen, Undo, Redo, ZoomIn, ZoomOut,
 import { cn } from '@/lib/cn';
 import { modKey } from '@/lib/platform';
 import { Tooltip } from '@/components/ui/Tooltip';
+import { Checkbox } from '@/components/ui/Checkbox';
 import { InsertVerseModal } from './InsertVerseModal';
 import { useUIStore } from '@/lib/store/useUIStore';
 import { DRAW_COLORS, DRAW_SIZES, type Tool } from './StudyMode';
@@ -279,15 +280,12 @@ export function StudyToolbar({ tool, onToolChange, showInsertVerse, onOpenInsert
             {(drawSettings.kind === 'rect' || drawSettings.kind === 'ellipse') && (
               <>
                 <div className="h-px bg-border" />
-                <label className="flex items-center gap-2 px-1 text-xs text-text-secondary cursor-pointer select-none">
-                  <input
-                    type="checkbox"
-                    checked={drawSettings.filled}
-                    onChange={(e) => onDrawSettingsChange({ ...drawSettings, filled: e.target.checked })}
-                    className="accent-accent"
-                  />
-                  Filled
-                </label>
+                <Checkbox
+                  checked={drawSettings.filled}
+                  onCheckedChange={(checked) => onDrawSettingsChange({ ...drawSettings, filled: checked })}
+                  label="Filled"
+                  className="px-1 text-xs select-none"
+                />
               </>
             )}
           </div>

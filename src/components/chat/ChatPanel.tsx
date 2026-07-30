@@ -23,7 +23,7 @@ export function ChatPanel() {
   const selected = conversations.find(c => c.id === selectedId) ?? null
 
   return (
-    <div className="w-full h-full bg-bg-secondary md:bg-bg-primary flex flex-col overflow-hidden">
+    <div className="w-full h-full bg-bg-secondary flex flex-col overflow-hidden">
       {selected ? (
         <ChatThread conversation={selected} onBack={() => select(null)} />
       ) : (

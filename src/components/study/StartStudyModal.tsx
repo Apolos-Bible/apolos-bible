@@ -10,6 +10,7 @@ import { cn } from '@/lib/cn'
 import { bibleApi } from '@/lib/bibleApi'
 import { paths } from '@/router/paths'
 import { Dialog } from '@/components/ui/Dialog'
+import { Select } from '@/components/ui/Select'
 
 interface StartStudyModalProps {
   open: boolean
@@ -200,9 +201,6 @@ export function StartStudyModal({
     }
   }
 
-  const selectClass =
-    'bg-bg-primary border border-border rounded-lg px-2.5 py-2 text-sm text-text-primary outline-none focus:border-accent transition-colors'
-
   return (
     <Dialog
       open={open}
@@ -262,15 +260,19 @@ export function StartStudyModal({
             {displayPlans.length > 0 && (
               <>
                 <label className="block text-xs font-medium text-text-secondary">{t('guided.plan')}</label>
-                <select
+                <Select
                   value={currentPlan?.slug ?? ''}
-                  onChange={(e) => { setPlanSlug(e.target.value); setGuidedSlug('') }}
-                  className={`${selectClass} w-full`}
-                >
-                  {displayPlans.map(plan => (
-                    <option key={plan.slug} value={plan.slug}>{plan.title}</option>
-                  ))}
-                </select>
+                  onChange={(value) => {
+                    setPlanSlug(value)
+                    setGuidedSlug('')
+                  }}
+                  ariaLabel={t('guided.plan')}
+                  options={displayPlans.map((plan) => ({
+                    value: plan.slug,
+                    label: plan.title,
+                  }))}
+                  className="w-full"
+                />
 
                 {currentPlan?.description && (
                   <p className="text-2xs text-text-muted leading-relaxed">{currentPlan.description}</p>
@@ -323,55 +325,56 @@ export function StartStudyModal({
               {type === 'verse' ? t('study.start.passage') : t('study.start.chapter')}
             </label>
             <div className="flex gap-2">
-              <select
+              <Select
                 value={bookSlug}
-                onChange={(e) => setBookSlug(e.target.value)}
-                className={`${selectClass} flex-1 min-w-0`}
-              >
-                {books.map(b => (
-                  <option key={b.slug} value={b.slug}>{b.name}</option>
-                ))}
-              </select>
-              <select
+                onChange={setBookSlug}
+                ariaLabel={t('layout.changeChapter')}
+                disabled={books.length === 0}
+                options={books.map((book) => ({
+                  value: book.slug,
+                  label: book.name,
+                }))}
+                className="min-w-0 flex-1"
+              />
+              <Select
                 value={chapter}
-                onChange={(e) => setChapter(Number(e.target.value))}
-                className={`${selectClass} w-20`}
-              >
-                {Array.from({ length: totalChapters }, (_, i) => i + 1).map(c => (
-                  <option key={c} value={c}>{c}</option>
-                ))}
-              </select>
+                onChange={setChapter}
+                ariaLabel={t('study.start.chapter')}
+                options={Array.from({ length: totalChapters }, (_, index) => {
+                  const value = index + 1
+                  return { value, label: value }
+                })}
+                className="w-24 shrink-0"
+              />
             </div>
 
             {type === 'verse' && (
               <div className="flex items-center gap-2">
-                <select
+                <Select
                   value={verseStart}
-                  onChange={(e) => {
-                    const v = Number(e.target.value)
-                    setVerseStart(v)
-                    if (verseEnd < v) setVerseEnd(v)
+                  onChange={(value) => {
+                    setVerseStart(value)
+                    if (verseEnd < value) setVerseEnd(value)
                   }}
                   disabled={!verseCount || loadingVerses}
-                  className={`${selectClass} flex-1`}
-                >
-                  {Array.from({ length: verseCount ?? 0 }, (_, i) => i + 1).map(v => (
-                    <option key={v} value={v}>{v}</option>
-                  ))}
-                </select>
+                  ariaLabel={t('study.start.passage')}
+                  options={Array.from({ length: verseCount ?? 0 }, (_, index) => {
+                    const value = index + 1
+                    return { value, label: value }
+                  })}
+                  className="min-w-0 flex-1"
+                />
                 <span className="text-xs text-text-muted">{t('study.start.to')}</span>
-                <select
+                <Select
                   value={verseEnd}
-                  onChange={(e) => setVerseEnd(Number(e.target.value))}
+                  onChange={setVerseEnd}
                   disabled={!verseCount || loadingVerses}
-                  className={`${selectClass} flex-1`}
-                >
-                  {Array.from({ length: verseCount ?? 0 }, (_, i) => i + 1)
-                    .filter(v => v >= verseStart)
-                    .map(v => (
-                      <option key={v} value={v}>{v}</option>
-                    ))}
-                </select>
+                  ariaLabel={`${t('study.start.passage')} ${t('study.start.to')}`}
+                  options={Array.from({ length: verseCount ?? 0 }, (_, index) => index + 1)
+                    .filter((value) => value >= verseStart)
+                    .map((value) => ({ value, label: value }))}
+                  className="min-w-0 flex-1"
+                />
               </div>
             )}
           </div>

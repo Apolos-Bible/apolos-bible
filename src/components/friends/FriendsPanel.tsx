@@ -1,153 +1,50 @@
-import { useEffect, useRef, useState } from 'react'
+import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { useFriendStore } from '@/lib/store/useFriendStore'
-import { useNotificationStore } from '@/lib/store/useNotificationStore'
+import { Plus } from 'lucide-react'
 import { useUIStore } from '@/lib/store/useUIStore'
-import { FriendCard } from './FriendCard'
-import { FriendRequestCard } from './FriendRequestCard'
-import { FriendSearch } from './FriendSearch'
+import { useChatStore } from '@/lib/store/useChatStore'
+import { ConversationList } from '@/components/chat/ConversationList'
+import { NewChatDialog } from '@/components/chat/NewChatDialog'
 import { PanelHeader } from '@/components/layout/PanelHeader'
-import type { Friend } from '@/types'
 
-const UNDO_DURATION = 4000
-
+/** The social inbox: direct messages and group conversations share one list. */
 export function FriendsPanel() {
   const { t } = useTranslation()
-
-  const friends        = useFriendStore(s => s.friends)
-  const received       = useFriendStore(s => s.received)
-  const sent           = useFriendStore(s => s.sent)
-  const load           = useFriendStore(s => s.load)
-  const acceptRequest  = useFriendStore(s => s.acceptRequest)
-  const declineRequest = useFriendStore(s => s.declineRequest)
-  const removeFriend   = useFriendStore(s => s.removeFriend)
-  const closePanel     = useUIStore(s => s.closePanel)
-  const addToast       = useUIStore(s => s.addToast)
-  const removeToast    = useUIStore(s => s.removeToast)
-  const markAllRead    = useNotificationStore(s => s.markAllRead)
-
-  const pendingRef = useRef<Map<number, { friend: Friend; timerId: ReturnType<typeof setTimeout> }>>(new Map())
-  const [pendingIds, setPendingIds] = useState<Set<number>>(new Set())
-
-  useEffect(() => { load() }, [load])
-  useEffect(() => { markAllRead() }, [markAllRead])
-
-  const handleAccept = async (id: number) => {
-    try {
-      await acceptRequest(id)
-      addToast(t('friends.requestAccepted'), 'success')
-    } catch {
-      addToast(t('friends.acceptFailed'), 'error')
-    }
-  }
-
-  const handleDecline = async (id: number) => {
-    try {
-      await declineRequest(id)
-    } catch {
-      addToast(t('friends.declineFailed'), 'error')
-    }
-  }
-
-  const handleRemove = (friend: Friend) => {
-    pendingRef.current.set(friend.id, {
-      friend,
-      timerId: setTimeout(async () => {
-        pendingRef.current.delete(friend.id)
-        setPendingIds(new Set(pendingRef.current.keys()))
-        try {
-          await removeFriend(friend.id)
-        } catch {
-          addToast(t('friends.removeFailed'), 'error')
-        }
-      }, UNDO_DURATION),
-    })
-    setPendingIds(new Set(pendingRef.current.keys()))
-
-    const toastId = addToast(t('friends.removed', { name: friend.name }), 'info', {
-      duration: UNDO_DURATION,
-      action: {
-        label: t('common.undo'),
-        onClick: () => {
-          const pending = pendingRef.current.get(friend.id)
-          if (!pending) return
-          clearTimeout(pending.timerId)
-          pendingRef.current.delete(friend.id)
-          setPendingIds(new Set(pendingRef.current.keys()))
-          removeToast(toastId)
-        },
-      },
-    })
-  }
+  const closePanel = useUIStore((s) => s.closePanel)
+  const openFloating = useChatStore((s) => s.openFloating)
+  const [composerOpen, setComposerOpen] = useState(false)
 
   return (
-    <div className="w-full md:w-panel h-full bg-bg-primary border-r border-border-subtle flex flex-col overflow-hidden">
+    <div className="w-full md:w-panel h-full bg-bg-secondary border-r border-border-subtle flex flex-col overflow-hidden">
       <PanelHeader
-        title={t('friends.title')}
+        title={t('nav.chats')}
         onClose={closePanel}
-        closeLabel={t('friends.closePanel')}
+        closeLabel={t('chat.closeChats')}
+        actions={
+          <button
+            type="button"
+            onClick={() => setComposerOpen(true)}
+            aria-label={t('common.newChat')}
+            title={t('common.newChat')}
+            className="inline-flex h-10 w-10 md:h-8 md:w-8 items-center justify-center rounded-md text-text-muted hover:text-text-primary hover:bg-bg-tertiary transition-colors"
+          >
+            <Plus className="h-5 w-5 md:h-4 md:w-4" strokeWidth={1.75} />
+          </button>
+        }
       />
 
-      <div className="flex-1 overflow-y-auto">
-        {/* Search */}
-        <div className="pt-3 pb-2">
-          <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-text-muted px-4 pb-2 select-none">{t('friends.addPeople')}</p>
-          <FriendSearch />
-        </div>
-
-        {/* Received requests */}
-        {received.length > 0 && (
-          <div className="border-t border-border-subtle pt-3 pb-2">
-            <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-text-muted px-4 pb-2 select-none">
-              {t('friends.requests', { count: received.length })}
-            </p>
-            <div className="flex flex-col gap-1 px-2">
-              {received.map((req) => (
-                <FriendRequestCard
-                  key={req.id}
-                  request={req}
-                  variant="received"
-                  onAccept={handleAccept}
-                  onDecline={handleDecline}
-                />
-              ))}
-            </div>
-          </div>
-        )}
-
-        {/* Sent requests */}
-        {sent.length > 0 && (
-          <div className="border-t border-border-subtle pt-3 pb-2">
-            <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-text-muted px-4 pb-2 select-none">{t('friends.sent')}</p>
-            <div className="flex flex-col gap-1 px-2">
-              {sent.map((req) => (
-                <FriendRequestCard
-                  key={req.id}
-                  request={req}
-                  variant="sent"
-                  onDecline={handleDecline}
-                />
-              ))}
-            </div>
-          </div>
-        )}
-
-        {/* Friends list */}
-        <div className="border-t border-border-subtle pt-3 pb-4">
-          <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-text-muted px-4 pb-2 select-none">
-            {friends.length > 0 ? t('friends.friendsCount', { count: friends.length }) : t('friends.title')}
-          </p>
-          {friends.length === 0 ? (
-            <p className="text-xs text-text-muted px-4">{t('friends.empty')}</p>
-          ) : (
-            <div className="flex flex-col gap-0.5 px-2">
-              {friends.filter(f => !pendingIds.has(f.id)).map((friend) => (
-                <FriendCard key={friend.id} friend={friend} onRemove={() => handleRemove(friend)} />
-              ))}
-            </div>
-          )}
-        </div>
+      <div className="min-h-0 flex-1 overflow-y-auto">
+        <ConversationList
+          onNewChat={() => setComposerOpen(true)}
+          onSelect={(conversation) => { void openFloating(conversation.id) }}
+        />
       </div>
+
+      <NewChatDialog
+        open={composerOpen}
+        onClose={() => setComposerOpen(false)}
+        onCreated={async (conversation) => { await openFloating(conversation.id) }}
+      />
     </div>
   )
 }

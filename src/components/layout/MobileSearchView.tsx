@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useUIStore } from '@/lib/store/useUIStore'
+import { UserAvatar } from '@/components/auth/UserAvatar'
 import { useVerseStore } from '@/lib/store/useVerseStore'
 import { useAuthStore } from '@/lib/store/useAuthStore'
 import { useFriendStore } from '@/lib/store/useFriendStore'
@@ -379,9 +380,7 @@ export function MobileSearchView() {
                 const isPending = sentIds.has(u.id)
                 return (
                   <li key={u.id} className="flex items-center gap-3 px-4 py-3">
-                    <div className="w-10 h-10 rounded-full bg-bg-tertiary border border-border-subtle flex items-center justify-center text-sm text-text-secondary font-medium shrink-0">
-                      {(u.name.charAt(0) || '?').toUpperCase()}
-                    </div>
+                    <UserAvatar name={u.name} email={u.email} src={u.avatar_url} size="lg" className="border border-border-subtle" />
                     <div className="flex-1 min-w-0">
                       <p className="text-[15px] text-text-primary truncate">{u.name}</p>
                       <p className="text-xs text-text-muted truncate">{u.email}</p>
