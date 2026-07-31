@@ -31,3 +31,8 @@ export function comparableBibleVersions(
   return bibleVersionsInSameLanguage(versions, currentVersionId)
     .filter((version) => version.id !== currentVersionId)
 }
+
+export function preferredComparisonVersion(options: ApiVersion[]): ApiVersion | undefined {
+  const preferredId = Number(localStorage.getItem('preferredCompareVersionId'))
+  return options.find((version) => version.id === preferredId) ?? options[0]
+}

@@ -18,8 +18,14 @@ export function collectClientSettings(): UserSettings {
     preferred_bible_version_id: verse.versionId,
     locale: ui.locale,
     theme: ui.theme,
+    accent_color: ui.accentColor,
     font_size: ui.fontSize,
     reading_mode: ui.readingMode,
+    reader_font: ui.readerFont,
+    line_height: ui.lineHeight,
+    show_verse_numbers: ui.showVerseNumbers,
+    reduce_motion: ui.reduceMotion,
+    high_contrast: ui.highContrast,
   }
 }
 
@@ -31,11 +37,20 @@ export async function applyUserSettings(settings: UserSettings): Promise<void> {
   const ui = useUIStore.getState()
   const verse = useVerseStore.getState()
 
+  if (settings.preferred_compare_version_id) {
+    localStorage.setItem('preferredCompareVersionId', String(settings.preferred_compare_version_id))
+  } else {
+    localStorage.removeItem('preferredCompareVersionId')
+  }
+  if (settings.preferred_ai_model) localStorage.setItem('preferredAiModel', settings.preferred_ai_model)
+  else localStorage.removeItem('preferredAiModel')
+
   if (settings.theme) {
     localStorage.setItem('theme', settings.theme)
-    document.documentElement.setAttribute('data-theme', settings.theme)
-    useUIStore.setState({ theme: settings.theme })
+    ui.setTheme(settings.theme, false)
   }
+
+  if (settings.accent_color) ui.setAccentColor(settings.accent_color, false)
 
   if (settings.locale) {
     localStorage.setItem(APP_LOCALE_STORAGE_KEY, settings.locale)
@@ -53,9 +68,19 @@ export async function applyUserSettings(settings: UserSettings): Promise<void> {
     useUIStore.setState({ readingMode: settings.reading_mode })
   }
 
-  if (settings.tutorial_completed) {
-    localStorage.setItem('tutorial_completed_v1', 'true')
-    localStorage.setItem('tutorial_invite_dismissed_v1', 'true')
+  if (settings.reader_font) ui.setReaderFont(settings.reader_font, false)
+  if (settings.line_height) ui.setLineHeight(settings.line_height, false)
+  if (typeof settings.show_verse_numbers === 'boolean') ui.setShowVerseNumbers(settings.show_verse_numbers, false)
+  if (typeof settings.reduce_motion === 'boolean') ui.setReduceMotion(settings.reduce_motion, false)
+  if (typeof settings.high_contrast === 'boolean') ui.setHighContrast(settings.high_contrast, false)
+
+  if (typeof settings.tutorial_completed === 'boolean') {
+    if (settings.tutorial_completed) {
+      localStorage.setItem('tutorial_completed_v1', 'true')
+      localStorage.setItem('tutorial_invite_dismissed_v1', 'true')
+    } else {
+      localStorage.removeItem('tutorial_completed_v1')
+    }
   }
 
   if (settings.preferred_bible_version_id && settings.preferred_bible_version_id !== verse.versionId) {
@@ -68,5 +93,11 @@ export async function applyUserSettings(settings: UserSettings): Promise<void> {
     locale: settings.locale ?? ui.locale,
     fontSize: settings.font_size ?? ui.fontSize,
     readingMode: settings.reading_mode ?? ui.readingMode,
+    accentColor: settings.accent_color ?? ui.accentColor,
+    readerFont: settings.reader_font ?? ui.readerFont,
+    lineHeight: settings.line_height ?? ui.lineHeight,
+    showVerseNumbers: settings.show_verse_numbers ?? ui.showVerseNumbers,
+    reduceMotion: settings.reduce_motion ?? ui.reduceMotion,
+    highContrast: settings.high_contrast ?? ui.highContrast,
   })
 }

@@ -1,4 +1,4 @@
-import { useEffect, useLayoutEffect, useState } from 'react'
+import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useTutorialStore } from '@/lib/store/useTutorialStore'
 import { modKey } from '@/lib/platform'
@@ -8,6 +8,7 @@ type Rect = { top: number; left: number; width: number; height: number }
 const PAD = 10
 const TOOLTIP_W = 320
 const TOOLTIP_GAP = 16
+const VIEWPORT_PAD = 12
 
 function getRect(selector: string | null): { rect: Rect | null; el: HTMLElement | null; found: boolean } {
   if (!selector) return { rect: null, el: null, found: true }
@@ -39,6 +40,9 @@ export function TutorialOverlay() {
   const [rect, setRect] = useState<Rect | null>(null)
   const [vw, setVw]     = useState(typeof window !== 'undefined' ? window.innerWidth : 1024)
   const [vh, setVh]     = useState(typeof window !== 'undefined' ? window.innerHeight : 768)
+  const [tooltipHeight, setTooltipHeight] = useState(180)
+  const tooltipRef = useRef<HTMLDivElement>(null)
+  const nextButtonRef = useRef<HTMLButtonElement>(null)
 
   useLayoutEffect(() => {
     if (!active || !current) return
@@ -53,29 +57,30 @@ export function TutorialOverlay() {
       setVw(window.innerWidth)
       setVh(window.innerHeight)
 
-      if (!found) {
-        if (current.target) {
-          // eslint-disable-next-line no-console
-          console.warn('[Apolos tour] target not found:', current.target)
-        }
+      if ((!found || !r) && attempts < 20) {
+        // Routes and responsive chrome may still be mounting or animating.
+        attempts++
         setRect(null)
+        timeouts.push(window.setTimeout(update, 100))
         return
       }
 
-      if (!r && attempts < 12) {
-        // Element exists but has no size yet — wait & retry (e.g. animating in)
-        attempts++
-        timeouts.push(window.setTimeout(update, 80))
+      if (!r) {
+        if (current.target) {
+          // eslint-disable-next-line no-console
+          console.warn('[Apolos tour] visible target not found:', current.target)
+        }
+        setRect(null)
         return
       }
 
       if (r && el) {
         // Make sure the target is visible
         const offscreen =
-          r.top < 0 || r.left < 0 || r.top > window.innerHeight || r.left > window.innerWidth
+          r.top < 0 || r.left < 0 || r.top + r.height > window.innerHeight || r.left + r.width > window.innerWidth
         if (offscreen) {
-          el.scrollIntoView({ behavior: 'smooth', block: 'center', inline: 'center' })
-          timeouts.push(window.setTimeout(update, 250))
+          el.scrollIntoView({ behavior: 'auto', block: 'center', inline: 'center' })
+          timeouts.push(window.setTimeout(update, 100))
           return
         }
       }
@@ -90,6 +95,8 @@ export function TutorialOverlay() {
     timeouts.push(window.setTimeout(update, 60))
 
     const onWin = () => update()
+    const mutations = new MutationObserver(onWin)
+    mutations.observe(document.body, { childList: true, subtree: true })
     window.addEventListener('resize', onWin)
     window.addEventListener('scroll', onWin, true)
     return () => {
@@ -97,15 +104,60 @@ export function TutorialOverlay() {
       timeouts.forEach((id) => window.clearTimeout(id))
       window.removeEventListener('resize', onWin)
       window.removeEventListener('scroll', onWin, true)
+      mutations.disconnect()
     }
   }, [active, current, step])
+
+  useLayoutEffect(() => {
+    if (!active || !tooltipRef.current) return
+    const card = tooltipRef.current
+    const updateHeight = () => setTooltipHeight(card.getBoundingClientRect().height)
+    updateHeight()
+    const observer = new ResizeObserver(updateHeight)
+    observer.observe(card)
+    return () => observer.disconnect()
+  }, [active, step])
+
+  useEffect(() => {
+    if (!active) return
+    const previouslyFocused = document.activeElement instanceof HTMLElement
+      ? document.activeElement
+      : null
+    return () => {
+      previouslyFocused?.focus()
+    }
+  }, [active])
+
+  useEffect(() => {
+    if (!active) return
+    const frame = window.requestAnimationFrame(() => nextButtonRef.current?.focus())
+    return () => window.cancelAnimationFrame(frame)
+  }, [active, step])
 
   useEffect(() => {
     if (!active) return
     const onKey = (e: KeyboardEvent) => {
       if (e.key === 'Escape') { e.preventDefault(); skip() }
-      else if (e.key === 'Enter' || e.key === 'ArrowRight') { e.preventDefault(); next() }
-      else if (e.key === 'ArrowLeft') { e.preventDefault(); prev() }
+      else if (e.key === 'Tab') {
+        const focusable = Array.from(
+          tooltipRef.current?.querySelectorAll<HTMLElement>('button:not([disabled]), [href], [tabindex]:not([tabindex="-1"])') ?? [],
+        )
+        if (focusable.length === 0) return
+        const first = focusable[0]
+        const last = focusable[focusable.length - 1]
+        if (e.shiftKey && document.activeElement === first) {
+          e.preventDefault()
+          last.focus()
+        } else if (!e.shiftKey && document.activeElement === last) {
+          e.preventDefault()
+          first.focus()
+        }
+      } else {
+        const target = e.target instanceof HTMLElement ? e.target : null
+        if (target?.closest('button, a, input, select, textarea, [contenteditable="true"]')) return
+        if (e.key === 'Enter' || e.key === 'ArrowRight') { e.preventDefault(); next() }
+        else if (e.key === 'ArrowLeft') { e.preventDefault(); prev() }
+      }
     }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
@@ -113,29 +165,32 @@ export function TutorialOverlay() {
 
   if (!active || !current) return null
 
-  const placement = current.placement ?? 'bottom'
+  const placement = vw < 768
+    ? current.mobilePlacement ?? current.placement ?? 'bottom'
+    : current.placement ?? 'bottom'
   const isCentered = !rect || placement === 'center'
+  const tooltipWidth = Math.max(0, Math.min(TOOLTIP_W, vw - VIEWPORT_PAD * 2))
 
-  let tipTop = vh / 2 - 80
-  let tipLeft = vw / 2 - TOOLTIP_W / 2
+  let tipTop = vh / 2 - tooltipHeight / 2
+  let tipLeft = vw / 2 - tooltipWidth / 2
 
   if (rect && !isCentered) {
     if (placement === 'right') {
       tipLeft = rect.left + rect.width + TOOLTIP_GAP
-      tipTop  = rect.top + rect.height / 2 - 60
+      tipTop  = rect.top + rect.height / 2 - tooltipHeight / 2
     } else if (placement === 'left') {
-      tipLeft = rect.left - TOOLTIP_W - TOOLTIP_GAP
-      tipTop  = rect.top + rect.height / 2 - 60
+      tipLeft = rect.left - tooltipWidth - TOOLTIP_GAP
+      tipTop  = rect.top + rect.height / 2 - tooltipHeight / 2
     } else if (placement === 'top') {
-      tipLeft = rect.left + rect.width / 2 - TOOLTIP_W / 2
-      tipTop  = rect.top - 140 - TOOLTIP_GAP
+      tipLeft = rect.left + rect.width / 2 - tooltipWidth / 2
+      tipTop  = rect.top - tooltipHeight - TOOLTIP_GAP
     } else {
-      tipLeft = rect.left + rect.width / 2 - TOOLTIP_W / 2
+      tipLeft = rect.left + rect.width / 2 - tooltipWidth / 2
       tipTop  = rect.top + rect.height + TOOLTIP_GAP
     }
-    tipLeft = Math.max(12, Math.min(tipLeft, vw - TOOLTIP_W - 12))
-    tipTop  = Math.max(12, Math.min(tipTop, vh - 180))
   }
+  tipLeft = Math.max(VIEWPORT_PAD, Math.min(tipLeft, vw - tooltipWidth - VIEWPORT_PAD))
+  tipTop = Math.max(VIEWPORT_PAD, Math.min(tipTop, vh - tooltipHeight - VIEWPORT_PAD))
 
   const isFirst = step === 0
   const isLast  = step === steps.length - 1
@@ -147,11 +202,11 @@ export function TutorialOverlay() {
   const spotHeight = rect ? rect.height + PAD * 2 : 0
 
   return (
-    <div className="fixed inset-0 z-50 pointer-events-none">
+    <div className="fixed inset-0 z-50" role="dialog" aria-modal="true" aria-labelledby="apolos-tour-title" aria-describedby="apolos-tour-description">
       <style>{`
         @keyframes apolos-tour-pulse {
-          0%, 100% { box-shadow: 0 0 0 0 rgba(200,169,106,0.55), 0 0 40px 8px rgba(200,169,106,0.25); }
-          50%      { box-shadow: 0 0 0 8px rgba(200,169,106,0), 0 0 60px 16px rgba(200,169,106,0.35); }
+          0%, 100% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--accent) 55%, transparent), 0 0 40px 8px color-mix(in srgb, var(--accent) 25%, transparent); }
+          50%      { box-shadow: 0 0 0 8px transparent, 0 0 60px 16px color-mix(in srgb, var(--accent) 35%, transparent); }
         }
         @keyframes apolos-tour-glow {
           0%, 100% { opacity: 0.55; }
@@ -163,8 +218,8 @@ export function TutorialOverlay() {
         }
       `}</style>
 
-      {/* Full-screen dim — only shows when no target (centered steps).
-          Pointer-events-none ensures clicks outside don't dismiss. */}
+      {/* Full-screen dim for centered steps. The overlay itself blocks the app
+          beneath it while the tour is active. */}
       {isCentered && (
         <div className="absolute inset-0 bg-black/65" />
       )}
@@ -182,7 +237,7 @@ export function TutorialOverlay() {
               width: spotWidth,
               height: spotHeight,
               boxShadow: '0 0 0 9999px rgba(0, 0, 0, 0.72)',
-              transition: 'top 350ms cubic-bezier(0.4, 0, 0.2, 1), left 350ms cubic-bezier(0.4, 0, 0.2, 1), width 350ms cubic-bezier(0.4, 0, 0.2, 1), height 350ms cubic-bezier(0.4, 0, 0.2, 1)',
+              transition: 'top 150ms, left 150ms, width 150ms, height 150ms',
             }}
           />
           {/* Pulsing accent ring */}
@@ -195,7 +250,7 @@ export function TutorialOverlay() {
               width: spotWidth,
               height: spotHeight,
               animation: 'apolos-tour-pulse 2.2s ease-in-out infinite',
-              transition: 'top 350ms cubic-bezier(0.4, 0, 0.2, 1), left 350ms cubic-bezier(0.4, 0, 0.2, 1), width 350ms cubic-bezier(0.4, 0, 0.2, 1), height 350ms cubic-bezier(0.4, 0, 0.2, 1)',
+              transition: 'top 150ms, left 150ms, width 150ms, height 150ms',
             }}
           />
           {/* Soft inner glow tint over the highlighted area */}
@@ -207,9 +262,9 @@ export function TutorialOverlay() {
               left: spotLeft,
               width: spotWidth,
               height: spotHeight,
-              background: 'radial-gradient(ellipse at center, rgba(200,169,106,0.10) 0%, rgba(200,169,106,0) 70%)',
+              background: 'radial-gradient(ellipse at center, color-mix(in srgb, var(--accent) 10%, transparent) 0%, transparent 70%)',
               animation: 'apolos-tour-glow 2.6s ease-in-out infinite',
-              transition: 'top 350ms cubic-bezier(0.4, 0, 0.2, 1), left 350ms cubic-bezier(0.4, 0, 0.2, 1), width 350ms cubic-bezier(0.4, 0, 0.2, 1), height 350ms cubic-bezier(0.4, 0, 0.2, 1)',
+              transition: 'top 150ms, left 150ms, width 150ms, height 150ms',
             }}
           />
         </>
@@ -217,10 +272,11 @@ export function TutorialOverlay() {
 
       {/* Tooltip card */}
       <div
+        ref={tooltipRef}
         key={step}
-        className="pointer-events-auto absolute rounded-lg border border-border-subtle bg-bg-secondary p-4 shadow-2xl"
+        className="absolute rounded-lg border border-border-subtle bg-bg-secondary p-4"
         style={{
-          width: TOOLTIP_W,
+          width: tooltipWidth,
           top: tipTop,
           left: tipLeft,
           animation: 'apolos-tour-fade-in 220ms ease-out',
@@ -237,11 +293,11 @@ export function TutorialOverlay() {
             {t('tutorial.skip')}
           </button>
         </div>
-        <h3 className="mt-2 text-sm font-medium text-text-primary">
+        <h3 id="apolos-tour-title" className="mt-2 text-sm font-medium text-text-primary">
           {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
           {(t as any)(current.titleKey)}
         </h3>
-        <p className="mt-1.5 text-xs text-text-secondary leading-relaxed">
+        <p id="apolos-tour-description" className="mt-1.5 text-xs text-text-secondary leading-relaxed">
           {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
           {(t as any)(current.bodyKey, { modKey })}
         </p>
@@ -267,6 +323,7 @@ export function TutorialOverlay() {
             {t('tutorial.back')}
           </button>
           <button
+            ref={nextButtonRef}
             onClick={next}
             className="rounded bg-accent px-3 py-1 text-xs font-medium text-bg-primary hover:opacity-90 transition-opacity"
           >

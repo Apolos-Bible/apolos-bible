@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef } from 'react'
 import { Columns2, X } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
-import { comparableBibleVersions } from '@/lib/bibleVersionOptions'
+import { comparableBibleVersions, preferredComparisonVersion } from '@/lib/bibleVersionOptions'
 import { cn } from '@/lib/cn'
 import { useActiveCompareStore } from '@/lib/store/useCompareStore'
 import { useActiveVerseStore } from '@/lib/store/useVerseStore'
@@ -129,7 +129,7 @@ export function CompareVersionPanel() {
     if (!open) return
     const selectedStillAvailable = result
       && options.some((version) => version.id === result.version.id)
-    const version = selectedStillAvailable ? result.version : options[0]
+    const version = selectedStillAvailable ? result.version : preferredComparisonVersion(options)
 
     if (!version) {
       closeCompare()
