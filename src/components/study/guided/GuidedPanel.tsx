@@ -14,12 +14,13 @@ import {
 } from 'lucide-react'
 import { useGuidedStore, promptKey } from '@/lib/store/useGuidedStore'
 import { useVerseStore } from '@/lib/store/useVerseStore'
-import { fetchGuidedVerses } from '@/lib/study/guidedPassage'
+import { fetchGuidedVerses, type GuidedVerse } from '@/lib/study/guidedPassage'
 import { claimGuidedInsert, readGuidedStep, getGuidedMap, writeGuidedStep } from '@/lib/study/yDocHelpers'
 import type { GuidedStep } from '@/lib/study/guidedApi'
 import { stepKind } from '@/lib/study/guidedStepKinds'
 import { cn } from '@/lib/cn'
 import { GuidedPrompt } from './GuidedPrompt'
+import { useIsMobile } from '@/lib/useIsMobile'
 
 interface GuidedPanelProps {
   slug: string
@@ -55,9 +56,14 @@ export function GuidedPanel({ slug, sessionId, doc, open, onClose, isGuest }: Gu
   const complete = useGuidedStore((s) => s.complete)
 
   const versionId = useVerseStore((s) => s.versionId)
+  const isMobile = useIsMobile()
   const [notesOpen, setNotesOpen] = useState(false)
   const [inserting, setInserting] = useState(false)
   const [insertError, setInsertError] = useState(false)
+  const [mobilePassage, setMobilePassage] = useState<GuidedVerse[]>([])
+  const [mobilePassageLoading, setMobilePassageLoading] = useState(false)
+  const mobilePassageCache = useRef(new Map<string, GuidedVerse[]>())
+  const mobilePassageRequests = useRef(new Map<string, Promise<GuidedVerse[]>>())
 
   useEffect(() => {
     void openStudy(slug, sessionId)
@@ -92,6 +98,26 @@ export function GuidedPanel({ slug, sessionId, doc, open, onClose, isGuest }: Gu
     [goToStep, doc, isGuest],
   )
 
+  const loadPassage = useCallback(async (target: GuidedStep) => {
+    const key = `${slug}:${versionId}:${target.id}`
+    const cached = mobilePassageCache.current.get(key)
+    if (cached) return cached
+
+    const pending = mobilePassageRequests.current.get(key)
+    if (pending) return pending
+
+    const request = fetchGuidedVerses(target.ranges, versionId)
+      .then((verses) => {
+        mobilePassageCache.current.set(key, verses)
+        return verses
+      })
+      .finally(() => {
+        mobilePassageRequests.current.delete(key)
+      })
+    mobilePassageRequests.current.set(key, request)
+    return request
+  }, [slug, versionId])
+
   // --- Bring the passage onto the canvas ----------------------------------
   const insertPassage = useCallback(
     async (target: GuidedStep, { auto }: { auto: boolean }) => {
@@ -104,7 +130,7 @@ export function GuidedPanel({ slug, sessionId, doc, open, onClose, isGuest }: Gu
       setInserting(true)
       setInsertError(false)
       try {
-        const verses = await fetchGuidedVerses(target.ranges, versionId)
+        const verses = await loadPassage(target)
         if (verses.length > 0) {
           actions.addVerseChain(verses, { x: target.position * STEP_COLUMN_WIDTH, y: 0 })
         }
@@ -114,8 +140,36 @@ export function GuidedPanel({ slug, sessionId, doc, open, onClose, isGuest }: Gu
         setInserting(false)
       }
     },
-    [doc, isGuest, versionId],
+    [doc, isGuest, loadPassage],
   )
+
+  // The guide covers the canvas on phones, so mirror the passage inside the
+  // guide itself. Keep this separate from canvas insertion so guests can read
+  // the Scripture too.
+  useEffect(() => {
+    if (!isMobile || !open || !step || step.ranges.length === 0) {
+      setMobilePassage([])
+      setMobilePassageLoading(false)
+      return
+    }
+
+    let cancelled = false
+    setMobilePassageLoading(true)
+    void loadPassage(step)
+      .then((verses) => {
+        if (!cancelled) setMobilePassage(verses)
+      })
+      .catch(() => {
+        if (!cancelled) setMobilePassage([])
+      })
+      .finally(() => {
+        if (!cancelled) setMobilePassageLoading(false)
+      })
+
+    return () => {
+      cancelled = true
+    }
+  }, [isMobile, open, step, loadPassage])
 
   // Entering a step with Scripture puts it on the canvas without being asked:
   // the person should always have the passage in front of them.
@@ -253,6 +307,34 @@ export function GuidedPanel({ slug, sessionId, doc, open, onClose, isGuest }: Gu
             )}
 
             {insertError && <p className="mb-2 text-2xs text-red-400">{t('guided.insertFailed')}</p>}
+
+            {isMobile && step.ranges.length > 0 && (
+              <section
+                className="mb-4 rounded-xl border border-accent/20 bg-accent/[0.045] px-3.5 py-3"
+                aria-label={t('guided.mobilePassage')}
+              >
+                <p className="mb-2 text-2xs font-semibold uppercase tracking-[0.12em] text-accent/80">
+                  {t('guided.mobilePassage')}
+                </p>
+                {mobilePassageLoading ? (
+                  <div className="flex items-center gap-2 text-xs text-text-muted">
+                    <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                    {t('guided.loading')}
+                  </div>
+                ) : mobilePassage.length > 0 ? (
+                  <div className="space-y-2">
+                    {mobilePassage.map((verse) => (
+                      <p key={`${verse.verseId}-${verse.verse}`} className="text-[15px] leading-relaxed text-text-primary">
+                        <sup className="mr-1.5 align-super text-[10px] font-semibold tabular-nums text-accent">{verse.verse}</sup>
+                        {verse.text}
+                      </p>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-xs text-text-muted">{t('guided.insertFailed')}</p>
+                )}
+              </section>
+            )}
 
             {/* How the body reads depends on the kind: Scripture is quoted, a
                 teaching or a prayer is prose to read, and the imported studies'
