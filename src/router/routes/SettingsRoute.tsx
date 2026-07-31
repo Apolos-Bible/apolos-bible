@@ -12,7 +12,10 @@ import { Select } from '@/components/ui/Select'
 import { cn } from '@/lib/cn'
 import { paths } from '@/router/paths'
 import { useUIStore, DEFAULT_ACCENT_COLOR, type FontSize, type Locale, type ReadingMode, type Theme } from '@/lib/store/useUIStore'
-import { useVerseStore } from '@/lib/store/useVerseStore'
+import {
+  setBibleVersionForAllStores,
+  useVerseStore,
+} from '@/lib/store/useVerseStore'
 import { useAuthStore } from '@/lib/store/useAuthStore'
 import {
   canUseGoogleAnalytics,
@@ -130,7 +133,6 @@ export function SettingsRoute() {
   const versions = useVerseStore((s) => s.versions)
   const versionId = useVerseStore((s) => s.versionId)
   const loadVersions = useVerseStore((s) => s.loadVersions)
-  const setVersion = useVerseStore((s) => s.setVersion)
   const selectableVersions = versions
   const selectedVersion = versions.find((version) => version.id === versionId)
 
@@ -760,7 +762,7 @@ export function SettingsRoute() {
                 <p className="mt-1 text-xs text-text-muted">{t('settings.bible.versionHelp')}</p>
                 <Select
                   value={versionId}
-                  onChange={setVersion}
+                  onChange={setBibleVersionForAllStores}
                   ariaLabel={t('settings.bible.version')}
                   disabled={selectableVersions.length === 0}
                   placeholder={t('common.loading')}

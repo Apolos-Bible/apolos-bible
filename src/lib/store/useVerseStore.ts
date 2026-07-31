@@ -126,12 +126,27 @@ export function createVerseStore() {
   },
 
   setVersion: async (id, options) => {
+    const {
+      selectedBook,
+      selectedChapter,
+      selectedVerseId,
+      verses,
+    } = get()
+    const selectedVerse = verses.find((verse) => verse.id === selectedVerseId)?.verse
+    const currentRoute = selectedBook
+      ? {
+          book: selectedBook,
+          chapter: selectedChapter,
+          ...(selectedVerse ? { verse: selectedVerse } : {}),
+        }
+      : undefined
+
     localStorage.setItem(BIBLE_VERSION_STORAGE_KEY, String(id))
     set({ versionId: id, books: [], verses: [], selectedVerseId: null, selectedVerseIds: [], cursorVerseId: null, selectionAnchorId: null, studyVerseId: null })
     if (options?.sync !== false && fromYouVersionClientId(id) === null) {
       saveUserSettingsSilently({ preferred_bible_version_id: id })
     }
-    await get().loadBooks()
+    await get().loadBooks(currentRoute)
   },
 
   setDefaultVersionForLocale: async (locale) => {
@@ -497,6 +512,25 @@ export function getVerseStoreForTab(tabId: string): VerseStore {
     workspaceVerseStores.set(tabId, store)
   }
   return store
+}
+
+/**
+ * Applies a preference change to the legacy reader and every Bible tab that
+ * has already been opened. Each store keeps its own reading location.
+ */
+export async function setBibleVersionForAllStores(
+  id: number,
+  options?: { sync?: boolean },
+): Promise<void> {
+  const stores = [useVerseStore, ...workspaceVerseStores.values()]
+
+  await Promise.all(stores.map((store, index) => (
+    store.getState().setVersion(id, {
+      // Persist the account preference once; the other stores only need to
+      // refresh their local reader state.
+      sync: options?.sync === false ? false : index === 0,
+    })
+  )))
 }
 
 const VerseStoreContext = createContext<VerseStore | null>(null)
