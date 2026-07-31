@@ -1,7 +1,16 @@
 import type { ApiVersion } from '@/lib/bibleApi'
 
 function normalizeLanguage(language: string): string {
-  return language.trim().toLowerCase().split(/[-_]/)[0]
+  const normalized = language.trim().toLowerCase().split(/[-_]/)[0]
+
+  return {
+    english: 'en',
+    inglés: 'en',
+    ingles: 'en',
+    spanish: 'es',
+    español: 'es',
+    espanol: 'es',
+  }[normalized] ?? normalized
 }
 
 export function bibleVersionsInSameLanguage(

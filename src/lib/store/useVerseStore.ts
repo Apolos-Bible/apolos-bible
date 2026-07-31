@@ -10,6 +10,7 @@ import {
 import { saveUserSettingsSilently } from '@/lib/userSettingsApi'
 import { prefetchVersion } from '@/lib/prefetchBible'
 import { pingReadingActivity } from '@/lib/readingActivity'
+import { fromYouVersionClientId } from '@/lib/youVersion'
 
 const LAST_READING_KEY = 'verbum_last_reading'
 
@@ -127,7 +128,7 @@ export function createVerseStore() {
   setVersion: async (id, options) => {
     localStorage.setItem(BIBLE_VERSION_STORAGE_KEY, String(id))
     set({ versionId: id, books: [], verses: [], selectedVerseId: null, selectedVerseIds: [], cursorVerseId: null, selectionAnchorId: null, studyVerseId: null })
-    if (options?.sync !== false) {
+    if (options?.sync !== false && fromYouVersionClientId(id) === null) {
       saveUserSettingsSilently({ preferred_bible_version_id: id })
     }
     await get().loadBooks()
@@ -137,10 +138,8 @@ export function createVerseStore() {
     // A deliberate version choice wins over the UI language. The setting is
     // persisted by setVersion, while this action only manages the default.
     try {
-      let { versions, versionId } = get()
-      if (versions.length === 0) {
-        versions = await bibleApi.versions()
-      }
+      let { versionId } = get()
+      const versions = await bibleApi.versions()
       if (storedActiveVersionId(versions) != null) {
         set({ versions })
         return
@@ -181,7 +180,9 @@ export function createVerseStore() {
         console.error('[bibleApi.books] non-array response', { versionId, apiBooks })
         return
       }
-      prefetchVersion(versionId, apiBooks)
+      if (fromYouVersionClientId(versionId) === null) {
+        prefetchVersion(versionId, apiBooks)
+      }
       const books: Book[] = apiBooks.map(b => ({
         id: b.slug,
         number: b.number,
@@ -289,7 +290,7 @@ export function createVerseStore() {
 
   loadChapter: async (slug, chapter) => {
     const { versionId } = get()
-    set({ selectedBook: slug, selectedChapter: chapter, loadingVerses: true, selectedVerseId: null, selectedVerseIds: [], cursorVerseId: null, selectionAnchorId: null, studyVerseId: null })
+    set({ selectedBook: slug, selectedChapter: chapter, chapterId: null, loadingVerses: true, selectedVerseId: null, selectedVerseIds: [], cursorVerseId: null, selectionAnchorId: null, studyVerseId: null })
     localStorage.setItem(LAST_READING_KEY, JSON.stringify({ book: slug, chapter }))
     try {
       const data = await bibleApi.chapter(versionId, slug, chapter)
@@ -301,7 +302,11 @@ export function createVerseStore() {
         verse: v.number,
         text: v.text,
       }))
-      set({ verses, chapterId: data.chapter_id, loadingVerses: false })
+      set({
+        verses,
+        chapterId: data.provider === 'youversion' ? null : data.chapter_id,
+        loadingVerses: false,
+      })
       const { versions } = get()
       pingReadingActivity({
         book_name: data.book.name,
