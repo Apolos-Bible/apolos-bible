@@ -44,7 +44,9 @@ export function FloatingChatDock({ rightPanelOpen }: FloatingChatDockProps) {
     .map((id) => byId.get(id))
     .filter((conversation): conversation is Conversation => conversation !== undefined)
   const bubbleConversations = conversations.filter((conversation) =>
-    (minimized[conversation.id] || conversation.unread_count > 0) && !openConversations.some((open) => open.id === conversation.id),
+    conversation.archived_at === null
+      && (minimized[conversation.id] || conversation.unread_count > 0)
+      && !openConversations.some((open) => open.id === conversation.id),
   )
   const openRequest = friendRequests.find((request) => request.id === openRequestId)
   const bubbleRequests = friendRequests

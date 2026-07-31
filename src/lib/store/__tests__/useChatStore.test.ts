@@ -12,6 +12,8 @@ vi.mock('@/lib/chatApi', () => ({
     typing: vi.fn(),
     addParticipants: vi.fn(),
     leave: vi.fn(),
+    archive: vi.fn(),
+    unarchive: vi.fn(),
   },
 }))
 
@@ -69,6 +71,8 @@ const mockChatApi = chatApi as unknown as {
   typing: ReturnType<typeof vi.fn>
   addParticipants: ReturnType<typeof vi.fn>
   leave: ReturnType<typeof vi.fn>
+  archive: ReturnType<typeof vi.fn>
+  unarchive: ReturnType<typeof vi.fn>
 }
 
 const mockConversation: Conversation = {
@@ -79,6 +83,7 @@ const mockConversation: Conversation = {
   last_message_at: '2024-01-01T00:00:00Z',
   unread_count: 0,
   last_read_at: null,
+  archived_at: null,
   participants: [
     { id: 1, name: 'Alice', email: 'alice@test.com', last_read_at: null },
     { id: 2, name: 'Bob', email: 'bob@test.com', last_read_at: null },
@@ -100,6 +105,8 @@ beforeEach(() => {
   useChatStore.setState({
     conversations: [],
     selectedId: null,
+    floatingIds: [],
+    floatingMinimized: {},
     messages: {},
     loadingList: false,
     loadingThread: {},
@@ -200,6 +207,31 @@ describe('useChatStore', () => {
     await useChatStore.getState().leave(1)
     expect(useChatStore.getState().conversations).toHaveLength(0)
     expect(useChatStore.getState().selectedId).toBeNull()
+  })
+
+  it('archives a conversation and closes its floating window', async () => {
+    mockChatApi.archive.mockResolvedValueOnce({ archived_at: '2026-07-31T12:00:00Z' })
+    useChatStore.setState({
+      conversations: [mockConversation],
+      selectedId: 1,
+      floatingIds: [1],
+      floatingMinimized: { 1: false },
+    })
+
+    await useChatStore.getState().archive(1)
+
+    expect(useChatStore.getState().conversations[0].archived_at).toBe('2026-07-31T12:00:00Z')
+    expect(useChatStore.getState().selectedId).toBeNull()
+    expect(useChatStore.getState().floatingIds).toEqual([])
+  })
+
+  it('restores an archived conversation', async () => {
+    mockChatApi.unarchive.mockResolvedValueOnce({ archived_at: null })
+    useChatStore.setState({ conversations: [{ ...mockConversation, archived_at: '2026-07-31T12:00:00Z' }] })
+
+    await useChatStore.getState().unarchive(1)
+
+    expect(useChatStore.getState().conversations[0].archived_at).toBeNull()
   })
 
   it('reset clears all state', () => {

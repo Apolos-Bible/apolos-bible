@@ -1,8 +1,10 @@
 import { useTranslation } from 'react-i18next'
-import { Plus } from 'lucide-react'
+import { useState } from 'react'
+import { Archive, ArchiveRestore, Plus } from 'lucide-react'
 import i18n from '@/lib/i18n'
 import { useChatStore } from '@/lib/store/useChatStore'
 import { useAuthStore } from '@/lib/store/useAuthStore'
+import { useUIStore } from '@/lib/store/useUIStore'
 import { ConversationAvatar } from '@/components/chat/ConversationAvatar'
 import { cn } from '@/lib/cn'
 import type { Conversation } from '@/lib/chatApi'
@@ -10,6 +12,7 @@ import type { Conversation } from '@/lib/chatApi'
 interface ConversationListProps {
   onNewChat?: () => void
   onSelect?: (conversation: Conversation) => void
+  filter?: 'active' | 'archived'
 }
 
 function relativeTime(iso: string | null): string {
@@ -28,19 +31,35 @@ function conversationTitle(c: Conversation, selfId: number | undefined): string 
   return other?.name ?? i18n.t('chat.directMessage')
 }
 
-export function ConversationList({ onNewChat, onSelect }: ConversationListProps = {}) {
+export function ConversationList({ onNewChat, onSelect, filter = 'active' }: ConversationListProps = {}) {
   const { t }        = useTranslation()
   const conversations = useChatStore(s => s.conversations)
   const selectedId    = useChatStore(s => s.selectedId)
   const select        = useChatStore(s => s.select)
   const loading       = useChatStore(s => s.loadingList)
+  const archive       = useChatStore(s => s.archive)
+  const unarchive     = useChatStore(s => s.unarchive)
+  const addToast      = useUIStore(s => s.addToast)
   const selfId        = useAuthStore(s => s.user?.id)
+  const [busyId, setBusyId] = useState<number | null>(null)
+  const visibleConversations = conversations.filter((conversation) =>
+    filter === 'archived' ? conversation.archived_at !== null : conversation.archived_at === null,
+  )
 
   if (loading && conversations.length === 0) {
     return <p className="workspace-chat-loading text-sm md:text-xs text-text-muted px-4 py-6">{t('common.loading')}</p>
   }
 
-  if (conversations.length === 0) {
+  if (visibleConversations.length === 0) {
+    if (filter === 'archived') {
+      return (
+        <div className="flex flex-col items-center px-8 py-12 text-center text-text-muted">
+          <Archive aria-hidden="true" className="mb-3 h-7 w-7 opacity-50" strokeWidth={1.5} />
+          <p className="text-xs">{t('chat.archivedEmpty')}</p>
+        </div>
+      )
+    }
+
     return (
       <>
         {/* Mobile: editorial empty state */}
@@ -75,9 +94,26 @@ export function ConversationList({ onNewChat, onSelect }: ConversationListProps 
     )
   }
 
+  const handleArchive = async (conversation: Conversation) => {
+    setBusyId(conversation.id)
+    try {
+      if (conversation.archived_at) {
+        await unarchive(conversation.id)
+        addToast(t('chat.unarchived'), 'success')
+      } else {
+        await archive(conversation.id)
+        addToast(t('chat.archived'), 'success')
+      }
+    } catch {
+      addToast(t('chat.archiveFailed'), 'error')
+    } finally {
+      setBusyId(null)
+    }
+  }
+
   return (
     <div className="workspace-conversation-list flex-1 space-y-1 overflow-y-auto p-2">
-      {conversations.map((c) => {
+      {visibleConversations.map((c) => {
         const isActive = c.id === selectedId
         const title    = conversationTitle(c, selfId)
         const isGroup  = c.type === 'group'
@@ -89,13 +125,11 @@ export function ConversationList({ onNewChat, onSelect }: ConversationListProps 
         const isUnread = c.unread_count > 0
 
         return (
-          <button
+          <div
             key={c.id}
-            onClick={() => onSelect ? onSelect(c) : select(c.id)}
             className={cn(
               'workspace-conversation-row',
-              'group relative w-full text-left flex gap-3 md:gap-2.5 items-center transition-colors',
-              'rounded-xl border border-transparent border-l-2 px-3 py-3 md:rounded-lg md:py-2.5',
+              'group relative flex w-full items-center rounded-xl border border-transparent border-l-2 transition-colors md:rounded-lg',
               isActive
                 ? 'border-border-subtle border-l-accent bg-bg-tertiary shadow-sm'
                 : isUnread
@@ -103,6 +137,11 @@ export function ConversationList({ onNewChat, onSelect }: ConversationListProps 
                   : 'active:bg-bg-tertiary/60 md:hover:bg-bg-tertiary/70',
             )}
           >
+            <button
+              type="button"
+              onClick={() => onSelect ? onSelect(c) : select(c.id)}
+              className="flex min-w-0 flex-1 items-center gap-3 px-3 py-3 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-accent/50 md:gap-2.5 md:py-2.5"
+            >
             {/* Unread accent rail (mobile only) */}
             {isUnread && (
               <span
@@ -127,7 +166,7 @@ export function ConversationList({ onNewChat, onSelect }: ConversationListProps 
               )}
             </span>
 
-            <div className="flex-1 min-w-0">
+            <div className="min-w-0 flex-1">
               <div className="flex items-baseline justify-between gap-2">
                 <span className={cn(
                   'workspace-conversation-list-title',
@@ -176,7 +215,21 @@ export function ConversationList({ onNewChat, onSelect }: ConversationListProps 
                 )}
               </div>
             </div>
-          </button>
+            </button>
+
+            <button
+              type="button"
+              disabled={busyId !== null}
+              onClick={() => { void handleArchive(c) }}
+              aria-label={c.archived_at ? t('chat.unarchiveAria', { title }) : t('chat.archiveAria', { title })}
+              title={c.archived_at ? t('chat.unarchive') : t('chat.archive')}
+              className="mr-2 inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-md text-text-muted opacity-70 transition-[color,background-color,opacity] hover:bg-bg-primary hover:text-accent disabled:opacity-40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/50 md:opacity-0 md:group-hover:opacity-100 md:group-focus-within:opacity-100"
+            >
+              {c.archived_at
+                ? <ArchiveRestore aria-hidden="true" className="h-4 w-4" strokeWidth={1.75} />
+                : <Archive aria-hidden="true" className="h-4 w-4" strokeWidth={1.75} />}
+            </button>
+          </div>
         )
       })}
     </div>

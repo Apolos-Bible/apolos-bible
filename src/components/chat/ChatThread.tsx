@@ -1,8 +1,10 @@
 import { useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Link } from 'react-router-dom'
+import { Archive, ArchiveRestore } from 'lucide-react'
 import { useChatStore } from '@/lib/store/useChatStore'
 import { useAuthStore } from '@/lib/store/useAuthStore'
+import { useUIStore } from '@/lib/store/useUIStore'
 import { ConversationAvatar } from '@/components/chat/ConversationAvatar'
 import { MessageItem } from './MessageItem'
 import { MessageInput } from './MessageInput'
@@ -39,11 +41,15 @@ export function ChatThread({ conversation, onBack, backLabel, onClose, closeLabe
   const typingEntries  = useChatStore(s => s.typing[conversation.id] ?? EMPTY_TYPING)
   const aiThinking     = useChatStore(s => s.aiThinking[conversation.id] === true)
   const setComposerAudience = useChatStore(s => s.setComposerAudience)
+  const archive         = useChatStore(s => s.archive)
+  const unarchive       = useChatStore(s => s.unarchive)
+  const addToast        = useUIStore(s => s.addToast)
   const selfId         = useAuthStore(s => s.user?.id)
 
   const scrollRef = useRef<HTMLDivElement>(null)
   const lastCountRef = useRef(0)
   const [manageOpen, setManageOpen] = useState(false)
+  const [archiveBusy, setArchiveBusy] = useState(false)
 
   const dayLabel = (iso: string): string => {
     const d = new Date(iso)
@@ -147,6 +153,23 @@ export function ChatThread({ conversation, onBack, backLabel, onClose, closeLabe
     />
   )
 
+  const handleArchive = async () => {
+    setArchiveBusy(true)
+    try {
+      if (conversation.archived_at) {
+        await unarchive(conversation.id)
+        addToast(t('chat.unarchived'), 'success')
+      } else {
+        await archive(conversation.id)
+        addToast(t('chat.archived'), 'success')
+      }
+    } catch {
+      addToast(t('chat.archiveFailed'), 'error')
+    } finally {
+      setArchiveBusy(false)
+    }
+  }
+
   return (
     <>
       <PanelHeader
@@ -176,13 +199,25 @@ export function ChatThread({ conversation, onBack, backLabel, onClose, closeLabe
         onClose={onClose}
         closeLabel={closeLabel}
         actions={
-          isGroup && !conversation.study_session_id ? (
-            <PanelHeaderButton onClick={() => setManageOpen(true)} aria-label={t('chat.manageGroup')} title={t('chat.manageGroup')}>
-              <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.75" className="h-5 w-5 md:h-4 md:w-4">
-                <path d="M8 3.5v9M3.5 8h9" strokeLinecap="round" />
-              </svg>
+          <>
+            <PanelHeaderButton
+              disabled={archiveBusy}
+              onClick={() => { void handleArchive() }}
+              aria-label={conversation.archived_at ? t('chat.unarchive') : t('chat.archive')}
+              title={conversation.archived_at ? t('chat.unarchive') : t('chat.archive')}
+            >
+              {conversation.archived_at
+                ? <ArchiveRestore aria-hidden="true" className="h-5 w-5 md:h-4 md:w-4" strokeWidth={1.75} />
+                : <Archive aria-hidden="true" className="h-5 w-5 md:h-4 md:w-4" strokeWidth={1.75} />}
             </PanelHeaderButton>
-          ) : undefined
+            {isGroup && !conversation.study_session_id && (
+              <PanelHeaderButton onClick={() => setManageOpen(true)} aria-label={t('chat.manageGroup')} title={t('chat.manageGroup')}>
+                <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.75" className="h-5 w-5 md:h-4 md:w-4">
+                  <path d="M8 3.5v9M3.5 8h9" strokeLinecap="round" />
+                </svg>
+              </PanelHeaderButton>
+            )}
+          </>
         }
       />
 
