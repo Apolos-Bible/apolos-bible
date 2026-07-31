@@ -22,6 +22,8 @@ import { registerAuthDeepLink } from '@/lib/deepLink'
 import { useIsMobile } from '@/lib/useIsMobile'
 import { isWorkspaceRoute } from './paths'
 import { WorkspaceDesktopShell } from '@/components/layout/WorkspaceDesktopShell'
+import { AnalyticsConsentBanner } from '@/components/privacy/AnalyticsConsentBanner'
+import { trackAnalyticsPageView } from '@/lib/analytics'
 
 const VISITED_STORAGE_KEY = 'verbum_has_visited'
 let hasLoggedStartupSettings = false
@@ -58,6 +60,10 @@ function RootLayoutSurface() {
   const listenForChatUpdates = useChatStore(s => s.listenForUpdates)
   const stopChatUpdates    = useChatStore(s => s.stopListeningForUpdates)
   const addToast           = useUIStore(s => s.addToast)
+
+  useEffect(() => {
+    trackAnalyticsPageView(location.pathname)
+  }, [location.pathname])
 
   useEffect(() => {
     void authInit()
@@ -166,6 +172,7 @@ function RootLayoutSurface() {
       <ContextMenu />
       <TutorialInvite />
       <TutorialOverlay />
+      <AnalyticsConsentBanner />
     </>
   )
 }
