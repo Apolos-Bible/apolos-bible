@@ -20,6 +20,8 @@ interface SelectProps<T extends SelectValue> {
   disabled?: boolean
   className?: string
   buttonClassName?: string
+  searchable?: boolean
+  searchPlaceholder?: string
 }
 
 /**
@@ -36,6 +38,8 @@ export function Select<T extends SelectValue>({
   disabled,
   className,
   buttonClassName,
+  searchable = false,
+  searchPlaceholder = 'Search…',
 }: SelectProps<T>) {
   const listboxId = useId()
   const rootRef = useRef<HTMLDivElement>(null)
@@ -43,7 +47,12 @@ export function Select<T extends SelectValue>({
   const selectedIndex = Math.max(0, options.findIndex((option) => Object.is(option.value, value)))
   const [open, setOpen] = useState(false)
   const [activeIndex, setActiveIndex] = useState(selectedIndex)
+  const [query, setQuery] = useState('')
+  const searchRef = useRef<HTMLInputElement>(null)
   const selectedOption = options.find((option) => Object.is(option.value, value))
+  const filteredOptions = searchable && query.trim()
+    ? options.filter((option) => `${option.label} ${option.description ?? ''}`.toLowerCase().includes(query.trim().toLowerCase()))
+    : options
 
   useEffect(() => {
     setActiveIndex(selectedIndex)
@@ -64,19 +73,23 @@ export function Select<T extends SelectValue>({
     if (open) optionRefs.current[activeIndex]?.scrollIntoView({ block: 'nearest' })
   }, [activeIndex, open])
 
+  useEffect(() => {
+    if (open && searchable) searchRef.current?.focus()
+  }, [open, searchable])
+
   const nextEnabled = (start: number, direction: 1 | -1) => {
-    if (options.length === 0) return 0
+    if (filteredOptions.length === 0) return 0
 
     let index = start
     for (let step = 0; step < options.length; step += 1) {
-      index = (index + direction + options.length) % options.length
-      if (!options[index]?.disabled) return index
+      index = (index + direction + filteredOptions.length) % filteredOptions.length
+      if (!filteredOptions[index]?.disabled) return index
     }
     return start
   }
 
   const selectIndex = (index: number) => {
-    const option = options[index]
+    const option = filteredOptions[index]
     if (!option || option.disabled) return
     onChange(option.value)
     setOpen(false)
@@ -138,6 +151,7 @@ export function Select<T extends SelectValue>({
         aria-controls={open ? listboxId : undefined}
         aria-activedescendant={open ? `${listboxId}-option-${activeIndex}` : undefined}
         onClick={() => {
+          setQuery('')
           setOpen((current) => !current)
           setActiveIndex(selectedIndex)
         }}
@@ -163,7 +177,25 @@ export function Select<T extends SelectValue>({
           aria-label={ariaLabel}
           className="absolute left-0 right-0 top-[calc(100%+6px)] z-30 max-h-64 overflow-y-auto rounded-2xl border border-border-subtle bg-bg-secondary p-1.5 shadow-xl"
         >
-          {options.map((option, index) => {
+          {searchable && (
+            <input
+              ref={searchRef}
+              value={query}
+              onChange={(event) => { setQuery(event.target.value); setActiveIndex(0) }}
+              onKeyDown={(event) => {
+                if (event.key === 'Escape') { event.preventDefault(); setOpen(false) }
+                if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
+                  event.preventDefault()
+                  setActiveIndex((current) => nextEnabled(current, event.key === 'ArrowDown' ? 1 : -1))
+                }
+                if (event.key === 'Enter' && filteredOptions.length > 0) { event.preventDefault(); selectIndex(activeIndex) }
+              }}
+              placeholder={searchPlaceholder}
+              aria-label={`${ariaLabel} search`}
+              className="mb-1.5 h-9 w-full rounded-xl border border-border-subtle bg-bg-primary px-3 text-sm text-text-primary outline-none placeholder:text-text-muted focus:border-accent/60"
+            />
+          )}
+          {filteredOptions.map((option, index) => {
             const selected = Object.is(option.value, value)
             const active = index === activeIndex
 
@@ -203,6 +235,7 @@ export function Select<T extends SelectValue>({
               </button>
             )
           })}
+          {filteredOptions.length === 0 && <p className="px-3 py-2 text-xs text-text-muted">No results</p>}
         </div>
       )}
     </div>
