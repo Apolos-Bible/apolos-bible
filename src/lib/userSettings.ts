@@ -2,7 +2,10 @@ import i18n from '@/lib/i18n'
 import { BIBLE_VERSION_STORAGE_KEY } from '@/lib/defaultBibleVersion'
 import { APP_LOCALE_STORAGE_KEY } from '@/lib/defaultAppLocale'
 import { useUIStore } from '@/lib/store/useUIStore'
-import { useVerseStore } from '@/lib/store/useVerseStore'
+import {
+  setBibleVersionForAllStores,
+  useVerseStore,
+} from '@/lib/store/useVerseStore'
 import { fetchUserSettings, saveUserSettings, type UserSettings } from '@/lib/userSettingsApi'
 
 export { fetchUserSettings }
@@ -57,7 +60,7 @@ export async function applyUserSettings(settings: UserSettings): Promise<void> {
 
   if (settings.preferred_bible_version_id && settings.preferred_bible_version_id !== verse.versionId) {
     localStorage.setItem(BIBLE_VERSION_STORAGE_KEY, String(settings.preferred_bible_version_id))
-    await verse.setVersion(settings.preferred_bible_version_id, { sync: false })
+    await setBibleVersionForAllStores(settings.preferred_bible_version_id, { sync: false })
   }
 
   useUIStore.setState({

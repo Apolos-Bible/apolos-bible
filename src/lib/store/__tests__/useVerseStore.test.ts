@@ -38,7 +38,11 @@ vi.mock('@/lib/userSettingsApi', () => ({
 
 import { bibleApi } from '@/lib/bibleApi'
 import { getStoredBibleVersionId } from '@/lib/defaultBibleVersion'
-import { useVerseStore } from '../useVerseStore'
+import {
+  getVerseStoreForTab,
+  setBibleVersionForAllStores,
+  useVerseStore,
+} from '../useVerseStore'
 import type { ApiBook, ApiChapterResponse } from '@/lib/bibleApi'
 
 const mockBibleApi = bibleApi as unknown as {
@@ -162,6 +166,60 @@ describe('useVerseStore', () => {
     expect(state.verses[0].id).toBe('john-3-16')
     expect(state.chapterId).toBe(10)
     expect(state.loadingVerses).toBe(false)
+  })
+
+  it('keeps the current reading location when the version changes', async () => {
+    vi.mocked(getStoredBibleVersionId).mockImplementation(
+      () => Number(localStorage.getItem('bibleVersionId')) || 1,
+    )
+    mockBibleApi.versions.mockResolvedValue([
+      { id: 1, name: 'King James Version', abbreviation: 'KJV', language: 'en' },
+      { id: 2, name: 'New Version', abbreviation: 'NEW', language: 'en' },
+    ])
+    mockBibleApi.books.mockResolvedValue(mockBooks)
+    mockBibleApi.chapter.mockResolvedValue(mockChapterResponse)
+    useVerseStore.setState({
+      selectedBook: 'john',
+      selectedChapter: 3,
+      selectedVerseId: 'john-3-17',
+      verses: [
+        { id: 'john-3-17', apiId: 101, book: 'John', chapter: 3, verse: 17, text: 'old text' },
+      ],
+    })
+
+    await useVerseStore.getState().setVersion(2)
+
+    expect(useVerseStore.getState().versionId).toBe(2)
+    expect(useVerseStore.getState().selectedBook).toBe('john')
+    expect(useVerseStore.getState().selectedChapter).toBe(3)
+    expect(mockBibleApi.books).toHaveBeenCalledWith(2)
+    expect(mockBibleApi.chapter).toHaveBeenCalledWith(2, 'john', 3)
+  })
+
+  it('updates every existing Bible tab when the preferred version changes', async () => {
+    vi.mocked(getStoredBibleVersionId).mockImplementation(
+      () => Number(localStorage.getItem('bibleVersionId')) || 1,
+    )
+    mockBibleApi.versions.mockResolvedValue([
+      { id: 1, name: 'King James Version', abbreviation: 'KJV', language: 'en' },
+      { id: 2, name: 'New Version', abbreviation: 'NEW', language: 'en' },
+    ])
+    mockBibleApi.books.mockResolvedValue(mockBooks)
+    mockBibleApi.chapter.mockResolvedValue(mockChapterResponse)
+    const firstTab = getVerseStoreForTab('version-sync-first')
+    const secondTab = getVerseStoreForTab('version-sync-second')
+    firstTab.setState({ selectedBook: 'john', selectedChapter: 3 })
+    secondTab.setState({ selectedBook: 'genesis', selectedChapter: 2 })
+
+    await setBibleVersionForAllStores(2)
+
+    expect(useVerseStore.getState().versionId).toBe(2)
+    expect(firstTab.getState().versionId).toBe(2)
+    expect(secondTab.getState().versionId).toBe(2)
+    expect(firstTab.getState().selectedBook).toBe('john')
+    expect(firstTab.getState().selectedChapter).toBe(3)
+    expect(secondTab.getState().selectedBook).toBe('genesis')
+    expect(secondTab.getState().selectedChapter).toBe(2)
   })
 
   it('selectBook switches book and loads chapter 1', async () => {
