@@ -6,6 +6,7 @@ import { AppPageLayout } from '@/components/layout/AppPageLayout'
 import { ProfileView } from '@/components/profile/ProfileView'
 import { ProfileSkeleton } from '@/components/profile/ProfileSkeleton'
 import { EmptyState } from '@/components/ui/EmptyState'
+import { RemoveFriendDialog } from '@/components/friends/RemoveFriendDialog'
 import { profileApi } from '@/lib/profileApi'
 import { friendApi } from '@/lib/friendApi'
 import { paths } from '@/router/paths'
@@ -35,6 +36,7 @@ export function ProfileRoute({ mode }: ProfileRouteProps) {
   const [data, setData] = useState<ProfileData | null>(null)
   const [status, setStatus] = useState<'loading' | 'ready' | 'notfound' | 'error'>('loading')
   const [pendingAction, setPendingAction] = useState(false)
+  const [confirmingRemove, setConfirmingRemove] = useState(false)
 
   // Auth guard — wait for init() so a deep link to /perfil doesn't bounce a
   // logged-in user while the session is still loading.
@@ -103,9 +105,9 @@ export function ProfileRoute({ mode }: ProfileRouteProps) {
   }
 
   const onAddFriend = () => { if (targetId) void run(() => friendApi.send(targetId), 'friend.error.add') }
-  const onRemoveFriend = () => {
+  const onRemoveFriend = async () => {
     if (!targetId) return
-    void run(async () => {
+    await run(async () => {
       await friendApi.remove(targetId)
       addToast(t('friend.removed'), 'info')
     }, 'friend.error.remove')
@@ -187,12 +189,22 @@ export function ProfileRoute({ mode }: ProfileRouteProps) {
               onCancelRequest={onCancelRequest}
               onAcceptRequest={onAcceptRequest}
               onDeclineRequest={onDeclineRequest}
-              onRemoveFriend={onRemoveFriend}
+              onRemoveFriend={() => setConfirmingRemove(true)}
               onMessage={onMessage}
             />
           </>
         )
       )}
+
+      <RemoveFriendDialog
+        open={confirmingRemove}
+        friendName={data?.user.name ?? ''}
+        busy={pendingAction}
+        onClose={() => setConfirmingRemove(false)}
+        onConfirm={() => {
+          void onRemoveFriend().finally(() => setConfirmingRemove(false))
+        }}
+      />
     </AppPageLayout>
   )
 }
