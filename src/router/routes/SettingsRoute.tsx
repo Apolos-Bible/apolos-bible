@@ -15,6 +15,13 @@ import { paths } from '@/router/paths'
 import { useUIStore, DEFAULT_ACCENT_COLOR, type FontSize, type Locale, type ReadingMode, type Theme } from '@/lib/store/useUIStore'
 import { useVerseStore } from '@/lib/store/useVerseStore'
 import { useAuthStore } from '@/lib/store/useAuthStore'
+import {
+  canUseGoogleAnalytics,
+  onAnalyticsConsentChange,
+  readAnalyticsConsent,
+  setAnalyticsConsent,
+  type AnalyticsConsent,
+} from '@/lib/analytics'
 
 const FONT_OPTIONS: { value: FontSize; label: string }[] = [
   { value: 'sm', label: 'S' },
@@ -112,6 +119,13 @@ export function SettingsRoute() {
   const setFontSize = useUIStore((s) => s.setFontSize)
   const readingMode = useUIStore((s) => s.readingMode)
   const setReadingMode = useUIStore((s) => s.setReadingMode)
+  const [analyticsConsent, setAnalyticsConsentState] = useState<AnalyticsConsent>(
+    () => readAnalyticsConsent() ?? 'denied',
+  )
+  useEffect(
+    () => onAnalyticsConsentChange(setAnalyticsConsentState),
+    [],
+  )
 
   const versions = useVerseStore((s) => s.versions)
   const versionId = useVerseStore((s) => s.versionId)
@@ -779,6 +793,27 @@ export function SettingsRoute() {
                     ]}
                   />
                 </SettingRow>
+                {canUseGoogleAnalytics() && (
+                  <div className="mt-4 border-t border-border-subtle pt-4">
+                    <SettingRow
+                      label={t('settings.privacy.analytics')}
+                      help={t('settings.privacy.analyticsHelp')}
+                    >
+                      <SegmentedControl<AnalyticsConsent>
+                        ariaLabel={t('settings.privacy.analytics')}
+                        value={analyticsConsent}
+                        onChange={(value) => {
+                          setAnalyticsConsentState(value)
+                          setAnalyticsConsent(value)
+                        }}
+                        options={[
+                          { value: 'denied', label: t('settings.privacy.analyticsOff') },
+                          { value: 'granted', label: t('settings.privacy.analyticsOn') },
+                        ]}
+                      />
+                    </SettingRow>
+                  </div>
+                )}
               </div>
             </section>
           )}
