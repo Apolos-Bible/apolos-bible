@@ -17,7 +17,9 @@ const config: Config = {
           muted:     'var(--text-muted)',
         },
         border: {
-          subtle: 'var(--border-subtle)',
+          DEFAULT: 'var(--border-subtle)',
+          subtle:  'var(--border-subtle)',
+          strong:  'var(--border-hover)',
         },
         accent: 'var(--accent)',
         fav:    'var(--fav)',
