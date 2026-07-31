@@ -5,6 +5,9 @@ import { HelmetProvider } from 'react-helmet-async'
 import { router } from './router'
 import './app/globals.css'
 import './lib/i18n'
+import { initializeGoogleAnalytics } from './lib/analytics'
+
+initializeGoogleAnalytics()
 
 // When the push SW is clicked it postMessages back asking us to navigate
 // to the conversation. We can't useNavigate outside the router, so we
