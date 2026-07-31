@@ -1,17 +1,22 @@
 import { useEffect, useLayoutEffect, useRef, useState, type ReactNode } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
-import { BadgeCheck, Camera, KeyRound, Loader2, Mail, Moon, Sun } from 'lucide-react'
+import { BadgeCheck, Camera, KeyRound, Loader2, Mail, Monitor, Moon, Sun } from 'lucide-react'
 import { AppPageLayout } from '@/components/layout/AppPageLayout'
 import { UserAvatar } from '@/components/auth/UserAvatar'
 import { SectionLabel } from '@/components/ui/SectionLabel'
 import { SegmentedControl } from '@/components/ui/SegmentedControl'
 import { NotificationsSection } from '@/components/ui/NotificationsSection'
+import { Switch } from '@/components/ui/Switch'
+import { StorageSettings } from '@/components/settings/StorageSettings'
+import { SecurityDataSettings } from '@/components/settings/SecurityDataSettings'
+import { ApplicationSettings } from '@/components/settings/ApplicationSettings'
+import { AiSettings } from '@/components/settings/AiSettings'
 import { ColorPicker } from '@/components/ui/ColorPicker'
 import { Select } from '@/components/ui/Select'
 import { cn } from '@/lib/cn'
 import { paths } from '@/router/paths'
-import { useUIStore, DEFAULT_ACCENT_COLOR, type FontSize, type Locale, type ReadingMode, type Theme } from '@/lib/store/useUIStore'
+import { useUIStore, DEFAULT_ACCENT_COLOR, type FontSize, type LineHeight, type Locale, type ReaderFont, type ReadingMode, type Theme } from '@/lib/store/useUIStore'
 import {
   setBibleVersionForAllStores,
   useVerseStore,
@@ -25,6 +30,8 @@ import {
   type AnalyticsConsent,
 } from '@/lib/analytics'
 import { isYouVersionVersion } from '@/lib/youVersion'
+import { comparableBibleVersions } from '@/lib/bibleVersionOptions'
+import { fetchUserSettings, saveUserSettings, type UserSettings } from '@/lib/userSettingsApi'
 
 const FONT_OPTIONS: { value: FontSize; label: string }[] = [
   { value: 'sm', label: 'S' },
@@ -47,6 +54,10 @@ const NAV = [
   { id: 'biblia', label: 'settings.nav.bible' },
   { id: 'privacidad', label: 'settings.nav.privacy' },
   { id: 'notificaciones', label: 'settings.nav.notifications' },
+  { id: 'almacenamiento', label: 'settings.nav.storage' },
+  { id: 'seguridad', label: 'settings.nav.security' },
+  { id: 'aplicacion', label: 'settings.nav.application' },
+  { id: 'ia', label: 'settings.nav.ai' },
   { id: 'peligro', label: 'settings.nav.danger' },
 ] as const
 
@@ -85,7 +96,6 @@ export function SettingsRoute() {
   const uploadAvatar = useAuthStore((s) => s.uploadAvatar)
   const removeAvatar = useAuthStore((s) => s.removeAvatar)
   const changePassword = useAuthStore((s) => s.changePassword)
-  const setContentPublicDefault = useAuthStore((s) => s.setContentPublicDefault)
   const resendVerification = useAuthStore((s) => s.resendVerification)
   const refreshUser = useAuthStore((s) => s.refreshUser)
   const logout = useAuthStore((s) => s.logout)
@@ -122,6 +132,19 @@ export function SettingsRoute() {
   const setFontSize = useUIStore((s) => s.setFontSize)
   const readingMode = useUIStore((s) => s.readingMode)
   const setReadingMode = useUIStore((s) => s.setReadingMode)
+  const readerFont = useUIStore((s) => s.readerFont)
+  const setReaderFont = useUIStore((s) => s.setReaderFont)
+  const lineHeight = useUIStore((s) => s.lineHeight)
+  const setLineHeight = useUIStore((s) => s.setLineHeight)
+  const showVerseNumbers = useUIStore((s) => s.showVerseNumbers)
+  const setShowVerseNumbers = useUIStore((s) => s.setShowVerseNumbers)
+  const reduceMotion = useUIStore((s) => s.reduceMotion)
+  const setReduceMotion = useUIStore((s) => s.setReduceMotion)
+  const highContrast = useUIStore((s) => s.highContrast)
+  const setHighContrast = useUIStore((s) => s.setHighContrast)
+  const keepScreenAwake = useUIStore((s) => s.keepScreenAwake)
+  const setKeepScreenAwake = useUIStore((s) => s.setKeepScreenAwake)
+  const [syncedSettings, setSyncedSettings] = useState<UserSettings | null>(null)
   const [analyticsConsent, setAnalyticsConsentState] = useState<AnalyticsConsent>(
     () => readAnalyticsConsent() ?? 'denied',
   )
@@ -170,6 +193,7 @@ export function SettingsRoute() {
   // Delete account
   const [deleteConfirm, setDeleteConfirm] = useState(false)
   const [deletePassword, setDeletePassword] = useState('')
+  const [deleteEmail, setDeleteEmail] = useState('')
   const [deleteError, setDeleteError] = useState('')
   const [deleting, setDeleting] = useState(false)
 
@@ -195,6 +219,26 @@ export function SettingsRoute() {
     if (versions.length === 0) loadVersions()
   }, [versions.length, loadVersions])
 
+  useEffect(() => {
+    let alive = true
+    void fetchUserSettings().then((settings) => {
+      if (alive) setSyncedSettings(settings)
+    }).catch(() => {})
+    return () => { alive = false }
+  }, [])
+
+  const updateSyncedSetting = async <K extends keyof UserSettings>(key: K, value: UserSettings[K]) => {
+    const previous = syncedSettings
+    setSyncedSettings((current) => current ? { ...current, [key]: value } : current)
+    try {
+      const saved = await saveUserSettings({ [key]: value })
+      if (saved) setSyncedSettings(saved)
+    } catch {
+      setSyncedSettings(previous)
+      addToast(t('common.error'), 'error')
+    }
+  }
+
   // On section change: reset the page scroll and move focus to the section
   // for keyboard/screen-reader continuity.
   useLayoutEffect(() => {
@@ -202,7 +246,7 @@ export function SettingsRoute() {
     document.getElementById(activeNav)?.focus({ preventScroll: true })
   }, [activeNav])
 
-  // Number keys 1–6 switch sections (advertised by the rail's kbd hints)
+  // Number keys switch sections (advertised by the rail's kbd hints).
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       const target = e.target as HTMLElement
@@ -301,11 +345,11 @@ export function SettingsRoute() {
   }
 
   const handleDelete = async () => {
-    if (!deletePassword) return
+    if ((hasPassword && !deletePassword) || (!hasPassword && deleteEmail.trim().toLowerCase() !== user.email.toLowerCase())) return
     setDeleting(true)
     setDeleteError('')
     try {
-      await deleteAccount(deletePassword)
+      await deleteAccount(hasPassword ? { password: deletePassword } : { email_confirmation: deleteEmail.trim() })
       addToast(t('settings.deleteAccount.success'), 'success')
       navigate(paths.root(), { replace: true })
     } catch (e) {
@@ -336,7 +380,7 @@ export function SettingsRoute() {
                 )}
               >
                 <span>{t(n.label)}</span>
-                <kbd className="text-2xs font-mono text-text-muted">{i + 1}</kbd>
+                {i < 9 && <kbd className="text-2xs font-mono text-text-muted">{i + 1}</kbd>}
               </button>
             ))}
           </nav>
@@ -661,6 +705,7 @@ export function SettingsRoute() {
                     options={[
                       { value: 'dark', label: <><Moon size={13} strokeWidth={1.6} />{t('settings.theme.dark')}</> },
                       { value: 'light', label: <><Sun size={13} strokeWidth={1.6} />{t('settings.theme.light')}</> },
+                      { value: 'system', label: <><Monitor size={13} strokeWidth={1.6} />{t('settings.theme.system')}</> },
                     ]}
                   />
                 </SettingRow>
@@ -744,6 +789,36 @@ export function SettingsRoute() {
                     ]}
                   />
                 </SettingRow>
+                <SettingRow label={t('settings.readerFont')}>
+                  <SegmentedControl<ReaderFont>
+                    ariaLabel={t('settings.readerFont')}
+                    value={readerFont}
+                    onChange={setReaderFont}
+                    options={[
+                      { value: 'reading', label: t('settings.readerFont.lora') },
+                      { value: 'serif', label: t('settings.readerFont.serif') },
+                      { value: 'sans', label: t('settings.readerFont.sans') },
+                    ]}
+                  />
+                </SettingRow>
+                <SettingRow label={t('settings.lineHeight')}>
+                  <SegmentedControl<LineHeight>
+                    ariaLabel={t('settings.lineHeight')}
+                    value={lineHeight}
+                    onChange={setLineHeight}
+                    options={[
+                      { value: 'compact', label: t('settings.lineHeight.compact') },
+                      { value: 'comfortable', label: t('settings.lineHeight.comfortable') },
+                      { value: 'relaxed', label: t('settings.lineHeight.relaxed') },
+                    ]}
+                  />
+                </SettingRow>
+                <SettingRow label={t('settings.reduceMotion')}>
+                  <Switch checked={reduceMotion} onCheckedChange={setReduceMotion} ariaLabel={t('settings.reduceMotion')} />
+                </SettingRow>
+                <SettingRow label={t('settings.highContrast')}>
+                  <Switch checked={highContrast} onCheckedChange={setHighContrast} ariaLabel={t('settings.highContrast')} />
+                </SettingRow>
               </div>
             </section>
           )}
@@ -801,6 +876,30 @@ export function SettingsRoute() {
                     </div>
                   </div>
                 )}
+                <div className="mt-5 border-t border-border-subtle pt-5">
+                  <SettingRow label={t('settings.bible.compareVersion')}>
+                    <Select
+                      value={syncedSettings?.preferred_compare_version_id ?? ''}
+                      onChange={(value) => {
+                        if (value) localStorage.setItem('preferredCompareVersionId', String(value))
+                        else localStorage.removeItem('preferredCompareVersionId')
+                        void updateSyncedSetting('preferred_compare_version_id', value ? Number(value) : null)
+                      }}
+                      ariaLabel={t('settings.bible.compareVersion')}
+                      options={[
+                        { value: '', label: t('settings.bible.compareNone') },
+                        ...comparableBibleVersions(selectableVersions, versionId).filter((version) => !isYouVersionVersion(version)).map((version) => ({ value: version.id, label: `${version.abbreviation} — ${version.name}` })),
+                      ]}
+                      className="w-full sm:max-w-md"
+                    />
+                  </SettingRow>
+                  <SettingRow label={t('settings.showVerseNumbers')}>
+                    <Switch checked={showVerseNumbers} onCheckedChange={setShowVerseNumbers} ariaLabel={t('settings.showVerseNumbers')} />
+                  </SettingRow>
+                  <SettingRow label={t('settings.keepScreenAwake')}>
+                    <Switch checked={keepScreenAwake} onCheckedChange={setKeepScreenAwake} ariaLabel={t('settings.keepScreenAwake')} />
+                  </SettingRow>
+                </div>
               </div>
             </section>
           )}
@@ -814,17 +913,30 @@ export function SettingsRoute() {
                 </h1>
               </header>
               <div className={SETTINGS_CARD}>
-                <SettingRow label={t('settings.privacy.defaultVisibility')} help={t('settings.privacy.help')}>
+                <SettingRow label={t('settings.privacy.notesVisibility')} help={t('settings.privacy.help')}>
                   <SegmentedControl<'public' | 'private'>
                     ariaLabel={t('settings.privacy.defaultVisibility')}
-                    value={user.content_public_default ? 'public' : 'private'}
-                    onChange={(v) => void setContentPublicDefault(v === 'public')}
+                    value={(syncedSettings?.notes_public_default ?? user.content_public_default) ? 'public' : 'private'}
+                    onChange={(v) => void updateSyncedSetting('notes_public_default', v === 'public')}
                     options={[
                       { value: 'private', label: t('settings.privacy.private') },
                       { value: 'public', label: t('settings.privacy.public') },
                     ]}
                   />
                 </SettingRow>
+                <div className="mt-4 border-t border-border-subtle pt-4">
+                  <SettingRow label={t('settings.privacy.highlightsVisibility')} help={t('settings.privacy.help')}>
+                    <SegmentedControl<'public' | 'private'>
+                      ariaLabel={t('settings.privacy.highlightsVisibility')}
+                      value={(syncedSettings?.highlights_public_default ?? user.content_public_default) ? 'public' : 'private'}
+                      onChange={(v) => void updateSyncedSetting('highlights_public_default', v === 'public')}
+                      options={[
+                        { value: 'private', label: t('settings.privacy.private') },
+                        { value: 'public', label: t('settings.privacy.public') },
+                      ]}
+                    />
+                  </SettingRow>
+                </div>
                 {canUseGoogleAnalytics() && (
                   <div className="mt-4 border-t border-border-subtle pt-4">
                     <SettingRow
@@ -846,6 +958,27 @@ export function SettingsRoute() {
                     </SettingRow>
                   </div>
                 )}
+                {syncedSettings && <div className="mt-4 space-y-4 border-t border-border-subtle pt-4">
+                  <SettingRow label={t('settings.privacy.discoverable')} help={t('settings.privacy.discoverableHelp')}>
+                    <Switch checked={syncedSettings.discoverable_by_email ?? true} onCheckedChange={(value) => void updateSyncedSetting('discoverable_by_email', value)} ariaLabel={t('settings.privacy.discoverable')} />
+                  </SettingRow>
+                  <SettingRow label={t('settings.privacy.readingActivity')} help={t('settings.privacy.readingActivityHelp')}>
+                    <Switch checked={syncedSettings.show_reading_activity ?? true} onCheckedChange={(value) => void updateSyncedSetting('show_reading_activity', value)} ariaLabel={t('settings.privacy.readingActivity')} />
+                  </SettingRow>
+                  <SettingRow label={t('settings.privacy.friendRequests')}>
+                    <Select
+                      value={syncedSettings.allow_friend_requests ?? 'everyone'}
+                      onChange={(value) => void updateSyncedSetting('allow_friend_requests', value as 'everyone' | 'friends_of_friends' | 'nobody')}
+                      ariaLabel={t('settings.privacy.friendRequests')}
+                      options={[
+                        { value: 'everyone', label: t('settings.privacy.friendRequestsEveryone') },
+                        { value: 'friends_of_friends', label: t('settings.privacy.friendRequestsMutual') },
+                        { value: 'nobody', label: t('settings.privacy.friendRequestsNobody') },
+                      ]}
+                      className="min-w-[11.5rem]"
+                    />
+                  </SettingRow>
+                </div>}
               </div>
             </section>
           )}
@@ -855,6 +988,30 @@ export function SettingsRoute() {
           <section id="notificaciones" tabIndex={-1} className="outline-none">
             <NotificationsSection />
           </section>
+          )}
+
+          {activeNav === 'almacenamiento' && (
+            <section id="almacenamiento" tabIndex={-1} className="outline-none">
+              <StorageSettings versions={versions} />
+            </section>
+          )}
+
+          {activeNav === 'seguridad' && (
+            <section id="seguridad" tabIndex={-1} className="outline-none">
+              <SecurityDataSettings />
+            </section>
+          )}
+
+          {activeNav === 'aplicacion' && (
+            <section id="aplicacion" tabIndex={-1} className="outline-none">
+              <ApplicationSettings />
+            </section>
+          )}
+
+          {activeNav === 'ia' && (
+            <section id="ia" tabIndex={-1} className="outline-none">
+              <AiSettings />
+            </section>
           )}
 
           {/* ── Cuenta y peligro ───────────────────────────────── */}
@@ -887,8 +1044,8 @@ export function SettingsRoute() {
                   </button>
                 ) : (
                   <div className="rounded-xl border border-red-500/30 bg-red-500/5 p-3">
-                    <p className="mb-3 text-xs text-text-secondary">{t('settings.deleteAccount.confirm')}</p>
-                    <input
+                    <p className="mb-3 text-xs text-text-secondary">{t(hasPassword ? 'settings.deleteAccount.confirm' : 'settings.deleteAccount.confirmEmail')}</p>
+                    {hasPassword && <input
                       type="password"
                       value={deletePassword}
                       onChange={(e) => {
@@ -901,13 +1058,20 @@ export function SettingsRoute() {
                         if (e.key === 'Escape') setDeleteConfirm(false)
                       }}
                       className={cn(INPUT, deleteError ? 'border-red-500' : '')}
-                    />
+                    />}
+                    {!hasPassword && <input
+                      type="email"
+                      value={deleteEmail}
+                      onChange={(e) => { setDeleteEmail(e.target.value); setDeleteError('') }}
+                      placeholder={t('settings.deleteAccount.emailPlaceholder')}
+                      className={cn(INPUT, deleteError ? 'border-red-500' : '')}
+                    />}
                     {deleteError && <p className="mt-1.5 text-xs text-red-400">{deleteError}</p>}
                     <div className="mt-3 flex gap-2">
                       <button
                         type="button"
                         onClick={handleDelete}
-                        disabled={deleting || !deletePassword}
+                        disabled={deleting || (hasPassword ? !deletePassword : deleteEmail.trim().toLowerCase() !== user.email.toLowerCase())}
                         className="flex-1 rounded-full bg-red-600 py-2 text-sm font-medium text-white transition-colors hover:bg-red-500 disabled:opacity-50"
                       >
                         {deleting ? t('settings.deleteAccount.deleting') : t('settings.deleteAccount.yesDelete')}
@@ -917,6 +1081,7 @@ export function SettingsRoute() {
                         onClick={() => {
                           setDeleteConfirm(false)
                           setDeletePassword('')
+                          setDeleteEmail('')
                           setDeleteError('')
                         }}
                         disabled={deleting}

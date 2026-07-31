@@ -70,7 +70,7 @@ export type FriendshipStatus =
 export type ProfileUser = {
   id: number
   name: string
-  email: string
+  email: string | null
   avatar_url?: string | null
   bio?: string | null
   // self-only

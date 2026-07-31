@@ -1,5 +1,5 @@
 import { useTranslation } from 'react-i18next'
-import { comparableBibleVersions } from '@/lib/bibleVersionOptions'
+import { comparableBibleVersions, preferredComparisonVersion } from '@/lib/bibleVersionOptions'
 import { useActiveVerseStore, useVerseStoreApi } from '@/lib/store/useVerseStore'
 import { useActiveCompareStore } from '@/lib/store/useCompareStore'
 import { useActiveCrossRefStore } from '@/lib/store/useCrossRefStore'
@@ -76,7 +76,7 @@ export function ReadingToolbar({ showCommentary = true, showVerseActions = true 
       vers = verseStore.getState().versions
     }
     const currentVersionId = verseStore.getState().versionId
-    const comparisonVersion = comparableBibleVersions(vers, currentVersionId)[0]
+    const comparisonVersion = preferredComparisonVersion(comparableBibleVersions(vers, currentVersionId))
     if (!comparisonVersion) {
       addToast(t('compareVersions.noAlternatives'), 'info')
       return

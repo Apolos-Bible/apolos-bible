@@ -28,6 +28,7 @@ import { SEOMeta } from '@/components/seo/SEOMeta'
 import { cn } from '@/lib/cn'
 import { isAuthError } from '@/lib/auth'
 import { isYouVersionVersion } from '@/lib/youVersion'
+import type { ReaderWidth } from '@/lib/store/useBiblePaneStore'
 
 // ── Icons ──────────────────────────────────────────────────────────────────
 
@@ -87,6 +88,36 @@ function NoteIcon({ size = 10 }: { size?: number }) {
   )
 }
 
+function CrossReferenceMark() {
+  return (
+    <svg width="9" height="9" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.35" strokeLinecap="round" aria-hidden="true">
+      <path d="M4.7 7.3 7.3 4.7" />
+      <path d="M3.8 8.8 2.7 9.9a2 2 0 0 1-2.8-2.8L2 5a2 2 0 0 1 2.8 0" transform="translate(1 -1)" />
+      <path d="m8.2 3.2 1.1-1.1a2 2 0 1 1 2.8 2.8L10 7a2 2 0 0 1-2.8 0" transform="translate(-1 1)" />
+    </svg>
+  )
+}
+
+function WidthIcon() {
+  return (
+    <svg width="13" height="13" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.25" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <path d="M1.5 3v8M12.5 3v8M1.5 7h11M4 5 1.5 7 4 9M10 5l2.5 2-2.5 2" />
+    </svg>
+  )
+}
+
+const READER_WIDTHS: ReaderWidth[] = ['narrow', 'medium', 'wide']
+const CONTENT_WIDTH_CLASS: Record<ReaderWidth, string> = {
+  narrow: 'max-w-[660px]',
+  medium: 'max-w-[820px]',
+  wide: 'max-w-[1040px]',
+}
+const NAV_WIDTH_CLASS: Record<ReaderWidth, string> = {
+  narrow: 'max-w-[684px]',
+  medium: 'max-w-[844px]',
+  wide: 'max-w-[1064px]',
+}
+
 // ── Component ──────────────────────────────────────────────────────────────
 
 export function VerseList() {
@@ -114,8 +145,11 @@ export function VerseList() {
   const isYouVersion     = isYouVersionVersion(currentVersion)
 
   const fontSize       = useUIStore((s) => s.fontSize)
+  const showVerseNumbers = useUIStore((s) => s.showVerseNumbers)
   const readingMode    = useActiveBiblePaneStore((s) => s.readingMode)
   const setReadingMode = useActiveBiblePaneStore((s) => s.setReadingMode)
+  const readerWidth    = useActiveBiblePaneStore((s) => s.readerWidth)
+  const setReaderWidth = useActiveBiblePaneStore((s) => s.setReaderWidth)
   const addToast       = useUIStore((s) => s.addToast)
   const openAuthModal  = useUIStore((s) => s.openAuthModal)
   const mobileChromeCollapsed = useUIStore((s) => s.mobileChromeCollapsed)
@@ -269,6 +303,10 @@ export function VerseList() {
     fontSize === 'sm' ? 'text-[13px] leading-[20px]' :
     fontSize === 'lg' ? 'text-[18px] leading-[26px]' :
     'text-[15px] leading-[22px]'
+  const flowTextSizeClass =
+    fontSize === 'sm' ? 'text-[13px]' :
+    fontSize === 'lg' ? 'text-[18px]' :
+    'text-[15px]'
 
   // ── Menu plumbing ────────────────────────────────────────────────────────
 
@@ -435,15 +473,17 @@ export function VerseList() {
     hasCrossRefs: boolean
   }) {
     return (
-      <span className="relative inline-block">
-        <span className={cn(
-          'font-sans text-[9px] font-bold align-super leading-none select-none mr-[2px]',
+      <span className="relative mr-[3px] inline-flex align-super items-center gap-[2px] leading-none">
+        {showVerseNumbers && <span className={cn(
+          'font-sans text-[9px] font-bold leading-none select-none',
           isSelected ? 'text-accent' : 'text-accent/60',
         )}>
           {n}
-        </span>
+        </span>}
         {hasCrossRefs && (
-          <span className="absolute -bottom-[3px] left-1/2 -translate-x-1/2 font-sans text-[7px] leading-none text-accent/40 select-none" aria-hidden="true">†</span>
+          <span className="inline-flex text-accent/40" title={t('toolbar.crossReferences')}>
+            <CrossReferenceMark />
+          </span>
         )}
         {hasActivity && (
           <span className="absolute -top-px -right-[1px] w-[4px] h-[4px] rounded-full bg-accent/50" aria-hidden="true" />
@@ -460,7 +500,7 @@ export function VerseList() {
       <SEOMeta />
       {/* Floating chapter navigation */}
       <div className="workspace-reader-chapter-nav pointer-events-none absolute inset-x-0 top-16 bottom-0 z-20 hidden md:flex items-center">
-        <div className="w-full max-w-[684px] mx-auto flex justify-between px-0">
+        <div className={cn('w-full mx-auto flex justify-between px-0 transition-[max-width] duration-200', NAV_WIDTH_CLASS[readerWidth])}>
         <Tooltip label={bookIdx === 0 && selectedChapter === 1 ? '' : t('verse.previousChapter')} side="top">
           <button
             onClick={() => navigateChapter('prev')}
@@ -524,7 +564,7 @@ export function VerseList() {
               <div className="workspace-reader-presence hidden md:block pointer-events-auto">
                 <PresenceAvatars users={others} />
               </div>
-              <div className="flex gap-2 items-center ml-auto">
+              <div className="workspace-reader-controls ml-auto flex min-w-0 max-w-full flex-wrap items-center justify-end gap-2">
                 <div className="workspace-reader-toolbar-wide hidden md:block">
                   <ReadingToolbar />
                 </div>
@@ -563,14 +603,30 @@ export function VerseList() {
                     </button>
                   </Tooltip>
                 </div>
+                <Tooltip className="workspace-reader-width-control" label={t(`verse.readerWidth.${readerWidth}`)} side="bottom">
+                  <div className="hidden h-[31px] items-center gap-1.5 rounded-md border border-border-subtle bg-bg-tertiary px-2 text-text-muted shadow-sm pointer-events-auto md:flex">
+                    <WidthIcon />
+                    <input
+                      type="range"
+                      min={0}
+                      max={2}
+                      step={1}
+                      value={READER_WIDTHS.indexOf(readerWidth)}
+                      onChange={(event) => setReaderWidth(READER_WIDTHS[Number(event.target.value)] ?? 'narrow')}
+                      aria-label={t('verse.readerWidth.label')}
+                      aria-valuetext={t(`verse.readerWidth.${readerWidth}`)}
+                      className="h-1 w-14 cursor-pointer accent-[var(--accent)]"
+                    />
+                  </div>
+                </Tooltip>
               </div>
             </div>
           </div>
 
-          <div className="workspace-reader-content max-w-[660px] mx-auto px-4 md:px-10 pt-4 pb-16">
+          <div className={cn('workspace-reader-content mx-auto px-4 md:px-10 pt-4 pb-16 transition-[max-width] duration-200', CONTENT_WIDTH_CLASS[readerWidth])}>
 
             {/* Chapter heading */}
-            <div className="workspace-reader-heading mb-6 md:mb-8 text-center">
+            <div className={cn('workspace-reader-heading text-center', readingMode === 'flow' ? 'mb-5 md:mb-6' : 'mb-6 md:mb-8')}>
               <h1 className="workspace-reader-title font-reading text-xl md:text-2xl font-medium tracking-tight text-text-primary">{bookName}</h1>
               <p className="mt-1 text-[10px] font-sans font-semibold uppercase tracking-[0.18em] text-accent/70">
                 {t('layout.chapter', { n: selectedChapter })}
@@ -584,7 +640,7 @@ export function VerseList() {
                 role="listbox"
                 aria-multiselectable="true"
                 aria-label={t('a11y.verseList', { book: bookName, chapter: selectedChapter })}
-                className={cn('font-reading leading-[2.2] md:leading-[2.6] tracking-wide text-text-primary select-none md:select-text', textSizeClass)}
+                className={cn('font-reading leading-[1.78] md:leading-[1.85] tracking-[0.003em] text-text-primary select-none md:select-text', flowTextSizeClass)}
               >
                 {verses.map((verse, i) => {
                   const isSelected      = selectedVerseIds.includes(verse.id)
@@ -606,8 +662,6 @@ export function VerseList() {
                           ? 'bg-accent/[0.12]'
                           : comparedHoverVerse === verse.verse
                             ? 'bg-accent/[0.08]'
-                          : isBookmarked
-                            ? 'bg-[#e06c7520]'
                             : 'hover:bg-black/[0.04]',
                       )}
                     >
@@ -624,7 +678,6 @@ export function VerseList() {
                           type="button"
                           onClick={(e) => {
                             e.stopPropagation()
-                            selectVerse(verse.id)
                             openStudyPanel(verse.id)
                           }}
                           tabIndex={-1}
@@ -671,17 +724,21 @@ export function VerseList() {
                             : 'hover:bg-black/[0.03]',
                       )}
                     >
-                      <div className="relative shrink-0 w-6 flex items-start justify-end gap-[2px] pt-[3px]">
+                      <div className="relative flex w-7 shrink-0 flex-col items-end pt-[2px]">
+                        <div className="flex h-3 items-center gap-1">
+                          {isBookmarked && <span className="md:hidden"><HeartIcon size={7} /></span>}
+                          {showVerseNumbers && <span className={cn(
+                            'font-sans text-[10px] font-bold leading-none select-none',
+                            isSelected ? 'text-accent' : 'text-accent/50',
+                          )}>
+                            {verse.verse}
+                          </span>}
+                        </div>
                         {hasCrossRefs && (
-                          <span className="font-sans text-[9px] leading-none text-accent/40 select-none" aria-hidden="true">†</span>
+                          <span className="mt-1 inline-flex text-accent/40" title={t('toolbar.crossReferences')}>
+                            <CrossReferenceMark />
+                          </span>
                         )}
-                        {isBookmarked && <HeartIcon size={7} />}
-                        <span className={cn(
-                          'font-sans text-[10px] font-bold leading-none select-none',
-                          isSelected ? 'text-accent' : 'text-accent/50',
-                        )}>
-                          {verse.verse}
-                        </span>
                         {hasActivity && (
                           <span className="absolute top-0 right-0 w-[4px] h-[4px] rounded-full bg-accent/50 translate-x-1 -translate-y-0.5" aria-hidden="true" />
                         )}
@@ -695,7 +752,6 @@ export function VerseList() {
                           highlights={verseHighlights}
                           className={cn(
                             'font-reading leading-[1.85] md:leading-[1.95] text-text-primary',
-                            isBookmarked && 'bg-[#e06c7520] rounded-sm',
                             textSizeClass,
                           )}
                         />
@@ -705,11 +761,10 @@ export function VerseList() {
                           type="button"
                           onClick={(e) => {
                             e.stopPropagation()
-                            selectVerse(verse.id)
                             openStudyPanel(verse.id)
                           }}
                           tabIndex={-1}
-                          className="shrink-0 self-start mt-0.5 inline-flex h-9 w-9 md:h-6 md:w-6 items-center justify-center rounded-md text-accent/70 hover:text-accent hover:bg-bg-tertiary"
+                          className="shrink-0 self-start mt-0.5 inline-flex h-9 w-9 items-center justify-center rounded-md text-accent/70 hover:text-accent hover:bg-bg-tertiary md:hidden"
                           aria-label={t('verse.openNotes')}
                           title={t('verse.openNotes')}
                         >
@@ -736,38 +791,56 @@ export function VerseList() {
                       >
                         <IconMore />
                       </button>
-                      {!isYouVersion && (
-                        <button
-                          type="button"
-                          onClick={(e) => {
-                            e.stopPropagation()
-                            if (actions.requireLogin()) return
-                            toggleBookmark(verse.apiId)
-                              .catch((error) => {
-                                if (isAuthError(error)) {
-                                  addToast(t('study.loginRequired'), 'error', {
-                                    action: { label: t('auth.logIn'), onClick: openAuthModal },
+                      {(!isYouVersion || myNoteBodies.length > 0) && (
+                        <div className="hidden w-7 shrink-0 self-start flex-col items-center md:flex">
+                          {!isYouVersion && (
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation()
+                                if (actions.requireLogin()) return
+                                toggleBookmark(verse.apiId)
+                                  .catch((error) => {
+                                    if (isAuthError(error)) {
+                                      addToast(t('study.loginRequired'), 'error', {
+                                        action: { label: t('auth.logIn'), onClick: openAuthModal },
+                                      })
+                                      return
+                                    }
+                                    addToast(t('toast.bookmarkFailed'), 'error')
                                   })
-                                  return
-                                }
-                                addToast(t('toast.bookmarkFailed'), 'error')
-                              })
-                          }}
-                          className={cn(
-                            'workspace-reader-bookmark',
-                            'hidden md:inline-flex shrink-0 self-start mt-0.5 h-8 w-8 items-center justify-center rounded-md transition-opacity',
-                            'hover:bg-bg-tertiary',
-                            isBookmarked
-                              ? 'text-[var(--fav)] opacity-100'
-                              : 'text-text-muted opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 focus-visible:opacity-100 hover:text-[var(--fav)]',
+                              }}
+                              className={cn(
+                                'workspace-reader-bookmark',
+                                'inline-flex h-6 w-7 items-center justify-center rounded-md transition-opacity hover:bg-bg-tertiary',
+                                isBookmarked
+                                  ? 'text-[var(--fav)] opacity-100'
+                                  : 'text-text-muted opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 focus-visible:opacity-100 hover:text-[var(--fav)]',
+                              )}
+                              tabIndex={-1}
+                              aria-label={isBookmarked ? t('verse.removeFromFavorites') : t('verse.addToFavorites')}
+                              aria-pressed={isBookmarked}
+                              title={isBookmarked ? t('verse.removeFromFavorites') : t('verse.addToFavorites')}
+                            >
+                              <HeartIcon size={13} filled={isBookmarked} />
+                            </button>
                           )}
-                          tabIndex={-1}
-                          aria-label={isBookmarked ? t('verse.removeFromFavorites') : t('verse.addToFavorites')}
-                          aria-pressed={isBookmarked}
-                          title={isBookmarked ? t('verse.removeFromFavorites') : t('verse.addToFavorites')}
-                        >
-                          <HeartIcon size={14} filled={isBookmarked} />
-                        </button>
+                          {myNoteBodies.length > 0 && (
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation()
+                                openStudyPanel(verse.id)
+                              }}
+                              tabIndex={-1}
+                              className="inline-flex h-5 w-7 items-center justify-center rounded-md text-accent/70 hover:bg-bg-tertiary hover:text-accent"
+                              aria-label={t('verse.openNotes')}
+                              title={t('verse.openNotes')}
+                            >
+                              <NoteIcon size={10} />
+                            </button>
+                          )}
+                        </div>
                       )}
                     </div>
                   )

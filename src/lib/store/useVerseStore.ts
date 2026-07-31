@@ -8,7 +8,7 @@ import {
   selectDefaultBibleVersionId,
 } from '@/lib/defaultBibleVersion'
 import { saveUserSettingsSilently } from '@/lib/userSettingsApi'
-import { prefetchVersion } from '@/lib/prefetchBible'
+import { prefetchVersion, shouldAutoPrefetch } from '@/lib/prefetchBible'
 import { pingReadingActivity } from '@/lib/readingActivity'
 import { fromYouVersionClientId } from '@/lib/youVersion'
 
@@ -195,7 +195,7 @@ export function createVerseStore() {
         console.error('[bibleApi.books] non-array response', { versionId, apiBooks })
         return
       }
-      if (fromYouVersionClientId(versionId) === null) {
+      if (fromYouVersionClientId(versionId) === null && shouldAutoPrefetch()) {
         prefetchVersion(versionId, apiBooks)
       }
       const books: Book[] = apiBooks.map(b => ({

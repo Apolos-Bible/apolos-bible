@@ -14,14 +14,18 @@ export async function checkForAppUpdates(notify: Notify, messages: {
   installing: (version: string) => string
   installed: string
   failed: string
-}) {
-  if (hasCheckedForUpdates || !isTauri()) return
+  noUpdate?: string
+}, options: { force?: boolean } = {}) {
+  if ((!options.force && hasCheckedForUpdates) || !isTauri()) return
   hasCheckedForUpdates = true
   let installingUpdate = false
 
   try {
     const update = await check({ timeout: 30_000 })
-    if (!update) return
+    if (!update) {
+      if (messages.noUpdate) notify(messages.noUpdate, 'success')
+      return
+    }
 
     installingUpdate = true
     notify(messages.installing(update.version), 'info', { duration: 10_000 })

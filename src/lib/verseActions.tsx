@@ -1,6 +1,6 @@
 import { useCallback, useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
-import { comparableBibleVersions } from '@/lib/bibleVersionOptions'
+import { comparableBibleVersions, preferredComparisonVersion } from '@/lib/bibleVersionOptions'
 import { useActiveVerseStore, useVerseStoreApi, type Verse } from '@/lib/store/useVerseStore'
 import { useHighlightStore } from '@/lib/store/useHighlightStore'
 import { useBookmarkStore } from '@/lib/store/useBookmarkStore'
@@ -330,7 +330,7 @@ export function useVerseActions() {
         available = verseStore.getState().versions
       }
       const currentVersionId = verseStore.getState().versionId
-      const comparisonVersion = comparableBibleVersions(available, currentVersionId)[0]
+      const comparisonVersion = preferredComparisonVersion(comparableBibleVersions(available, currentVersionId))
       if (!comparisonVersion) {
         addToast(t('compareVersions.noAlternatives'), 'info')
         return

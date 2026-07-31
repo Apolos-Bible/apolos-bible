@@ -34,6 +34,7 @@ import { getBiblePaneStoreForTab, BiblePaneStoreProvider } from '@/lib/store/use
 import { workspaceRoutes } from '@/router/workspaceRoutes'
 import { WorkspacePaneProvider } from './WorkspacePaneContext'
 import { WorkspaceSidePanel } from './WorkspaceSidePanel'
+import { DesktopSidebar } from './DesktopSidebar'
 import {
   clearWorkspaceTabDrag,
   readWorkspaceTabDrag,
@@ -144,13 +145,9 @@ export function WorkspaceDesktopShell() {
   return (
     <BibleTabStateProvider tabId={activeTab?.kind === 'bible' ? activeTab.id : 'workspace-global'}>
       <div className="app-viewport flex w-full overflow-hidden bg-bg-primary">
-      <aside
-        className="h-full w-sidebar shrink-0 overflow-hidden"
-        data-region="sidebar"
-        aria-label={t('a11y.regionSidebar')}
-      >
+      <DesktopSidebar>
         <Sidebar />
-      </aside>
+      </DesktopSidebar>
 
       <aside
         className={cn(
