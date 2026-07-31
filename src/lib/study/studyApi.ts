@@ -43,7 +43,29 @@ export const studyApi = {
   getSharedSession: (shareToken: string) =>
     api.get<{ session: StudySession; guest_ws_token: string }>(`/api/studies/share/${shareToken}`),
 
-  uploadFile: (id: string, file: File) => {
+  uploadFile: async (id: string, file: File) => {
+    // Keep small files on the ordinary API path. Larger files go straight to
+    // private S3 with a 15-minute PUT URL, bypassing PHP/Nginx body limits.
+    if (file.size > 4 * 1024 * 1024) {
+      const prepared = await api.post<{
+        file_id: string;
+        upload_url: string;
+        upload_headers: Record<string, string>;
+      }>(`/api/studies/${id}/files/prepare`, { name: file.name, size: file.size });
+
+      const uploaded = await fetch(prepared.upload_url, {
+        method: 'PUT',
+        headers: prepared.upload_headers,
+        body: file,
+      });
+      if (!uploaded.ok) throw new Error(`Direct upload failed (${uploaded.status})`);
+
+      return api.post<StudyFileUpload>(
+        `/api/studies/${id}/files/${prepared.file_id}/complete`,
+        {},
+      );
+    }
+
     const form = new FormData();
     form.append('file', file);
     return api.upload<StudyFileUpload>(`/api/studies/${id}/files`, form);
