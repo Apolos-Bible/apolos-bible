@@ -24,6 +24,7 @@ import { isWorkspaceRoute } from './paths'
 import { WorkspaceDesktopShell } from '@/components/layout/WorkspaceDesktopShell'
 import { AnalyticsConsentBanner } from '@/components/privacy/AnalyticsConsentBanner'
 import { trackAnalyticsPageView } from '@/lib/analytics'
+import { findWorkspaceGroup, useWorkspaceStore } from '@/lib/store/useWorkspaceStore'
 
 const VISITED_STORAGE_KEY = 'verbum_has_visited'
 let hasLoggedStartupSettings = false
@@ -174,6 +175,16 @@ function RootLayoutSurface() {
   // their own scopes, so they can't fire on routes where they'd be meaningless.
   useCommands({
     'app.commandPalette': () => openCommandPalette(),
+    'app.closeTab': () => {
+      // Always claim the browser shortcut. Outside the tabbed workspace this
+      // deliberately becomes a no-op instead of closing the browser tab.
+      if (!isWorkspaceRoute(location.pathname)) return
+      const state = useWorkspaceStore.getState()
+      const group = findWorkspaceGroup(state.layout, state.activeGroupId)
+      if (!group?.activeTabId) return
+      const nextPath = state.closeTab(group.id, group.activeTabId)
+      if (nextPath) navigate(nextPath)
+    },
     'app.search': () => openCommandPalette(),
     'app.shortcuts': () => useUIStore.getState().toggleShortcutsPanel(),
     'app.goHome': () => { navigate(paths.root()) },
