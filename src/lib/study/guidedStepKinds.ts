@@ -1,7 +1,7 @@
 import type { LucideIcon } from 'lucide-react'
 import {
   Sunrise, Landmark, BookOpen, GraduationCap, MessagesSquare,
-  HeartHandshake, Footprints, HandHeart, History, Sparkles,
+  HeartHandshake, Footprints, HandHeart, History, Brain,
 } from 'lucide-react'
 import type { GuidedStepKind } from '@/lib/study/guidedApi'
 
@@ -43,7 +43,7 @@ export const STEP_KINDS: StepKindSpec[] = [
   { kind: 'practice',    Icon: Footprints,     takesReference: false, takesPrompts: true,  bodyStyle: 'prose' },
   { kind: 'prayer',      Icon: HandHeart,      takesReference: false, takesPrompts: false, bodyStyle: 'prose' },
   { kind: 'review',      Icon: History,        takesReference: true,  takesPrompts: true,  bodyStyle: 'prose' },
-  { kind: 'memory',      Icon: Sparkles,       takesReference: false, takesPrompts: false, bodyStyle: 'verse' },
+  { kind: 'memory',      Icon: Brain,          takesReference: false, takesPrompts: false, bodyStyle: 'verse' },
 ]
 
 const BY_KIND = new Map(STEP_KINDS.map((spec) => [spec.kind, spec]))

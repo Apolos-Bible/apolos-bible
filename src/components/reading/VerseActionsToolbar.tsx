@@ -7,7 +7,7 @@ import {
   Link2,
   MoreHorizontal,
   Share2,
-  Sparkles,
+  ScanSearch,
   Star,
   StickyNote,
 } from 'lucide-react'
@@ -168,7 +168,7 @@ export function VerseActionsToolbar() {
               aria-disabled={!hasSingleVerse}
               className={buttonClass(!hasSingleVerse)}
             >
-              <Sparkles className="h-3.5 w-3.5" strokeWidth={1.7} aria-hidden />
+              <ScanSearch className="h-3.5 w-3.5" strokeWidth={1.7} aria-hidden />
             </button>
           </ActionTooltip>
         </>

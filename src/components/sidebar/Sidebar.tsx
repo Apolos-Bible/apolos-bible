@@ -7,6 +7,7 @@ import {
   BookPlus,
   ExternalLink,
   GraduationCap,
+  Gamepad2,
   MessagesSquare,
   NotebookPen,
   PanelLeftClose,
@@ -268,6 +269,7 @@ export function Sidebar() {
         {/* Central destinations navigate into their own workspace tabs. */}
         <NavItem compact={compact} dataTour="new-study" icon={BookPlus} label={t('nav.newStudy')} active={false} onClick={() => user ? setShowStartStudy(true) : openAuthModal()} />
         <SectionLabel compact={compact}>{t('nav.social')}</SectionLabel>
+        <NavItem compact={compact} dataTour="games" icon={Gamepad2} label={t('nav.games')} active={pathname.startsWith('/juegos')} onClick={() => user ? openRoute(paths.games(), t('nav.games')) : openAuthModal()} onOpenNew={() => user ? openRoute(paths.games(), t('nav.games'), true) : openAuthModal()} />
         {/* Marketplace opens or focuses its workspace tab. */}
         <NavItem compact={compact} dataTour="marketplace" icon={Store} label={t('nav.marketplace')} active={pathname.startsWith('/marketplace')} onClick={() => user ? openRoute(paths.marketplace(), t('nav.marketplace')) : openAuthModal()} onOpenNew={() => user ? openRoute(paths.marketplace(), t('nav.marketplace'), true) : openAuthModal()} />
         <NavItem compact={compact} dataTour="friends" icon={UsersRound} label={t('nav.friends')} active={activePanel === 'friends'} onClick={() => user ? toggleSidebarPanel('friends') : openAuthModal()} />

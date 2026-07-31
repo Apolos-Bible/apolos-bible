@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useNavigate } from 'react-router-dom'
-import { Search, PenLine, Sparkles, Store, ArrowRight, Bookmark, Compass } from 'lucide-react'
+import { Search, PenLine, Award, Store, ArrowRight, Bookmark, Compass } from 'lucide-react'
 import { AppPageLayout } from '@/components/layout/AppPageLayout'
 import { useMarketplaceStore } from '@/lib/store/useMarketplaceStore'
 import { useAuthStore } from '@/lib/store/useAuthStore'
@@ -135,7 +135,7 @@ export function MarketplaceRoute() {
                 id="featured-shelf"
                 className="mb-2.5 flex items-center gap-1.5 text-xs font-semibold uppercase tracking-[0.12em] text-text-secondary"
               >
-                <Sparkles className="h-3.5 w-3.5 text-accent" />
+                <Award className="h-3.5 w-3.5 text-accent" />
                 {t('market.featuredTitle')}
               </h2>
               {/* Horizontal shelf: the wide content scrolls inside itself, the

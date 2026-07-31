@@ -13,15 +13,18 @@ export type BibleParams = {
   book: string
   chapter: number
   verse?: number | null
+  endVerse?: number | null
 }
 
 export const paths = {
   root: () => '/',
 
-  bible({ lang, book, chapter, verse }: BibleParams): string {
+  bible({ lang, book, chapter, verse, endVerse }: BibleParams): string {
     const langPrefix = lang === 'en' ? '' : `/${lang}`
     const base = `${langPrefix}/bible/${book}/${chapter}`
-    return verse ? `${base}/${verse}` : base
+    if (!verse) return base
+    const versePath = `${base}/${verse}`
+    return endVerse && endVerse > verse ? `${versePath}?endVerse=${endVerse}` : versePath
   },
 
   study({ sessionId, shareToken }: { sessionId: string; shareToken?: string | null }): string {
@@ -52,6 +55,14 @@ export const paths = {
     return '/marketplace'
   },
 
+  games(): string {
+    return '/juegos'
+  },
+
+  gameRoom(roomId: string): string {
+    return `/juegos/${roomId}`
+  },
+
   marketplacePath(slug: string): string {
     return `/marketplace/${slug}`
   },
@@ -73,6 +84,7 @@ export function isPageRoute(pathname: string): boolean {
     pathname.startsWith('/perfil') ||
     pathname.startsWith('/ajustes') ||
     pathname.startsWith('/marketplace') ||
+    pathname.startsWith('/juegos') ||
     pathname.startsWith('/mis-rutas') ||
     pathname.startsWith('/u/')
     || pathname.startsWith('/chat/')

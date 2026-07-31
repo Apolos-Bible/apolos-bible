@@ -8,8 +8,8 @@ import {
   Compass,
   HeartHandshake,
   Loader2,
+  Palette,
   Play,
-  Sparkles,
   X,
 } from 'lucide-react'
 import { Dialog } from '@/components/ui/Dialog'
@@ -142,7 +142,7 @@ export function MarketplaceStudyModal({ open, onClose, plan, study }: Marketplac
                 {studyData.theme && (
                   <div className="rounded-xl border border-border-subtle bg-bg-tertiary/40 p-3">
                     <p className="mb-1 flex items-center gap-1.5 text-2xs font-semibold uppercase tracking-[0.1em] text-text-muted">
-                      <Sparkles className="h-3 w-3" />
+                      <Palette className="h-3 w-3" />
                       {t('guided.theme')}
                     </p>
                     <p className="text-sm leading-relaxed text-text-secondary">{studyData.theme}</p>
