@@ -15,7 +15,7 @@ Laravel API (all credentials remain here)
   │     ├── successful-response cache
   │     └── publisher attribution passthrough
   ├── YouVersion OAuth ──► PKCE / OIDC / Data Exchange
-  └── LLM abstraction ───► Gloo OAuth2 ──► Completions V2
+  └── LLM abstraction ───► LLPhant ──────► DeepSeek
         ├── short-lived token cache
         ├── verified-email gate
         ├── per-user budget
@@ -35,25 +35,21 @@ Laravel API (all credentials remain here)
 - Data Exchange currently requests `highlights`; user tokens are encrypted at
   rest.
 
-## Gloo implementation
+## LLPhant and DeepSeek implementation
 
-- Backend exchanges Client ID and Client Secret at
-  `POST /oauth2/token` using scope `api/access`.
-- Bearer tokens are cached for `expires_in - 60` seconds.
-- AI requests use `POST /ai/v2/chat/completions`.
-- A revoked cached token receives one forced refresh after HTTP 401.
-- The model is catalogued as `gloo/gpt-5-mini`; production can choose it via
-  `LLM_PROVIDER=gloo` or through the existing model selector.
-- Gloo usage fields are normalized into Apolos's provider-independent usage and
-  budget accounting.
-- Optional theological tradition is accepted only from Gloo's documented
-  `evangelical`, `catholic`, and `mainline` values.
+- `App\Contracts\LlmClient` keeps controllers independent of the provider.
+- `OpenAiLlmClient` uses LLPhant's OpenAI-compatible chat implementation.
+- DeepSeek is configured as the current default provider.
+- Raw provider usage is normalized into Apolos's provider-independent budget
+  accounting.
+- The backend enforces verified-email checks, per-user monthly budgets, and
+  endpoint throttles before inference.
 
 ## Data sent to AI
 
 The assistant receives recent conversation, bounded canvas structure, selected
 passages already present in the study, and up to three explicitly attached
-documents. It does not receive YouVersion or Gloo credentials. Prompts and
+documents. It does not receive YouVersion or DeepSeek credentials. Prompts and
 responses should not be presented as professional counseling.
 
 ## Production environment
@@ -63,13 +59,9 @@ YOUVERSION_APP_KEY=
 YOUVERSION_AUTH_URL=https://api.youversion.com
 YOUVERSION_REDIRECT_URI=https://apolos.io/api/auth/youversion/callback
 
-GLOO_CLIENT_ID=
-GLOO_CLIENT_SECRET=
-GLOO_BASE_URL=https://platform.ai.gloo.com
-GLOO_MODEL=gloo-openai-gpt-5-mini
-GLOO_TRADITION=
-GLOO_TIMEOUT=60
-
-LLM_PROVIDER=gloo
+LLM_PROVIDER=deepseek
+DEEPSEEK_API_KEY=
+DEEPSEEK_BASE_URL=https://api.deepseek.com/v1
+DEEPSEEK_MODEL=deepseek-v4-flash
+DEEPSEEK_TIMEOUT=60
 ```
-

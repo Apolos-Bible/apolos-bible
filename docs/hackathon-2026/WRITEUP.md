@@ -1,7 +1,7 @@
 # Apolos — Scripture, native to the creator canvas
 
 **Subtitle:** A collaborative visual studio powered by YouVersion Platform and
-Gloo AI Studio.
+canvas-aware AI.
 
 Creators, ministry leaders, and small groups often begin with a blank canvas:
 an idea, a difficult question, and scattered notes across chat, documents, and
@@ -23,13 +23,12 @@ uses Authorization Code with PKCE; ID tokens are verified against JWKS before
 accounts are linked. The Data Exchange flow requests user-highlight permission
 without exposing tokens to the browser.
 
-Gloo AI Studio powers the canvas-aware collaborator. The backend exchanges
-organization credentials through OAuth2 client credentials, caches the
-short-lived bearer token, and calls Completions V2. Recent team conversation,
-canvas nodes, selected passages, and approved documents form bounded context.
-Gloo returns a values-aligned response that can propose connections and
-structured canvas changes. Existing rate limits, verified-email checks, and
-per-user budgets constrain abuse and cost.
+The canvas-aware collaborator runs through Apolos's provider-independent
+LLPhant integration and the configured DeepSeek model. Recent team
+conversation, canvas nodes, selected passages, and approved documents form
+bounded context. The assistant can propose connections and structured canvas
+changes. Existing rate limits, verified-email checks, and per-user budgets
+constrain abuse and cost.
 
 The demo follows a creator preparing a study about anxiety. She opens licensed
 passages in two translations, arranges them around a real question, and asks
@@ -40,4 +39,3 @@ becomes a shared, source-grounded experience.
 Apolos can bring this workflow to distributed churches, creator teams, student
 groups, and communities already working together online: Scripture not added
 after creation, but woven into creation itself.
-

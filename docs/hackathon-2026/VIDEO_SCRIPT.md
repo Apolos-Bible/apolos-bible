@@ -37,21 +37,22 @@ caches only successful responses.”
 
 On-screen: **LIVE · YouVersion Platform API**
 
-## 1:12–1:55 — Gloo changes the workflow
+## 1:12–1:55 — AI changes the workflow
 
 **Visual:** In study chat, type a rehearsed prompt:
 
 > /apolos Connect these passages to the fear of an uncertain future. Add one
 > reflection question and a three-step path for a small group.
 
-Show the loading state, Gloo response, and the proposed/created canvas changes.
+Show the loading state, DeepSeek response, and the proposed/created canvas
+changes.
 
 **Narration:** “The creator does not leave the canvas to prompt a generic
-chatbot. Apolos sends bounded canvas context to Gloo AI Studio. Gloo's
-values-aligned inference helps turn the source material into a thoughtful path
-while our backend enforces authentication, rate limits, and budgets.”
+chatbot. Apolos sends bounded canvas context through LLPhant to DeepSeek. The
+assistant helps turn the source material into a thoughtful path while our
+backend enforces authentication, rate limits, and budgets.”
 
-On-screen: **LIVE · Gloo AI Studio Completions V2**
+On-screen: **LIVE · LLPhant + DeepSeek**
 
 ## 1:55–2:20 — Collaboration
 
@@ -75,4 +76,3 @@ On-screen:
 - **Apolos**
 - **Scripture, native to creation**
 - `https://apolos.bible`
-

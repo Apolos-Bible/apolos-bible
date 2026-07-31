@@ -30,11 +30,11 @@ Fill and test every placeholder before pressing Submit.
 
 - Title: **Apolos — Scripture, native to the creator canvas**
 - Subtitle: **A collaborative visual studio powered by YouVersion Platform and
-  Gloo AI Studio**
+  canvas-aware AI**
 
 ## Short project description
 
 Apolos is a collaborative creator studio where teams arrange licensed
 YouVersion passages, ideas, and conversation on a shared visual canvas, while
-Gloo's values-aligned AI helps transform that grounded context into reusable
-study experiences.
+the canvas-aware Apolos assistant helps transform that grounded context into
+reusable study experiences.
