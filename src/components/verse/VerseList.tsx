@@ -27,6 +27,7 @@ import { EmptyState } from '@/components/ui/EmptyState'
 import { SEOMeta } from '@/components/seo/SEOMeta'
 import { cn } from '@/lib/cn'
 import { isAuthError } from '@/lib/auth'
+import { isYouVersionVersion } from '@/lib/youVersion'
 
 // ── Icons ──────────────────────────────────────────────────────────────────
 
@@ -107,6 +108,10 @@ export function VerseList() {
   const selectedChapter  = useActiveVerseStore((s) => s.selectedChapter)
   const navigateChapter  = useActiveVerseStore((s) => s.navigateChapter)
   const loadingVerses    = useActiveVerseStore((s) => s.loadingVerses)
+  const versions         = useActiveVerseStore((s) => s.versions)
+  const versionId        = useActiveVerseStore((s) => s.versionId)
+  const currentVersion   = versions.find((version) => version.id === versionId)
+  const isYouVersion     = isYouVersionVersion(currentVersion)
 
   const fontSize       = useUIStore((s) => s.fontSize)
   const readingMode    = useActiveBiblePaneStore((s) => s.readingMode)
@@ -209,17 +214,19 @@ export function VerseList() {
   }, [setMobileChromeCollapsed])
 
   useEffect(() => {
-    if (verses.length) loadHighlightsForChapter(verses.map((v) => v.apiId))
-  }, [verses])
+    if (!isYouVersion && verses.length) {
+      loadHighlightsForChapter(verses.map((v) => v.apiId))
+    }
+  }, [isYouVersion, verses])
 
   useEffect(() => {
-    if (!user || !verses.length) return
+    if (isYouVersion || !user || !verses.length) return
     const missingVerseIds = verses
       .map((verse) => verse.apiId)
       .filter((verseApiId) => notes[verseApiId] == null && !notesLoading[verseApiId])
 
     void Promise.all(missingVerseIds.map((verseApiId) => loadNotes(verseApiId)))
-  }, [user?.id, verses, notes, notesLoading, loadNotes])
+  }, [isYouVersion, user?.id, verses, notes, notesLoading, loadNotes])
 
   useEffect(() => {
     if (chapterId) loadChapterRefs(chapterId)
@@ -247,10 +254,10 @@ export function VerseList() {
 
   useEffect(() => {
     const bookNumber = books.find((b) => b.slug === selectedBook)?.number
-    if (!user || !bookNumber) return
+    if (isYouVersion || !user || !bookNumber) return
     joinChapter(bookNumber, selectedChapter, String(user.id))
     return () => leaveChapter()
-  }, [user?.id, books, selectedBook, selectedChapter, friendIds, joinChapter, leaveChapter])
+  }, [isYouVersion, user?.id, books, selectedBook, selectedChapter, friendIds, joinChapter, leaveChapter])
 
   const bookName    = books.find((b) => b.slug === selectedBook)?.name ?? selectedBook
   const currentBook = books.find((b) => b.slug === selectedBook)
@@ -583,7 +590,7 @@ export function VerseList() {
                   const isSelected      = selectedVerseIds.includes(verse.id)
                   const verseHighlights = highlights[verse.apiId] ?? []
                   const hasActivity     = (notes[verse.apiId]?.length ?? 0) > 0 || verseHighlights.length > 0
-                  const hasFriendActivity = (activityByVerse[verse.verse]?.length ?? 0) > 0
+                  const hasFriendActivity = !isYouVersion && (activityByVerse[verse.verse]?.length ?? 0) > 0
                   const isBookmarked    = bookmarkedIds.has(verse.apiId)
                   const hasCrossRefs    = verseIdsWithRefs.has(verse.apiId)
                   const myNoteBodies    = getMyNoteBodies(verse.apiId)
@@ -646,7 +653,7 @@ export function VerseList() {
                   const isSelected      = selectedVerseIds.includes(verse.id)
                   const verseHighlights = highlights[verse.apiId] ?? []
                   const hasActivity     = (notes[verse.apiId]?.length ?? 0) > 0 || verseHighlights.length > 0
-                  const hasFriendActivity = (activityByVerse[verse.verse]?.length ?? 0) > 0
+                  const hasFriendActivity = !isYouVersion && (activityByVerse[verse.verse]?.length ?? 0) > 0
                   const isBookmarked    = bookmarkedIds.has(verse.apiId)
                   const hasCrossRefs    = verseIdsWithRefs.has(verse.apiId)
                   const myNoteBodies    = getMyNoteBodies(verse.apiId)
@@ -729,41 +736,73 @@ export function VerseList() {
                       >
                         <IconMore />
                       </button>
-                      <button
-                        type="button"
-                        onClick={(e) => {
-                          e.stopPropagation()
-                          if (actions.requireLogin()) return
-                          toggleBookmark(verse.apiId)
-                            .catch((error) => {
-                              if (isAuthError(error)) {
-                                addToast(t('study.loginRequired'), 'error', {
-                                  action: { label: t('auth.logIn'), onClick: openAuthModal },
-                                })
-                                return
-                              }
-                              addToast(t('toast.bookmarkFailed'), 'error')
-                            })
-                        }}
-                        className={cn(
-                          'workspace-reader-bookmark',
-                          'hidden md:inline-flex shrink-0 self-start mt-0.5 h-8 w-8 items-center justify-center rounded-md transition-opacity',
-                          'hover:bg-bg-tertiary',
-                          isBookmarked
-                            ? 'text-[var(--fav)] opacity-100'
-                            : 'text-text-muted opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 focus-visible:opacity-100 hover:text-[var(--fav)]',
-                        )}
-                        tabIndex={-1}
-                        aria-label={isBookmarked ? t('verse.removeFromFavorites') : t('verse.addToFavorites')}
-                        aria-pressed={isBookmarked}
-                        title={isBookmarked ? t('verse.removeFromFavorites') : t('verse.addToFavorites')}
-                      >
-                        <HeartIcon size={14} filled={isBookmarked} />
-                      </button>
+                      {!isYouVersion && (
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            if (actions.requireLogin()) return
+                            toggleBookmark(verse.apiId)
+                              .catch((error) => {
+                                if (isAuthError(error)) {
+                                  addToast(t('study.loginRequired'), 'error', {
+                                    action: { label: t('auth.logIn'), onClick: openAuthModal },
+                                  })
+                                  return
+                                }
+                                addToast(t('toast.bookmarkFailed'), 'error')
+                              })
+                          }}
+                          className={cn(
+                            'workspace-reader-bookmark',
+                            'hidden md:inline-flex shrink-0 self-start mt-0.5 h-8 w-8 items-center justify-center rounded-md transition-opacity',
+                            'hover:bg-bg-tertiary',
+                            isBookmarked
+                              ? 'text-[var(--fav)] opacity-100'
+                              : 'text-text-muted opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 focus-visible:opacity-100 hover:text-[var(--fav)]',
+                          )}
+                          tabIndex={-1}
+                          aria-label={isBookmarked ? t('verse.removeFromFavorites') : t('verse.addToFavorites')}
+                          aria-pressed={isBookmarked}
+                          title={isBookmarked ? t('verse.removeFromFavorites') : t('verse.addToFavorites')}
+                        >
+                          <HeartIcon size={14} filled={isBookmarked} />
+                        </button>
+                      )}
                     </div>
                   )
                 })}
               </div>
+            )}
+
+            {isYouVersion && currentVersion && (
+              <footer className="mt-10 border-t border-border-subtle pt-4 text-xs leading-relaxed text-text-muted">
+                {currentVersion.copyright && <p>{currentVersion.copyright}</p>}
+                {currentVersion.info && <p className="mt-2">{currentVersion.info}</p>}
+                <div className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-1">
+                  {currentVersion.publisherUrl && (
+                    <a
+                      href={currentVersion.publisherUrl}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="text-accent/80 transition-colors hover:text-accent"
+                    >
+                      {t('youVersion.publisher')}
+                    </a>
+                  )}
+                  {currentVersion.deepLink && (
+                    <a
+                      href={currentVersion.deepLink}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="text-accent/80 transition-colors hover:text-accent"
+                    >
+                      {t('youVersion.open')}
+                    </a>
+                  )}
+                  <span>{t('youVersion.poweredBy')}</span>
+                </div>
+              </footer>
             )}
 
           </div>

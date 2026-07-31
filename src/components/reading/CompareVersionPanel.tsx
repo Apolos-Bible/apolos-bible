@@ -7,6 +7,7 @@ import { useActiveCompareStore } from '@/lib/store/useCompareStore'
 import { useActiveVerseStore } from '@/lib/store/useVerseStore'
 import { Select } from '@/components/ui/Select'
 import { useVersePointerSelection } from '@/components/verse/useVersePointerSelection'
+import { isYouVersionVersion } from '@/lib/youVersion'
 
 function proportionalScrollTop(source: HTMLElement, target: HTMLElement): number {
   const sourceRange = Math.max(0, source.scrollHeight - source.clientHeight)
@@ -322,6 +323,36 @@ export function CompareVersionPanel() {
                 )
               })}
             </div>
+
+            {isYouVersionVersion(result.version) && (
+              <footer className="mt-8 border-t border-border-subtle pt-4 text-[10px] leading-relaxed text-text-muted">
+                {result.version.copyright && <p>{result.version.copyright}</p>}
+                {result.version.info && <p className="mt-2">{result.version.info}</p>}
+                <div className="mt-2 flex flex-wrap gap-x-3 gap-y-1">
+                  {result.version.publisherUrl && (
+                    <a
+                      href={result.version.publisherUrl}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="text-accent/80 hover:text-accent"
+                    >
+                      {t('youVersion.publisher')}
+                    </a>
+                  )}
+                  {result.version.deepLink && (
+                    <a
+                      href={result.version.deepLink}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="text-accent/80 hover:text-accent"
+                    >
+                      {t('youVersion.open')}
+                    </a>
+                  )}
+                  <span>{t('youVersion.poweredBy')}</span>
+                </div>
+              </footer>
+            )}
           </>
         )}
       </div>

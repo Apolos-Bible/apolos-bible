@@ -13,6 +13,9 @@ import { useContextMenuStore } from '@/lib/store/useContextMenuStore'
 import { createWorkspaceTab, useWorkspaceStore } from '@/lib/store/useWorkspaceStore'
 import { StartStudyModal } from '@/components/study/StartStudyModal'
 import { useWorkspacePane } from '@/components/layout/WorkspacePaneContext'
+import { Select } from '@/components/ui/Select'
+import { bibleVersionsInSameLanguage } from '@/lib/bibleVersionOptions'
+import { isYouVersionVersion } from '@/lib/youVersion'
 
 interface BookGroupProps {
   label: string
@@ -114,6 +117,9 @@ export function BookSelector() {
   const navigate = useNavigate()
   const { pathname } = useLocation()
   const books = useActiveVerseStore((s) => s.books)
+  const versions = useActiveVerseStore((s) => s.versions)
+  const versionId = useActiveVerseStore((s) => s.versionId)
+  const setVersion = useActiveVerseStore((s) => s.setVersion)
   const selectedBook = useActiveVerseStore((s) => s.selectedBook)
   const selectedChapter = useActiveVerseStore((s) => s.selectedChapter)
   const loadChapter = useActiveVerseStore((s) => s.loadChapter)
@@ -195,9 +201,25 @@ export function BookSelector() {
 
   const oldTestament = books.filter((b) => b.testament === 'old')
   const newTestament = books.filter((b) => b.testament === 'new')
+  const selectableVersions = bibleVersionsInSameLanguage(versions, versionId)
 
   return (
     <div ref={scrollRef} className="flex-1 overflow-y-auto py-1">
+      <div className="sticky top-0 z-20 border-b border-border-subtle bg-bg-secondary px-3 py-2">
+        <Select
+          value={versionId}
+          onChange={setVersion}
+          ariaLabel={t('youVersion.changeVersion')}
+          placeholder={t('common.loading')}
+          disabled={selectableVersions.length === 0}
+          options={selectableVersions.map((version) => ({
+            value: version.id,
+            label: version.abbreviation,
+            description: `${version.name}${isYouVersionVersion(version) ? ` · ${t('youVersion.provider')}` : ''}`,
+          }))}
+          buttonClassName="h-9 rounded-lg"
+        />
+      </div>
       <BookGroup
         label={t('sidebar.oldTestament')}
         books={oldTestament}
