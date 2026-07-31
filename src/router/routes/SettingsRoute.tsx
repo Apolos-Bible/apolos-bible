@@ -30,7 +30,6 @@ import {
   type AnalyticsConsent,
 } from '@/lib/analytics'
 import { isYouVersionVersion } from '@/lib/youVersion'
-import { comparableBibleVersions } from '@/lib/bibleVersionOptions'
 import { fetchUserSettings, saveUserSettings, type UserSettings } from '@/lib/userSettingsApi'
 
 const FONT_OPTIONS: { value: FontSize; label: string }[] = [
@@ -846,6 +845,8 @@ export function SettingsRoute() {
                     label: `${version.abbreviation} — ${version.name}${isYouVersionVersion(version) ? ` · ${t('youVersion.provider')}` : ''}`,
                   }))}
                   className="mt-4 w-full sm:max-w-md"
+                  searchable
+                  searchPlaceholder={t('youVersion.searchVersion')}
                 />
                 {isYouVersionVersion(selectedVersion) && (
                   <div className="mt-4 border-t border-border-subtle pt-4 text-xs leading-relaxed text-text-muted">
@@ -888,9 +889,11 @@ export function SettingsRoute() {
                       ariaLabel={t('settings.bible.compareVersion')}
                       options={[
                         { value: '', label: t('settings.bible.compareNone') },
-                        ...comparableBibleVersions(selectableVersions, versionId).filter((version) => !isYouVersionVersion(version)).map((version) => ({ value: version.id, label: `${version.abbreviation} — ${version.name}` })),
+                        ...selectableVersions.filter((version) => version.id !== versionId).map((version) => ({ value: version.id, label: `${version.abbreviation} — ${version.name}${isYouVersionVersion(version) ? ` · ${t('youVersion.provider')}` : ''}` })),
                       ]}
                       className="w-full sm:max-w-md"
+                      searchable
+                      searchPlaceholder={t('youVersion.searchVersion')}
                     />
                   </SettingRow>
                   <SettingRow label={t('settings.showVerseNumbers')}>
