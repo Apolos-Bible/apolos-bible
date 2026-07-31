@@ -1,9 +1,14 @@
+import { useState } from 'react'
+import { Link } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
-import { MessageCircle } from 'lucide-react'
+import { Check, MessageCircle, UserPlus, X } from 'lucide-react'
 import { useChatStore } from '@/lib/store/useChatStore'
 import { useAuthStore } from '@/lib/store/useAuthStore'
+import { useFriendStore } from '@/lib/store/useFriendStore'
+import { useUIStore } from '@/lib/store/useUIStore'
 import { UserAvatar } from '@/components/auth/UserAvatar'
 import { cn } from '@/lib/cn'
+import { paths } from '@/router/paths'
 import { ChatThread } from './ChatThread'
 import type { Conversation } from '@/lib/chatApi'
 
@@ -29,6 +34,12 @@ export function FloatingChatDock({ rightPanelOpen }: FloatingChatDockProps) {
   const minimizeFloating = useChatStore((s) => s.minimizeFloating)
   const closeFloating = useChatStore((s) => s.closeFloating)
   const selfId = useAuthStore((s) => s.user?.id)
+  const friendRequests = useFriendStore((s) => s.received)
+  const acceptRequest = useFriendStore((s) => s.acceptRequest)
+  const declineRequest = useFriendStore((s) => s.declineRequest)
+  const addToast = useUIStore((s) => s.addToast)
+  const [openRequestId, setOpenRequestId] = useState<number | null>(null)
+  const [busyRequestId, setBusyRequestId] = useState<number | null>(null)
 
   const byId = new Map(conversations.map((conversation) => [conversation.id, conversation]))
   const openConversations = floatingIds
@@ -38,8 +49,37 @@ export function FloatingChatDock({ rightPanelOpen }: FloatingChatDockProps) {
   const bubbleConversations = conversations.filter((conversation) =>
     (minimized[conversation.id] || conversation.unread_count > 0) && !openConversations.some((open) => open.id === conversation.id),
   )
+  const openRequest = friendRequests.find((request) => request.id === openRequestId)
+  const bubbleRequests = friendRequests
+    .filter((request) => request.user && request.id !== openRequestId)
+    .slice(0, 4)
 
-  if (openConversations.length === 0 && bubbleConversations.length === 0) return null
+  if (openConversations.length === 0 && bubbleConversations.length === 0 && friendRequests.length === 0) return null
+
+  const handleAcceptRequest = async (requestId: number) => {
+    setBusyRequestId(requestId)
+    try {
+      await acceptRequest(requestId)
+      addToast(t('friends.requestAccepted'), 'success')
+      setOpenRequestId(null)
+    } catch {
+      addToast(t('friends.acceptFailed'), 'error')
+    } finally {
+      setBusyRequestId(null)
+    }
+  }
+
+  const handleDeclineRequest = async (requestId: number) => {
+    setBusyRequestId(requestId)
+    try {
+      await declineRequest(requestId)
+      setOpenRequestId(null)
+    } catch {
+      addToast(t('friends.declineFailed'), 'error')
+    } finally {
+      setBusyRequestId(null)
+    }
+  }
 
   return (
     <div
@@ -63,9 +103,93 @@ export function FloatingChatDock({ rightPanelOpen }: FloatingChatDockProps) {
             />
           </div>
         ))}
+
+        {openRequest?.user && (
+          <div className="pointer-events-auto w-[min(19rem,calc(100vw-5rem))] shrink-0 overflow-hidden rounded-xl border border-border-subtle bg-bg-secondary shadow-2xl">
+            <div className="flex items-center gap-3 border-b border-border-subtle px-4 py-3">
+              <Link
+                to={paths.userProfile(openRequest.user.id)}
+                className="flex min-w-0 flex-1 items-center gap-3 rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/50"
+              >
+                <UserAvatar
+                  name={openRequest.user.name}
+                  email={openRequest.user.email}
+                  src={openRequest.user.avatar_url}
+                  size="lg"
+                  className="h-10 w-10"
+                />
+                <div className="min-w-0">
+                  <p className="truncate text-sm font-semibold text-text-primary">{openRequest.user.name}</p>
+                  <p className="truncate text-2xs text-text-muted">{openRequest.user.email}</p>
+                </div>
+              </Link>
+              <button
+                type="button"
+                disabled={busyRequestId !== null}
+                onClick={() => setOpenRequestId(null)}
+                aria-label={t('friends.closeRequest')}
+                className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-md text-text-muted transition-colors hover:bg-bg-tertiary hover:text-text-primary disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/50"
+              >
+                <X aria-hidden="true" className="h-4 w-4" strokeWidth={1.75} />
+              </button>
+            </div>
+
+            <div className="px-4 py-3">
+              <p className="text-xs leading-relaxed text-text-secondary">
+                {t('notification.friendRequest', { name: openRequest.user.name })}
+              </p>
+              <div className="mt-3 flex gap-2">
+                <button
+                  type="button"
+                  disabled={busyRequestId !== null}
+                  onClick={() => { void handleAcceptRequest(openRequest.id) }}
+                  aria-label={t('friends.acceptAria', { name: openRequest.user.name })}
+                  className="inline-flex h-9 flex-1 items-center justify-center gap-1.5 rounded-md bg-accent px-3 text-xs font-semibold text-bg-primary transition-opacity hover:opacity-80 disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/50"
+                >
+                  <Check aria-hidden="true" className="h-4 w-4" strokeWidth={2} />
+                  {t('friends.accept')}
+                </button>
+                <button
+                  type="button"
+                  disabled={busyRequestId !== null}
+                  onClick={() => { void handleDeclineRequest(openRequest.id) }}
+                  aria-label={t('friends.declineAria', { name: openRequest.user.name })}
+                  className="inline-flex h-9 flex-1 items-center justify-center rounded-md border border-border-subtle px-3 text-xs font-medium text-text-secondary transition-colors hover:border-red-400/40 hover:text-red-400 disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-400/50"
+                >
+                  {t('friends.decline')}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
 
       <div className="flex shrink-0 flex-col items-end gap-2 pointer-events-auto">
+        {bubbleRequests.map((request) => {
+          const person = request.user!
+          return (
+            <button
+              key={`friend-request-${request.id}`}
+              type="button"
+              onClick={() => setOpenRequestId(request.id)}
+              aria-label={t('friends.openRequest', { name: person.name })}
+              title={t('notification.friendRequest', { name: person.name })}
+              className="group relative rounded-full outline-none transition-transform hover:-translate-y-0.5 focus-visible:ring-2 focus-visible:ring-accent/70"
+            >
+              <UserAvatar
+                name={person.name}
+                email={person.email}
+                src={person.avatar_url}
+                size="lg"
+                className="h-12 w-12 border-2 border-accent text-sm shadow-lg"
+              />
+              <span className="absolute -right-1 -top-1 flex h-5 w-5 items-center justify-center rounded-full bg-accent text-bg-primary shadow">
+                <UserPlus aria-hidden="true" className="h-3 w-3" strokeWidth={2} />
+              </span>
+            </button>
+          )
+        })}
+
         {bubbleConversations.slice(-4).map((conversation) => {
           const avatar = conversationAvatar(conversation, selfId)
           const title = conversationTitle(conversation, selfId)
