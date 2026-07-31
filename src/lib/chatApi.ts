@@ -34,6 +34,7 @@ export interface Conversation {
   last_message_at:   string | null
   unread_count:      number
   last_read_at:      string | null
+  archived_at:       string | null
   participants:      ChatParticipant[]
   members_can_invite?: boolean
   last_message:      ChatLastMessagePreview | null
@@ -64,6 +65,8 @@ export const chatApi = {
   messages:       (id: number, before?: number) => api.get<ChatMessage[]>(`/api/conversations/${id}/messages${before ? `?before=${before}` : ''}`),
   send:           (id: number, body: string)    => api.post<ChatMessage>(`/api/conversations/${id}/messages`, { body }),
   markRead:       (id: number)                  => api.post<{ last_read_at: string; last_read_message_id: number | null }>(`/api/conversations/${id}/read`, {}),
+  archive:        (id: number)                  => api.patch<{ archived_at: string }>(`/api/conversations/${id}/archive`, {}),
+  unarchive:      (id: number)                  => api.delete<{ archived_at: null }>(`/api/conversations/${id}/archive`),
   typing:         (id: number)                  => api.post<{ ok: boolean }>(`/api/conversations/${id}/typing`, {}),
   addParticipants:(id: number, userIds: number[]) => api.post<Conversation>(`/api/conversations/${id}/participants`, { user_ids: userIds }),
   leave:          (id: number)                  => api.delete<void>(`/api/conversations/${id}/leave`),

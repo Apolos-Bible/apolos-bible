@@ -46,6 +46,8 @@ type ChatState = {
   askApolos: (id: number, sessionId: string, prompt: string, documents?: AiContextDocument[]) => Promise<void>
   setComposerAudience: (id: number, audience: 'study' | 'apolos') => void
   markRead: (id: number) => Promise<void>
+  archive: (id: number) => Promise<void>
+  unarchive: (id: number) => Promise<void>
   notifyTyping: (id: number) => void
   listenForUpdates: (userId: number) => void
   stopListeningForUpdates: () => void
@@ -111,6 +113,7 @@ function subscribeToConversation(id: number, set: (fn: (s: ChatState) => Partial
           const isFromSelf = authId !== undefined && message.user_id === authId
           return {
             ...c,
+            archived_at:    null,
             last_message_at: message.created_at,
             unread_count:    isSelected || isFromSelf ? c.unread_count : c.unread_count + 1,
             last_message: {
@@ -277,6 +280,7 @@ export const useChatStore = create<ChatState>((set, get) => ({
         c.id === id
           ? {
               ...c,
+              archived_at:    null,
               last_message_at: message.created_at,
               unread_count:    0,
               last_read_at:    message.created_at,
@@ -329,6 +333,7 @@ export const useChatStore = create<ChatState>((set, get) => ({
           c.id === id
             ? {
                 ...c,
+                archived_at: null,
                 last_message_at: message.created_at,
                 last_message: {
                   id:         message.id,
@@ -375,6 +380,29 @@ export const useChatStore = create<ChatState>((set, get) => ({
     } catch {
       // ignore
     }
+  },
+
+  archive: async (id) => {
+    const { archived_at } = await chatApi.archive(id)
+    set((s) => ({
+      conversations: s.conversations.map((conversation) =>
+        conversation.id === id ? { ...conversation, archived_at } : conversation,
+      ),
+      selectedId: s.selectedId === id ? null : s.selectedId,
+      floatingIds: s.floatingIds.filter((floatingId) => floatingId !== id),
+      floatingMinimized: Object.fromEntries(
+        Object.entries(s.floatingMinimized).filter(([floatingId]) => Number(floatingId) !== id),
+      ),
+    }))
+  },
+
+  unarchive: async (id) => {
+    await chatApi.unarchive(id)
+    set((s) => ({
+      conversations: s.conversations.map((conversation) =>
+        conversation.id === id ? { ...conversation, archived_at: null } : conversation,
+      ),
+    }))
   },
 
   notifyTyping: (id) => {
