@@ -40,6 +40,7 @@ import { pointsBounds, strokeHit, type StrokeData, type StrokeKind } from '@/lib
 import { StudyDocContext } from '@/lib/study/StudyDocContext';
 import { hasVerseDrag, readVerseDrag, endVerseDrag } from '@/lib/study/verseDrag';
 import { studyNodeTypes } from './nodes';
+import type { FileNodeData } from './nodes/FileNode';
 import { studyEdgeTypes } from './edges';
 import { RemoteCursors } from './cursor/RemoteCursors';
 import { DrawingLayer, type DrawSettings } from './DrawingLayer';
@@ -793,27 +794,38 @@ function StudyCanvasInner({
     });
   }, [getVisibleCenterFlow, isGuest]);
 
-  const addFileNode = useCallback((data: { fileId: string; name: string; mimeType: string; size: number; contentUrl: string }) => {
+  const addFileNodes = useCallback((items: FileNodeData[]) => {
     if (isGuest) return;
     const d = docRef.current;
-    if (!d) return;
+    if (!d || items.length === 0) return;
 
-    const isPdf = data.mimeType === 'application/pdf';
-    const isImage = data.mimeType.startsWith('image/');
-    const width = isPdf ? 480 : isImage ? 420 : 320;
-    const height = isPdf ? 560 : isImage ? 300 : 140;
     const center = getVisibleCenterFlow();
-    const position = findFreeSpot(
-      { x: center.x - width / 2, y: center.y - height / 2, width, height },
-      obstaclesFrom(displayedNodesRef.current),
-    );
-    const id = `file-${data.fileId}-${Date.now()}`;
+    const occupied = obstaclesFrom(displayedNodesRef.current);
+    const placements = items.map((data, index) => {
+      const isLink = data.kind === 'link';
+      const isPdf = data.mimeType === 'application/pdf';
+      const isImage = data.mimeType.startsWith('image/');
+      const width = isLink ? 560 : isPdf ? 480 : isImage ? 420 : 320;
+      const height = isLink ? 400 : isPdf ? 560 : isImage ? 300 : 140;
+      const position = findFreeSpot(
+        { x: center.x - width / 2, y: center.y - height / 2, width, height },
+        occupied,
+      );
+      occupied.push({ ...position, width, height });
+
+      return { id: `file-${data.fileId}-${Date.now()}-${index}`, data, position, width, height };
+    });
 
     d.transact(() => {
-      writeNodeToMap(getNodesMap(d), { id, type: 'file', position, width, height, data });
+      const nodesMap = getNodesMap(d);
+      placements.forEach(({ id, data, position, width, height }) => {
+        writeNodeToMap(nodesMap, { id, type: 'file', position, width, height, data });
+      });
     });
     undoManagerRef.current?.stopCapturing();
   }, [getVisibleCenterFlow, isGuest]);
+
+  const addFileNode = useCallback((data: FileNodeData) => addFileNodes([data]), [addFileNodes]);
 
   // Insert a sequence of verses as individual verse nodes stacked vertically
   // and connected bottom→top, so multi-verse selections become a chain rather
@@ -1394,10 +1406,10 @@ function StudyCanvasInner({
   }, [isGuest, getVisibleCenterFlow]);
 
 useEffect(() => {
-    (window as any).__studyCanvasActions = { addStickyNote, addVerseNode, addPassageNode, addFileNode, addVerseChain, addCrossRefNode, addAiNoteNode, setVerseNodeVersion, undo, redo, resizeNode, deleteNodes, duplicateNode, zoomIn, zoomOut, fitView, toggleLock, getCanvasContext, applyAiMutations };
+    (window as any).__studyCanvasActions = { addStickyNote, addVerseNode, addPassageNode, addFileNode, addFileNodes, addVerseChain, addCrossRefNode, addAiNoteNode, setVerseNodeVersion, undo, redo, resizeNode, deleteNodes, duplicateNode, zoomIn, zoomOut, fitView, toggleLock, getCanvasContext, applyAiMutations };
     (window as any).__studyCanvasState = { isLocked: !isInteractive };
     return () => { delete (window as any).__studyCanvasActions; delete (window as any).__studyCanvasState; };
-  }, [addStickyNote, addVerseNode, addPassageNode, addFileNode, addVerseChain, addCrossRefNode, addAiNoteNode, setVerseNodeVersion, undo, redo, resizeNode, deleteNodes, duplicateNode, zoomIn, zoomOut, fitView, toggleLock, getCanvasContext, applyAiMutations, isInteractive]);
+  }, [addStickyNote, addVerseNode, addPassageNode, addFileNode, addFileNodes, addVerseChain, addCrossRefNode, addAiNoteNode, setVerseNodeVersion, undo, redo, resizeNode, deleteNodes, duplicateNode, zoomIn, zoomOut, fitView, toggleLock, getCanvasContext, applyAiMutations, isInteractive]);
 
   // --- Cursor tracking ---
   const handleCanvasPointerMove = useCallback(

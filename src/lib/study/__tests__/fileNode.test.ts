@@ -55,4 +55,31 @@ describe('board file nodes', () => {
     expect(exported).toContain('application/pdf · 4096 bytes');
     expect(exported).toContain('https://apolos.io/signed-file');
   });
+
+  it('persists sandboxed web-page nodes as the same collaborative file type', () => {
+    const doc = new Y.Doc();
+    writeNodeToMap(getNodesMap(doc), {
+      id: 'link-node-1',
+      type: 'file',
+      position: { x: 40, y: 60 },
+      width: 560,
+      height: 400,
+      data: {
+        kind: 'link',
+        fileId: 'link-uuid',
+        name: 'example.com',
+        mimeType: 'text/html',
+        size: 0,
+        contentUrl: 'https://example.com/',
+      },
+    });
+
+    const stored = getNodesMap(doc).get('link-node-1');
+    expect(nodeFromYMap('link-node-1', stored!)).toMatchObject({
+      type: 'file',
+      width: 560,
+      height: 400,
+      data: { kind: 'link', contentUrl: 'https://example.com/' },
+    });
+  });
 });
