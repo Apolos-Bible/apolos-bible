@@ -2,7 +2,7 @@
 
 A desktop Bible study app built for focus, depth, and collaboration.
 
-> **Landing:** [apolos.io](https://apolos.io) · **Privacy:** [apolos.io/privacy](https://apolos.io/privacy) · **Terms:** [apolos.io/terms](https://apolos.io/terms) · **GitHub:** [Tulia-Study/tulia-bible](https://github.com/Tulia-Study/tulia-bible)
+> **Landing:** [apolos.io](https://apolos.io) · **Privacy:** [apolos.io/privacy](https://apolos.io/privacy) · **Terms:** [apolos.io/terms](https://apolos.io/terms) · **GitHub:** [Apolos-Bible/apolos-bible](https://github.com/Apolos-Bible/apolos-bible)
 
 <img width="1680" height="960" alt="Reading view with friends panel open — Genesis 1 with accepted friends visible in the sidebar" src="https://github.com/user-attachments/assets/7c0a9ca9-33ea-47bc-9cb8-3067a0514508" />
 <img width="3360" height="1918" alt="Command palette — search and jump to any book, chapter, or verse in a keystroke" src="https://github.com/user-attachments/assets/90be971d-51f7-449a-bb77-8ede0ae4b918" />
@@ -35,6 +35,23 @@ Named after **Apolos** (Acts 18:24-28) — a Jew from Alexandria, *"poderoso en 
 **Study with friends** — Add friends, see who's reading the same chapter as you in real time, and get notified when they highlight or annotate something.
 
 **Your library** — Bookmark verses to revisit later. All your notes and highlights sync to your account.
+
+---
+
+## YouVersion + Gloo New Frontiers build
+
+Apolos is being submitted as a collaborative Scripture creator studio:
+licensed YouVersion passages are native objects inside a shared visual canvas,
+and Gloo AI Studio powers the values-aligned, canvas-aware collaborator.
+
+- [Submission checklist and deliverables](docs/hackathon-2026/README.md)
+- [Technical architecture](docs/hackathon-2026/ARCHITECTURE.md)
+- [Reproducible Kaggle notebook](docs/hackathon-2026/notebook/apolos-platform-demo.ipynb)
+- [YouVersion Platform developer documentation](https://developers.youversion.com/)
+- [Gloo AI Studio developer documentation](https://docs.gloo.com/getting-started/quickstart-developers)
+
+Provider credentials are held only by the Laravel backend; they are never
+included in the React/Tauri client.
 
 ---
 
