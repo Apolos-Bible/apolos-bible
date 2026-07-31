@@ -40,6 +40,12 @@ export const studyApi = {
   shareLink: (id: string) =>
     api.post<{ share_token: string; share_url: string }>(`/api/studies/${id}/share`),
 
+  checkExternalLink: (id: string, url: string) =>
+    api.post<{ embeddable: boolean; final_url: string; reason: string | null }>(
+      `/api/studies/${id}/links/check`,
+      { url },
+    ),
+
   getSharedSession: (shareToken: string) =>
     api.get<{ session: StudySession; guest_ws_token: string }>(`/api/studies/share/${shareToken}`),
 

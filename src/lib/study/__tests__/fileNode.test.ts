@@ -82,4 +82,28 @@ describe('board file nodes', () => {
       data: { kind: 'link', contentUrl: 'https://example.com/' },
     });
   });
+
+  it('persists external-only links without turning them back into iframes', () => {
+    const doc = new Y.Doc();
+    writeNodeToMap(getNodesMap(doc), {
+      id: 'external-link-1',
+      type: 'file',
+      position: { x: 0, y: 0 },
+      data: {
+        kind: 'link',
+        linkMode: 'external',
+        fileId: 'link-uuid',
+        name: 'blocked.example',
+        mimeType: 'text/html',
+        size: 0,
+        contentUrl: 'https://blocked.example/',
+      },
+    });
+
+    const stored = getNodesMap(doc).get('external-link-1');
+    expect(nodeFromYMap('external-link-1', stored!)).toMatchObject({
+      type: 'file',
+      data: { kind: 'link', linkMode: 'external' },
+    });
+  });
 });
