@@ -14,6 +14,7 @@ import { isAuthError } from '@/lib/auth'
 import { focusWhenReady, type TranslationKey } from '@/lib/keyboard'
 import type { HighlightColor } from '@/types'
 import { isMac } from '@/lib/platform'
+import { isRemoteVerseApiId, isYouVersionVersion } from '@/lib/youVersion'
 
 // ── Icons ──────────────────────────────────────────────────────────────────
 
@@ -101,6 +102,7 @@ export function useVerseActions() {
   const closeStudyPanel = useActiveVerseStore((s) => s.closeStudyPanel)
   const loadVersions = useActiveVerseStore((s) => s.loadVersions)
   const versions = useActiveVerseStore((s) => s.versions)
+  const versionId = useActiveVerseStore((s) => s.versionId)
   const verseStore = useVerseStoreApi()
 
   const highlights = useHighlightStore((s) => s.highlights)
@@ -122,6 +124,22 @@ export function useVerseActions() {
   const openAuthModal = useUIStore((s) => s.openAuthModal)
 
   const bookName = books.find((b) => b.slug === selectedBook)?.name ?? selectedBook
+  const currentVersion = versions.find((version) => version.id === versionId)
+  const remoteAttribution = isYouVersionVersion(currentVersion)
+    ? [
+        currentVersion?.abbreviation ? `(${currentVersion.abbreviation})` : '',
+        currentVersion?.copyright ?? '',
+      ].filter(Boolean).join('\n')
+    : ''
+
+  const requireLocalVerses = useCallback(
+    (list: Verse[]): boolean => {
+      if (!list.some((verse) => isRemoteVerseApiId(verse.apiId))) return true
+      addToast(t('youVersion.actionsUnavailable'), 'info')
+      return false
+    },
+    [addToast, t],
+  )
 
   /**
    * The verses a command acts on: the multi-selection, else the cursor verse,
@@ -178,28 +196,35 @@ export function useVerseActions() {
   const copyText = useCallback(
     (list: Verse[]) => {
       if (!list.length) return
-      navigator.clipboard.writeText(list.map((v) => v.text).join('\n\n'))
+      const text = list.map((v) => v.text).join('\n\n')
+      navigator.clipboard.writeText(
+        remoteAttribution ? `${text}\n\n${remoteAttribution}` : text,
+      )
       addToast(t('toast.copied'), 'success')
     },
-    [addToast, t],
+    [addToast, remoteAttribution, t],
   )
 
   const copyReference = useCallback(
     (list: Verse[]) => {
       if (!list.length) return
       const refs = list.map(referenceFor).join(', ')
-      const payload = list.length === 1 ? `${refs} — ${list[0].text}` : refs
+      const value = list.length === 1 ? `${refs} — ${list[0].text}` : refs
+      const payload = remoteAttribution ? `${value}\n\n${remoteAttribution}` : value
       navigator.clipboard.writeText(payload)
       addToast(t('verse.copiedRef', { ref: refs }), 'success')
     },
-    [addToast, t, referenceFor],
+    [addToast, remoteAttribution, t, referenceFor],
   )
 
   const share = useCallback(
     (list: Verse[]) => {
       if (!list.length) return
       const refs = list.map(referenceFor).join(', ')
-      const shareText = list.map((v) => `${referenceFor(v)} — ${v.text}`).join('\n\n')
+      const verseText = list.map((v) => `${referenceFor(v)} — ${v.text}`).join('\n\n')
+      const shareText = remoteAttribution
+        ? `${verseText}\n\n${remoteAttribution}`
+        : verseText
       const shareUrl = window.location.href
       if (navigator.share) {
         navigator.share({ title: refs, text: shareText, url: shareUrl })
@@ -208,12 +233,12 @@ export function useVerseActions() {
         addToast(t('toast.copied'), 'success')
       }
     },
-    [addToast, t, referenceFor],
+    [addToast, remoteAttribution, t, referenceFor],
   )
 
   const highlight = useCallback(
     (list: Verse[], color: HighlightColor) => {
-      if (!list.length || requireLogin()) return
+      if (!list.length || !requireLocalVerses(list) || requireLogin()) return
       Promise.all(
         list.map(async (verse) => {
           const existing = highlights[verse.apiId] ?? []
@@ -222,13 +247,13 @@ export function useVerseActions() {
         }),
       ).catch((error) => reportFailure(error, 'toast.highlightFailed'))
     },
-    [requireLogin, highlights, removeHighlight, addHighlight, reportFailure],
+    [requireLocalVerses, requireLogin, highlights, removeHighlight, addHighlight, reportFailure],
   )
 
   /** `h` — clears when everything is already highlighted, else paints yellow. */
   const toggleHighlight = useCallback(
     (list: Verse[]) => {
-      if (!list.length || requireLogin()) return
+      if (!list.length || !requireLocalVerses(list) || requireLogin()) return
       const allHighlighted = list.every((verse) => (highlights[verse.apiId] ?? []).length > 0)
 
       if (!allHighlighted) {
@@ -242,33 +267,33 @@ export function useVerseActions() {
         ),
       ).catch((error) => reportFailure(error, 'toast.highlightFailed'))
     },
-    [requireLogin, highlights, highlight, removeHighlight, reportFailure],
+    [requireLocalVerses, requireLogin, highlights, highlight, removeHighlight, reportFailure],
   )
 
   const addNote = useCallback(
     (list: Verse[]) => {
-      if (!list.length || requireLogin()) return
+      if (!list.length || !requireLocalVerses(list) || requireLogin()) return
       openStudyPanel(list[0].id)
       // The panel mounts a frame or two later (and in a different subtree on
       // mobile), so aim at the composer rather than assuming it's there.
       focusWhenReady(NOTE_INPUT_SELECTOR)
     },
-    [requireLogin, openStudyPanel],
+    [requireLocalVerses, requireLogin, openStudyPanel],
   )
 
   const toggleFavorite = useCallback(
     (list: Verse[]) => {
-      if (!list.length || requireLogin()) return
+      if (!list.length || !requireLocalVerses(list) || requireLogin()) return
       Promise.all(list.map((verse) => toggleBookmark(verse.apiId))).catch((error) =>
         reportFailure(error, 'toast.bookmarkFailed'),
       )
     },
-    [requireLogin, toggleBookmark, reportFailure],
+    [requireLocalVerses, requireLogin, toggleBookmark, reportFailure],
   )
 
   const openCrossRefs = useCallback(
     (list: Verse[]) => {
-      if (!list.length) return
+      if (!list.length || !requireLocalVerses(list)) return
       closeCompare()
       closeStudyPanel()
       void openCrossRefPanel(
@@ -276,11 +301,12 @@ export function useVerseActions() {
         verseStore.getState().versionId,
       )
     },
-    [closeCompare, closeStudyPanel, openCrossRefPanel, referenceFor],
+    [requireLocalVerses, closeCompare, closeStudyPanel, openCrossRefPanel, referenceFor],
   )
 
   const openSimilar = useCallback(
     (list: Verse[]) => {
+      if (!requireLocalVerses(list)) return
       if (list.length !== 1) {
         addToast(t('toolbar.similarRequiresOne'), 'info')
         return
@@ -293,7 +319,7 @@ export function useVerseActions() {
         verseStore.getState().versionId,
       )
     },
-    [addToast, closeCompare, closeStudyPanel, openSimilarPanel, referenceFor, t],
+    [requireLocalVerses, addToast, closeCompare, closeStudyPanel, openSimilarPanel, referenceFor, t],
   )
 
   const compareVersions = useCallback(
@@ -336,6 +362,7 @@ export function useVerseActions() {
   const buildMenu = useCallback(
     (list: Verse[]): MenuItem[] => {
       if (!list.length) return []
+      const hasRemoteVerses = list.some((verse) => isRemoteVerseApiId(verse.apiId))
       const allBookmarked = list.every((verse) => bookmarkedIds.has(verse.apiId))
       const hasCrossRefs = list.some((verse) => verseIdsWithRefs.has(verse.apiId))
 
@@ -343,6 +370,11 @@ export function useVerseActions() {
         { type: 'action', label: t('study.copyVerseText'), icon: <IconCopy />, shortcut: platformShortcut('C'), onClick: () => copyText(list) },
         { type: 'action', label: t('verse.copyReference'), icon: <IconCopy />, shortcut: platformShortcut('C', true), onClick: () => copyReference(list) },
         { type: 'action', label: t('verse.shareVerse'), icon: <IconShare />, shortcut: platformShortcut('S', true), onClick: () => share(list) },
+      ]
+
+      if (hasRemoteVerses) return items
+
+      items.push(
         { type: 'separator' },
         { type: 'label', text: t('verse.highlightVerse') },
         ...HIGHLIGHT_SWATCHES.map((swatch, i) => ({
@@ -354,7 +386,7 @@ export function useVerseActions() {
         })),
         { type: 'separator' },
         { type: 'action', label: t('verse.addNote'), icon: <IconNote />, shortcut: 'N', onClick: () => addNote(list) },
-      ]
+      )
 
       if (hasCrossRefs) {
         items.push({ type: 'separator' })
