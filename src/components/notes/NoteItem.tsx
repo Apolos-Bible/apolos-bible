@@ -9,6 +9,7 @@ import { cn } from '@/lib/cn'
 import { NOTE_TYPE_LIST, getNoteTypeDef } from '@/lib/noteTypes'
 import type { NoteType } from '@/lib/noteTypes'
 import NoteEditor from '@/components/notes/NoteEditor'
+import { NoteContent } from '@/components/notes/NoteContent'
 import { UserAvatar } from '@/components/auth/UserAvatar'
 
 interface NoteItemProps {
@@ -143,6 +144,7 @@ export default function NoteItem({ note, verseApiId, depth = 0, replyParentId, s
       setIsEditing(false)
     } catch (error) {
       addToast(error instanceof Error ? error.message : t('notes.updateFailed'), 'error')
+      throw error
     }
   }
 
@@ -174,7 +176,7 @@ export default function NoteItem({ note, verseApiId, depth = 0, replyParentId, s
   return (
     <div className={cn('note-enter', depth > 0 && 'pl-4 border-l border-border-subtle')}>
       <div className={cn(
-        'group relative flex gap-2.5 py-1.5 px-2 -mx-2 rounded-md border-l-2 transition-colors duration-150',
+        'note-surface group relative flex gap-2.5 py-1.5 px-2 -mx-2 rounded-md border-l-2 transition-colors duration-150',
         typeDef.bgClass,
         typeDef.borderClass,
         settingsOpen && 'bg-bg-tertiary/50',
@@ -238,12 +240,10 @@ export default function NoteItem({ note, verseApiId, depth = 0, replyParentId, s
                 </p>
               )}
 
-              <p className={cn(
+              <NoteContent body={note.body} className={cn(
                 'text-sm text-text-secondary leading-relaxed whitespace-pre-wrap break-words mt-0.5',
                 typeDef.italic && 'italic',
-              )}>
-                {note.body}
-              </p>
+              )} />
 
               <div className="flex items-center gap-3 mt-1">
                 <button
