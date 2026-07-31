@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next'
 import {
   BookOpen,
   GraduationCap,
+  Gamepad2,
   MessagesSquare,
   Search,
   UserRound,
@@ -142,6 +143,15 @@ export function MobileBottomNav() {
     navigate(paths.profile())
   }
 
+  const goToGames = () => {
+    clearOthers()
+    if (!user) {
+      openAuthModal()
+      return
+    }
+    navigate(paths.games())
+  }
+
   const goToBible = () => {
     clearOthers()
     if (onPage) navigate(paths.root())
@@ -183,6 +193,13 @@ export function MobileBottomNav() {
         badge={pendingInvitations}
         onClick={goToPanel('my-studies')}
         dataTour="my-studies"
+      />
+      <NavButton
+        icon={Gamepad2}
+        label={t('nav.games')}
+        active={pathname.startsWith('/juegos')}
+        onClick={goToGames}
+        dataTour="games"
       />
       <BibleButton
         label={t('nav.bible')}

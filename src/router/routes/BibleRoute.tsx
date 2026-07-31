@@ -1,5 +1,5 @@
 import { useEffect, useRef } from 'react'
-import { useNavigate, useParams } from 'react-router-dom'
+import { useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import type { AppLocale } from '@/lib/defaultAppLocale'
 import { PanelLayout } from '@/components/layout/PanelLayout'
 import { activeBibleContextPanel } from '@/components/layout/bibleContextPanel'
@@ -16,10 +16,12 @@ import { useUIStore } from '@/lib/store/useUIStore'
 import { useActiveBiblePaneStore } from '@/lib/store/useBiblePaneStore'
 import { useActiveVerseStore, useVerseStoreApi } from '@/lib/store/useVerseStore'
 import { isAppLocale, parseChapter, parseVerse, paths, verseIdToNumber } from '@/router/paths'
+import { resolveReferenceBook } from '@/lib/bibleRefs'
 import { NotFound } from './NotFound'
 
 export function BibleRoute() {
   const params = useParams<{ lang?: string; book: string; chapter?: string; verse?: string }>()
+  const [searchParams] = useSearchParams()
 
   if (params.lang !== undefined && !isAppLocale(params.lang)) {
     return <NotFound />
@@ -31,6 +33,7 @@ export function BibleRoute() {
   const lang = isAppLocale(params.lang) ? params.lang : null
   const chapter = parseChapter(params.chapter) ?? 1
   const verse = parseVerse(params.verse)
+  const endVerse = parseVerse(searchParams.get('endVerse') ?? undefined)
 
   return (
     <BibleView
@@ -38,6 +41,7 @@ export function BibleRoute() {
       book={params.book}
       chapter={chapter}
       verse={verse ?? null}
+      endVerse={endVerse && verse && endVerse > verse ? endVerse : null}
     />
   )
 }
@@ -47,9 +51,10 @@ type BibleViewProps = {
   book: string
   chapter: number
   verse: number | null
+  endVerse: number | null
 }
 
-function BibleView({ lang, book, chapter, verse }: BibleViewProps) {
+function BibleView({ lang, book, chapter, verse, endVerse }: BibleViewProps) {
   const navigate = useNavigate()
   const locale = useUIStore(s => s.locale)
   const setLocale = useUIStore(s => s.setLocale)
@@ -73,47 +78,55 @@ function BibleView({ lang, book, chapter, verse }: BibleViewProps) {
   // URL → store sync (initial mount + back/forward + programmatic param change)
   const lastSyncedKey = useRef<string>('')
   useEffect(() => {
-    const key = `${book}/${chapter}/${verse ?? ''}`
+    const key = `${book}/${chapter}/${verse ?? ''}/${endVerse ?? ''}`
     if (lastSyncedKey.current === key) return
     lastSyncedKey.current = key
 
     const state = verseStore.getState()
 
     if (state.books.length === 0) {
-      void state.loadBooks({ book, chapter, verse: verse ?? undefined })
+      void state.loadBooks({ book, chapter, verse: verse ?? undefined, endVerse: endVerse ?? undefined })
       return
     }
 
-    const matched = state.books.find(b => b.slug === book)
+    const matched = resolveReferenceBook(state.books, book)
     if (!matched) return
 
     const safeChapter = Math.min(Math.max(chapter, 1), matched.chapters)
-    const targetVerseId = verse ? `${book}-${safeChapter}-${verse}` : null
+    const targetVerseId = verse ? `${matched.slug}-${safeChapter}-${verse}` : null
 
-    const sameLocation = state.selectedBook === book && state.selectedChapter === safeChapter
+    const sameLocation = state.selectedBook === matched.slug && state.selectedChapter === safeChapter
+    const selectedEnd = verseIdToNumber(state.selectedVerseIds[state.selectedVerseIds.length - 1])
     const sameVerse = (state.selectedVerseId ?? null) === targetVerseId
+      && (endVerse ? selectedEnd === endVerse : state.selectedVerseIds.length <= 1)
 
     if (sameLocation && sameVerse) return
 
-    if (verse) {
-      void state.openVerse(book, safeChapter, verse)
+    if (verse && endVerse) {
+      void state.openVerseRange(matched.slug, safeChapter, verse, endVerse)
+    } else if (verse) {
+      void state.openVerse(matched.slug, safeChapter, verse)
     } else if (!sameLocation) {
-      void state.loadChapter(book, safeChapter)
+      void state.loadChapter(matched.slug, safeChapter)
     }
-  }, [book, chapter, verse, verseStore])
+  }, [book, chapter, verse, endVerse, verseStore])
 
   // Store → URL sync (when in-app actions mutate the store, mirror to URL)
   useEffect(() => {
     const writeUrl = () => {
       const state = verseStore.getState()
-      const { selectedBook, selectedChapter, selectedVerseId } = state
+      const { selectedBook, selectedChapter, selectedVerseId, selectedVerseIds } = state
       if (!selectedBook) return
       const verseNum = verseIdToNumber(selectedVerseId)
+      const endVerseNum = selectedVerseIds.length > 1
+        ? verseIdToNumber(selectedVerseIds[selectedVerseIds.length - 1])
+        : null
       const target = paths.bible({
         lang: useUIStore.getState().locale,
         book: selectedBook,
         chapter: selectedChapter,
         verse: verseNum ?? null,
+        endVerse: endVerseNum,
       })
       if (window.location.pathname === target) return
       lastSyncedKey.current = `${selectedBook}/${selectedChapter}/${verseNum ?? ''}`
@@ -124,7 +137,8 @@ function BibleView({ lang, book, chapter, verse }: BibleViewProps) {
       if (
         state.selectedBook === prev.selectedBook &&
         state.selectedChapter === prev.selectedChapter &&
-        state.selectedVerseId === prev.selectedVerseId
+        state.selectedVerseId === prev.selectedVerseId &&
+        state.selectedVerseIds === prev.selectedVerseIds
       ) return
       writeUrl()
     })
@@ -135,11 +149,15 @@ function BibleView({ lang, book, chapter, verse }: BibleViewProps) {
     const state = verseStore.getState()
     if (!state.selectedBook) return
     const verseNum = verseIdToNumber(state.selectedVerseId)
+    const endVerseNum = state.selectedVerseIds.length > 1
+      ? verseIdToNumber(state.selectedVerseIds[state.selectedVerseIds.length - 1])
+      : null
     const target = paths.bible({
       lang: locale,
       book: state.selectedBook,
       chapter: state.selectedChapter,
       verse: verseNum ?? null,
+      endVerse: endVerseNum,
     })
     if (window.location.pathname === target) return
     navigate(target, { replace: true })

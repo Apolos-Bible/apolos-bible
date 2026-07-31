@@ -753,3 +753,132 @@ body {
     justify-self: start;
   }
 }
+
+/* Bible game feel -------------------------------------------------------- */
+@keyframes game-round-enter {
+  from { opacity: 0; transform: translateY(14px) scale(0.985); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+@keyframes game-soft-pop {
+  0% { opacity: 0; transform: translateY(8px) scale(0.96); }
+  65% { transform: translateY(-2px) scale(1.015); }
+  100% { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+@keyframes game-score-pop {
+  0% { opacity: 0; transform: scale(0.5) rotate(-8deg); }
+  65% { transform: scale(1.2) rotate(3deg); }
+  100% { opacity: 1; transform: scale(1) rotate(0); }
+}
+
+@keyframes game-answer-correct {
+  0%, 100% { transform: scale(1); }
+  45% { transform: scale(1.025); box-shadow: 0 0 32px rgb(52 211 153 / 0.18); }
+}
+
+@keyframes game-answer-wrong {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-5px); }
+  50% { transform: translateX(5px); }
+  75% { transform: translateX(-2px); }
+}
+
+@keyframes game-float {
+  0%, 100% { transform: translateY(0) rotate(-2deg); }
+  50% { transform: translateY(-7px) rotate(2deg); }
+}
+
+@keyframes game-timer-urgent {
+  0%, 100% { box-shadow: 0 0 0 0 rgb(248 113 113 / 0); }
+  50% { box-shadow: 0 0 0 6px rgb(248 113 113 / 0.12); }
+}
+
+@keyframes game-confetti-fall {
+  0% { opacity: 0; transform: translate3d(0, -12px, 0) rotate(0deg); }
+  10% { opacity: 1; }
+  100% { opacity: 0; transform: translate3d(28px, 520px, 0) rotate(760deg); }
+}
+
+@keyframes game-shine {
+  from { background-position: 200% 50%; }
+  to { background-position: -100% 50%; }
+}
+
+@keyframes game-podium-enter {
+  from { opacity: 0; transform: translateY(22px) scale(0.94); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+@keyframes game-memory-match {
+  0%, 100% { transform: scale(1); }
+  45% { transform: scale(1.07) rotate(1deg); filter: brightness(1.22); }
+}
+
+@keyframes game-map-pin {
+  from { opacity: 0; transform: translate(-50%, -35%) scale(0.65); }
+  to { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+}
+
+.game-round-enter { animation: game-round-enter 420ms cubic-bezier(.2,.8,.2,1) both; }
+.game-soft-pop, .game-reveal-win, .game-reveal-lose { animation: game-soft-pop 430ms cubic-bezier(.2,.9,.2,1.1) both; }
+.game-score-pop, .game-badge-pop { animation: game-score-pop 560ms cubic-bezier(.16,1,.3,1) 120ms both; }
+.game-answer-correct { animation: game-answer-correct 650ms ease-out both; }
+.game-answer-wrong { animation: game-answer-wrong 360ms ease-out both; }
+.game-float { animation: game-float 3.4s ease-in-out infinite; }
+.game-timer-urgent { animation: game-timer-urgent 900ms ease-in-out infinite; }
+.game-results-enter { animation: game-round-enter 520ms cubic-bezier(.16,1,.3,1) both; }
+.game-podium-card { animation: game-podium-enter 520ms cubic-bezier(.16,1,.3,1) both; }
+.game-winner-crown { animation: game-float 2.8s ease-in-out infinite; }
+.game-progress-shine, .game-cta-shine {
+  background-size: 220% 100%;
+  animation: game-shine 3.8s linear infinite;
+}
+.game-clue-enter { animation: game-soft-pop 360ms cubic-bezier(.2,.8,.2,1) both; }
+.game-memory-card { perspective: 900px; }
+.game-memory-card-inner {
+  transform-style: preserve-3d;
+  transition: transform 480ms cubic-bezier(.2,.75,.2,1);
+}
+.game-memory-card.is-flipped .game-memory-card-inner { transform: rotateY(180deg); }
+.game-memory-card-face {
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+}
+.game-memory-card-back { transform: rotateY(180deg); }
+.game-memory-match { animation: game-memory-match 520ms cubic-bezier(.2,.8,.2,1); }
+.game-map-pin { animation: game-map-pin 420ms cubic-bezier(.2,.8,.2,1) both; }
+.game-confetti-piece {
+  position: absolute;
+  top: -12px;
+  width: 8px;
+  height: 13px;
+  border-radius: 2px;
+  animation-name: game-confetti-fall;
+  animation-timing-function: cubic-bezier(.2,.7,.2,1);
+  animation-fill-mode: both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .game-round-enter,
+  .game-soft-pop,
+  .game-reveal-win,
+  .game-reveal-lose,
+  .game-score-pop,
+  .game-badge-pop,
+  .game-answer-correct,
+  .game-answer-wrong,
+  .game-float,
+  .game-timer-urgent,
+  .game-results-enter,
+  .game-podium-card,
+  .game-winner-crown,
+  .game-progress-shine,
+  .game-cta-shine,
+  .game-clue-enter,
+  .game-memory-match,
+  .game-map-pin,
+  .game-confetti-piece { animation: none !important; }
+
+  .game-memory-card-inner { transition: none !important; }
+}

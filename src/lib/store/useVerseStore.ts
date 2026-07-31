@@ -11,6 +11,7 @@ import { saveUserSettingsSilently } from '@/lib/userSettingsApi'
 import { prefetchVersion, shouldAutoPrefetch } from '@/lib/prefetchBible'
 import { pingReadingActivity } from '@/lib/readingActivity'
 import { fromYouVersionClientId } from '@/lib/youVersion'
+import { resolveReferenceBook } from '@/lib/bibleRefs'
 
 const LAST_READING_KEY = 'verbum_last_reading'
 
@@ -59,7 +60,7 @@ export interface VerseState {
   loadVersions: () => Promise<void>
   setVersion: (id: number, options?: { sync?: boolean }) => Promise<void>
   setDefaultVersionForLocale: (locale: string) => Promise<void>
-  loadBooks: (initialRoute?: { book: string; chapter: number; verse?: number }) => Promise<void>
+  loadBooks: (initialRoute?: { book: string; chapter: number; verse?: number; endVerse?: number }) => Promise<void>
   ensureBooks: () => Promise<void>
   selectBook: (slug: string) => void
   selectChapter: (chapter: number) => void
@@ -74,6 +75,7 @@ export interface VerseState {
   openStudyPanel: (id: string) => void
   closeStudyPanel: () => void
   openVerse: (slug: string, chapter: number, verse: number) => Promise<void>
+  openVerseRange: (slug: string, chapter: number, startVerse: number, endVerse: number) => Promise<void>
   navigateVerse: (dir: 'next' | 'prev') => void
   navigateChapter: (dir: 'next' | 'prev') => void
   loadChapter: (slug: string, chapter: number) => Promise<void>
@@ -211,11 +213,13 @@ export function createVerseStore() {
       if (books.length === 0) return
 
       if (initialRoute) {
-        const matchedBook = books.find(b => b.slug === initialRoute.book)
+        const matchedBook = resolveReferenceBook(books, initialRoute.book)
         if (matchedBook) {
           const chapter = Math.min(Math.max(initialRoute.chapter, 1), matchedBook.chapters)
           set({ selectedBook: matchedBook.slug, selectedChapter: chapter })
-          if (initialRoute.verse) {
+          if (initialRoute.verse && initialRoute.endVerse && initialRoute.endVerse > initialRoute.verse) {
+            get().openVerseRange(matchedBook.slug, chapter, initialRoute.verse, initialRoute.endVerse)
+          } else if (initialRoute.verse) {
             get().openVerse(matchedBook.slug, chapter, initialRoute.verse)
           } else {
             get().loadChapter(matchedBook.slug, chapter)
@@ -450,6 +454,29 @@ export function createVerseStore() {
       book_slug: slug,
       chapter,
       verse,
+      version: versions.find(v => v.id === versionId)?.abbreviation ?? '',
+    })
+  },
+
+  openVerseRange: async (slug, chapter, startVerse, endVerse) => {
+    const first = Math.min(startVerse, endVerse)
+    const last = Math.max(startVerse, endVerse)
+    set({ selectedBook: slug, selectedChapter: chapter, selectedVerseId: null, selectedVerseIds: [], cursorVerseId: null, selectionAnchorId: null, studyVerseId: null })
+    await get().loadChapter(slug, chapter)
+    const range = get().verses.filter((item) => item.verse >= first && item.verse <= last)
+    const firstId = `${slug}-${chapter}-${first}`
+    set({
+      selectedVerseId: firstId,
+      selectedVerseIds: range.map((item) => item.id),
+      cursorVerseId: firstId,
+      selectionAnchorId: firstId,
+    })
+    const { verses, versionId, versions } = get()
+    pingReadingActivity({
+      book_name: verses[0]?.book ?? slug,
+      book_slug: slug,
+      chapter,
+      verse: first,
       version: versions.find(v => v.id === versionId)?.abbreviation ?? '',
     })
   },
