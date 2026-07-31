@@ -1,11 +1,30 @@
 import { api } from './api'
 import { db } from './db'
+import { getFrontendLocale } from './defaultAppLocale'
+import {
+  fromYouVersionClientId,
+  parseYouVersionChapterHtml,
+  remoteVerseApiId,
+  usfmForBookSlug,
+  youVersionBibleToApiVersion,
+  youVersionIndexToApiBooks,
+  type YouVersionCatalogResponse,
+  type YouVersionIndex,
+  type YouVersionPassage,
+} from './youVersion'
 
 export interface ApiVersion {
   id: number
   name: string
   abbreviation: string
   language: string
+  provider?: 'local' | 'youversion'
+  providerId?: number
+  copyright?: string
+  info?: string
+  promotionalContent?: string
+  publisherUrl?: string
+  deepLink?: string
 }
 
 export interface ApiBook {
@@ -14,6 +33,7 @@ export interface ApiBook {
   name: string
   slug: string
   chapters_count: number
+  usfm?: string
 }
 
 export interface ApiVerse {
@@ -27,6 +47,7 @@ export interface ApiChapterResponse {
   chapter: number
   chapter_id: number
   verses: ApiVerse[]
+  provider?: 'local' | 'youversion'
 }
 
 export interface ApiSearchResult {
@@ -86,27 +107,91 @@ const isArray = <T>(v: unknown): v is T[] => Array.isArray(v)
 const chapterKey = (versionId: number, slug: string, n: number) => `${versionId}:${slug}:${n}`
 
 export const bibleApi = {
-  versions: () => cacheFirst<ApiVersion[]>(
-    // The API only returns published versions. Use a new cache key whenever
-    // that publication contract changes so stale, formerly-visible versions
-    // cannot survive indefinitely in IndexedDB.
-    async () => (await db.versions.get('published:v1'))?.data,
-    () => api.get<ApiVersion[]>('/api/versions'),
-    (data) => db.versions.put({ key: 'published:v1', data }),
-    isArray,
-  ),
-  books: (versionId: number) => cacheFirst<ApiBook[]>(
-    async () => (await db.books.get(versionId))?.data,
-    () => api.get<ApiBook[]>(`/api/versions/${versionId}/books`),
-    (data) => db.books.put({ versionId, data }),
-    isArray,
-  ),
-  chapter: (versionId: number, slug: string, n: number) => cacheFirst(
-    async () => (await db.chapters.get(chapterKey(versionId, slug, n)))?.data,
-    () => api.get<ApiChapterResponse>(`/api/versions/${versionId}/books/${slug}/chapters/${n}`),
-    (data) => db.chapters.put({ key: chapterKey(versionId, slug, n), versionId, slug, chapter: n, data }),
-  ),
-  search: (versionId: number, q: string) => api.get<ApiSearchResult[]>(`/api/versions/${versionId}/search?q=${encodeURIComponent(q)}`),
+  versions: async () => {
+    const language = getFrontendLocale().split('-')[0]
+    const local = await cacheFirst<ApiVersion[]>(
+      // The API only returns published versions. Use a new cache key whenever
+      // that publication contract changes so stale, formerly-visible versions
+      // cannot survive indefinitely in IndexedDB.
+      async () => (await db.versions.get('published:v1'))?.data,
+      () => api.get<ApiVersion[]>('/api/versions'),
+      (data) => db.versions.put({ key: 'published:v1', data }),
+      isArray,
+    )
+
+    const remoteKey = `youversion:${language}:v1`
+    const remote = await api.get<YouVersionCatalogResponse>(
+      `/api/youversion/versions?language=${encodeURIComponent(language)}`,
+    )
+      .then((response) => response.data.map(youVersionBibleToApiVersion))
+      .then((data) => {
+        void db.versions.put({ key: remoteKey, data }).catch(() => {})
+        return data
+      })
+      .catch(async () => (await db.versions.get(remoteKey).catch(() => undefined))?.data ?? [])
+
+    return [
+      ...local.map((version) => ({ ...version, provider: version.provider ?? ('local' as const) })),
+      ...remote,
+    ]
+  },
+  books: (versionId: number) => {
+    const youVersionId = fromYouVersionClientId(versionId)
+    if (youVersionId !== null) {
+      return cacheFirst<ApiBook[]>(
+        async () => (await db.books.get(versionId))?.data,
+        async () => {
+          const index = await api.get<YouVersionIndex>(
+            `/api/youversion/bibles/${youVersionId}/index`,
+          )
+          return youVersionIndexToApiBooks(index)
+        },
+        (data) => db.books.put({ versionId, data }),
+        isArray,
+      )
+    }
+
+    return cacheFirst<ApiBook[]>(
+      async () => (await db.books.get(versionId))?.data,
+      () => api.get<ApiBook[]>(`/api/versions/${versionId}/books`),
+      (data) => db.books.put({ versionId, data }),
+      isArray,
+    )
+  },
+  chapter: async (versionId: number, slug: string, n: number) => {
+    const youVersionId = fromYouVersionClientId(versionId)
+    if (youVersionId !== null) {
+      const book = usfmForBookSlug(slug)
+      if (!book) throw Object.assign(new Error('Book not available in YouVersion'), { status: 404 })
+
+      const passage = await api.get<YouVersionPassage>(
+        `/api/youversion/bibles/${youVersionId}/passages/${book.usfm}.${n}?format=html&include_headings=0&include_notes=0`,
+      )
+      const verses = parseYouVersionChapterHtml(passage.content)
+      if (verses.length === 0) throw new Error('YouVersion returned a chapter with no verse markers')
+
+      return {
+        book: { number: book.number, name: passage.reference.replace(/\s+\d+.*$/, ''), slug },
+        chapter: n,
+        chapter_id: 0,
+        provider: 'youversion' as const,
+        verses: verses.map((verse) => ({
+          id: remoteVerseApiId(youVersionId, book.number, n, verse.number),
+          number: verse.number,
+          text: verse.text,
+        })),
+      }
+    }
+
+    return cacheFirst(
+      async () => (await db.chapters.get(chapterKey(versionId, slug, n)))?.data,
+      () => api.get<ApiChapterResponse>(`/api/versions/${versionId}/books/${slug}/chapters/${n}`),
+      (data) => db.chapters.put({ key: chapterKey(versionId, slug, n), versionId, slug, chapter: n, data }),
+    )
+  },
+  search: (versionId: number, q: string) => fromYouVersionClientId(versionId) !== null
+    ? Promise.resolve([])
+    : api.get<ApiSearchResult[]>(`/api/versions/${versionId}/search?q=${encodeURIComponent(q)}`),
   crossRefs: (verseId: number, versionId?: number) => {
     // Cache only the canonical (no version override) result; cross-version
     // mappings are cheap to recompute and we want fresh data when the user
@@ -119,6 +204,7 @@ export const bibleApi = {
         isArray,
       )
     }
+    if (fromYouVersionClientId(versionId) !== null) return Promise.resolve([])
     return api.get<ApiCrossRef[]>(`/api/verses/${verseId}/cross-references?version_id=${versionId}`)
   },
   verseInVersion: (verseId: number, versionId: number) =>

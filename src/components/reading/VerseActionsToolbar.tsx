@@ -16,6 +16,7 @@ import { useActiveCrossRefStore } from '@/lib/store/useCrossRefStore'
 import { useActiveVerseStore } from '@/lib/store/useVerseStore'
 import { useVerseActions } from '@/lib/verseActions'
 import { ActionTooltip } from '@/components/ui/ActionTooltip'
+import { isRemoteVerseApiId } from '@/lib/youVersion'
 
 function shortcut(key: string, modifier = false) {
   if (!modifier) return key
@@ -40,6 +41,7 @@ export function VerseActionsToolbar() {
 
   const hasCrossReferences = selectedVerses.some((verse) => verseIdsWithRefs.has(verse.apiId))
   const hasSingleVerse = selectedVerses.length === 1
+  const supportsLocalActions = selectedVerses.every((verse) => !isRemoteVerseApiId(verse.apiId))
   const list = selectedVerses
 
   const buttonClass = (disabled = false) => cn(
@@ -89,70 +91,74 @@ export function VerseActionsToolbar() {
         </button>
       </ActionTooltip>
 
-      <ActionTooltip label={t('toolbar.addNote')} shortcut="N">
-        <button
-          type="button"
-          onClick={() => actions.addNote(list)}
-          aria-label={t('toolbar.addNote')}
-          className={buttonClass()}
-        >
-          <StickyNote className="h-3.5 w-3.5" strokeWidth={1.7} aria-hidden />
-        </button>
-      </ActionTooltip>
+      {supportsLocalActions && (
+        <>
+          <ActionTooltip label={t('toolbar.addNote')} shortcut="N">
+            <button
+              type="button"
+              onClick={() => actions.addNote(list)}
+              aria-label={t('toolbar.addNote')}
+              className={buttonClass()}
+            >
+              <StickyNote className="h-3.5 w-3.5" strokeWidth={1.7} aria-hidden />
+            </button>
+          </ActionTooltip>
 
-      <ActionTooltip label={t('toolbar.highlightVerses')} shortcut="H">
-        <button
-          type="button"
-          onClick={() => actions.toggleHighlight(list)}
-          aria-label={t('toolbar.highlightVerses')}
-          className={buttonClass()}
-        >
-          <Highlighter className="h-3.5 w-3.5" strokeWidth={1.7} aria-hidden />
-        </button>
-      </ActionTooltip>
+          <ActionTooltip label={t('toolbar.highlightVerses')} shortcut="H">
+            <button
+              type="button"
+              onClick={() => actions.toggleHighlight(list)}
+              aria-label={t('toolbar.highlightVerses')}
+              className={buttonClass()}
+            >
+              <Highlighter className="h-3.5 w-3.5" strokeWidth={1.7} aria-hidden />
+            </button>
+          </ActionTooltip>
 
-      <ActionTooltip label={t('toolbar.toggleFavorite')} shortcut="F">
-        <button
-          type="button"
-          onClick={() => actions.toggleFavorite(list)}
-          aria-label={t('toolbar.toggleFavorite')}
-          className={buttonClass()}
-        >
-          <Star className="h-3.5 w-3.5" strokeWidth={1.7} aria-hidden />
-        </button>
-      </ActionTooltip>
+          <ActionTooltip label={t('toolbar.toggleFavorite')} shortcut="F">
+            <button
+              type="button"
+              onClick={() => actions.toggleFavorite(list)}
+              aria-label={t('toolbar.toggleFavorite')}
+              className={buttonClass()}
+            >
+              <Star className="h-3.5 w-3.5" strokeWidth={1.7} aria-hidden />
+            </button>
+          </ActionTooltip>
 
-      <span className="mx-0.5 h-5 w-px shrink-0 bg-border-subtle" aria-hidden />
+          <span className="mx-0.5 h-5 w-px shrink-0 bg-border-subtle" aria-hidden />
 
-      <ActionTooltip
-        label={hasCrossReferences ? t('toolbar.crossReferences') : t('toolbar.noCrossReferences')}
-        shortcut="X"
-      >
-        <button
-          type="button"
-          onClick={() => hasCrossReferences && actions.openCrossRefs(list)}
-          aria-label={hasCrossReferences ? t('toolbar.crossReferences') : t('toolbar.noCrossReferences')}
-          aria-disabled={!hasCrossReferences}
-          className={buttonClass(!hasCrossReferences)}
-        >
-          <GitBranch className="h-3.5 w-3.5" strokeWidth={1.7} aria-hidden />
-        </button>
-      </ActionTooltip>
+          <ActionTooltip
+            label={hasCrossReferences ? t('toolbar.crossReferences') : t('toolbar.noCrossReferences')}
+            shortcut="X"
+          >
+            <button
+              type="button"
+              onClick={() => hasCrossReferences && actions.openCrossRefs(list)}
+              aria-label={hasCrossReferences ? t('toolbar.crossReferences') : t('toolbar.noCrossReferences')}
+              aria-disabled={!hasCrossReferences}
+              className={buttonClass(!hasCrossReferences)}
+            >
+              <GitBranch className="h-3.5 w-3.5" strokeWidth={1.7} aria-hidden />
+            </button>
+          </ActionTooltip>
 
-      <ActionTooltip
-        label={hasSingleVerse ? t('toolbar.similarVerses') : t('toolbar.similarRequiresOne')}
-        shortcut="S"
-      >
-        <button
-          type="button"
-          onClick={() => hasSingleVerse && actions.openSimilar(list)}
-          aria-label={hasSingleVerse ? t('toolbar.similarVerses') : t('toolbar.similarRequiresOne')}
-          aria-disabled={!hasSingleVerse}
-          className={buttonClass(!hasSingleVerse)}
-        >
-          <Sparkles className="h-3.5 w-3.5" strokeWidth={1.7} aria-hidden />
-        </button>
-      </ActionTooltip>
+          <ActionTooltip
+            label={hasSingleVerse ? t('toolbar.similarVerses') : t('toolbar.similarRequiresOne')}
+            shortcut="S"
+          >
+            <button
+              type="button"
+              onClick={() => hasSingleVerse && actions.openSimilar(list)}
+              aria-label={hasSingleVerse ? t('toolbar.similarVerses') : t('toolbar.similarRequiresOne')}
+              aria-disabled={!hasSingleVerse}
+              className={buttonClass(!hasSingleVerse)}
+            >
+              <Sparkles className="h-3.5 w-3.5" strokeWidth={1.7} aria-hidden />
+            </button>
+          </ActionTooltip>
+        </>
+      )}
     </div>
   )
 }

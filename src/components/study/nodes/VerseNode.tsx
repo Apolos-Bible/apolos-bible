@@ -25,7 +25,8 @@ export function VerseNode({ id, data, selected }: NodeProps<VerseNodeType>) {
   const versions = useVerseStore((s) => s.versions);
   const readerVersionId = useVerseStore((s) => s.versionId);
   const versionName = versions.find((v) => v.id === data.version_id)?.abbreviation ?? '';
-  const selectableVersions = bibleVersionsInSameLanguage(versions, data.version_id);
+  const selectableVersions = bibleVersionsInSameLanguage(versions, data.version_id)
+    .filter((version) => version.provider !== 'youversion');
   const { ref: scrollRef, className: scrollClass } = useNoWheelOnOverflow<HTMLDivElement>();
   const xrefBtnRef = useRef<HTMLButtonElement>(null);
   const [xrefOpen, setXrefOpen] = useState(false);
