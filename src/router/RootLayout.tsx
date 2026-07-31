@@ -43,6 +43,7 @@ function RootLayoutSurface() {
   const isMobile = useIsMobile()
   const openCommandPalette = useUIStore(s => s.openCommandPalette)
   const authModalOpen      = useUIStore(s => s.authModalOpen)
+  const keepScreenAwake    = useUIStore(s => s.keepScreenAwake)
   const closeAuthModal     = useUIStore(s => s.closeAuthModal)
   const authModalMode      = useUIStore(s => s.authModalMode)
   const authModalKey       = useUIStore(s => s.authModalKey)
@@ -121,12 +122,33 @@ function RootLayoutSurface() {
   }, [locale, selectedBook, versionId, versions])
 
   useEffect(() => {
+    if (localStorage.getItem('autoUpdate') === 'false') return
     void checkForAppUpdates(addToast, {
       installing: (version) => t('updater.installing', { version }),
       installed: t('updater.installed'),
       failed: t('updater.failed'),
     })
   }, [addToast, t])
+
+  useEffect(() => {
+    if (!keepScreenAwake || !('wakeLock' in navigator)) return
+    let released = false
+    let lock: { release: () => Promise<void> } | null = null
+    const acquire = async () => {
+      if (document.visibilityState !== 'visible') return
+      try {
+        lock = await (navigator as Navigator & { wakeLock: { request: (type: 'screen') => Promise<{ release: () => Promise<void> }> } }).wakeLock.request('screen')
+        if (released) await lock.release()
+      } catch { /* unsupported or denied by the platform */ }
+    }
+    void acquire()
+    document.addEventListener('visibilitychange', acquire)
+    return () => {
+      released = true
+      document.removeEventListener('visibilitychange', acquire)
+      void lock?.release()
+    }
+  }, [keepScreenAwake])
 
   useEffect(() => {
     return registerAuthDeepLink((to, opts) => navigate(to, opts))

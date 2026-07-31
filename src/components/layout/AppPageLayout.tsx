@@ -12,6 +12,7 @@ import { MobileSearchView } from './MobileSearchView'
 import { WorkspaceSidePanel } from './WorkspaceSidePanel'
 import { WorkspaceTabs } from './WorkspaceTabs'
 import { useWorkspacePane } from './WorkspacePaneContext'
+import { DesktopSidebar } from './DesktopSidebar'
 
 interface AppPageLayoutProps {
   /** Title shown in the mobile top bar. */
@@ -86,9 +87,9 @@ export function AppPageLayout({ title, mobileActions, children }: AppPageLayoutP
       </header>
 
       {/* Desktop sidebar */}
-      <aside className="hidden md:block flex-shrink-0 w-sidebar h-full overflow-hidden">
+      <DesktopSidebar>
         <Sidebar />
-      </aside>
+      </DesktopSidebar>
 
       {/* Panels are part of the workspace shell, so opening one never changes
           or unmounts the active page tab. */}

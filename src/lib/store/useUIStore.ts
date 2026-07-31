@@ -17,13 +17,19 @@ type Toast = {
 }
 
 export type FontSize    = 'sm' | 'base' | 'lg'
-export type Theme       = 'dark' | 'light'
+export type Theme       = 'dark' | 'light' | 'system'
 export type Locale      = AppLocale
 export type Panel       = 'favorites' | 'my-notes' | 'friends' | 'chat' | 'my-studies'
 export type ReadingMode = 'flow' | 'verse'
+export type ReaderFont  = 'reading' | 'sans' | 'serif'
+export type LineHeight  = 'compact' | 'comfortable' | 'relaxed'
 
 function applyTheme(t: Theme) {
-  document.documentElement.setAttribute('data-theme', t)
+  const resolved = t === 'system'
+    ? (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light')
+    : t
+  document.documentElement.setAttribute('data-theme', resolved)
+  document.documentElement.setAttribute('data-theme-preference', t)
 }
 
 export const DEFAULT_ACCENT_COLOR = '#6d7cea'
@@ -45,7 +51,9 @@ type UIStore = {
   mobileBookPickerOpen: boolean
   mobileSearchOpen: boolean
   mobileChromeCollapsed: boolean
+  desktopSidebarCollapsed: boolean
   setMobileChromeCollapsed: (v: boolean) => void
+  toggleDesktopSidebar: () => void
   showOthersNotes: boolean
   toggleCommentary: () => void
   toggleShowOthersNotes: () => void
@@ -56,6 +64,12 @@ type UIStore = {
   accentColor: string
   locale: Locale
   readingMode: ReadingMode
+  readerFont: ReaderFont
+  lineHeight: LineHeight
+  showVerseNumbers: boolean
+  reduceMotion: boolean
+  highContrast: boolean
+  keepScreenAwake: boolean
   openCommandPalette: () => void
   closeCommandPalette: () => void
   toggleShortcutsPanel: () => void
@@ -76,10 +90,16 @@ type UIStore = {
   togglePanel: (panel: Panel) => void
   closePanel: () => void
   setFontSize: (size: FontSize) => void
-  setTheme: (t: Theme) => void
-  setAccentColor: (color: string) => void
+  setTheme: (t: Theme, sync?: boolean) => void
+  setAccentColor: (color: string, sync?: boolean) => void
   setLocale: (l: Locale) => void
   setReadingMode: (mode: ReadingMode) => void
+  setReaderFont: (font: ReaderFont, sync?: boolean) => void
+  setLineHeight: (height: LineHeight, sync?: boolean) => void
+  setShowVerseNumbers: (show: boolean, sync?: boolean) => void
+  setReduceMotion: (reduce: boolean, sync?: boolean) => void
+  setHighContrast: (high: boolean, sync?: boolean) => void
+  setKeepScreenAwake: (keep: boolean) => void
   enterStudyMode: () => void
   exitStudyMode: () => void
 }
@@ -88,10 +108,25 @@ const savedFontSize    = (localStorage.getItem('fontSize')    as FontSize)    ??
 const savedTheme       = (localStorage.getItem('theme')       as Theme)       ?? 'light'
 const savedAccentColor = localStorage.getItem('accentColor') ?? DEFAULT_ACCENT_COLOR
 const savedReadingMode = (localStorage.getItem('readingMode') as ReadingMode) ?? 'verse'
+const savedReaderFont = (localStorage.getItem('readerFont') as ReaderFont) ?? 'reading'
+const savedLineHeight = (localStorage.getItem('lineHeight') as LineHeight) ?? 'comfortable'
+const savedShowVerseNumbers = localStorage.getItem('showVerseNumbers') !== 'false'
+const savedReduceMotion = localStorage.getItem('reduceMotion') === 'true'
+const savedHighContrast = localStorage.getItem('highContrast') === 'true'
+const savedKeepScreenAwake = localStorage.getItem('keepScreenAwake') === 'true'
 const savedLocale      = getStoredAppLocale()
 const savedShowOthers  = localStorage.getItem('showOthersNotes') === 'true'
+const savedDesktopSidebarCollapsed = localStorage.getItem('desktopSidebarCollapsed') === 'true'
 applyTheme(savedTheme)
 applyAccentColor(savedAccentColor)
+document.documentElement.dataset.readerFont = savedReaderFont
+document.documentElement.dataset.lineHeight = savedLineHeight
+document.documentElement.dataset.reduceMotion = String(savedReduceMotion)
+document.documentElement.dataset.highContrast = String(savedHighContrast)
+
+window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => {
+  if (localStorage.getItem('theme') === 'system') applyTheme('system')
+})
 
 let _toastSeq = 0
 
@@ -108,7 +143,13 @@ export const useUIStore = create<UIStore>((set) => ({
   mobileBookPickerOpen: false,
   mobileSearchOpen: false,
   mobileChromeCollapsed: false,
+  desktopSidebarCollapsed: savedDesktopSidebarCollapsed,
   setMobileChromeCollapsed: (v) => set({ mobileChromeCollapsed: v }),
+  toggleDesktopSidebar: () => set((state) => {
+    const collapsed = !state.desktopSidebarCollapsed
+    localStorage.setItem('desktopSidebarCollapsed', String(collapsed))
+    return { desktopSidebarCollapsed: collapsed }
+  }),
   showOthersNotes: savedShowOthers,
   toggleCommentary: () => set((s) => ({ commentaryOpen: !s.commentaryOpen })),
   toggleShowOthersNotes: () =>
@@ -124,6 +165,12 @@ export const useUIStore = create<UIStore>((set) => ({
   accentColor: savedAccentColor,
   locale: savedLocale ?? selectDefaultAppLocale(getBrowserLocale()),
   readingMode: savedReadingMode,
+  readerFont: savedReaderFont,
+  lineHeight: savedLineHeight,
+  showVerseNumbers: savedShowVerseNumbers,
+  reduceMotion: savedReduceMotion,
+  highContrast: savedHighContrast,
+  keepScreenAwake: savedKeepScreenAwake,
 
   openCommandPalette: () => set({ commandPaletteOpen: true }),
   closeCommandPalette: () => set({ commandPaletteOpen: false }),
@@ -167,16 +214,17 @@ export const useUIStore = create<UIStore>((set) => ({
     set({ fontSize: size })
   },
 
-  setTheme: (t) => {
+  setTheme: (t, sync = true) => {
     localStorage.setItem('theme', t)
     applyTheme(t)
-    saveUserSettingsSilently({ theme: t })
+    if (sync) saveUserSettingsSilently({ theme: t })
     set({ theme: t })
   },
 
-  setAccentColor: (color) => {
+  setAccentColor: (color, sync = true) => {
     localStorage.setItem('accentColor', color)
     applyAccentColor(color)
+    if (sync) saveUserSettingsSilently({ accent_color: color })
     set({ accentColor: color })
   },
 
@@ -191,6 +239,45 @@ export const useUIStore = create<UIStore>((set) => ({
     localStorage.setItem('readingMode', mode)
     saveUserSettingsSilently({ reading_mode: mode })
     set({ readingMode: mode })
+  },
+
+  setReaderFont: (readerFont, sync = true) => {
+    localStorage.setItem('readerFont', readerFont)
+    document.documentElement.dataset.readerFont = readerFont
+    if (sync) saveUserSettingsSilently({ reader_font: readerFont })
+    set({ readerFont })
+  },
+
+  setLineHeight: (lineHeight, sync = true) => {
+    localStorage.setItem('lineHeight', lineHeight)
+    document.documentElement.dataset.lineHeight = lineHeight
+    if (sync) saveUserSettingsSilently({ line_height: lineHeight })
+    set({ lineHeight })
+  },
+
+  setShowVerseNumbers: (showVerseNumbers, sync = true) => {
+    localStorage.setItem('showVerseNumbers', String(showVerseNumbers))
+    if (sync) saveUserSettingsSilently({ show_verse_numbers: showVerseNumbers })
+    set({ showVerseNumbers })
+  },
+
+  setReduceMotion: (reduceMotion, sync = true) => {
+    localStorage.setItem('reduceMotion', String(reduceMotion))
+    document.documentElement.dataset.reduceMotion = String(reduceMotion)
+    if (sync) saveUserSettingsSilently({ reduce_motion: reduceMotion })
+    set({ reduceMotion })
+  },
+
+  setHighContrast: (highContrast, sync = true) => {
+    localStorage.setItem('highContrast', String(highContrast))
+    document.documentElement.dataset.highContrast = String(highContrast)
+    if (sync) saveUserSettingsSilently({ high_contrast: highContrast })
+    set({ highContrast })
+  },
+
+  setKeepScreenAwake: (keepScreenAwake) => {
+    localStorage.setItem('keepScreenAwake', String(keepScreenAwake))
+    set({ keepScreenAwake })
   },
 
   enterStudyMode: () => set({ studyMode: true }),

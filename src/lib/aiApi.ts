@@ -120,9 +120,15 @@ export const aiApi = {
   usage: () => api.get<AiUsageSummary>('/api/ai/usage'),
   models: () => api.get<{ models: AiModel[] }>('/api/ai/models'),
   verseQuestion: (body: AiVerseQuestionRequest) =>
-    api.post<AiVerseQuestionResponse>('/api/ai/verse-question', body),
+    api.post<AiVerseQuestionResponse>('/api/ai/verse-question', {
+      ...body,
+      model: body.model ?? localStorage.getItem('preferredAiModel') ?? undefined,
+    }),
   studyChat: (body: AiStudyChatRequest) =>
-    api.post<AiStudyChatResponse>('/api/ai/study-chat', body),
+    api.post<AiStudyChatResponse>('/api/ai/study-chat', {
+      ...body,
+      model: body.model ?? localStorage.getItem('preferredAiModel') ?? undefined,
+    }),
   ingestDocument: (sessionId: string, file: File, versionId?: number) => {
     const form = new FormData()
     form.append('session_id', sessionId)

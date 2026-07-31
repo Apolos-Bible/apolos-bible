@@ -16,6 +16,7 @@ interface AuthUser {
   content_public_default?: boolean
   /** False for Google-only accounts that never set a local password. */
   has_password?: boolean
+  connected_providers?: Array<'password' | 'google' | 'youversion'>
 }
 
 interface AuthState {
@@ -33,7 +34,7 @@ interface AuthState {
   changePassword: (currentPassword: string, password: string, passwordConfirmation: string) => Promise<void>
   setContentPublicDefault: (value: boolean) => Promise<void>
   logout: () => Promise<void>
-  deleteAccount: (password: string) => Promise<void>
+  deleteAccount: (confirmation: { password?: string; email_confirmation?: string }) => Promise<void>
   init: () => Promise<void>
 }
 
@@ -150,8 +151,8 @@ export const useAuthStore = create<AuthState>((set) => ({
     set({ user: null })
   },
 
-  deleteAccount: async (password: string) => {
-    await api.delete('/api/user', { password })
+  deleteAccount: async (confirmation) => {
+    await api.delete('/api/user', confirmation)
     clearToken()
     localStorage.removeItem('verbum_last_reading')
     resetUserSession()

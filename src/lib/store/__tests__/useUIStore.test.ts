@@ -38,6 +38,7 @@ beforeEach(() => {
     studyMode: false,
     commentaryOpen: false,
     mobileSidebarOpen: false,
+    desktopSidebarCollapsed: false,
     showOthersNotes: false,
     toasts: [],
     activePanel: null,
@@ -115,6 +116,12 @@ describe('useUIStore — modals & panels', () => {
     expect(useUIStore.getState().mobileSidebarOpen).toBe(false)
     store.toggleMobileSidebar()
     expect(useUIStore.getState().mobileSidebarOpen).toBe(true)
+  })
+
+  it('desktop sidebar compact mode persists', () => {
+    useUIStore.getState().toggleDesktopSidebar()
+    expect(useUIStore.getState().desktopSidebarCollapsed).toBe(true)
+    expect(localStorage.getItem('desktopSidebarCollapsed')).toBe('true')
   })
 
   it('study mode toggles', () => {

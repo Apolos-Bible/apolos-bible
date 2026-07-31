@@ -13,6 +13,33 @@
   font-family: 'Lora', Georgia, Cambria, 'Times New Roman', serif;
 }
 
+html[data-reader-font="sans"] .font-reading {
+  font-family: Inter, ui-sans-serif, system-ui, sans-serif;
+}
+
+html[data-reader-font="serif"] .font-reading {
+  font-family: Georgia, Cambria, 'Times New Roman', serif;
+}
+
+html[data-line-height="compact"] .workspace-reader-content .font-reading { line-height: 1.55 !important; }
+html[data-line-height="comfortable"] .workspace-reader-content .font-reading { line-height: 1.85 !important; }
+html[data-line-height="relaxed"] .workspace-reader-content .font-reading { line-height: 2.15 !important; }
+
+html[data-reduce-motion="true"] *,
+html[data-reduce-motion="true"] *::before,
+html[data-reduce-motion="true"] *::after {
+  animation-duration: 0.01ms !important;
+  animation-iteration-count: 1 !important;
+  scroll-behavior: auto !important;
+  transition-duration: 0.01ms !important;
+}
+
+html[data-high-contrast="true"] {
+  --text-secondary: var(--text-primary);
+  --text-muted: var(--text-primary);
+  --border-subtle: var(--border-hover);
+}
+
 html[data-theme="dark"] {
   color-scheme: dark;
   --bg-primary:     #0f1115;
@@ -632,6 +659,45 @@ body {
     width: 2.25rem;
     height: 2.25rem;
     opacity: 1;
+  }
+}
+
+/* Reader actions respond to the pane itself, including split workspace tabs.
+   Lower-priority actions progressively collapse into the full “More” menu. */
+.workspace-reader-toolbar {
+  container-name: reader-toolbar;
+  container-type: inline-size;
+}
+
+.reader-action-more {
+  display: none !important;
+}
+
+@container reader-toolbar (max-width: 900px) {
+  .reader-action-secondary {
+    display: none !important;
+  }
+
+  .reader-action-more {
+    display: inline-flex !important;
+  }
+}
+
+@container reader-toolbar (max-width: 680px) {
+  .workspace-reader-width-control {
+    display: none !important;
+  }
+}
+
+@container reader-toolbar (max-width: 460px) {
+  .reader-action-compact {
+    display: none !important;
+  }
+}
+
+@container reader-toolbar (max-width: 320px) {
+  .reader-action-primary {
+    display: none !important;
   }
 }
 

@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 import {
   bibleVersionsInSameLanguage,
   comparableBibleVersions,
+  preferredComparisonVersion,
 } from './bibleVersionOptions'
 import type { ApiVersion } from './bibleApi'
 
@@ -21,6 +22,12 @@ describe('Bible version selector options', () => {
   it('excludes the reader version from comparison options', () => {
     expect(comparableBibleVersions(versions, 1).map((version) => version.id))
       .toEqual([2])
+  })
+
+  it('uses the saved comparison version when it remains available', () => {
+    localStorage.setItem('preferredCompareVersionId', '2')
+    expect(preferredComparisonVersion(versions)?.id).toBe(2)
+    localStorage.removeItem('preferredCompareVersionId')
   })
 
   it('matches API language names with locale codes', () => {

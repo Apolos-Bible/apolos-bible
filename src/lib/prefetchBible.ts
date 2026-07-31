@@ -4,7 +4,27 @@ import { db } from './db'
 const inflight = new Set<number>()
 const CONCURRENCY = 4
 
-export async function prefetchVersion(versionId: number, books: ApiBook[]): Promise<void> {
+export type OfflineAutoDownload = 'off' | 'wifi' | 'always'
+
+export function offlineAutoDownload(): OfflineAutoDownload {
+  const value = localStorage.getItem('offlineAutoDownload')
+  return value === 'off' || value === 'always' ? value : 'wifi'
+}
+
+export function shouldAutoPrefetch(): boolean {
+  const preference = offlineAutoDownload()
+  if (preference === 'off') return false
+  if (preference === 'always') return true
+  const connection = (navigator as Navigator & { connection?: { type?: string; saveData?: boolean } }).connection
+  if (connection?.saveData) return false
+  return !connection?.type || connection.type === 'wifi' || connection.type === 'ethernet'
+}
+
+export async function prefetchVersion(
+  versionId: number,
+  books: ApiBook[],
+  onProgress?: (completed: number, total: number) => void,
+): Promise<void> {
   if (inflight.has(versionId)) return
   inflight.add(versionId)
   try {
@@ -16,6 +36,9 @@ export async function prefetchVersion(versionId: number, books: ApiBook[]): Prom
       }
     }
     if (!tasks.length) return
+    const total = tasks.length
+    let completed = 0
+    onProgress?.(0, total)
 
     let i = 0
     const worker = async () => {
@@ -24,6 +47,8 @@ export async function prefetchVersion(versionId: number, books: ApiBook[]): Prom
         const t = tasks[idx]
         try {
           await bibleApi.chapter(versionId, t.slug, t.n)
+          completed += 1
+          onProgress?.(completed, total)
         } catch {
           // network down or rate-limited; bail this worker
           return

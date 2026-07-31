@@ -56,6 +56,15 @@ async function upload<T>(path: string, form: FormData): Promise<T> {
   return res.json()
 }
 
+async function download(path: string): Promise<Blob> {
+  const token = getToken()
+  const res = await fetch(`${BASE}${path}`, {
+    headers: token ? { Authorization: `Bearer ${token}` } : {},
+  })
+  if (!res.ok) throw new Error(res.statusText)
+  return res.blob()
+}
+
 export const api = {
   get:    <T>(path: string)                  => request<T>(path),
   post:   <T>(path: string, body: unknown)   => request<T>(path, { method: 'POST',   body: JSON.stringify(body) }),
@@ -63,4 +72,5 @@ export const api = {
   put:    <T>(path: string, body: unknown)   => request<T>(path, { method: 'POST',   body: JSON.stringify({ ...(body as object), _method: 'PUT' }) }),
    delete: <T>(path: string, body?: unknown)  => request<T>(path, { method: 'POST', body: JSON.stringify({ ...(body as object), _method: 'DELETE' }) }),
   upload,
+  download,
 }

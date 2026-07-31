@@ -22,15 +22,17 @@ interface NavButtonProps {
   active?: boolean
   badge?: number
   onClick: () => void
+  dataTour?: string
 }
 
-function NavButton({ icon: Icon, label, active = false, badge, onClick }: NavButtonProps) {
+function NavButton({ icon: Icon, label, active = false, badge, onClick, dataTour }: NavButtonProps) {
   return (
     <button
       type="button"
       onClick={onClick}
       aria-pressed={active}
       aria-label={label}
+      data-tour={dataTour}
       className={cn(
         'relative flex h-full flex-1 flex-col items-center justify-center gap-1 transition-colors',
         active ? 'text-accent' : 'text-text-muted hover:text-text-primary',
@@ -53,15 +55,17 @@ interface BibleButtonProps {
   label: string
   active: boolean
   onClick: () => void
+  dataTour?: string
 }
 
-function BibleButton({ label, active, onClick }: BibleButtonProps) {
+function BibleButton({ label, active, onClick, dataTour }: BibleButtonProps) {
   return (
     <button
       type="button"
       onClick={onClick}
       aria-pressed={active}
       aria-label={label}
+      data-tour={dataTour}
       className={cn(
         'relative flex h-full flex-1 flex-col items-center justify-center gap-1 transition-colors',
         active ? 'text-accent' : 'text-text-secondary hover:text-text-primary',
@@ -170,6 +174,7 @@ export function MobileBottomNav() {
         label={t('layout.search')}
         active={mobileSearchOpen}
         onClick={goToSearch}
+        dataTour="search"
       />
       <NavButton
         icon={GraduationCap}
@@ -177,11 +182,13 @@ export function MobileBottomNav() {
         active={activePanel === 'my-studies'}
         badge={pendingInvitations}
         onClick={goToPanel('my-studies')}
+        dataTour="my-studies"
       />
       <BibleButton
         label={t('nav.bible')}
         active={isReader}
         onClick={goToBible}
+        dataTour="bible"
       />
       <NavButton
         icon={MessagesSquare}
@@ -189,6 +196,7 @@ export function MobileBottomNav() {
         active={activePanel === 'friends' || activePanel === 'chat'}
         badge={chatUnread + friendsUnread}
         onClick={goToPanel('friends')}
+        dataTour="chats"
       />
       <NavButton
         icon={UserRound}
@@ -196,6 +204,7 @@ export function MobileBottomNav() {
         active={isProfile}
         badge={friendsUnread}
         onClick={goToProfile}
+        dataTour="profile"
       />
     </nav>
   )
