@@ -5,6 +5,7 @@ import { useUIStore } from '@/lib/store/useUIStore'
 import { useChatStore } from '@/lib/store/useChatStore'
 import { ConversationList } from '@/components/chat/ConversationList'
 import { NewChatDialog } from '@/components/chat/NewChatDialog'
+import { FriendRequestBubbles } from '@/components/friends/FriendRequestBubbles'
 import { PanelHeader } from '@/components/layout/PanelHeader'
 
 /** The social inbox: direct messages and group conversations share one list. */
@@ -32,6 +33,8 @@ export function FriendsPanel() {
           </button>
         }
       />
+
+      <FriendRequestBubbles />
 
       <div className="min-h-0 flex-1 overflow-y-auto">
         <ConversationList

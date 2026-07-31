@@ -349,6 +349,8 @@
   "friends.messageTitle": "Escribir mensaje",
   "friends.accept": "Aceptar",
   "friends.decline": "Rechazar",
+  "friends.acceptAria": "Aceptar la solicitud de {{name}}",
+  "friends.declineAria": "Rechazar la solicitud de {{name}}",
   "friends.pending": "pendiente",
   "favorites.signInPrompt": "Inicia sesión para ver favoritos",
   "favorites.empty": "Sin favoritos aún",
