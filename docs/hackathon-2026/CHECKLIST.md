@@ -17,7 +17,7 @@ Legend: `[x]` implemented or prepared, `[ ]` still requires action.
 - [x] Add a public working product URL that does not require login.
 - [x] Add the public frontend source repository URL with setup instructions.
 - [ ] Make the backend repository public or publish a reviewable sanitized
-      mirror containing the YouVersion and Gloo integrations.
+      mirror containing the YouVersion and AI integrations.
 - [ ] Click **Submit** on the Writeup before the deadline.
 - [ ] Verify the final entry is submitted, not Draft.
 
@@ -40,19 +40,21 @@ Legend: `[x]` implemented or prepared, `[ ]` still requires action.
 
 ### Gloo AI Studio
 
-- [x] Implement OAuth2 client-credentials token exchange server-side.
-- [x] Cache short-lived bearer tokens and retry after an unauthorized response.
-- [x] Implement Completions V2 with a values-aligned Gloo model.
-- [x] Map Gloo usage into the existing per-user quota system.
-- [x] Add Gloo to the AI model catalog used by the creator canvas.
-- [x] Add automated request/response tests.
-- [ ] Create Gloo Studio Client ID and Client Secret.
-- [ ] Set production `GLOO_CLIENT_ID` and `GLOO_CLIENT_SECRET`.
-- [ ] Set `LLM_PROVIDER=gloo` for the hackathon demo, or select Gloo in-app.
-- [ ] Choose `GLOO_TRADITION` only if the demo intentionally targets
-      `evangelical`, `catholic`, or `mainline`; otherwise leave it blank.
-- [ ] Perform and record a real production Gloo response.
-- [ ] Confirm spend limit and API usage dashboard.
+- [x] Remove the experimental Gloo implementation and credentials.
+- [ ] **Eligibility blocker:** the challenge requires this API, but the product
+      intentionally does not use Gloo.
+- [ ] Obtain a written exception from the organizers or do not submit this
+      project to a challenge that requires both APIs.
+- [ ] Do not describe DeepSeek inference as Gloo inference in any asset.
+
+### Existing AI runtime
+
+- [x] Use the existing LLPhant abstraction with DeepSeek.
+- [x] Keep the DeepSeek API key exclusively in backend configuration.
+- [x] Keep verified-email checks, request throttles, and per-user AI budgets.
+- [x] Ground the assistant in recent conversation, canvas state, selected Bible
+      passages, and explicitly attached documents.
+- [ ] Record a real production response and identify it honestly as DeepSeek.
 
 ## P1 — Product demo readiness
 
@@ -61,7 +63,7 @@ Legend: `[x]` implemented or prepared, `[ ]` still requires action.
 - [ ] Prepare one polished study canvas; suggested theme: anxiety and peace.
 - [ ] Put 2–3 YouVersion passages on the canvas.
 - [ ] Demonstrate at least two licensed translations.
-- [ ] Ask Apolos/Gloo a concise canvas-aware question.
+- [ ] Ask Apolos/DeepSeek a concise canvas-aware question.
 - [ ] Show the AI result changing or enriching the canvas.
 - [ ] Show another participant receiving the shared update.
 - [ ] Share or publish the finished study.
@@ -79,7 +81,7 @@ Legend: `[x]` implemented or prepared, `[ ]` still requires action.
 - [ ] Lead with one person's problem, not a feature list.
 - [ ] Explicitly say why this is not another Bible app.
 - [ ] Clearly identify live YouVersion data in the video.
-- [ ] Clearly identify live Gloo inference in the video.
+- [ ] Clearly identify live DeepSeek inference in the video.
 - [ ] End with credible scale: teams, churches, creators, and communities.
 
 ## P1 — Public proof
@@ -88,7 +90,7 @@ Legend: `[x]` implemented or prepared, `[ ]` still requires action.
 - [ ] Make the backend GitHub repository Public or publish a sanitized mirror;
       it is currently Private.
 - [x] Add a root README section linking both API integrations.
-- [x] Add local setup instructions for YouVersion and Gloo env variables.
+- [x] Add local setup instructions for YouVersion and LLPhant/DeepSeek.
 - [ ] Add architecture screenshot/diagram to the Media Gallery.
 - [x] Confirm `https://apolos.bible` responds without a login.
 - [x] Confirm the public app and API use HTTPS.

@@ -38,20 +38,24 @@ Named after **Apolos** (Acts 18:24-28) — a Jew from Alexandria, *"poderoso en 
 
 ---
 
-## YouVersion + Gloo New Frontiers build
+## YouVersion New Frontiers preparation
 
 Apolos is being submitted as a collaborative Scripture creator studio:
 licensed YouVersion passages are native objects inside a shared visual canvas,
-and Gloo AI Studio powers the values-aligned, canvas-aware collaborator.
+and the existing LLPhant + DeepSeek assistant is aware of that canvas.
 
 - [Submission checklist and deliverables](docs/hackathon-2026/README.md)
 - [Technical architecture](docs/hackathon-2026/ARCHITECTURE.md)
 - [Reproducible Kaggle notebook](docs/hackathon-2026/notebook/apolos-platform-demo.ipynb)
 - [YouVersion Platform developer documentation](https://developers.youversion.com/)
-- [Gloo AI Studio developer documentation](https://docs.gloo.com/getting-started/quickstart-developers)
 
 Provider credentials are held only by the Laravel backend; they are never
 included in the React/Tauri client.
+
+> Eligibility note: the published challenge rules require Gloo AI Studio.
+> Apolos intentionally continues to use LLPhant + DeepSeek, so the submission
+> does not satisfy that requirement unless the organizers grant an exception
+> or the rules change.
 
 ---
 

@@ -1,12 +1,12 @@
-# Apolos — New Frontiers submission kit
+# Apolos — New Frontiers preparation kit
 
-This folder is the single source of truth for the YouVersion + Gloo AI Studio
-hackathon submission.
+This folder is the single source of truth for preparing the hackathon
+submission.
 
 ## Product thesis
 
 **Apolos is a collaborative Scripture creator studio.** It brings licensed
-YouVersion text and Gloo's values-aligned AI into the visual canvas where
+YouVersion text and Apolos's canvas-aware AI into the visual canvas where
 leaders, creators, and small groups already turn ideas into experiences.
 Scripture is not a pop-up or a generated quote: it is source material that can
 be read, compared, arranged, discussed, and shared in real time.
@@ -25,8 +25,11 @@ be read, compared, arranged, discussed, and shared in real time.
 
 - YouVersion Bible catalog, passage reading, attribution, caching, sign-in, and
   Data Exchange permission flow are implemented.
-- Gloo AI Studio OAuth and Completions V2 support are implemented in the
-  backend branch, but production credentials still need to be supplied.
+- The AI assistant continues to use LLPhant with the configured DeepSeek API
+  key. No Gloo runtime code or credentials are used.
+- The challenge text requires both YouVersion and Gloo. With the current
+  product decision, this is an unresolved eligibility blocker and must never be
+  represented as completed.
 - The product, repository, notebook, screenshots, video, and Kaggle Writeup
   must all be publicly reachable to judges without requesting access.
 
@@ -34,6 +37,5 @@ be read, compared, arranged, discussed, and shared in real time.
 
 - Challenge rules: use the live Kaggle competition page as the authority.
 - YouVersion Platform: <https://developers.youversion.com/>
-- Gloo developer quickstart: <https://docs.gloo.com/getting-started/quickstart-developers>
-- Gloo Completions V2: <https://docs.gloo.com/api-guides/completions-v2>
-
+- Gloo requirement reference:
+  <https://docs.gloo.com/getting-started/quickstart-developers>

@@ -4,13 +4,13 @@
 
 - Deploy backend and frontend commits intended for submission.
 - Run migrations and the LLM model seeder.
-- Confirm production has YouVersion and Gloo environment variables.
+- Confirm production has YouVersion and DeepSeek environment variables.
 - Open the public product in a fresh incognito window.
 - Confirm NIV, NIrV, NASB, and AMP load and a chapter renders.
 - Confirm publisher copyright and “Bible text provided by YouVersion” appear.
 - Sign in as the verified demo user.
-- Select **Gloo · GPT-5 mini** or set it as the server default.
-- Send one disposable `/apolos` request and confirm Gloo usage increments.
+- Confirm DeepSeek is the configured LLPhant provider.
+- Send one disposable `/apolos` request and confirm AI usage increments.
 - Open a second browser profile with a second participant.
 - Disable unrelated notifications and hide bookmarks/personal tabs.
 
@@ -24,7 +24,7 @@ Suggested passages:
 - Matthew 6:25–34
 - Psalm 46:1–3
 
-Prepare the canvas with a title, one central question, and space for Gloo's
+Prepare the canvas with a title, one central question, and space for the AI
 result. Keep the final AI prompt copied in a plain-text note for reliable paste.
 
 ## Recording sequence
@@ -32,7 +32,7 @@ result. Keep the final AI prompt copied in a plain-text note for reliable paste.
 1. Record the opening problem shots.
 2. Record the clean product reveal.
 3. Record YouVersion catalog, passage, comparison, and attribution.
-4. Record the real Gloo request and response in one uninterrupted take.
+4. Record the real DeepSeek request and response in one uninterrupted take.
 5. Record second-participant collaboration.
 6. Record share/publish and final zoom-out.
 7. Add narration, captions, API labels, and music only after the product cut.
@@ -45,4 +45,3 @@ result. Keep the final AI prompt copied in a plain-text note for reliable paste.
 - Keep a local fallback canvas already populated with the successful result.
 - If production authentication fails, show the public reader first and use the
   authenticated prepared session only for the creator flow.
-
