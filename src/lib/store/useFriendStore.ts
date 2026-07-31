@@ -5,6 +5,7 @@ import { useNotificationStore } from './useNotificationStore'
 
 type FriendStore = {
   friends: Friend[]
+  recommendations: Friend[]
   received: FriendRequest[]
   sent: FriendRequest[]
   searchResults: Friend[]
@@ -21,6 +22,7 @@ type FriendStore = {
 
 export const useFriendStore = create<FriendStore>((set) => ({
   friends: [],
+  recommendations: [],
   received: [],
   sent: [],
   searchResults: [],
@@ -28,12 +30,22 @@ export const useFriendStore = create<FriendStore>((set) => ({
 
   load: async () => {
     try {
-      const [friends, received, sent] = await Promise.all([
+      const results = await Promise.allSettled([
         friendApi.friends(),
         friendApi.received(),
         friendApi.sent(),
+        friendApi.recommendations?.() ?? Promise.resolve([]),
       ])
-      set({ friends, received, sent })
+      const value = <T,>(index: number, fallback: T): T => {
+        const result = results[index]
+        return result?.status === 'fulfilled' ? result.value as T : fallback
+      }
+      set({
+        friends: value(0, []),
+        received: value(1, []),
+        sent: value(2, []),
+        recommendations: value(3, []),
+      })
     } catch {
       // silently fail — user may not be logged in
     }
@@ -57,7 +69,10 @@ export const useFriendStore = create<FriendStore>((set) => ({
 
   sendRequest: async (userId) => {
     const req = await friendApi.send(userId)
-    set((s) => ({ sent: [...s.sent, req] }))
+    set((s) => ({
+      sent: [...s.sent, req],
+      recommendations: s.recommendations.filter((friend) => friend.id !== userId),
+    }))
   },
 
   acceptRequest: async (friendshipId) => {
