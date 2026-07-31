@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState, type PointerEvent as ReactPointerEvent, type ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
+import { PanelLeftClose, PanelLeftOpen } from 'lucide-react'
 import { cn } from '@/lib/cn'
 import { useActiveVerseStore } from '@/lib/store/useVerseStore'
 import { useUIStore } from '@/lib/store/useUIStore'
@@ -15,6 +16,7 @@ import { MobileSearchView } from './MobileSearchView'
 import { BookSelector } from '@/components/sidebar/BookSelector'
 import { FloatingChatDock } from '@/components/chat/FloatingChatDock'
 import { WorkspaceTabs } from './WorkspaceTabs'
+import { DesktopSidebar } from './DesktopSidebar'
 import { useWorkspacePane } from './WorkspacePaneContext'
 
 interface PanelLayoutProps {
@@ -136,6 +138,7 @@ function PanelLayoutSurface({ sidebar, main, panel, leftPanel }: PanelLayoutProp
 
         <main
           className="min-h-0 flex-1 overflow-hidden relative"
+          data-tour="reading"
           data-region="reader"
           aria-label={t('a11y.regionReader')}
           tabIndex={-1}
@@ -236,14 +239,9 @@ function PanelLayoutSurface({ sidebar, main, panel, leftPanel }: PanelLayoutProp
       </div>
 
       <div className="hidden md:flex h-full w-full overflow-hidden">
-        <aside
-          className="flex-shrink-0 w-sidebar h-full overflow-hidden"
-          data-region="sidebar"
-          aria-label={t('a11y.regionSidebar')}
-          tabIndex={-1}
-        >
+        <DesktopSidebar>
           {sidebar}
-        </aside>
+        </DesktopSidebar>
 
         <aside
           className={cn(
@@ -311,6 +309,8 @@ function EmbeddedBibleWorkspace({
   const { t } = useTranslation()
   const containerRef = useRef<HTMLDivElement>(null)
   const [panelWidth, setPanelWidth] = useState(storedBibleContextWidth)
+  const libraryCollapsed = useActiveBiblePaneStore((state) => state.libraryCollapsed)
+  const toggleLibrary = useActiveBiblePaneStore((state) => state.toggleLibrary)
 
   const beginResize = (event: ReactPointerEvent<HTMLDivElement>) => {
     event.preventDefault()
@@ -340,14 +340,42 @@ function EmbeddedBibleWorkspace({
   return (
     <div ref={containerRef} className="workspace-bible-context flex h-full min-h-0 min-w-0 overflow-hidden bg-bg-secondary">
       <aside
-        className="hidden w-[220px] shrink-0 flex-col overflow-hidden border-r border-border-subtle bg-bg-secondary lg:flex"
+        className={cn(
+          'hidden shrink-0 flex-col overflow-hidden border-r border-border-subtle bg-bg-secondary transition-[width] duration-200 lg:flex',
+          libraryCollapsed ? 'w-9' : 'w-[220px]',
+        )}
         data-region="bible-tab-selector"
         aria-label={t('nav.library')}
       >
-        <div className="border-b border-border-subtle px-3 py-2 text-2xs font-semibold uppercase tracking-wider text-text-muted">
-          {t('nav.library')}
-        </div>
-        <BookSelector />
+        {libraryCollapsed ? (
+          <button
+            type="button"
+            onClick={toggleLibrary}
+            className="flex h-10 w-full items-center justify-center text-text-muted hover:bg-bg-tertiary hover:text-text-primary"
+            aria-label={t('layout.openLibrary')}
+            title={t('layout.openLibrary')}
+          >
+            <PanelLeftOpen className="h-4 w-4" strokeWidth={1.6} />
+          </button>
+        ) : (
+          <>
+            <div className="flex h-10 shrink-0 items-center justify-between border-b border-border-subtle pl-3 pr-1.5">
+              <span className="text-2xs font-semibold uppercase tracking-wider text-text-muted">
+                {t('nav.library')}
+              </span>
+              <button
+                type="button"
+                onClick={toggleLibrary}
+                className="flex h-7 w-7 items-center justify-center rounded-md text-text-muted hover:bg-bg-tertiary hover:text-text-primary"
+                aria-label={t('layout.closeLibrary')}
+                title={t('layout.closeLibrary')}
+              >
+                <PanelLeftClose className="h-4 w-4" strokeWidth={1.6} />
+              </button>
+            </div>
+            <BookSelector />
+          </>
+        )}
       </aside>
       <main
         className="workspace-bible-reader min-w-0 flex-1 overflow-hidden"

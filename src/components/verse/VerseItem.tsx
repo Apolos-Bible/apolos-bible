@@ -35,9 +35,7 @@ export function VerseItem({ verse, isSelected, noteCount, highlightCount }: Vers
         'px-6 py-3 border-b border-border-subtle cursor-pointer group transition-colors duration-100',
         isSelected
           ? 'bg-bg-tertiary border-l-2 border-l-accent'
-          : isBookmarked
-            ? 'bg-fav/[0.04] border-l-2 border-l-fav/50 hover:bg-fav/[0.07]'
-            : 'hover:bg-bg-secondary',
+          : 'hover:bg-bg-secondary',
       )}
     >
       {/* Top row: reference + badge + quick actions */}

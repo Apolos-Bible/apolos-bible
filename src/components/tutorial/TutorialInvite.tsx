@@ -1,9 +1,12 @@
 import { useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
+import { useNavigate } from 'react-router-dom'
 import { useTutorialStore } from '@/lib/store/useTutorialStore'
+import { paths } from '@/router/paths'
 
 export function TutorialInvite() {
   const { t } = useTranslation()
+  const navigate = useNavigate()
   const inviteOpen   = useTutorialStore((s) => s.inviteOpen)
   const active       = useTutorialStore((s) => s.active)
   const showInvite   = useTutorialStore((s) => s.showInvite)
@@ -16,15 +19,23 @@ export function TutorialInvite() {
   }, [showInvite])
 
   useEffect(() => {
-    ;(window as unknown as { apolosTour?: () => void }).apolosTour = () => {
+    const tourWindow = window as unknown as { apolosTour?: () => void }
+    tourWindow.apolosTour = () => {
+      navigate(paths.root())
       useTutorialStore.getState().reset()
     }
-  }, [])
+    return () => { delete tourWindow.apolosTour }
+  }, [navigate])
+
+  const startFromReader = () => {
+    navigate(paths.root())
+    start()
+  }
 
   if (!inviteOpen || active) return null
 
   return (
-    <div className="fixed bottom-4 right-4 z-40 w-72 rounded-lg border border-border-subtle bg-bg-secondary p-3 shadow-2xl">
+    <div role="status" className="fixed bottom-4 right-4 z-40 w-[min(18rem,calc(100vw-2rem))] rounded-lg border border-border-subtle bg-bg-secondary p-3">
       <div className="flex items-start justify-between gap-2">
         <div className="flex items-center gap-2">
           <span className="flex h-6 w-6 items-center justify-center rounded-md bg-accent/15 text-accent">
@@ -55,7 +66,7 @@ export function TutorialInvite() {
           {t('tutorial.invite.skip')}
         </button>
         <button
-          onClick={start}
+          onClick={startFromReader}
           className="rounded bg-accent px-2.5 py-1 text-xs font-medium text-bg-primary hover:opacity-90 transition-opacity"
         >
           {t('tutorial.invite.start')}

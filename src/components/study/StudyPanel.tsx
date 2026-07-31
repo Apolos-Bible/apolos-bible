@@ -1,6 +1,6 @@
 import { useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
-import { useVerseStore } from '@/lib/store/useVerseStore'
+import { useActiveVerseStore } from '@/lib/store/useVerseStore'
 import { useHighlightStore } from '@/lib/store/useHighlightStore'
 import { useAuthStore } from '@/lib/store/useAuthStore'
 import { useUIStore } from '@/lib/store/useUIStore'
@@ -33,10 +33,10 @@ function IconCopy() {
 export function StudyPanel() {
   const { t } = useTranslation()
 
-  const studyVerseId    = useVerseStore((s) => s.studyVerseId)
-  const selectedVerseIds = useVerseStore((s) => s.selectedVerseIds)
-  const verses          = useVerseStore((s) => s.verses)
-  const closeStudyPanel = useVerseStore((s) => s.closeStudyPanel)
+  const studyVerseId    = useActiveVerseStore((s) => s.studyVerseId)
+  const selectedVerseIds = useActiveVerseStore((s) => s.selectedVerseIds)
+  const verses          = useActiveVerseStore((s) => s.verses)
+  const closeStudyPanel = useActiveVerseStore((s) => s.closeStudyPanel)
 
   const highlights     = useHighlightStore((s) => s.highlights)
   const loadHighlights = useHighlightStore((s) => s.loadHighlights)

@@ -1,14 +1,27 @@
 import { api } from '@/lib/api'
-import type { FontSize, Locale, ReadingMode, Theme } from '@/lib/store/useUIStore'
+import type { FontSize, LineHeight, Locale, ReaderFont, ReadingMode, Theme } from '@/lib/store/useUIStore'
 
 export interface UserSettings {
   preferred_bible_version_id: number | null
+  preferred_compare_version_id?: number | null
   locale: Locale | null
   theme: Theme | null
+  accent_color?: string | null
   font_size: FontSize | null
   reading_mode: ReadingMode | null
+  reader_font?: ReaderFont | null
+  line_height?: LineHeight | null
+  show_verse_numbers?: boolean
+  reduce_motion?: boolean
+  high_contrast?: boolean
+  discoverable_by_email?: boolean
+  show_reading_activity?: boolean
+  allow_friend_requests?: 'everyone' | 'friends_of_friends' | 'nobody'
+  preferred_ai_model?: string | null
   tutorial_completed?: boolean
   content_public_default?: boolean
+  notes_public_default?: boolean
+  highlights_public_default?: boolean
 }
 
 export type UserSettingsUpdate = Partial<UserSettings>

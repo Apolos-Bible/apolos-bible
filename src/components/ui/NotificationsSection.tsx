@@ -24,15 +24,26 @@ type Preferences = {
   friend_request: boolean
   friend_accepted: boolean
   activity_in_chapter: boolean
+  study_invitation: boolean
+  reading_reminder: boolean
+  quiet_hours_start: string | null
+  quiet_hours_end: string | null
+  timezone: string | null
+  reminder_time: string | null
+  reminder_timezone: string | null
 }
 
-const PREF_KEYS: Record<keyof Preferences, string> = {
+type EventPreference = Exclude<keyof Preferences, 'quiet_hours_start' | 'quiet_hours_end' | 'timezone' | 'reminder_time' | 'reminder_timezone'>
+
+const PREF_KEYS: Record<EventPreference, string> = {
   chat_message: 'settings.notifications.pref.chatMessage',
   note_reply: 'settings.notifications.pref.noteReply',
   note_like: 'settings.notifications.pref.noteLike',
   friend_request: 'settings.notifications.pref.friendRequest',
   friend_accepted: 'settings.notifications.pref.friendAccepted',
   activity_in_chapter: 'settings.notifications.pref.activityInChapter',
+  study_invitation: 'settings.notifications.pref.studyInvitation',
+  reading_reminder: 'settings.notifications.pref.readingReminder',
 }
 
 const CARD = 'rounded-2xl border border-border-subtle bg-bg-secondary p-4 sm:p-5'
@@ -87,7 +98,7 @@ export function NotificationsSection() {
     await refreshSubs()
   }
 
-  async function togglePref(key: keyof Preferences, value: boolean) {
+  async function togglePref(key: EventPreference, value: boolean) {
     if (!prefs) return
     const previous = prefs
     setPrefs({ ...prefs, [key]: value })
@@ -144,7 +155,7 @@ export function NotificationsSection() {
         )}
         {prefs && (
           <div className="mt-2 divide-y divide-border-subtle">
-            {(Object.keys(PREF_KEYS) as (keyof Preferences)[]).map((key) => {
+            {(Object.keys(PREF_KEYS) as EventPreference[]).map((key) => {
               const label = t(PREF_KEYS[key] as never)
               return (
                 <div key={key} className="flex min-h-[54px] items-center justify-between gap-4 py-2.5">
@@ -162,6 +173,38 @@ export function NotificationsSection() {
           </div>
         )}
       </section>
+
+      {prefs && <section className={CARD}>
+        <SectionLabel>{t('settings.notifications.quietHours')}</SectionLabel>
+        <p className="mt-2 text-xs text-text-muted">{t('settings.notifications.quietHoursHelp')}</p>
+        <div className="mt-4 flex flex-wrap items-center gap-3">
+          <input type="time" value={prefs.quiet_hours_start?.slice(0, 5) ?? ''} onChange={(event) => {
+            const value = event.target.value || null
+            setPrefs({ ...prefs, quiet_hours_start: value })
+            void api.patch('/api/push/preferences', { quiet_hours_start: value, timezone: Intl.DateTimeFormat().resolvedOptions().timeZone })
+          }} className="rounded-xl border border-border-subtle bg-bg-secondary px-3 py-2 text-sm text-text-primary" aria-label={t('settings.notifications.quietStart')} />
+          <span className="text-sm text-text-muted">—</span>
+          <input type="time" value={prefs.quiet_hours_end?.slice(0, 5) ?? ''} onChange={(event) => {
+            const value = event.target.value || null
+            setPrefs({ ...prefs, quiet_hours_end: value })
+            void api.patch('/api/push/preferences', { quiet_hours_end: value, timezone: Intl.DateTimeFormat().resolvedOptions().timeZone })
+          }} className="rounded-xl border border-border-subtle bg-bg-secondary px-3 py-2 text-sm text-text-primary" aria-label={t('settings.notifications.quietEnd')} />
+        </div>
+      </section>}
+
+      {prefs && <section className={CARD}>
+        <SectionLabel>{t('settings.notifications.readingReminder')}</SectionLabel>
+        <p className="mt-2 text-xs text-text-muted">{t('settings.notifications.readingReminderHelp')}</p>
+        <div className="mt-4 flex items-center gap-3">
+          <input type="time" disabled={!prefs.reading_reminder} value={prefs.reminder_time?.slice(0, 5) ?? ''} onChange={(event) => {
+            const value = event.target.value || null
+            const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone
+            setPrefs({ ...prefs, reminder_time: value, reminder_timezone: timezone })
+            void api.patch('/api/push/preferences', { reminder_time: value, reminder_timezone: timezone })
+          }} className="rounded-xl border border-border-subtle bg-bg-secondary px-3 py-2 text-sm text-text-primary disabled:opacity-50" aria-label={t('settings.notifications.reminderTime')} />
+          {!prefs.reading_reminder && <span className="text-xs text-text-muted">{t('settings.notifications.enableReminderFirst')}</span>}
+        </div>
+      </section>}
 
       {!loading && subs.length > 0 && (
         <section className={CARD}>

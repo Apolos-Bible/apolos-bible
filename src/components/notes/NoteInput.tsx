@@ -1,7 +1,7 @@
 import { useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useNoteStore } from '@/lib/store/useNoteStore'
-import { useVerseStore } from '@/lib/store/useVerseStore'
+import { useActiveVerseStore } from '@/lib/store/useVerseStore'
 import { useUIStore } from '@/lib/store/useUIStore'
 import { useAuthStore } from '@/lib/store/useAuthStore'
 import { cn } from '@/lib/cn'
@@ -21,7 +21,7 @@ export default function NoteInput({ verseApiId, verseApiIds }: NoteInputProps) {
   const [isPublic, setIsPublic] = useState(false)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
   const addNote = useNoteStore((s) => s.addNote)
-  const closeStudyPanel = useVerseStore((s) => s.closeStudyPanel)
+  const closeStudyPanel = useActiveVerseStore((s) => s.closeStudyPanel)
   const addToast = useUIStore((s) => s.addToast)
   const openAuthModal = useUIStore((s) => s.openAuthModal)
   const user = useAuthStore((s) => s.user)
