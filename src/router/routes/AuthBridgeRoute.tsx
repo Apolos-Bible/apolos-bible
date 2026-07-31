@@ -15,14 +15,19 @@ export function AuthBridgeRoute() {
   const [launched, setLaunched] = useState(false)
 
   const error = searchParams.get('error')
+  const provider = searchParams.get('provider') === 'youversion' ? 'youversion' : 'google'
+  const dataExchange = searchParams.get('data_exchange')
 
   const deepLink = useMemo(() => {
     const hash = window.location.hash.startsWith('#')
       ? window.location.hash.slice(1)
       : window.location.hash
-    const qs = error ? `?error=${encodeURIComponent(error)}` : ''
+    const params = new URLSearchParams({ provider })
+    if (error) params.set('error', error)
+    if (dataExchange) params.set('data_exchange', dataExchange)
+    const qs = `?${params.toString()}`
     return `tulia://auth/finish${qs}${hash ? `#${hash}` : ''}`
-  }, [error])
+  }, [dataExchange, error, provider])
 
   useEffect(() => {
     document.title = 'Apolos'

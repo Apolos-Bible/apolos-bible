@@ -110,6 +110,14 @@ export function AuthModal({ open, onClose, initialMode = 'login' }: AuthModalPro
   const isResetPassword = mode === 'reset-password'
   const isForgotPassword = mode === 'forgot-password'
   const isAuth = mode === 'login' || mode === 'register'
+  const startExternalAuth = (provider: 'google' | 'youversion') => {
+    const url = `${API_BASE}/api/auth/${provider}/redirect${isTauri() ? '?client=desktop' : ''}`
+    if (isTauri()) {
+      void openUrl(url)
+    } else {
+      window.location.href = url
+    }
+  }
 
   return (
     <Dialog
@@ -195,20 +203,8 @@ export function AuthModal({ open, onClose, initialMode = 'login' }: AuthModalPro
 
           <button
             type="button"
-            onClick={() => {
-              // In Tauri we open the system browser instead of navigating
-              // the webview. That way Google can use the user's existing
-              // session and they don't have to re-type credentials. The
-              // backend honors `?client=desktop` and redirects to the
-              // `tulia://auth/finish` deep link, which the app receives
-              // via tauri-plugin-deep-link.
-              if (isTauri()) {
-                void openUrl(`${API_BASE}/api/auth/google/redirect?client=desktop`)
-              } else {
-                window.location.href = `${API_BASE}/api/auth/google/redirect`
-              }
-            }}
-            className="flex w-full items-center justify-center gap-2.5 bg-bg-tertiary border border-border-subtle rounded-lg py-2.5 text-sm font-medium text-text-primary hover:border-accent/40 transition-colors duration-150 mb-3"
+            onClick={() => startExternalAuth('google')}
+            className="flex w-full items-center justify-center gap-2.5 bg-bg-tertiary border border-border-subtle rounded-lg py-2.5 text-sm font-medium text-text-primary hover:border-accent/40 transition-colors duration-150 mb-2"
           >
             <svg width="16" height="16" viewBox="0 0 18 18" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
               <path d="M17.64 9.2c0-.637-.057-1.251-.164-1.84H9v3.481h4.844a4.14 4.14 0 0 1-1.796 2.717v2.258h2.908c1.702-1.567 2.684-3.874 2.684-6.615z" fill="#4285F4"/>
@@ -217,6 +213,22 @@ export function AuthModal({ open, onClose, initialMode = 'login' }: AuthModalPro
               <path d="M9 3.58c1.321 0 2.508.454 3.44 1.345l2.582-2.58C13.463.891 11.426 0 9 0A8.997 8.997 0 0 0 .957 4.958L3.964 7.29C4.672 5.163 6.656 3.58 9 3.58z" fill="#EA4335"/>
             </svg>
             <span>{mode === 'login' ? t('auth.continueWithGoogle', 'Continuar con Google') : t('auth.signUpWithGoogle', 'Registrarse con Google')}</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => startExternalAuth('youversion')}
+            className="flex w-full items-center justify-center gap-2.5 bg-bg-tertiary border border-border-subtle rounded-lg py-2.5 text-sm font-medium text-text-primary hover:border-accent/40 transition-colors duration-150 mb-3"
+          >
+            <svg width="17" height="17" viewBox="0 0 18 18" fill="none" aria-hidden="true">
+              <rect width="18" height="18" rx="4" fill="#2D72D9" />
+              <path d="M4.5 4.5 9 9l4.5-4.5M9 9v4.5" stroke="white" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+            <span>
+              {mode === 'login'
+                ? t('auth.continueWithYouVersion')
+                : t('auth.signUpWithYouVersion')}
+            </span>
           </button>
 
           <div className="flex items-center gap-3 mb-2">

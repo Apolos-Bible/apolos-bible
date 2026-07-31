@@ -4,6 +4,7 @@ import { RootRedirect } from './routes/RootRedirect'
 import { StudyRoute } from './routes/StudyRoute'
 import { ResetPasswordRoute } from './routes/ResetPasswordRoute'
 import { GoogleFinishRoute } from './routes/GoogleFinishRoute'
+import { YouVersionFinishRoute } from './routes/YouVersionFinishRoute'
 import { AuthBridgeRoute } from './routes/AuthBridgeRoute'
 import { NotFound } from './routes/NotFound'
 import { workspaceRoutes } from './workspaceRoutes'
@@ -25,6 +26,7 @@ export const router = createBrowserRouter([
 
       // Google OAuth callback landing — backend redirects here with #token=...
       { path: 'auth/google/finish', element: <GoogleFinishRoute /> },
+      { path: 'auth/youversion/finish', element: <YouVersionFinishRoute /> },
 
       // Desktop/mobile OAuth bridge: https page that hands the token back
       // to the installed Tauri app via a user-initiated `tulia://` link.

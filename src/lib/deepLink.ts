@@ -5,8 +5,8 @@ type Navigate = (to: string, opts?: { replace?: boolean }) => void
 
 /**
  * Forwards `tulia://auth/finish?...` deep links to the in-app
- * `/auth/google/finish?...` route, where GoogleFinishRoute already
- * handles `#token=` and `?error=`. Any other scheme paths are ignored.
+ * the matching provider finish route, where the SPA consumes `#token=`
+ * and `?error=`. Any other scheme paths are ignored.
  *
  * Listens both to URLs the app is launched with (cold start) and to
  * URLs received while running.
@@ -40,7 +40,11 @@ export function registerAuthDeepLink(navigate: Navigate): () => void {
       return
     }
 
-    const target = `/auth/google/finish${search}${hash}`
+    const searchParams = new URLSearchParams(search.startsWith('?') ? search.slice(1) : search)
+    const provider = searchParams.get('provider') === 'youversion' ? 'youversion' : 'google'
+    searchParams.delete('provider')
+    const remainingSearch = searchParams.size > 0 ? `?${searchParams.toString()}` : ''
+    const target = `/auth/${provider}/finish${remainingSearch}${hash}`
     console.log('[deepLink] navigating to', target)
     navigate(target, { replace: true })
   }
