@@ -11,6 +11,11 @@ import { PanelHeader, PanelHeaderButton } from '@/components/layout/PanelHeader'
 import { StartStudyModal } from '@/components/study/StartStudyModal';
 import type { StudySession } from '@/lib/study/studyApi';
 
+function studyThumbnailUrl(value: string): string {
+  if (/^https?:\/\//i.test(value)) return value;
+  return `${import.meta.env.VITE_API_URL ?? ''}/storage/${value.replace(/^\/+/, '')}`;
+}
+
 export function MyStudiesPanel() {
   const { t } = useTranslation();
   const navigate = useNavigate();
@@ -163,7 +168,7 @@ export function MyStudiesPanel() {
                   <div className="w-12 h-12 md:w-10 md:h-10 rounded-lg bg-bg-tertiary border border-border shrink-0 flex items-center justify-center overflow-hidden">
                     {session.thumbnail_url ? (
                       <img
-                        src={`${import.meta.env.VITE_API_URL ?? ''}/storage/${session.thumbnail_url}`}
+                        src={studyThumbnailUrl(session.thumbnail_url)}
                         alt=""
                         className="w-full h-full object-cover"
                       />
