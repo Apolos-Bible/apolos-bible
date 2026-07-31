@@ -1,4 +1,5 @@
 import { FriendsPanel } from '@/components/friends/FriendsPanel'
+import { FriendsHubPanel } from '@/components/friends/FriendsHubPanel'
 import { FavoritesPanel } from '@/components/sidebar/FavoritesPanel'
 import { MyNotesPanel } from '@/components/sidebar/MyNotesPanel'
 import { MyStudiesPanel } from '@/components/study/MyStudiesPanel'
@@ -8,7 +9,8 @@ export function WorkspaceSidePanel({ panel }: { panel: Panel | null }) {
   const content = panel === 'favorites' ? <FavoritesPanel />
     : panel === 'my-notes' ? <MyNotesPanel />
     : panel === 'my-studies' ? <MyStudiesPanel />
-    : panel === 'friends' || panel === 'chat' ? <FriendsPanel />
+    : panel === 'friends' ? <FriendsHubPanel />
+    : panel === 'chat' ? <FriendsPanel />
     : null
 
   if (!content) return null
