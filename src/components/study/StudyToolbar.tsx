@@ -1,6 +1,6 @@
-import { useCallback, useState } from 'react';
+import { useCallback, useRef, useState, type ChangeEvent } from 'react';
 import { useTranslation } from 'react-i18next';
-import { MousePointer2, Hand, StickyNote, BookOpen, Undo, Redo, ZoomIn, ZoomOut, Maximize2, Lock, Unlock, Pencil, Eraser, Minus, ArrowRight, Square, Circle, MessageSquare, Compass } from 'lucide-react';
+import { MousePointer2, Hand, StickyNote, BookOpen, Undo, Redo, ZoomIn, ZoomOut, Maximize2, Lock, Unlock, Pencil, Eraser, Minus, ArrowRight, Square, Circle, MessageSquare, Compass, Loader2, Paperclip } from 'lucide-react';
 import { cn } from '@/lib/cn';
 import { modKey } from '@/lib/platform';
 import { Tooltip } from '@/components/ui/Tooltip';
@@ -10,6 +10,8 @@ import { useUIStore } from '@/lib/store/useUIStore';
 import { DRAW_COLORS, DRAW_SIZES, type Tool } from './StudyMode';
 import type { DrawSettings } from './DrawingLayer';
 import type { StrokeKind } from '@/lib/study/strokes';
+import { studyApi } from '@/lib/study/studyApi';
+import { useStudyStore } from '@/lib/store/useStudyStore';
 
 function ToolbarButton({
   icon, active, onClick, disabled,
@@ -64,7 +66,11 @@ export function StudyToolbar({ tool, onToolChange, showInsertVerse, onOpenInsert
   const { t } = useTranslation();
   const getActions = useCallback(() => (window as any).__studyCanvasActions, []);
   const openAuthModal = useUIStore(s => s.openAuthModal);
+  const addToast = useUIStore(s => s.addToast);
+  const sessionId = useStudyStore(s => s.activeSession?.id ?? null);
   const [locked, setLocked] = useState(false);
+  const [fileBusy, setFileBusy] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleSticky = useCallback(() => {
     if (isGuest) { openAuthModal('login'); return; }
@@ -95,6 +101,37 @@ export function StudyToolbar({ tool, onToolChange, showInsertVerse, onOpenInsert
     if (isGuest) { openAuthModal('login'); return; }
     onToolChange('erase');
   }, [isGuest, openAuthModal, onToolChange]);
+
+  const handleFile = useCallback(() => {
+    if (isGuest) { openAuthModal('login'); return; }
+    fileInputRef.current?.click();
+  }, [isGuest, openAuthModal]);
+
+  const handleFileChange = useCallback(async (event: ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(event.target.files ?? []);
+    event.target.value = '';
+    if (!sessionId || files.length === 0) return;
+
+    setFileBusy(true);
+    try {
+      for (const file of files) {
+        const uploaded = await studyApi.uploadFile(sessionId, file);
+        getActions()?.addFileNode?.({
+          fileId: uploaded.id,
+          name: uploaded.name,
+          mimeType: uploaded.mime_type,
+          size: uploaded.size,
+          contentUrl: uploaded.content_url,
+        });
+      }
+      addToast(t('study.file.uploaded'), 'success');
+    } catch (error) {
+      addToast(error instanceof Error ? error.message : t('study.file.failed'), 'error');
+    } finally {
+      setFileBusy(false);
+      onToolChange('select');
+    }
+  }, [addToast, getActions, onToolChange, sessionId, t]);
 
   const drawPopoverOpen = tool === 'draw';
 
@@ -133,6 +170,22 @@ export function StudyToolbar({ tool, onToolChange, showInsertVerse, onOpenInsert
               disabled={isGuest}
             />
           </Tooltip>
+          <Tooltip label={isGuest ? 'Log in to edit' : t('study.toolbar.file')} side="right">
+            <ToolbarButton
+              icon={fileBusy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Paperclip className="h-4 w-4" />}
+              active={fileBusy}
+              onClick={handleFile}
+              disabled={isGuest || fileBusy}
+            />
+          </Tooltip>
+          <input
+            ref={fileInputRef}
+            type="file"
+            multiple
+            accept=".jpg,.jpeg,.png,.gif,.webp,.avif,.pdf,.txt,.md,.csv,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.zip"
+            className="hidden"
+            onChange={handleFileChange}
+          />
 
           <div className="h-px bg-border mx-1" />
 

@@ -42,7 +42,21 @@ export const studyApi = {
 
   getSharedSession: (shareToken: string) =>
     api.get<{ session: StudySession; guest_ws_token: string }>(`/api/studies/share/${shareToken}`),
+
+  uploadFile: (id: string, file: File) => {
+    const form = new FormData();
+    form.append('file', file);
+    return api.upload<StudyFileUpload>(`/api/studies/${id}/files`, form);
+  },
 };
+
+export interface StudyFileUpload {
+  id: string;
+  name: string;
+  mime_type: string;
+  size: number;
+  content_url: string;
+}
 
 export interface StudyParticipant {
   id: number;

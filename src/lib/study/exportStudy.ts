@@ -28,6 +28,8 @@ function labelFor(node: RawNode): string {
       return `Comentario de ${d.authorName ?? 'desconocido'}`;
     case 'ai-note':
       return d.sourceReference ? `Nota IA (${d.sourceReference})` : 'Nota IA';
+    case 'file':
+      return d.name ? `Archivo ${d.name}` : 'Archivo';
     case 'drawing':
       return 'Dibujo';
     default:
@@ -68,6 +70,13 @@ function renderNode(node: LabeledNode): string | null {
       const q = d.question ?? '';
       const a = d.answer ?? '';
       return `${head} Nota IA${src}\nPregunta: ${q}\nRespuesta: ${a}`;
+    }
+    case 'file': {
+      const name = d.name ?? '(sin nombre)';
+      const mime = d.mimeType ?? 'application/octet-stream';
+      const size = typeof d.size === 'number' ? ` · ${d.size} bytes` : '';
+      const url = d.contentUrl ? `\n${d.contentUrl}` : '';
+      return `${head} Archivo — ${name}\n${mime}${size}${url}`;
     }
     case 'drawing':
       return null;

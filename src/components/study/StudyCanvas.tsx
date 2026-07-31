@@ -151,6 +151,7 @@ const NODE_FALLBACK_SIZE: Record<string, { width: number; height: number }> = {
   verse: { width: 320, height: 110 },
   passage: { width: 400, height: 180 },
   'ai-note': { width: 300, height: 180 },
+  file: { width: 420, height: 300 },
 };
 
 /**
@@ -792,6 +793,28 @@ function StudyCanvasInner({
     });
   }, [getVisibleCenterFlow, isGuest]);
 
+  const addFileNode = useCallback((data: { fileId: string; name: string; mimeType: string; size: number; contentUrl: string }) => {
+    if (isGuest) return;
+    const d = docRef.current;
+    if (!d) return;
+
+    const isPdf = data.mimeType === 'application/pdf';
+    const isImage = data.mimeType.startsWith('image/');
+    const width = isPdf ? 480 : isImage ? 420 : 320;
+    const height = isPdf ? 560 : isImage ? 300 : 140;
+    const center = getVisibleCenterFlow();
+    const position = findFreeSpot(
+      { x: center.x - width / 2, y: center.y - height / 2, width, height },
+      obstaclesFrom(displayedNodesRef.current),
+    );
+    const id = `file-${data.fileId}-${Date.now()}`;
+
+    d.transact(() => {
+      writeNodeToMap(getNodesMap(d), { id, type: 'file', position, width, height, data });
+    });
+    undoManagerRef.current?.stopCapturing();
+  }, [getVisibleCenterFlow, isGuest]);
+
   // Insert a sequence of verses as individual verse nodes stacked vertically
   // and connected bottom→top, so multi-verse selections become a chain rather
   // than a single passage block.
@@ -1264,6 +1287,7 @@ function StudyCanvasInner({
         if (n.type === 'ai-note') {
           out.text = [data.question, data.answer].filter(Boolean).join(' — ');
         }
+        if (n.type === 'file') out.text = data.name;
         return out;
       });
     const edges = edgesRef.current.map((e) => ({
@@ -1370,10 +1394,10 @@ function StudyCanvasInner({
   }, [isGuest, getVisibleCenterFlow]);
 
 useEffect(() => {
-    (window as any).__studyCanvasActions = { addStickyNote, addVerseNode, addPassageNode, addVerseChain, addCrossRefNode, addAiNoteNode, setVerseNodeVersion, undo, redo, resizeNode, deleteNodes, duplicateNode, zoomIn, zoomOut, fitView, toggleLock, getCanvasContext, applyAiMutations };
+    (window as any).__studyCanvasActions = { addStickyNote, addVerseNode, addPassageNode, addFileNode, addVerseChain, addCrossRefNode, addAiNoteNode, setVerseNodeVersion, undo, redo, resizeNode, deleteNodes, duplicateNode, zoomIn, zoomOut, fitView, toggleLock, getCanvasContext, applyAiMutations };
     (window as any).__studyCanvasState = { isLocked: !isInteractive };
     return () => { delete (window as any).__studyCanvasActions; delete (window as any).__studyCanvasState; };
-  }, [addStickyNote, addVerseNode, addPassageNode, addVerseChain, addCrossRefNode, addAiNoteNode, setVerseNodeVersion, undo, redo, resizeNode, deleteNodes, duplicateNode, zoomIn, zoomOut, fitView, toggleLock, getCanvasContext, applyAiMutations, isInteractive]);
+  }, [addStickyNote, addVerseNode, addPassageNode, addFileNode, addVerseChain, addCrossRefNode, addAiNoteNode, setVerseNodeVersion, undo, redo, resizeNode, deleteNodes, duplicateNode, zoomIn, zoomOut, fitView, toggleLock, getCanvasContext, applyAiMutations, isInteractive]);
 
   // --- Cursor tracking ---
   const handleCanvasPointerMove = useCallback(
@@ -1573,6 +1597,7 @@ useEffect(() => {
               nodeColor={(n: Node) => {
                 if (n.type === 'sticky') return '#eab308';
                 if (n.type === 'verse') return '#6d7cea';
+                if (n.type === 'file') return '#c8a96a';
                 return '#6b7280';
               }}
             />
