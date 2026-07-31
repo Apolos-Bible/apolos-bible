@@ -45,6 +45,7 @@ export type PresenceUser = {
   id: number
   name: string
   color: string
+  avatar_url?: string | null
 }
 
 export type Friend = {

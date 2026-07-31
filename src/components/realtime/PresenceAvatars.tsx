@@ -19,10 +19,11 @@ const GAP = 8
 interface TooltipPos { top: number; left: number }
 
 function UserTooltip({
-  user, email, anchor, closing, onClose, onMouseEnter, onMouseLeave,
+  user, email, avatarUrl, anchor, closing, onClose, onMouseEnter, onMouseLeave,
 }: {
   user: PresenceUser
   email?: string
+  avatarUrl?: string | null
   anchor: DOMRect
   closing: boolean
   onClose: () => void
@@ -61,7 +62,7 @@ function UserTooltip({
       onMouseEnter={onMouseEnter}
       onMouseLeave={onMouseLeave}
     >
-      <UserAvatar name={user.name} email={email} size="lg" className="ring-1" />
+      <UserAvatar name={user.name} email={email} src={avatarUrl} size="lg" className="ring-1" />
       <p className="text-xs font-medium text-text-primary text-center leading-tight">{user.name}</p>
       <button
         onClick={handleMessage}
@@ -109,7 +110,7 @@ export function PresenceAvatars({ users }: PresenceAvatarsProps) {
   const visible  = users.slice(0, MAX_VISIBLE)
   const overflow = users.length - MAX_VISIBLE
   const label    = users.map((u) => u.name).join(', ') + t('presence.readingChapter')
-  const emailById = new Map(friends.map((friend) => [friend.id, friend.email]))
+  const contactsById = new Map(friends.map((friend) => [friend.id, friend]))
 
   function enterUser(id: number, e: React.MouseEvent<HTMLDivElement>) {
     if (leaveTimer.current)  clearTimeout(leaveTimer.current)
@@ -137,7 +138,8 @@ export function PresenceAvatars({ users }: PresenceAvatarsProps) {
         >
           <UserAvatar
             name={user.name}
-            email={emailById.get(user.id)}
+            email={contactsById.get(user.id)?.email}
+            src={user.avatar_url || contactsById.get(user.id)?.avatar_url}
             size="xs"
             className={cn('ring-1 ring-bg-primary border cursor-default', 'select-none')}
           />
@@ -161,7 +163,8 @@ export function PresenceAvatars({ users }: PresenceAvatarsProps) {
         return (
           <UserTooltip
             user={user}
-            email={emailById.get(user.id)}
+            email={contactsById.get(user.id)?.email}
+            avatarUrl={user.avatar_url || contactsById.get(user.id)?.avatar_url}
             anchor={hovered.rect}
             closing={closing}
             onClose={dismiss}
