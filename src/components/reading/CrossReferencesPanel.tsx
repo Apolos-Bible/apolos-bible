@@ -1,5 +1,5 @@
 import { useTranslation } from 'react-i18next'
-import { Sparkles, X } from 'lucide-react'
+import { ScanSearch, X } from 'lucide-react'
 import { cn } from '@/lib/cn'
 import { useActiveCrossRefStore } from '@/lib/store/useCrossRefStore'
 import { useActiveVerseStore } from '@/lib/store/useVerseStore'
@@ -98,7 +98,7 @@ export function CrossReferencesPanel() {
               tab === 'similar' ? 'bg-bg-tertiary text-accent' : 'text-text-muted hover:text-text-primary',
             )}
           >
-            <Sparkles className="h-3.5 w-3.5" strokeWidth={1.7} aria-hidden />
+            <ScanSearch className="h-3.5 w-3.5" strokeWidth={1.7} aria-hidden />
             {t('toolbar.similarVerses')}
           </button>
         </div>

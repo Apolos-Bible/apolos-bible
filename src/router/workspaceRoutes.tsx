@@ -8,6 +8,8 @@ import { NotFound } from './routes/NotFound'
 import { PathEditorRoute } from './routes/PathEditorRoute'
 import { ProfileRoute } from './routes/ProfileRoute'
 import { SettingsRoute } from './routes/SettingsRoute'
+import { GamesRoute } from './routes/GamesRoute'
+import { GameRoomRoute } from './routes/GameRoomRoute'
 
 /**
  * Routes that can live inside a desktop editor group. They intentionally omit
@@ -26,6 +28,8 @@ export const workspaceRoutes: RouteObject[] = [
   { path: 'ajustes', element: <SettingsRoute /> },
   { path: 'marketplace', element: <MarketplaceRoute /> },
   { path: 'marketplace/:slug', element: <MarketplacePathRoute /> },
+  { path: 'juegos', element: <GamesRoute /> },
+  { path: 'juegos/:roomId', element: <GameRoomRoute /> },
   { path: 'mis-rutas', element: <MyPathsRoute /> },
   { path: 'mis-rutas/:slug', element: <PathEditorRoute /> },
   { path: 'mis-rutas/:slug/:studySlug', element: <PathEditorRoute /> },

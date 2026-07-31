@@ -8,7 +8,7 @@ import { useActiveCrossRefStore } from '@/lib/store/useCrossRefStore'
 import { useActiveCompareStore } from '@/lib/store/useCompareStore'
 import { useAuthStore } from '@/lib/store/useAuthStore'
 import { useUIStore } from '@/lib/store/useUIStore'
-import { Sparkles } from 'lucide-react'
+import { ScanSearch } from 'lucide-react'
 import type { MenuItem } from '@/lib/store/useContextMenuStore'
 import { isAuthError } from '@/lib/auth'
 import { focusWhenReady, type TranslationKey } from '@/lib/keyboard'
@@ -403,7 +403,7 @@ export function useVerseActions() {
         items.push({
           type: 'action',
           label: t('toolbar.similarVerses'),
-          icon: <Sparkles className="h-3 w-3" strokeWidth={1.7} />,
+          icon: <ScanSearch className="h-3 w-3" strokeWidth={1.7} />,
           shortcut: 'S',
           onClick: () => openSimilar(list),
         })

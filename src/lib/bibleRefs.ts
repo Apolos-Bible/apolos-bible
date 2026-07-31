@@ -1,3 +1,5 @@
+import { normalizeText } from './normalizeText'
+
 export type Segment =
   | { kind: 'text'; value: string }
   | {
@@ -173,6 +175,14 @@ export const BOOK_ALIASES: Record<string, string> = {
   jude: 'jude', judas: 'jude', jud: 'jude',
   // Revelation (66)
   revelation: 'revelation', apocalipsis: 'revelation', apo: 'revelation', rev: 'revelation', rv: 'revelation', ap: 'revelation',
+}
+
+export function resolveReferenceBook<B extends { name: string; slug: string }>(
+  books: readonly B[],
+  canonicalSlug: string,
+): B | undefined {
+  return books.find((book) => book.slug === canonicalSlug)
+    ?? books.find((book) => BOOK_ALIASES[normalizeText(book.name).trim()] === canonicalSlug)
 }
 
 // Version prefix is detected separately (strict uppercase) to avoid matching

@@ -168,6 +168,17 @@ describe('useVerseStore', () => {
     expect(state.loadingVerses).toBe(false)
   })
 
+  it('opens and selects a verse range while anchoring the scroll at its start', async () => {
+    mockBibleApi.chapter.mockResolvedValueOnce(mockChapterResponse)
+
+    await useVerseStore.getState().openVerseRange('john', 3, 16, 18)
+
+    const state = useVerseStore.getState()
+    expect(state.selectedVerseId).toBe('john-3-16')
+    expect(state.selectedVerseIds).toEqual(['john-3-16', 'john-3-17', 'john-3-18'])
+    expect(state.cursorVerseId).toBe('john-3-16')
+  })
+
   it('keeps the current reading location when the version changes', async () => {
     vi.mocked(getStoredBibleVersionId).mockImplementation(
       () => Number(localStorage.getItem('bibleVersionId')) || 1,
