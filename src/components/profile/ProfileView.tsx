@@ -6,6 +6,7 @@ import { cn } from '@/lib/cn'
 import { modKey } from '@/lib/platform'
 import { paths } from '@/router/paths'
 import { relativeTime } from '@/lib/relativeTime'
+import { noteToPlainText } from '@/lib/richNotes'
 import { useUIStore } from '@/lib/store/useUIStore'
 import { UserAvatar } from '@/components/auth/UserAvatar'
 import { SectionLabel } from '@/components/ui/SectionLabel'
@@ -428,7 +429,7 @@ export function ProfileView({
                                 )}
                               </div>
                               <p className="line-clamp-2 whitespace-pre-line text-base leading-snug text-text-secondary">
-                                {note.body}
+                                {noteToPlainText(note.body)}
                               </p>
                             </>
                           )
@@ -527,7 +528,7 @@ export function ProfileView({
                             <div className="min-w-0">
                               <span className={cn(REF, 'mr-2')}>{like.verse_ref}</span>
                               <span className="line-clamp-2 font-reading text-base leading-snug text-text-secondary">
-                                {like.note_body}
+                                {noteToPlainText(like.note_body)}
                               </span>
                               <time className="mt-0.5 block text-2xs text-text-muted">
                                 {relativeTime(like.created_at)}

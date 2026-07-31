@@ -28,6 +28,7 @@ import { SEOMeta } from '@/components/seo/SEOMeta'
 import { cn } from '@/lib/cn'
 import { isAuthError } from '@/lib/auth'
 import { isYouVersionVersion } from '@/lib/youVersion'
+import { noteToPlainText } from '@/lib/richNotes'
 import type { ReaderWidth } from '@/lib/store/useBiblePaneStore'
 
 // ── Icons ──────────────────────────────────────────────────────────────────
@@ -417,7 +418,7 @@ export function VerseList() {
 
     return (notes[verseApiId] ?? [])
       .filter((note) => note.user?.id === user.id)
-      .map((note) => note.body)
+      .map((note) => noteToPlainText(note.body))
   }
 
   /**
