@@ -9,7 +9,6 @@ import { SegmentedControl } from '@/components/ui/SegmentedControl'
 import { NotificationsSection } from '@/components/ui/NotificationsSection'
 import { ColorPicker } from '@/components/ui/ColorPicker'
 import { Select } from '@/components/ui/Select'
-import { bibleVersionsInSameLanguage } from '@/lib/bibleVersionOptions'
 import { cn } from '@/lib/cn'
 import { paths } from '@/router/paths'
 import { useUIStore, DEFAULT_ACCENT_COLOR, type FontSize, type Locale, type ReadingMode, type Theme } from '@/lib/store/useUIStore'
@@ -132,7 +131,7 @@ export function SettingsRoute() {
   const versionId = useVerseStore((s) => s.versionId)
   const loadVersions = useVerseStore((s) => s.loadVersions)
   const setVersion = useVerseStore((s) => s.setVersion)
-  const selectableVersions = bibleVersionsInSameLanguage(versions, versionId)
+  const selectableVersions = versions
   const selectedVersion = versions.find((version) => version.id === versionId)
 
   // One section at a time, Linear-style. The active section IS the URL hash
