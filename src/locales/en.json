@@ -994,6 +994,7 @@
   "guided.insertOnCanvas": "Put the passage on the canvas",
   "guided.inserting": "Opening the passage…",
   "guided.insertFailed": "Could not open the passage. You can look it up with the Bible panel.",
+  "guided.mobilePassage": "Passage text",
   "guided.leaderNotes": "Notes for guiding others",
   "guided.previous": "Previous",
   "guided.next": "Next",
