@@ -3,9 +3,11 @@ import { Download, ExternalLink, FileArchive, FileText, Loader2, Paperclip } fro
 import { Handle, Position, type Node, type NodeProps } from '@xyflow/react';
 import { useTranslation } from 'react-i18next';
 import { cn } from '@/lib/cn';
+import { safeExternalUrl } from '@/lib/study/externalUrl';
 import { ResizableNode } from './ResizableNode';
 
 export type FileNodeData = {
+  kind?: 'upload' | 'link';
   fileId: string;
   name: string;
   mimeType: string;
@@ -32,9 +34,14 @@ export const FileNode = memo(function FileNode({ id, data, selected }: NodeProps
   const { t } = useTranslation();
   const isImage = data.mimeType.startsWith('image/');
   const isPdf = data.mimeType === 'application/pdf';
+  const safeLinkUrl = data.kind === 'link' ? safeExternalUrl(data.contentUrl) : null;
+  const isLink = safeLinkUrl !== null;
   const [pdfUrl, setPdfUrl] = useState<string | null>(null);
   const [pdfFailed, setPdfFailed] = useState(false);
-  const openFile = () => window.open(data.contentUrl, '_blank', 'noopener,noreferrer');
+  const openFile = () => {
+    const url = data.kind === 'link' ? safeLinkUrl : data.contentUrl;
+    if (url) window.open(url, '_blank', 'noopener,noreferrer');
+  };
 
   // apolos.io deliberately sends SAMEORIGIN for framed responses. Fetching the
   // signed private PDF first and framing its local blob URL keeps that security
@@ -74,8 +81,8 @@ export const FileNode = memo(function FileNode({ id, data, selected }: NodeProps
     <ResizableNode
       id={id}
       selected={selected}
-      minWidth={isPdf ? 320 : 220}
-      minHeight={isPdf ? 300 : isImage ? 180 : 120}
+      minWidth={isLink ? 360 : isPdf ? 320 : 220}
+      minHeight={isLink ? 240 : isPdf ? 300 : isImage ? 180 : 120}
       radialActions={[
         {
           key: 'open-file',
@@ -96,11 +103,11 @@ export const FileNode = memo(function FileNode({ id, data, selected }: NodeProps
         <Handle id="left" type="source" position={Position.Left} className="!bg-border" />
 
         <header className="flex h-10 shrink-0 items-center gap-2 border-b border-border-subtle px-3">
-          <Paperclip className="h-3.5 w-3.5 shrink-0 text-accent" />
+          {isLink ? <ExternalLink className="h-3.5 w-3.5 shrink-0 text-accent" /> : <Paperclip className="h-3.5 w-3.5 shrink-0 text-accent" />}
           <span className="min-w-0 flex-1 truncate text-xs font-medium text-text-primary" title={data.name}>
             {data.name}
           </span>
-          <span className="shrink-0 text-2xs text-text-muted">{formatBytes(data.size)}</span>
+          <span className="shrink-0 text-2xs text-text-muted">{isLink ? t('study.file.webPage') : formatBytes(data.size)}</span>
           <button
             type="button"
             onClick={openFile}
@@ -111,13 +118,33 @@ export const FileNode = memo(function FileNode({ id, data, selected }: NodeProps
           </button>
         </header>
 
-        {isImage ? (
+        {isLink ? (
+          <div className="relative min-h-0 flex-1 bg-bg-secondary">
+            <iframe
+              src={safeLinkUrl}
+              title={data.name}
+              loading="lazy"
+              sandbox="allow-forms allow-scripts"
+              referrerPolicy="no-referrer"
+              allow="camera 'none'; microphone 'none'; geolocation 'none'; payment 'none'; usb 'none'; serial 'none'; clipboard-read 'none'; clipboard-write 'none'"
+              className="nodrag nowheel h-full w-full border-0 bg-white"
+            />
+            <div className="pointer-events-none absolute bottom-2 left-2 rounded bg-black/70 px-2 py-1 text-2xs text-white/80">
+              {t('study.file.sandboxed')}
+            </div>
+          </div>
+        ) : data.kind === 'link' ? (
+          <div className="flex min-h-0 flex-1 flex-col items-center justify-center gap-2 p-4 text-center">
+            <ExternalLink className="h-7 w-7 text-red-400" />
+            <p className="text-xs text-text-secondary">{t('study.file.invalidLink')}</p>
+          </div>
+        ) : isImage ? (
           <div className="min-h-0 flex-1 bg-bg-secondary p-2">
             <img
               src={data.contentUrl}
               alt={data.name}
               draggable={false}
-              className="nodrag h-full w-full select-none object-contain"
+              className="h-full w-full select-none object-contain"
             />
           </div>
         ) : isPdf && pdfUrl ? (
