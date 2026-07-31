@@ -8,6 +8,7 @@ import { ResizableNode } from './ResizableNode';
 
 export type FileNodeData = {
   kind?: 'upload' | 'link';
+  linkMode?: 'embed' | 'external';
   fileId: string;
   name: string;
   mimeType: string;
@@ -36,6 +37,7 @@ export const FileNode = memo(function FileNode({ id, data, selected }: NodeProps
   const isPdf = data.mimeType === 'application/pdf';
   const safeLinkUrl = data.kind === 'link' ? safeExternalUrl(data.contentUrl) : null;
   const isLink = safeLinkUrl !== null;
+  const canEmbed = isLink && data.linkMode !== 'external';
   const [pdfUrl, setPdfUrl] = useState<string | null>(null);
   const [pdfFailed, setPdfFailed] = useState(false);
   const openFile = () => {
@@ -81,8 +83,8 @@ export const FileNode = memo(function FileNode({ id, data, selected }: NodeProps
     <ResizableNode
       id={id}
       selected={selected}
-      minWidth={isLink ? 360 : isPdf ? 320 : 220}
-      minHeight={isLink ? 240 : isPdf ? 300 : isImage ? 180 : 120}
+      minWidth={canEmbed ? 360 : isPdf ? 320 : 220}
+      minHeight={canEmbed ? 240 : isPdf ? 300 : isImage ? 180 : 120}
       radialActions={[
         {
           key: 'open-file',
@@ -118,7 +120,7 @@ export const FileNode = memo(function FileNode({ id, data, selected }: NodeProps
           </button>
         </header>
 
-        {isLink ? (
+        {canEmbed ? (
           <div className="relative min-h-0 flex-1 bg-bg-secondary">
             <iframe
               src={safeLinkUrl}
@@ -132,6 +134,17 @@ export const FileNode = memo(function FileNode({ id, data, selected }: NodeProps
             <div className="pointer-events-none absolute bottom-2 left-2 rounded bg-black/70 px-2 py-1 text-2xs text-white/80">
               {t('study.file.sandboxed')}
             </div>
+          </div>
+        ) : isLink ? (
+          <div className="flex min-h-0 flex-1 flex-col items-center justify-center gap-3 p-5 text-center">
+            <ExternalLink className="h-8 w-8 text-accent" />
+            <div>
+              <p className="text-sm font-medium text-text-primary">{data.name}</p>
+              <p className="mt-1 text-xs text-text-muted">{t('study.file.externalOnlyDescription')}</p>
+            </div>
+            <button type="button" onClick={openFile} className="nodrag rounded-lg bg-accent px-3 py-2 text-xs font-semibold text-bg-primary hover:opacity-90">
+              {t('study.file.openExternal')}
+            </button>
           </div>
         ) : data.kind === 'link' ? (
           <div className="flex min-h-0 flex-1 flex-col items-center justify-center gap-2 p-4 text-center">

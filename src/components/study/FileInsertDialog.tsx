@@ -11,7 +11,7 @@ const MAX_FILE_BYTES = 40 * 1024 * 1024;
 const ACCEPTED_EXTENSIONS = '.jpg,.jpeg,.png,.gif,.webp,.avif,.pdf,.txt,.md,.csv,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.zip';
 
 type PendingFile = { id: string; file: File };
-type PendingLink = { id: string; url: string; name: string };
+type PendingLink = { id: string; url: string; name: string; embeddable: boolean };
 
 interface FileInsertDialogProps {
   open: boolean;
@@ -39,6 +39,7 @@ export function FileInsertDialog({ open, sessionId, onClose, onAdd }: FileInsert
   const [linkValue, setLinkValue] = useState('');
   const [dragActive, setDragActive] = useState(false);
   const [busy, setBusy] = useState(false);
+  const [checkingLink, setCheckingLink] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const closeAndReset = useCallback(() => {
@@ -73,17 +74,40 @@ export function FileInsertDialog({ open, sessionId, onClose, onAdd }: FileInsert
     appendFiles(Array.from(event.dataTransfer.files));
   }, [appendFiles]);
 
-  const addLink = useCallback(() => {
+  const addLink = useCallback(async () => {
     const url = safeExternalUrl(linkValue);
     if (!url) {
       setError(t('study.file.invalidLink'));
       return;
     }
-    const parsed = new URL(url);
-    setLinks((current) => [...current, { id: itemId(), url, name: parsed.hostname }]);
-    setLinkValue('');
+    if (!sessionId || checkingLink) return;
+
+    setCheckingLink(true);
     setError(null);
-  }, [linkValue, t]);
+    try {
+      const result = await studyApi.checkExternalLink(sessionId, url);
+      const finalUrl = safeExternalUrl(result.final_url) ?? url;
+      setLinks((current) => [...current, {
+        id: itemId(),
+        url: finalUrl,
+        name: new URL(finalUrl).hostname,
+        embeddable: result.embeddable,
+      }]);
+      setLinkValue('');
+      if (!result.embeddable) setError(t('study.file.embedBlocked'));
+    } catch {
+      setLinks((current) => [...current, {
+        id: itemId(),
+        url,
+        name: new URL(url).hostname,
+        embeddable: false,
+      }]);
+      setLinkValue('');
+      setError(t('study.file.embedUnavailable'));
+    } finally {
+      setCheckingLink(false);
+    }
+  }, [checkingLink, linkValue, sessionId, t]);
 
   const addToCanvas = useCallback(async () => {
     if (!sessionId || busy || (files.length === 0 && links.length === 0)) return;
@@ -115,6 +139,7 @@ export function FileInsertDialog({ open, sessionId, onClose, onAdd }: FileInsert
 
     nodes.push(...links.map((link) => ({
       kind: 'link' as const,
+      linkMode: link.embeddable ? 'embed' as const : 'external' as const,
       fileId: `link-${link.id}`,
       name: link.name,
       mimeType: 'text/html',
@@ -206,15 +231,15 @@ export function FileInsertDialog({ open, sessionId, onClose, onAdd }: FileInsert
                 value={linkValue}
                 onChange={(event) => setLinkValue(event.target.value)}
                 onKeyDown={(event) => {
-                  if (event.key === 'Enter') { event.preventDefault(); addLink(); }
+                  if (event.key === 'Enter') { event.preventDefault(); void addLink(); }
                 }}
                 placeholder="https://example.com"
                 className="w-full rounded-lg border border-border bg-bg-primary py-2 pl-9 pr-3 text-sm text-text-primary outline-none placeholder:text-text-muted focus:border-accent/50"
               />
             </div>
-            <button type="button" onClick={addLink} disabled={!linkValue.trim()} className="inline-flex items-center gap-1.5 rounded-lg border border-border px-3 text-xs font-medium text-text-secondary transition-colors hover:bg-bg-tertiary hover:text-text-primary disabled:opacity-40">
-              <Plus className="h-3.5 w-3.5" />
-              {t('study.file.queueLink')}
+            <button type="button" onClick={() => void addLink()} disabled={!linkValue.trim() || checkingLink || !sessionId} className="inline-flex items-center gap-1.5 rounded-lg border border-border px-3 text-xs font-medium text-text-secondary transition-colors hover:bg-bg-tertiary hover:text-text-primary disabled:opacity-40">
+              {checkingLink ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Plus className="h-3.5 w-3.5" />}
+              {checkingLink ? t('study.file.checkingLink') : t('study.file.queueLink')}
             </button>
           </div>
           <p className="mt-1.5 text-2xs text-text-muted">{t('study.file.linkSecurity')}</p>
@@ -247,6 +272,7 @@ export function FileInsertDialog({ open, sessionId, onClose, onAdd }: FileInsert
                   <div className="min-w-0 flex-1">
                     <p className="truncate text-xs font-medium text-text-primary">{link.name}</p>
                     <p className="truncate text-2xs text-text-muted">{link.url}</p>
+                    {!link.embeddable && <p className="mt-0.5 text-2xs text-amber-500">{t('study.file.externalOnly')}</p>}
                   </div>
                   <button type="button" onClick={() => setLinks((current) => current.filter((item) => item.id !== link.id))} disabled={busy} aria-label={t('study.file.removeItem', { name: link.name })} className="flex h-7 w-7 items-center justify-center rounded text-text-muted hover:bg-bg-tertiary hover:text-red-400 disabled:opacity-40">
                     <X className="h-3.5 w-3.5" />
