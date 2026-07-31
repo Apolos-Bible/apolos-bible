@@ -1,5 +1,5 @@
 import { useEffect, type ReactNode } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useLocation, useNavigate } from 'react-router-dom'
 import { ChevronLeft } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { Sidebar } from '@/components/sidebar/Sidebar'
@@ -7,6 +7,7 @@ import { FloatingChatDock } from '@/components/chat/FloatingChatDock'
 import { cn } from '@/lib/cn'
 import { useUIStore } from '@/lib/store/useUIStore'
 import { useVerseStore } from '@/lib/store/useVerseStore'
+import { useIsMobile } from '@/lib/useIsMobile'
 import { MobileBottomNav } from './MobileBottomNav'
 import { MobileSearchView } from './MobileSearchView'
 import { WorkspaceSidePanel } from './WorkspaceSidePanel'
@@ -34,10 +35,27 @@ interface AppPageLayoutProps {
  */
 export function AppPageLayout({ title, mobileActions, children }: AppPageLayoutProps) {
   const navigate = useNavigate()
+  const { pathname } = useLocation()
+  const isMobile = useIsMobile()
   const { t } = useTranslation()
   const activePanel = useUIStore((state) => state.activePanel)
+  const closePanel = useUIStore((state) => state.closePanel)
   const mobileSearchOpen = useUIStore((state) => state.mobileSearchOpen)
+  const closeMobileSearch = useUIStore((state) => state.closeMobileSearch)
+  const closeMobileSidebar = useUIStore((state) => state.closeMobileSidebar)
+  const closeMobileBookPicker = useUIStore((state) => state.closeMobileBookPicker)
   const workspacePane = useWorkspacePane()
+
+  // Panels belong to the reader/workspace route. Clear any reader chrome when
+  // entering a full page so a panel opened on the Bible cannot sit above (or
+  // hide) the destination page after navigation.
+  useEffect(() => {
+    if (!isMobile) return
+    closePanel()
+    closeMobileSearch()
+    closeMobileSidebar()
+    closeMobileBookPicker()
+  }, [isMobile, pathname, closePanel, closeMobileSearch, closeMobileSidebar, closeMobileBookPicker])
 
   // On a hard refresh of /perfil or /ajustes the reader never mounts, so
   // nobody loads the Bible book list the sidebar shows. Fetch it here
