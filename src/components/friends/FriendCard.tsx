@@ -1,6 +1,8 @@
+import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { UserAvatar } from '@/components/auth/UserAvatar'
+import { RemoveFriendDialog } from '@/components/friends/RemoveFriendDialog'
 import { MessageCircle } from 'lucide-react'
 import { paths } from '@/router/paths'
 import type { Friend } from '@/types'
@@ -13,6 +15,7 @@ interface FriendCardProps {
 
 export function FriendCard({ friend, onRemove, onMessage }: FriendCardProps) {
   const { t } = useTranslation()
+  const [confirmingRemove, setConfirmingRemove] = useState(false)
 
   return (
     <div className="flex items-center gap-3 md:gap-2.5 px-3 py-3 md:py-2 rounded hover:bg-bg-tertiary group transition-colors">
@@ -38,7 +41,8 @@ export function FriendCard({ friend, onRemove, onMessage }: FriendCardProps) {
         </button>
       )}
       <button
-        onClick={onRemove}
+        type="button"
+        onClick={() => setConfirmingRemove(true)}
         aria-label={t('friends.removeAria', { name: friend.name })}
         title={t('friends.removeTitle')}
         className="inline-flex h-10 w-10 md:h-auto md:w-auto items-center justify-center md:opacity-0 md:group-hover:opacity-100 md:focus-visible:opacity-100 transition-opacity text-text-muted hover:text-red-400 focus-visible:text-red-400 md:p-1 rounded focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-red-400"
@@ -47,6 +51,16 @@ export function FriendCard({ friend, onRemove, onMessage }: FriendCardProps) {
           <path d="M3 8h10" strokeLinecap="round" />
         </svg>
       </button>
+
+      <RemoveFriendDialog
+        open={confirmingRemove}
+        friendName={friend.name}
+        onClose={() => setConfirmingRemove(false)}
+        onConfirm={() => {
+          setConfirmingRemove(false)
+          onRemove()
+        }}
+      />
     </div>
   )
 }
