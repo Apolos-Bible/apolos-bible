@@ -349,6 +349,8 @@
   "friends.messageTitle": "Send message",
   "friends.accept": "Accept",
   "friends.decline": "Decline",
+  "friends.acceptAria": "Accept {{name}}'s friend request",
+  "friends.declineAria": "Decline {{name}}'s friend request",
   "friends.pending": "pending",
   "favorites.signInPrompt": "Sign in to see favorites",
   "favorites.empty": "No favorites yet",
