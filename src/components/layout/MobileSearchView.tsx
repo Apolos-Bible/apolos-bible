@@ -12,6 +12,7 @@ import { BOOK_ALIASES } from '@/lib/bibleRefs'
 import type { Book } from '@/lib/store/useVerseStore'
 import { api } from '@/lib/api'
 import { cn } from '@/lib/cn'
+import { noteToPlainText } from '@/lib/richNotes'
 
 type Scope = 'all' | 'bible' | 'notes' | 'people'
 
@@ -143,7 +144,7 @@ export function MobileSearchView() {
     const q = normalizeText(query.trim())
     if (q.length < 2) return []
     return allNotes
-      .filter((n) => normalizeText(n.body).includes(q))
+      .filter((n) => normalizeText(noteToPlainText(n.body)).includes(q))
       .slice(0, scope === 'all' ? 5 : 50)
   }, [allNotes, query, scope])
 
@@ -359,7 +360,7 @@ export function MobileSearchView() {
                     <p className="text-xs text-text-muted capitalize">
                       {n.verse.book} {n.verse.chapter}:{n.verse.number}
                     </p>
-                    <p className="mt-0.5 text-[15px] text-text-primary line-clamp-2">{n.body}</p>
+                    <p className="mt-0.5 text-[15px] text-text-primary line-clamp-2">{noteToPlainText(n.body)}</p>
                   </button>
                 </li>
               ))}

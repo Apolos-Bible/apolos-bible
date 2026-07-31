@@ -57,6 +57,14 @@ export const COMMANDS: CommandSpec[] = [
     allowInInput: true,
   },
   {
+    id: 'app.closeTab',
+    keys: ['mod+w'],
+    scope: 'app',
+    group: 'app',
+    descriptionKey: 'shortcuts.closeTab',
+    allowInInput: true,
+  },
+  {
     id: 'app.search',
     keys: ['/'],
     scope: 'app',
@@ -112,11 +120,12 @@ export const COMMANDS: CommandSpec[] = [
   // ── Dialogs ─────────────────────────────────────────────────────────────
   {
     id: 'dialog.close',
-    keys: ['escape'],
+    keys: ['escape', 'mod+w'],
     scope: 'dialog',
     group: 'app',
     descriptionKey: 'shortcuts.closeDialog',
     allowInInput: true,
+    overrides: ['app.closeTab'],
   },
 
   // ── Reader: navigation ──────────────────────────────────────────────────
