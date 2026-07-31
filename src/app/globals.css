@@ -3,6 +3,19 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Legacy border utility aliases. The study surface still uses `border-border`
+   in a few places; keep those classes tied to the theme variables instead of
+   falling back to Tailwind's light default border color. */
+@layer utilities {
+  .border-border,
+  .border-border-subtle { border-color: var(--border-subtle); }
+  .border-border-strong { border-color: var(--border-hover); }
+  .bg-border { background-color: var(--border-subtle); }
+  .text-border { color: var(--border-subtle); }
+  .divide-border > :not([hidden]) ~ :not([hidden]) { border-color: var(--border-subtle); }
+  .ring-border { --tw-ring-color: var(--border-subtle); }
+}
+
 * {
   box-sizing: border-box;
   margin: 0;
