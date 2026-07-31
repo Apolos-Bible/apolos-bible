@@ -1,12 +1,13 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
-import { Check, MessageCircle, UserPlus, X } from 'lucide-react'
+import { Check, UserPlus, X } from 'lucide-react'
 import { useChatStore } from '@/lib/store/useChatStore'
 import { useAuthStore } from '@/lib/store/useAuthStore'
 import { useFriendStore } from '@/lib/store/useFriendStore'
 import { useUIStore } from '@/lib/store/useUIStore'
 import { UserAvatar } from '@/components/auth/UserAvatar'
+import { ConversationAvatar } from '@/components/chat/ConversationAvatar'
 import { cn } from '@/lib/cn'
 import { paths } from '@/router/paths'
 import { ChatThread } from './ChatThread'
@@ -19,10 +20,6 @@ interface FloatingChatDockProps {
 function conversationTitle(conversation: Conversation, selfId: number | undefined): string {
   if (conversation.type === 'group') return conversation.name ?? conversation.participants.map((p) => p.name).join(', ')
   return conversation.participants.find((p) => p.id !== selfId)?.name ?? conversation.participants[0]?.name ?? 'Chat'
-}
-
-function conversationAvatar(conversation: Conversation, selfId: number | undefined) {
-  return conversation.participants.find((p) => p.id !== selfId) ?? conversation.participants[0]
 }
 
 export function FloatingChatDock({ rightPanelOpen }: FloatingChatDockProps) {
@@ -191,7 +188,6 @@ export function FloatingChatDock({ rightPanelOpen }: FloatingChatDockProps) {
         })}
 
         {bubbleConversations.slice(-4).map((conversation) => {
-          const avatar = conversationAvatar(conversation, selfId)
           const title = conversationTitle(conversation, selfId)
           return (
             <button
@@ -202,28 +198,11 @@ export function FloatingChatDock({ rightPanelOpen }: FloatingChatDockProps) {
               title={title}
               className="group relative rounded-full outline-none transition-transform hover:-translate-y-0.5 focus-visible:ring-2 focus-visible:ring-accent/70"
             >
-              {conversation.type === 'group' ? (
-                conversation.avatar_url ? (
-                  <UserAvatar
-                    name={title}
-                    src={conversation.avatar_url}
-                    size="lg"
-                    className="h-12 w-12 border-2 border-bg-primary text-sm shadow-lg"
-                  />
-                ) : (
-                  <span className="flex h-12 w-12 items-center justify-center rounded-full border-2 border-bg-primary bg-accent text-bg-primary shadow-lg">
-                    <MessageCircle className="h-5 w-5" strokeWidth={1.8} />
-                  </span>
-                )
-              ) : (
-                <UserAvatar
-                  name={avatar?.name}
-                  email={avatar?.email}
-                  src={avatar?.avatar_url}
-                  size="lg"
-                  className="h-12 w-12 border-2 border-bg-primary text-sm shadow-lg"
-                />
-              )}
+              <ConversationAvatar
+                conversation={conversation}
+                selfId={selfId}
+                className="h-12 w-12 border-2 border-bg-primary text-sm shadow-lg"
+              />
               {conversation.unread_count > 0 && (
                 <span className="absolute -right-0.5 -top-1 min-w-5 h-5 rounded-full bg-accent px-1 text-[10px] font-semibold leading-5 text-bg-primary shadow">
                   {conversation.unread_count > 9 ? '9+' : conversation.unread_count}

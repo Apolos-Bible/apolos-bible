@@ -392,6 +392,7 @@
   "chat.sendFailed": "Could not send message",
   "chat.send": "Send",
   "chat.newConversation": "New conversation",
+  "chat.inboxDescription": "Your conversations",
   "chat.directMessage": "Direct message",
   "chat.group": "Group",
   "chat.groupNamePlaceholder": "Group name (optional)",
