@@ -724,7 +724,14 @@ export function VerseList() {
                             : 'hover:bg-black/[0.03]',
                       )}
                     >
-                      <div className="relative flex w-7 shrink-0 flex-col items-end pt-[2px]">
+                      <div className={cn(
+                        'relative shrink-0 flex-col items-end pt-[2px]',
+                        showVerseNumbers || hasCrossRefs || hasActivity || hasFriendActivity
+                          ? 'flex w-7'
+                          : isBookmarked
+                            ? 'flex w-7 md:hidden'
+                            : 'hidden',
+                      )}>
                         <div className="flex h-3 items-center gap-1">
                           {isBookmarked && <span className="md:hidden"><HeartIcon size={7} /></span>}
                           {showVerseNumbers && <span className={cn(
@@ -733,8 +740,13 @@ export function VerseList() {
                           )}>
                             {verse.verse}
                           </span>}
+                          {!showVerseNumbers && hasCrossRefs && (
+                            <span className="inline-flex text-accent/40" title={t('toolbar.crossReferences')}>
+                              <CrossReferenceMark />
+                            </span>
+                          )}
                         </div>
-                        {hasCrossRefs && (
+                        {showVerseNumbers && hasCrossRefs && (
                           <span className="mt-1 inline-flex text-accent/40" title={t('toolbar.crossReferences')}>
                             <CrossReferenceMark />
                           </span>
