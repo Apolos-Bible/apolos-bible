@@ -15,6 +15,14 @@ import { paths } from '@/router/paths'
 import { useUIStore, DEFAULT_ACCENT_COLOR, type FontSize, type Locale, type ReadingMode, type Theme } from '@/lib/store/useUIStore'
 import { useVerseStore } from '@/lib/store/useVerseStore'
 import { useAuthStore } from '@/lib/store/useAuthStore'
+import { isYouVersionVersion } from '@/lib/youVersion'
+import {
+  canUseGoogleAnalytics,
+  onAnalyticsConsentChange,
+  readAnalyticsConsent,
+  setAnalyticsConsent,
+  type AnalyticsConsent,
+} from '@/lib/analytics'
 
 const FONT_OPTIONS: { value: FontSize; label: string }[] = [
   { value: 'sm', label: 'S' },
@@ -112,12 +120,20 @@ export function SettingsRoute() {
   const setFontSize = useUIStore((s) => s.setFontSize)
   const readingMode = useUIStore((s) => s.readingMode)
   const setReadingMode = useUIStore((s) => s.setReadingMode)
+  const [analyticsConsent, setAnalyticsConsentState] = useState<AnalyticsConsent>(
+    () => readAnalyticsConsent() ?? 'denied',
+  )
+  useEffect(
+    () => onAnalyticsConsentChange(setAnalyticsConsentState),
+    [],
+  )
 
   const versions = useVerseStore((s) => s.versions)
   const versionId = useVerseStore((s) => s.versionId)
   const loadVersions = useVerseStore((s) => s.loadVersions)
   const setVersion = useVerseStore((s) => s.setVersion)
   const selectableVersions = bibleVersionsInSameLanguage(versions, versionId)
+  const selectedVersion = versions.find((version) => version.id === versionId)
 
   // One section at a time, Linear-style. The active section IS the URL hash
   // (/ajustes#apariencia), so deep links, refresh, and back/forward all keep
@@ -751,10 +767,39 @@ export function SettingsRoute() {
                   placeholder={t('common.loading')}
                   options={selectableVersions.map((version) => ({
                     value: version.id,
-                    label: `${version.abbreviation} — ${version.name}`,
+                    label: `${version.abbreviation} — ${version.name}${isYouVersionVersion(version) ? ` · ${t('youVersion.provider')}` : ''}`,
                   }))}
                   className="mt-4 w-full sm:max-w-md"
                 />
+                {isYouVersionVersion(selectedVersion) && (
+                  <div className="mt-4 border-t border-border-subtle pt-4 text-xs leading-relaxed text-text-muted">
+                    {selectedVersion?.copyright && <p>{selectedVersion.copyright}</p>}
+                    {selectedVersion?.info && <p className="mt-2">{selectedVersion.info}</p>}
+                    <div className="mt-3 flex flex-wrap gap-x-3 gap-y-1">
+                      {selectedVersion?.publisherUrl && (
+                        <a
+                          href={selectedVersion.publisherUrl}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="text-accent/80 transition-colors hover:text-accent"
+                        >
+                          {t('youVersion.publisher')}
+                        </a>
+                      )}
+                      {selectedVersion?.deepLink && (
+                        <a
+                          href={selectedVersion.deepLink}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="text-accent/80 transition-colors hover:text-accent"
+                        >
+                          {t('youVersion.open')}
+                        </a>
+                      )}
+                      <span>{t('youVersion.poweredBy')}</span>
+                    </div>
+                  </div>
+                )}
               </div>
             </section>
           )}
@@ -779,6 +824,27 @@ export function SettingsRoute() {
                     ]}
                   />
                 </SettingRow>
+                {canUseGoogleAnalytics() && (
+                  <div className="mt-4 border-t border-border-subtle pt-4">
+                    <SettingRow
+                      label={t('settings.privacy.analytics')}
+                      help={t('settings.privacy.analyticsHelp')}
+                    >
+                      <SegmentedControl<AnalyticsConsent>
+                        ariaLabel={t('settings.privacy.analytics')}
+                        value={analyticsConsent}
+                        onChange={(value) => {
+                          setAnalyticsConsentState(value)
+                          setAnalyticsConsent(value)
+                        }}
+                        options={[
+                          { value: 'denied', label: t('settings.privacy.analyticsOff') },
+                          { value: 'granted', label: t('settings.privacy.analyticsOn') },
+                        ]}
+                      />
+                    </SettingRow>
+                  </div>
+                )}
               </div>
             </section>
           )}
