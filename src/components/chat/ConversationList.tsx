@@ -1,9 +1,9 @@
 import { useTranslation } from 'react-i18next'
-import { Plus, UsersRound } from 'lucide-react'
+import { Plus } from 'lucide-react'
 import i18n from '@/lib/i18n'
 import { useChatStore } from '@/lib/store/useChatStore'
 import { useAuthStore } from '@/lib/store/useAuthStore'
-import { UserAvatar } from '@/components/auth/UserAvatar'
+import { ConversationAvatar } from '@/components/chat/ConversationAvatar'
 import { cn } from '@/lib/cn'
 import type { Conversation } from '@/lib/chatApi'
 
@@ -26,11 +26,6 @@ function conversationTitle(c: Conversation, selfId: number | undefined): string 
   if (c.type === 'group') return c.name ?? c.participants.map(p => p.name).join(', ')
   const other = c.participants.find(p => p.id !== selfId)
   return other?.name ?? i18n.t('chat.directMessage')
-}
-
-function conversationAvatar(c: Conversation, selfId: number | undefined) {
-  const other = c.participants.find(p => p.id !== selfId)
-  return other ?? c.participants[0]
 }
 
 export function ConversationList({ onNewChat, onSelect }: ConversationListProps = {}) {
@@ -81,7 +76,7 @@ export function ConversationList({ onNewChat, onSelect }: ConversationListProps 
   }
 
   return (
-    <div className="workspace-conversation-list flex-1 overflow-y-auto md:py-1">
+    <div className="workspace-conversation-list flex-1 space-y-1 overflow-y-auto p-2">
       {conversations.map((c) => {
         const isActive = c.id === selectedId
         const title    = conversationTitle(c, selfId)
@@ -99,14 +94,13 @@ export function ConversationList({ onNewChat, onSelect }: ConversationListProps 
             onClick={() => onSelect ? onSelect(c) : select(c.id)}
             className={cn(
               'workspace-conversation-row',
-              'group relative w-full text-left flex gap-3 md:gap-2.5 items-center md:items-start transition-colors',
-              'px-4 md:px-3 py-3 md:py-2.5',
-              'md:rounded-none',
+              'group relative w-full text-left flex gap-3 md:gap-2.5 items-center transition-colors',
+              'rounded-xl border border-transparent border-l-2 px-3 py-3 md:rounded-lg md:py-2.5',
               isActive
-                ? 'bg-bg-tertiary'
+                ? 'border-border-subtle border-l-accent bg-bg-tertiary shadow-sm'
                 : isUnread
-                  ? 'active:bg-bg-tertiary/60 md:hover:bg-bg-secondary'
-                  : 'active:bg-bg-tertiary/40 md:hover:bg-bg-secondary',
+                  ? 'bg-accent/[0.04] active:bg-accent/[0.08] md:hover:bg-accent/[0.07]'
+                  : 'active:bg-bg-tertiary/60 md:hover:bg-bg-tertiary/70',
             )}
           >
             {/* Unread accent rail (mobile only) */}
@@ -119,28 +113,11 @@ export function ConversationList({ onNewChat, onSelect }: ConversationListProps 
 
             {/* Avatar */}
             <span className="relative shrink-0">
-              {isGroup ? (
-                c.avatar_url ? (
-                  <UserAvatar
-                    name={title}
-                    src={c.avatar_url}
-                    size="xl"
-                    className="workspace-conversation-list-avatar w-14 h-14 text-lg md:w-7 md:h-7 md:text-xs"
-                  />
-                ) : (
-                  <span className="workspace-conversation-list-avatar w-14 h-14 md:w-7 md:h-7 rounded-full bg-accent/15 text-accent flex items-center justify-center">
-                    <UsersRound className="w-6 h-6 md:w-3.5 md:h-3.5" strokeWidth={1.75} />
-                  </span>
-                )
-              ) : (
-                <UserAvatar
-                  name={conversationAvatar(c, selfId)?.name}
-                  email={conversationAvatar(c, selfId)?.email}
-                  src={conversationAvatar(c, selfId)?.avatar_url}
-                  size="md"
-                  className="workspace-conversation-list-avatar w-14 h-14 text-lg md:w-7 md:h-7 md:text-xs"
-                />
-              )}
+              <ConversationAvatar
+                conversation={c}
+                selfId={selfId}
+                className="workspace-conversation-list-avatar h-14 w-14 text-lg md:h-9 md:w-9 md:text-xs"
+              />
               {/* Subtle accent ring on unread */}
               {isUnread && (
                 <span

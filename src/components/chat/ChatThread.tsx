@@ -1,10 +1,9 @@
 import { useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Link } from 'react-router-dom'
-import { UsersRound } from 'lucide-react'
 import { useChatStore } from '@/lib/store/useChatStore'
 import { useAuthStore } from '@/lib/store/useAuthStore'
-import { UserAvatar } from '@/components/auth/UserAvatar'
+import { ConversationAvatar } from '@/components/chat/ConversationAvatar'
 import { MessageItem } from './MessageItem'
 import { MessageInput } from './MessageInput'
 import { TypingDots } from './TypingDots'
@@ -140,26 +139,11 @@ export function ChatThread({ conversation, onBack, backLabel, onClose, closeLabe
   const headerHref = isGroup
     ? paths.conversation(conversation.id)
     : otherParticipant ? paths.userProfile(otherParticipant.id) : null
-  const avatar = isGroup ? (
-    conversation.avatar_url ? (
-      <UserAvatar
-        name={conversation.name}
-        src={conversation.avatar_url}
-        size="md"
-        className="h-8 w-8 md:h-7 md:w-7 text-sm"
-      />
-    ) : (
-      <span className="flex h-8 w-8 md:h-7 md:w-7 items-center justify-center rounded-full bg-accent/15 text-accent">
-        <UsersRound className="h-4 w-4 md:h-3.5 md:w-3.5" strokeWidth={1.75} />
-      </span>
-    )
-  ) : (
-    <UserAvatar
-      name={otherParticipant?.name}
-      email={otherParticipant?.email}
-      src={otherParticipant?.avatar_url}
-      size="md"
-      className="h-8 w-8 md:h-7 md:w-7 text-sm"
+  const avatar = (
+    <ConversationAvatar
+      conversation={conversation}
+      selfId={selfId}
+      className="h-8 w-8 text-sm md:h-7 md:w-7"
     />
   )
 

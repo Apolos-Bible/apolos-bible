@@ -18,6 +18,8 @@ export function FriendsPanel() {
     <div className="flex h-full w-full min-w-0 flex-col overflow-hidden border-r border-border-subtle bg-bg-secondary">
       <PanelHeader
         title={t('nav.chats')}
+        description={t('chat.inboxDescription')}
+        className="bg-bg-primary/60"
         onClose={closePanel}
         closeLabel={t('chat.closeChats')}
         actions={
@@ -26,7 +28,7 @@ export function FriendsPanel() {
             onClick={() => setComposerOpen(true)}
             aria-label={t('common.newChat')}
             title={t('common.newChat')}
-            className="inline-flex h-10 w-10 md:h-8 md:w-8 items-center justify-center rounded-md text-text-muted hover:text-text-primary hover:bg-bg-tertiary transition-colors"
+            className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-accent/10 text-accent transition-colors hover:bg-accent/20 md:h-8 md:w-8"
           >
             <Plus className="h-5 w-5 md:h-4 md:w-4" strokeWidth={1.75} />
           </button>
