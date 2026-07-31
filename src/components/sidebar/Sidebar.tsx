@@ -15,6 +15,7 @@ import {
   Settings,
   Star,
   Store,
+  UsersRound,
   type LucideIcon,
 } from 'lucide-react'
 import { useUIStore } from '@/lib/store/useUIStore'
@@ -269,7 +270,8 @@ export function Sidebar() {
         <SectionLabel compact={compact}>{t('nav.social')}</SectionLabel>
         {/* Marketplace opens or focuses its workspace tab. */}
         <NavItem compact={compact} dataTour="marketplace" icon={Store} label={t('nav.marketplace')} active={pathname.startsWith('/marketplace')} onClick={() => user ? openRoute(paths.marketplace(), t('nav.marketplace')) : openAuthModal()} onOpenNew={() => user ? openRoute(paths.marketplace(), t('nav.marketplace'), true) : openAuthModal()} />
-        <NavItem compact={compact} dataTour="chats" icon={MessagesSquare} label={t('nav.chats')} active={activePanel === 'friends' || activePanel === 'chat'} badge={chatUnread} onClick={() => user ? toggleSidebarPanel('friends') : openAuthModal()} />
+        <NavItem compact={compact} dataTour="friends" icon={UsersRound} label={t('nav.friends')} active={activePanel === 'friends'} onClick={() => user ? toggleSidebarPanel('friends') : openAuthModal()} />
+        <NavItem compact={compact} dataTour="chats" icon={MessagesSquare} label={t('nav.chats')} active={activePanel === 'chat'} badge={chatUnread} onClick={() => user ? toggleSidebarPanel('chat') : openAuthModal()} />
       </div>
 
       {/* Footer */}
