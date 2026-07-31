@@ -108,7 +108,7 @@ const chapterKey = (versionId: number, slug: string, n: number) => `${versionId}
 
 export const bibleApi = {
   versions: async () => {
-    const language = getFrontendLocale().split('-')[0]
+    const frontendLanguage = getFrontendLocale().split('-')[0]
     const local = await cacheFirst<ApiVersion[]>(
       // The API only returns published versions. Use a new cache key whenever
       // that publication contract changes so stale, formerly-visible versions
@@ -119,16 +119,23 @@ export const bibleApi = {
       isArray,
     )
 
-    const remoteKey = `youversion:${language}:v1`
-    const remote = await api.get<YouVersionCatalogResponse>(
-      `/api/youversion/versions?language=${encodeURIComponent(language)}`,
-    )
-      .then((response) => response.data.map(youVersionBibleToApiVersion))
-      .then((data) => {
-        void db.versions.put({ key: remoteKey, data }).catch(() => {})
-        return data
-      })
-      .catch(async () => (await db.versions.get(remoteKey).catch(() => undefined))?.data ?? [])
+    const languages = [...new Set([frontendLanguage, 'es', 'en'])]
+    const remoteCatalogs = await Promise.all(languages.map(async (language) => {
+      const remoteKey = `youversion:${language}:all:v2`
+
+      return api.get<YouVersionCatalogResponse>(
+        `/api/youversion/versions?language=${encodeURIComponent(language)}&popular=0`,
+      )
+        .then((response) => response.data.map(youVersionBibleToApiVersion))
+        .then((data) => {
+          void db.versions.put({ key: remoteKey, data }).catch(() => {})
+          return data
+        })
+        .catch(async () => (await db.versions.get(remoteKey).catch(() => undefined))?.data ?? [])
+    }))
+    const remote = [...new Map(
+      remoteCatalogs.flat().map((version) => [version.id, version]),
+    ).values()]
 
     return [
       ...local.map((version) => ({ ...version, provider: version.provider ?? ('local' as const) })),

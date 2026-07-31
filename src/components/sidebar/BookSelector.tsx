@@ -14,7 +14,6 @@ import { createWorkspaceTab, useWorkspaceStore } from '@/lib/store/useWorkspaceS
 import { StartStudyModal } from '@/components/study/StartStudyModal'
 import { useWorkspacePane } from '@/components/layout/WorkspacePaneContext'
 import { Select } from '@/components/ui/Select'
-import { bibleVersionsInSameLanguage } from '@/lib/bibleVersionOptions'
 import { isYouVersionVersion } from '@/lib/youVersion'
 
 interface BookGroupProps {
@@ -201,7 +200,7 @@ export function BookSelector() {
 
   const oldTestament = books.filter((b) => b.testament === 'old')
   const newTestament = books.filter((b) => b.testament === 'new')
-  const selectableVersions = bibleVersionsInSameLanguage(versions, versionId)
+  const selectableVersions = versions
 
   return (
     <div ref={scrollRef} className="flex-1 overflow-y-auto py-1">
