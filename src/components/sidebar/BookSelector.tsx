@@ -217,6 +217,8 @@ export function BookSelector() {
             description: `${version.name}${isYouVersionVersion(version) ? ` · ${t('youVersion.provider')}` : ''}`,
           }))}
           buttonClassName="h-9 rounded-lg"
+          searchable
+          searchPlaceholder={t('youVersion.searchVersion')}
         />
       </div>
       <BookGroup

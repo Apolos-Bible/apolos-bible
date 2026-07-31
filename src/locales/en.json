@@ -792,6 +792,7 @@
   "settings.bible.compareNone": "Ask when comparing",
   "youVersion.provider": "YouVersion",
   "youVersion.changeVersion": "Change Bible version",
+  "youVersion.searchVersion": "Search version…",
   "youVersion.publisher": "Publisher website",
   "youVersion.open": "Open in YouVersion",
   "youVersion.poweredBy": "Bible text provided by YouVersion.",

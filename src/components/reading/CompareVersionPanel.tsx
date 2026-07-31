@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef } from 'react'
 import { Columns2, X } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
-import { comparableBibleVersions, preferredComparisonVersion } from '@/lib/bibleVersionOptions'
+import { preferredComparisonVersion } from '@/lib/bibleVersionOptions'
 import { cn } from '@/lib/cn'
 import { useActiveCompareStore } from '@/lib/store/useCompareStore'
 import { useActiveVerseStore } from '@/lib/store/useVerseStore'
@@ -92,7 +92,7 @@ export function CompareVersionPanel() {
   } = useActiveCompareStore()
 
   const options = useMemo(
-    () => comparableBibleVersions(versions, currentVersionId),
+    () => versions.filter((version) => version.id !== currentVersionId),
     [currentVersionId, versions],
   )
   const mainVerseByNumber = useMemo(
@@ -253,6 +253,8 @@ export function CompareVersionPanel() {
           }))}
           ariaLabel={t('compareVersions.selectVersion')}
           className="mt-3"
+          searchable
+          searchPlaceholder={t('youVersion.searchVersion')}
           buttonClassName="h-9 rounded-lg bg-bg-primary text-xs"
         />
       </header>

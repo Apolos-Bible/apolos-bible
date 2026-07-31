@@ -4,7 +4,6 @@ import { Handle, Position, type NodeProps, type Node } from '@xyflow/react';
 import { useTranslation } from 'react-i18next';
 import { ChevronDown, Languages, Loader2, Network, Sparkles } from 'lucide-react';
 import { cn } from '@/lib/cn';
-import { bibleVersionsInSameLanguage } from '@/lib/bibleVersionOptions';
 import { useVerseStore } from '@/lib/store/useVerseStore';
 import { ResizableNode } from './ResizableNode';
 import { useNoWheelOnOverflow } from './useNoWheelOnOverflow';
@@ -25,8 +24,7 @@ export function VerseNode({ id, data, selected }: NodeProps<VerseNodeType>) {
   const versions = useVerseStore((s) => s.versions);
   const readerVersionId = useVerseStore((s) => s.versionId);
   const versionName = versions.find((v) => v.id === data.version_id)?.abbreviation ?? '';
-  const selectableVersions = bibleVersionsInSameLanguage(versions, data.version_id)
-    .filter((version) => version.provider !== 'youversion');
+  const selectableVersions = versions.filter((version) => version.id !== data.version_id);
   const { ref: scrollRef, className: scrollClass } = useNoWheelOnOverflow<HTMLDivElement>();
   const xrefBtnRef = useRef<HTMLButtonElement>(null);
   const [xrefOpen, setXrefOpen] = useState(false);
@@ -35,6 +33,7 @@ export function VerseNode({ id, data, selected }: NodeProps<VerseNodeType>) {
   const versionBtnRef = useRef<HTMLButtonElement>(null);
   const versionMenuElRef = useRef<HTMLDivElement>(null);
   const [versionMenuOpen, setVersionMenuOpen] = useState(false);
+  const [versionQuery, setVersionQuery] = useState('');
   const [menuPos, setMenuPos] = useState<{ left: number; top: number } | null>(null);
   const [switching, setSwitching] = useState(false);
 
@@ -72,6 +71,7 @@ export function VerseNode({ id, data, selected }: NodeProps<VerseNodeType>) {
   const switchVersion = async (versionId: number) => {
     if (versionId === data.version_id || switching) return;
     setVersionMenuOpen(false);
+    setVersionQuery('');
     setSwitching(true);
     try {
       await (window as any).__studyCanvasActions?.setVerseNodeVersion?.(id, versionId);
@@ -92,7 +92,7 @@ export function VerseNode({ id, data, selected }: NodeProps<VerseNodeType>) {
           icon: <Languages className="w-[18px] h-[18px]" />,
           label: t('study.verseNode.changeVersion', 'Cambiar versión'),
           active: versionMenuOpen,
-          onClick: () => setVersionMenuOpen((v) => !v),
+          onClick: () => { setVersionQuery(''); setVersionMenuOpen((v) => !v) },
         },
         {
           key: 'ai',
@@ -228,7 +228,14 @@ export function VerseNode({ id, data, selected }: NodeProps<VerseNodeType>) {
               'py-1 min-w-[140px] max-h-64 overflow-y-auto',
             )}
           >
-            {selectableVersions.map((v) => (
+            <input
+              value={versionQuery}
+              onChange={(event) => setVersionQuery(event.target.value)}
+              placeholder={t('youVersion.searchVersion')}
+              aria-label={t('youVersion.searchVersion')}
+              className="mb-1.5 w-full rounded border border-border-subtle bg-bg-primary px-2 py-1.5 text-xs text-text-primary outline-none focus:border-accent/60"
+            />
+            {selectableVersions.filter((v) => `${v.abbreviation} ${v.name}`.toLowerCase().includes(versionQuery.toLowerCase())).map((v) => (
               <button
                 key={v.id}
                 type="button"
