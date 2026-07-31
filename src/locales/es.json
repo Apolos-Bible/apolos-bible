@@ -886,6 +886,7 @@
   "settings.application.links": "Ayuda y legal",
   "settings.application.privacy": "Privacidad",
   "settings.application.support": "Contactar soporte",
+  "settings.application.supportEmail": "hola@apolos.io",
   "settings.ai.title": "Apolos IA",
   "settings.ai.subtitle": "Elige el modelo predeterminado y consulta tu uso mensual.",
   "settings.ai.model": "Modelo predeterminado",

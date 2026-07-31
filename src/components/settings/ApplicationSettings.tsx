@@ -12,6 +12,7 @@ const CARD = 'rounded-2xl border border-border-subtle bg-bg-secondary p-4 sm:p-5
 
 export function ApplicationSettings() {
   const { t } = useTranslation()
+  const supportEmail = t('settings.application.supportEmail')
   const addToast = useUIStore((state) => state.addToast)
   const desktop = isTauri()
   const [version, setVersion] = useState('web')
@@ -61,7 +62,7 @@ export function ApplicationSettings() {
       <SectionLabel>{t('settings.application.links')}</SectionLabel>
       <div className="mt-3 flex flex-wrap gap-4 text-sm">
         <a href="https://apolos.io/privacy" target="_blank" rel="noreferrer" className="font-medium text-accent hover:underline">{t('settings.application.privacy')}</a>
-        <a href="mailto:hola@apolos.io" className="font-medium text-accent hover:underline">{t('settings.application.support')}</a>
+        <a href={`mailto:${supportEmail}`} className="font-medium text-accent hover:underline">{t('settings.application.support')}</a>
       </div>
     </section>
   </div>
