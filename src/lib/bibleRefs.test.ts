@@ -1,9 +1,17 @@
 import { describe, it, expect } from 'vitest'
-import { segmentText } from './bibleRefs'
+import { resolveReferenceBook, segmentText } from './bibleRefs'
 
 describe('placeholder', () => {
   it('runs', () => {
     expect(1 + 1).toBe(2)
+  })
+})
+
+describe('resolveReferenceBook', () => {
+  it('resolves a canonical reference to a localized book slug', () => {
+    const books = [{ name: 'Rut', slug: 'rut' }, { name: 'Juan', slug: 'juan' }]
+    expect(resolveReferenceBook(books, 'ruth')?.slug).toBe('rut')
+    expect(resolveReferenceBook(books, 'john')?.slug).toBe('juan')
   })
 })
 

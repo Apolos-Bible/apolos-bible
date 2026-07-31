@@ -8,8 +8,8 @@ import {
   Check,
   ChevronDown,
   Compass,
+  Flag,
   Loader2,
-  Sparkles,
   X,
 } from 'lucide-react'
 import { useGuidedStore, promptKey } from '@/lib/store/useGuidedStore'
@@ -430,7 +430,7 @@ export function GuidedPanel({ slug, sessionId, doc, open, onClose, isGuest }: Gu
                   : 'bg-accent text-bg-primary hover:opacity-90',
               )}
             >
-              {completed ? <Check className="w-3.5 h-3.5" /> : <Sparkles className="w-3.5 h-3.5" />}
+              {completed ? <Check className="w-3.5 h-3.5" /> : <Flag className="w-3.5 h-3.5" />}
               {completed ? t('guided.completed') : t('guided.finish')}
             </button>
           ) : (

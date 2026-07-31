@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useNavigate } from 'react-router-dom'
-import { BookmarkPlus, BookmarkCheck, Sparkles, ArrowRight } from 'lucide-react'
+import { BookmarkPlus, BookmarkCheck, Award, ArrowRight } from 'lucide-react'
 import { useMarketplaceStore } from '@/lib/store/useMarketplaceStore'
 import type { StudyPathCard } from '@/lib/study/marketplaceApi'
 import { paths } from '@/router/paths'
@@ -53,7 +53,7 @@ export function FeaturedHero({ items }: { items: StudyPathCard[] }) {
 
         <div className="workspace-featured-content relative flex h-full min-h-[19rem] flex-col justify-end gap-3 p-6 md:p-8">
           <span className="inline-flex w-fit items-center gap-1.5 rounded-full bg-white/15 px-2.5 py-1 text-[11px] font-semibold uppercase tracking-[0.12em] text-white backdrop-blur">
-            <Sparkles className="h-3 w-3" />
+            <Award className="h-3 w-3" />
             {t('market.featuredBadge')}
           </span>
 

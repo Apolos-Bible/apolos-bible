@@ -1,7 +1,7 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { useTranslation } from 'react-i18next';
-import { X, Loader2, Plus, Check, Sparkles } from 'lucide-react';
+import { X, Loader2, Plus, Check, ScanSearch } from 'lucide-react';
 import { cn } from '@/lib/cn';
 import { bibleApi, type ApiCrossRef } from '@/lib/bibleApi';
 
@@ -232,7 +232,7 @@ export function CrossReferencePopover({
         </TabButton>
         <TabButton active={tab === 'meaning'} onClick={() => pickTab('meaning')}>
           <span className="inline-flex items-center gap-1">
-            <Sparkles className="w-3 h-3" />
+            <ScanSearch className="w-3 h-3" />
             {t('study.crossRefs.tabs.meaning')}
           </span>
         </TabButton>
