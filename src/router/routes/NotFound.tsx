@@ -1,9 +1,10 @@
 import { useNavigate, useRouteError } from 'react-router-dom'
 import { paths } from '@/router/paths'
 
-export function NotFound() {
+type RouteErrorLike = { statusText?: string; message?: string } | null
+
+function NotFoundContent({ error = null }: { error?: RouteErrorLike }) {
   const navigate = useNavigate()
-  const error = useRouteError() as { statusText?: string; message?: string } | null
 
   return (
     <div className="flex h-screen items-center justify-center p-8 text-center">
@@ -22,4 +23,15 @@ export function NotFound() {
       </div>
     </div>
   )
+}
+
+/** A normal catch-all route. It is not inside a data-router error boundary. */
+export function NotFound() {
+  return <NotFoundContent />
+}
+
+/** Only use this component as `errorElement`, where useRouteError is valid. */
+export function RouteErrorPage() {
+  const error = useRouteError() as RouteErrorLike
+  return <NotFoundContent error={error} />
 }

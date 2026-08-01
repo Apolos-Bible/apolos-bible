@@ -32,6 +32,7 @@ import {
   getEdgesMap,
   nodeFromYMap,
   edgeFromYMap,
+  filterVersesMissingFromCanvas,
   writeNodeToMap,
   writeEdgeToMap,
 } from '@/lib/study/yDocHelpers';
@@ -830,16 +831,28 @@ function StudyCanvasInner({
   // Insert a sequence of verses as individual verse nodes stacked vertically
   // and connected bottom→top, so multi-verse selections become a chain rather
   // than a single passage block.
-  const addVerseChain = useCallback((verses: { verseId: number; reference: string; version_id: number; text: string }[], at?: { x: number; y: number }) => {
+  const addVerseChain = useCallback((
+    verses: { verseId: number; reference: string; version_id: number; text: string }[],
+    at?: { x: number; y: number },
+    options?: {
+      dedupe?: boolean;
+      idPrefix?: string;
+      data?: Record<string, unknown>;
+    },
+  ) => {
     if (isGuest) return;
     if (!verses || verses.length === 0) return;
     const d = docRef.current;
     if (!d) return;
+    const versesToInsert = options?.dedupe
+      ? filterVersesMissingFromCanvas(d, verses)
+      : verses;
+    if (versesToInsert.length === 0) return;
     const nodeW = 320;
     const gap = 40;
-    const heights = verses.map((v) => heightForVerseText(v.text));
+    const heights = versesToInsert.map((v) => heightForVerseText(v.text));
     const baseTs = Date.now();
-    const totalH = heights.reduce((sum, h) => sum + h, 0) + (verses.length - 1) * gap;
+    const totalH = heights.reduce((sum, h) => sum + h, 0) + (versesToInsert.length - 1) * gap;
     // A drop positions the chain's top-left under the pointer; a toolbar insert
     // centres it in the visible canvas.
     const anchor = at ?? getVisibleCenterFlow();
@@ -862,12 +875,24 @@ function StudyCanvasInner({
       const edgesMap = getEdgesMap(d);
       const ids: string[] = [];
       let y = startY;
-      verses.forEach((v, i) => {
-        const id = `verse-${v.verseId}-${baseTs}-${i}`;
+      versesToInsert.forEach((v, i) => {
+        // Guided insertions use stable ids. If two synced participants claim
+        // the same step concurrently, Yjs merges these keys instead of leaving
+        // two timestamped copies of every verse on the canvas.
+        const id = options?.idPrefix
+          ? `${options.idPrefix}-verse-${v.version_id}-${v.verseId}`
+          : `verse-${v.verseId}-${baseTs}-${i}`;
         ids.push(id);
         const nodeH = heights[i];
         const position = { x: startX, y };
-        writeNodeToMap(nodesMap, { id, type: 'verse', position, width: nodeW, height: nodeH, data: v });
+        writeNodeToMap(nodesMap, {
+          id,
+          type: 'verse',
+          position,
+          width: nodeW,
+          height: nodeH,
+          data: options?.data ? { ...v, ...options.data } : v,
+        });
         y += nodeH + gap;
         if (i > 0) {
           const prev = ids[i - 1];
