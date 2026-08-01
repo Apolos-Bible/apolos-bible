@@ -72,6 +72,89 @@ export function claimGuidedInsert(doc: Y.Doc, stepId: number): boolean {
   return true;
 }
 
+interface CanvasVerseIdentity {
+  verseId: number;
+  version_id: number;
+  text?: string;
+}
+
+function verseIdentity(verseId: unknown, versionId: unknown): string | null {
+  if (typeof verseId !== 'number' || typeof versionId !== 'number') return null;
+  return `${versionId}:${verseId}`;
+}
+
+function textIdentity(text: unknown): string | null {
+  if (typeof text !== 'string') return null;
+  const normalized = text.normalize('NFC').replace(/\s+/g, ' ').trim();
+  return normalized ? normalized : null;
+}
+
+/**
+ * Remove verses whose text is already represented on the canvas. Both an
+ * individual verse node and a verse nested inside a passage node count. This
+ * is the last line of defence for old guided sessions that predate the shared
+ * `inserted:<step>` marker (or opened before that marker finished syncing).
+ */
+export function filterVersesMissingFromCanvas<T extends CanvasVerseIdentity>(
+  doc: Y.Doc,
+  verses: T[],
+): T[] {
+  const existing = new Set<string>();
+  const existingTexts = new Set<string>();
+
+  getNodesMap(doc).forEach((nodeMap) => {
+    const type = nodeMap.get('type');
+    const data = nodeMap.get('data');
+    if (!data || typeof data !== 'object') return;
+
+    if (type === 'verse') {
+      const identity = verseIdentity(data.verseId, data.version_id);
+      if (identity) existing.add(identity);
+      const text = textIdentity(data.text);
+      if (text) existingTexts.add(text);
+      return;
+    }
+
+    if (type === 'passage' && Array.isArray(data.verses)) {
+      data.verses.forEach((verse: any) => {
+        const identity = verseIdentity(verse?.verseId, verse?.version_id ?? data.version_id);
+        if (identity) existing.add(identity);
+        const text = textIdentity(verse?.text);
+        if (text) existingTexts.add(text);
+      });
+    }
+  });
+
+  return verses.filter((verse) => {
+    const identity = `${verse.version_id}:${verse.verseId}`;
+    const text = textIdentity(verse.text);
+    if (existing.has(identity) || (text != null && existingTexts.has(text))) return false;
+    existing.add(identity);
+    if (text) existingTexts.add(text);
+    return true;
+  });
+}
+
+/**
+ * Decide whether mounting a guided step should seed its passage. An existing
+ * canvas wins even if it was copied into a newly reopened session, while step
+ * changes made after mounting are still allowed through to per-verse dedupe.
+ */
+export function shouldAutoInsertGuidedPassage({
+  doc,
+  firstStepInVisit,
+  progressSessionId,
+  sessionId,
+}: {
+  doc: Y.Doc;
+  firstStepInVisit: boolean;
+  progressSessionId: string | null | undefined;
+  sessionId: string;
+}): boolean {
+  if (!firstStepInVisit) return true;
+  return progressSessionId !== sessionId && getNodesMap(doc).size === 0;
+}
+
 export function nodeFromYMap(id: string, m: Y.Map<any>) {
   const node: any = {
     id: m.get('id') ?? id,

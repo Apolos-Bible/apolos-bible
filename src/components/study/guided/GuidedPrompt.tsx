@@ -54,7 +54,17 @@ export function GuidedPrompt({
   }, [question, answer, revealed])
 
   useEffect(() => {
-    if (autoFocus) textareaRef.current?.focus()
+    if (!autoFocus) return
+
+    // Revealing the next question must not steal the cursor from an answer
+    // that is still being edited (for example after a synced remote reveal).
+    const active = document.activeElement
+    const isWriting = active instanceof HTMLInputElement
+      || active instanceof HTMLTextAreaElement
+      || active instanceof HTMLSelectElement
+      || (active instanceof HTMLElement && active.isContentEditable)
+
+    if (!isWriting) textareaRef.current?.focus()
   }, [autoFocus])
 
   const written = myAnswer.trim().length > 0
