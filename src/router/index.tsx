@@ -6,13 +6,14 @@ import { ResetPasswordRoute } from './routes/ResetPasswordRoute'
 import { GoogleFinishRoute } from './routes/GoogleFinishRoute'
 import { YouVersionFinishRoute } from './routes/YouVersionFinishRoute'
 import { AuthBridgeRoute } from './routes/AuthBridgeRoute'
-import { NotFound } from './routes/NotFound'
+import { NotFound, RouteErrorPage } from './routes/NotFound'
 import { workspaceRoutes } from './workspaceRoutes'
 
 export const router = createBrowserRouter([
   {
+    id: 'root',
     element: <RootLayout />,
-    errorElement: <NotFound />,
+    errorElement: <RouteErrorPage />,
     children: [
       { index: true, element: <RootRedirect /> },
       ...workspaceRoutes.filter((route) => route.path !== '*'),

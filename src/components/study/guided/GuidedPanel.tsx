@@ -15,7 +15,14 @@ import {
 import { useGuidedStore, promptKey } from '@/lib/store/useGuidedStore'
 import { useVerseStore } from '@/lib/store/useVerseStore'
 import { fetchGuidedVerses, type GuidedVerse } from '@/lib/study/guidedPassage'
-import { claimGuidedInsert, readGuidedStep, getGuidedMap, writeGuidedStep } from '@/lib/study/yDocHelpers'
+import { visibleGuidedPromptCount } from '@/lib/study/guidedPromptProgress'
+import {
+  claimGuidedInsert,
+  readGuidedStep,
+  getGuidedMap,
+  shouldAutoInsertGuidedPassage,
+  writeGuidedStep,
+} from '@/lib/study/yDocHelpers'
 import type { GuidedStep } from '@/lib/study/guidedApi'
 import { stepKind } from '@/lib/study/guidedStepKinds'
 import { cn } from '@/lib/cn'
@@ -26,6 +33,7 @@ interface GuidedPanelProps {
   slug: string
   sessionId: string
   doc: Y.Doc | null
+  synced: boolean
   open: boolean
   onClose: () => void
   isGuest: boolean
@@ -40,7 +48,7 @@ const STEP_COLUMN_WIDTH = 440
  */
 export const GUIDED_PANEL_WIDTH = 420
 
-export function GuidedPanel({ slug, sessionId, doc, open, onClose, isGuest }: GuidedPanelProps) {
+export function GuidedPanel({ slug, sessionId, doc, synced, open, onClose, isGuest }: GuidedPanelProps) {
   const { t } = useTranslation()
   const study = useGuidedStore((s) => s.study)
   const progress = useGuidedStore((s) => s.progress)
@@ -121,18 +129,30 @@ export function GuidedPanel({ slug, sessionId, doc, open, onClose, isGuest }: Gu
   // --- Bring the passage onto the canvas ----------------------------------
   const insertPassage = useCallback(
     async (target: GuidedStep, { auto }: { auto: boolean }) => {
-      if (isGuest || !doc || target.ranges.length === 0) return
+      if (isGuest || !doc || !synced || target.ranges.length === 0) return
       const actions = (window as any).__studyCanvasActions
       if (!actions?.addVerseChain) return
-      // Only one participant plants each step's verses.
-      if (auto && !claimGuidedInsert(doc, target.id)) return
 
       setInserting(true)
       setInsertError(false)
       try {
         const verses = await loadPassage(target)
         if (verses.length > 0) {
-          actions.addVerseChain(verses, { x: target.position * STEP_COLUMN_WIDTH, y: 0 })
+          // Claim only after the fetch succeeds. A failed request must not mark
+          // the passage as inserted forever. Manual insertion may restore a
+          // passage that the person intentionally removed, so it ignores an
+          // existing claim while still deduplicating the verses themselves.
+          const claimed = claimGuidedInsert(doc, target.id)
+          if (auto && !claimed) return
+          actions.addVerseChain(
+            verses,
+            { x: target.position * STEP_COLUMN_WIDTH, y: 0 },
+            {
+              dedupe: true,
+              idPrefix: `guided-${slug}-${target.id}`,
+              data: { guidedStudySlug: slug, guidedStepId: target.id },
+            },
+          )
         }
       } catch {
         setInsertError(true)
@@ -140,7 +160,7 @@ export function GuidedPanel({ slug, sessionId, doc, open, onClose, isGuest }: Gu
         setInserting(false)
       }
     },
-    [doc, isGuest, loadPassage],
+    [doc, isGuest, loadPassage, slug, synced],
   )
 
   // The guide covers the canvas on phones, so mirror the passage inside the
@@ -173,29 +193,44 @@ export function GuidedPanel({ slug, sessionId, doc, open, onClose, isGuest }: Gu
 
   // Entering a step with Scripture puts it on the canvas without being asked:
   // the person should always have the passage in front of them.
-  const autoInsertedRef = useRef<Set<number>>(new Set())
+  const autoInsertedRef = useRef<Set<string>>(new Set())
+  const visitRef = useRef<string | null>(null)
   useEffect(() => {
-    if (!open || !step || isGuest) return
+    if (!open || !step || isGuest || !synced) return
     if (step.ranges.length === 0) return
-    if (autoInsertedRef.current.has(step.id)) return
-    autoInsertedRef.current.add(step.id)
-    void insertPassage(step, { auto: true })
-  }, [open, step, isGuest, insertPassage])
+    const visitKey = `${sessionId}:${slug}`
+    const insertionKey = `${sessionId}:${slug}:${step.id}`
+    if (autoInsertedRef.current.has(insertionKey)) return
+    autoInsertedRef.current.add(insertionKey)
 
-  // Questions about a passage come one at a time: the next appears once this
-  // one is answered or its answer has been read. Purely personal questions
-  // (the opening ones, the application) are all shown — nobody should be stuck
-  // behind a question they don't want to write down.
+    // `progress.session_id` is persisted by the API, independently of Yjs.
+    // Existing canvas content is the second signal and also covers reopened
+    // sessions whose snapshot was copied to a new session id. In either case,
+    // mounting the panel must not seed its current passage again. Moving to a
+    // different step during this visit still inserts that new step normally.
+    const firstStepInVisit = visitRef.current !== visitKey
+    visitRef.current = visitKey
+    if (!shouldAutoInsertGuidedPassage({
+      doc,
+      firstStepInVisit,
+      progressSessionId: progress?.session_id,
+      sessionId,
+    })) return
+
+    void insertPassage(step, { auto: true })
+  }, [open, step, progress?.session_id, isGuest, synced, sessionId, slug, insertPassage])
+
+  // Questions with a held-back answer come one at a time. Typing is not a
+  // completion signal: the next question appears only after the person
+  // deliberately reveals the current answer. Purely personal questions (the
+  // opening ones, the application) are all shown so nobody is forced to write.
   const visiblePrompts = useMemo(() => {
     if (!step) return 0
-    if (!step.prompts.some((prompt) => prompt.answer)) return step.prompts.length
-
-    const firstOpen = step.prompts.findIndex((_, i) => {
-      const key = promptKey(step.id, i)
-      return !(answers[key]?.trim() || revealed[key])
-    })
-    return firstOpen === -1 ? step.prompts.length : Math.min(step.prompts.length, firstOpen + 1)
-  }, [step, answers, revealed])
+    return visibleGuidedPromptCount(
+      step.prompts,
+      (index) => Boolean(revealed[promptKey(step.id, index)]),
+    )
+  }, [step, revealed])
 
   // A note on the canvas has to stand on its own once the guide is closed, so
   // it carries the question (and the passage it came from), not just the answer.
