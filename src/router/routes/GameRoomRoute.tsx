@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
-import { ArrowDown, ArrowRight, ArrowUp, Check, CircleHelp, Copy, Crown, Flame, Gamepad2, GripVertical, Grid2X2, Link2, ListOrdered, Loader2, MapPin, MapPinned, Medal, PanelsTopLeft, PartyPopper, Play, Quote, RotateCcw, Star, Trophy, UsersRound, X, Zap } from 'lucide-react'
+import { ArrowDown, ArrowRight, ArrowUp, Check, CircleHelp, Copy, Crown, Flame, Gamepad2, GripVertical, Grid2X2, Link2, ListOrdered, Loader2, MapPin, MapPinned, Medal, PanelsTopLeft, PartyPopper, Play, Quote, RotateCcw, Share2, Star, Trophy, UsersRound, X, Zap } from 'lucide-react'
 import { AppPageLayout } from '@/components/layout/AppPageLayout'
 import { UserAvatar } from '@/components/auth/UserAvatar'
 import { gameApi, type GameAnswer, type GameQuestion, type GameRoom } from '@/lib/gameApi'
@@ -15,6 +15,7 @@ import { createWorkspaceTab, useWorkspaceStore } from '@/lib/store/useWorkspaceS
 import { useWorkspacePane } from '@/components/layout/WorkspacePaneContext'
 import { cn } from '@/lib/cn'
 import { moveTimelineItem, moveTimelineItemByOffset, type TimelineDropPosition } from '@/lib/gameTimeline'
+import { gameInviteUrl } from '@/lib/gameInvite'
 
 export function GameRoomRoute() {
   const { roomId } = useParams<{ roomId: string }>()
@@ -100,8 +101,33 @@ function Lobby({ room, isHost, friends, selectedFriends, setSelectedFriends, bus
   const { t } = useTranslation()
   const addToast = useUIStore((state) => state.addToast)
   const copyCode = async () => {
-    await navigator.clipboard.writeText(room.code)
-    addToast(t('games.codeCopied'), 'success')
+    try {
+      await navigator.clipboard.writeText(room.code)
+      addToast(t('games.codeCopied'), 'success')
+    } catch {
+      addToast(t('games.shareFailed'), 'error')
+    }
+  }
+  const shareLobby = async () => {
+    const url = gameInviteUrl(room.code)
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: t('games.shareTitle'),
+          text: t('games.shareText'),
+          url,
+        })
+        return
+      } catch (error) {
+        if ((error as DOMException).name === 'AbortError') return
+      }
+    }
+    try {
+      await navigator.clipboard.writeText(url)
+      addToast(t('games.linkCopied'), 'success')
+    } catch {
+      addToast(t('games.shareFailed'), 'error')
+    }
   }
   return (
     <div className="mx-auto grid w-full max-w-5xl gap-5 px-4 py-6 md:grid-cols-[minmax(0,1fr)_320px] md:px-8 md:py-10">
@@ -111,9 +137,14 @@ function Lobby({ room, isHost, friends, selectedFriends, setSelectedFriends, bus
           <span className="text-2xs font-semibold uppercase tracking-[0.14em] text-accent">{t('games.lobby')}</span>
           <h1 className="mt-2 text-3xl font-black tracking-[-0.03em] text-text-primary md:text-4xl">{t('games.getReady')}</h1>
           <p className="mt-2 max-w-lg text-sm leading-relaxed text-text-muted">{t('games.lobbyHint')}</p>
-          <button type="button" onClick={() => void copyCode()} className="mt-5 inline-flex items-center gap-3 rounded-2xl border border-dashed border-accent/35 bg-bg-primary/80 px-5 py-3.5 shadow-lg transition-transform hover:-translate-y-0.5">
-            <span className="text-xs text-text-muted">{t('games.code')}</span><strong className="font-mono text-xl tracking-[0.22em] text-text-primary">{room.code}</strong><Copy className="h-4 w-4 text-accent" />
-          </button>
+          <div className="mt-5 flex flex-wrap gap-2.5">
+            <button type="button" onClick={() => void copyCode()} className="inline-flex items-center gap-3 rounded-2xl border border-dashed border-accent/35 bg-bg-primary/80 px-5 py-3.5 shadow-lg transition-transform hover:-translate-y-0.5">
+              <span className="text-xs text-text-muted">{t('games.code')}</span><strong className="font-mono text-xl tracking-[0.22em] text-text-primary">{room.code}</strong><Copy className="h-4 w-4 text-accent" />
+            </button>
+            <button type="button" onClick={() => void shareLobby()} className="inline-flex items-center gap-2 rounded-2xl border border-accent/30 bg-accent/10 px-5 py-3.5 text-sm font-semibold text-accent shadow-lg transition-transform hover:-translate-y-0.5">
+              <Share2 className="h-4 w-4" />{t('games.shareLobby')}
+            </button>
+          </div>
         </div>
 
         <div className="relative mt-7">

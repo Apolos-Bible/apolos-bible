@@ -5,6 +5,7 @@ import { setToken } from '@/lib/api'
 import { useAuthStore } from '@/lib/store/useAuthStore'
 import { useUIStore } from '@/lib/store/useUIStore'
 import { resetUserSession } from '@/lib/userSession'
+import { consumeAuthReturnPath } from '@/lib/authReturnPath'
 
 export function YouVersionFinishRoute() {
   const [searchParams] = useSearchParams()
@@ -17,9 +18,10 @@ export function YouVersionFinishRoute() {
     ranRef.current = true
 
     const finish = async () => {
+      const returnPath = consumeAuthReturnPath()
       if (searchParams.get('error')) {
         useUIStore.getState().addToast(t('auth.youVersionFailed'), 'error')
-        navigate('/', { replace: true })
+        navigate(returnPath, { replace: true })
         return
       }
 
@@ -28,7 +30,7 @@ export function YouVersionFinishRoute() {
         : window.location.hash
       const token = new URLSearchParams(hash).get('token')
       if (!token) {
-        navigate('/', { replace: true })
+        navigate(returnPath, { replace: true })
         return
       }
 
@@ -50,7 +52,7 @@ export function YouVersionFinishRoute() {
         useUIStore.getState().addToast(t('auth.youVersionFailed'), 'error')
       }
 
-      navigate('/', { replace: true })
+      navigate(returnPath, { replace: true })
     }
 
     void finish()

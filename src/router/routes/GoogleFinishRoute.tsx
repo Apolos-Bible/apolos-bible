@@ -5,6 +5,7 @@ import { setToken } from '@/lib/api'
 import { useAuthStore } from '@/lib/store/useAuthStore'
 import { useUIStore } from '@/lib/store/useUIStore'
 import { resetUserSession } from '@/lib/userSession'
+import { consumeAuthReturnPath } from '@/lib/authReturnPath'
 
 export function GoogleFinishRoute() {
   const [searchParams] = useSearchParams()
@@ -17,13 +18,14 @@ export function GoogleFinishRoute() {
     ranRef.current = true
 
     const finish = async () => {
+      const returnPath = consumeAuthReturnPath()
       const error = searchParams.get('error')
       if (error) {
         useUIStore.getState().addToast(
           t('auth.googleFailed', 'No pudimos iniciar sesión con Google. Inténtalo de nuevo.'),
           'error',
         )
-        navigate('/', { replace: true })
+        navigate(returnPath, { replace: true })
         return
       }
 
@@ -33,7 +35,7 @@ export function GoogleFinishRoute() {
       const token = new URLSearchParams(hash).get('token')
 
       if (!token) {
-        navigate('/', { replace: true })
+        navigate(returnPath, { replace: true })
         return
       }
 
@@ -52,7 +54,7 @@ export function GoogleFinishRoute() {
           'error',
         )
       }
-      navigate('/', { replace: true })
+      navigate(returnPath, { replace: true })
     }
     void finish()
   }, [navigate, searchParams, t])

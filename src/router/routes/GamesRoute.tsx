@@ -1,5 +1,5 @@
-import { useEffect, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useEffect, useRef, useState } from 'react'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { Brain, CircleHelp, Clock3, Gamepad2, Grid2X2, Link2, ListOrdered, MapPinned, Quote, UsersRound } from 'lucide-react'
 import { AppPageLayout } from '@/components/layout/AppPageLayout'
@@ -8,6 +8,7 @@ import { useAuthStore } from '@/lib/store/useAuthStore'
 import { useUIStore } from '@/lib/store/useUIStore'
 import { paths } from '@/router/paths'
 import { cn } from '@/lib/cn'
+import { normalizeGameCode } from '@/lib/gameInvite'
 
 const GAME_CARDS = [
   { type: 'trivia', icon: Brain, label: 'games.type.trivia', hint: 'games.type.triviaHint', tone: 'from-cyan-400/15 to-blue-500/5 text-cyan-300 border-cyan-400/20' },
@@ -23,27 +24,44 @@ const GAME_CARDS = [
 export function GamesRoute() {
   const { t, i18n } = useTranslation()
   const navigate = useNavigate()
+  const [searchParams] = useSearchParams()
   const user = useAuthStore((state) => state.user)
   const authLoading = useAuthStore((state) => state.loading)
   const openAuthModal = useUIStore((state) => state.openAuthModal)
   const addToast = useUIStore((state) => state.addToast)
   const [rooms, setRooms] = useState<GameRoomSummary[]>([])
   const [invitations, setInvitations] = useState<GameRoomSummary[]>([])
-  const [code, setCode] = useState('')
+  const sharedCode = normalizeGameCode(searchParams.get('join'))
+  const [code, setCode] = useState(sharedCode ?? '')
   const [busy, setBusy] = useState(false)
+  const attemptedSharedCode = useRef<string | null>(null)
 
   useEffect(() => {
     if (authLoading) return
     if (!user) {
       openAuthModal()
-      navigate(paths.root(), { replace: true })
+      if (!sharedCode) navigate(paths.root(), { replace: true })
       return
     }
     void gameApi.index().then((data) => {
       setRooms(data.rooms)
       setInvitations(data.invitations)
     }).catch(() => addToast(t('games.error'), 'error'))
-  }, [authLoading, user, openAuthModal, navigate, addToast, t])
+  }, [authLoading, user, openAuthModal, navigate, addToast, sharedCode, t])
+
+  useEffect(() => {
+    if (sharedCode) setCode(sharedCode)
+  }, [sharedCode])
+
+  useEffect(() => {
+    if (authLoading || !user || !sharedCode || attemptedSharedCode.current === sharedCode) return
+    attemptedSharedCode.current = sharedCode
+    setBusy(true)
+    void gameApi.join(sharedCode)
+      .then((room) => navigate(paths.gameRoom(room.id), { replace: true }))
+      .catch(() => addToast(t('games.codeError'), 'error'))
+      .finally(() => setBusy(false))
+  }, [authLoading, user, sharedCode, navigate, addToast, t])
 
   const createRoom = async () => {
     setBusy(true)
@@ -80,6 +98,16 @@ export function GamesRoute() {
     } finally {
       setBusy(false)
     }
+  }
+
+  if (authLoading || !user) {
+    return (
+      <AppPageLayout title={t('games.title')}>
+        <div className="flex min-h-[60vh] items-center justify-center px-5 text-center text-sm text-text-muted">
+          {authLoading ? t('common.loading') : t('games.signInToJoin')}
+        </div>
+      </AppPageLayout>
+    )
   }
 
   return (
