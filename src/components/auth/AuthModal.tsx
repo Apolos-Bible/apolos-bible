@@ -7,6 +7,7 @@ import { useUIStore } from '@/lib/store/useUIStore'
 import { cn } from '@/lib/cn'
 import { LogoStacked } from '@/components/brand/Logo'
 import { Dialog } from '@/components/ui/Dialog'
+import { rememberAuthReturnPath } from '@/lib/authReturnPath'
 
 const API_BASE = import.meta.env.VITE_API_URL ?? 'https://apolos.test'
 
@@ -111,6 +112,7 @@ export function AuthModal({ open, onClose, initialMode = 'login' }: AuthModalPro
   const isForgotPassword = mode === 'forgot-password'
   const isAuth = mode === 'login' || mode === 'register'
   const startExternalAuth = (provider: 'google' | 'youversion') => {
+    rememberAuthReturnPath()
     const url = `${API_BASE}/api/auth/${provider}/redirect${isTauri() ? '?client=desktop' : ''}`
     if (isTauri()) {
       void openUrl(url)
