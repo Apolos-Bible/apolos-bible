@@ -1,8 +1,8 @@
 import { useEffect, useMemo, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { ArrowUpRight, BookOpen, FileText, Search } from 'lucide-react'
 import { useAuthStore } from '@/lib/store/useAuthStore'
-import { useVerseStore } from '@/lib/store/useVerseStore'
 import { useUIStore } from '@/lib/store/useUIStore'
 import { api } from '@/lib/api'
 import { PanelHeader } from '@/components/layout/PanelHeader'
@@ -10,14 +10,16 @@ import { NoteDocumentModal, type EditableUserNote } from '@/components/notes/Not
 import { getNoteTypeDef, type NoteType } from '@/lib/noteTypes'
 import { noteToPlainText } from '@/lib/richNotes'
 import { cn } from '@/lib/cn'
+import { paths } from '@/router/paths'
 
 type UserNoteResponse = Omit<EditableUserNote, 'note_type'> & { note_type?: NoteType | null }
 
 export function MyNotesPanel() {
   const { t, i18n } = useTranslation()
+  const navigate = useNavigate()
   const user = useAuthStore((state) => state.user)
-  const openVerse = useVerseStore((state) => state.openVerse)
   const closePanel = useUIStore((state) => state.closePanel)
+  const locale = useUIStore((state) => state.locale)
   const addToast = useUIStore((state) => state.addToast)
   const [notes, setNotes] = useState<EditableUserNote[]>([])
   const [loading, setLoading] = useState(false)
@@ -52,8 +54,13 @@ export function MyNotesPanel() {
 
   const openPassage = (note: EditableUserNote) => {
     setEditingNote(null)
-    void openVerse(note.verse.slug, note.verse.chapter, note.verse.number)
     closePanel()
+    navigate(paths.bible({
+      lang: locale,
+      book: note.verse.slug,
+      chapter: note.verse.chapter,
+      verse: note.verse.number,
+    }))
   }
 
   const saveNote = async (note: EditableUserNote, body: string, noteType: NoteType, isPublic: boolean) => {
