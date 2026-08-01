@@ -277,6 +277,7 @@ function StudyModeSurface() {
             slug={guidedSlug}
             sessionId={activeSession.id}
             doc={doc}
+            synced={synced}
             open={guidedOpen}
             onClose={() => setGuidedOpen(false)}
             isGuest={isGuest}
