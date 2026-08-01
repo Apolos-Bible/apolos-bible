@@ -1,17 +1,19 @@
 import { useEffect } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { useBookmarkStore } from '@/lib/store/useBookmarkStore'
 import { useAuthStore } from '@/lib/store/useAuthStore'
-import { useVerseStore } from '@/lib/store/useVerseStore'
 import { useUIStore } from '@/lib/store/useUIStore'
 import { PanelHeader } from '@/components/layout/PanelHeader'
+import { paths } from '@/router/paths'
 
 export function FavoritesPanel() {
   const { t } = useTranslation()
+  const navigate = useNavigate()
   const user = useAuthStore(s => s.user)
   const { bookmarks, loading, load } = useBookmarkStore()
-  const openVerse = useVerseStore(s => s.openVerse)
   const closePanel = useUIStore(s => s.closePanel)
+  const locale = useUIStore(s => s.locale)
 
   useEffect(() => {
     if (user) load()
@@ -40,8 +42,13 @@ export function FavoritesPanel() {
             <button
               key={b.id}
               onClick={() => {
-                void openVerse(b.verse.slug, b.verse.chapter, b.verse.number)
                 closePanel()
+                navigate(paths.bible({
+                  lang: locale,
+                  book: b.verse.slug,
+                  chapter: b.verse.chapter,
+                  verse: b.verse.number,
+                }))
               }}
               className="w-full text-left px-4 py-3.5 md:py-3 border-b border-border-subtle hover:bg-bg-secondary transition-colors"
             >
