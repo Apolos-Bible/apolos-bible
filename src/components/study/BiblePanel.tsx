@@ -365,7 +365,7 @@ export function BiblePanel({ open, onClose, isGuest = false }: BiblePanelProps) 
         disabled={!bookSlug}
         title={t('study.bible.prevChapter')}
         aria-label={t('study.bible.prevChapter')}
-        className="w-7 h-7 flex items-center justify-center rounded-md text-text-muted hover:text-text-primary hover:bg-bg-tertiary transition-colors disabled:opacity-30"
+        className="flex h-11 w-11 items-center justify-center rounded-md text-text-muted transition-colors hover:bg-bg-tertiary hover:text-text-primary disabled:opacity-30 md:h-7 md:w-7"
       >
         <ChevronLeft className="w-4 h-4" />
       </button>
@@ -377,14 +377,14 @@ export function BiblePanel({ open, onClose, isGuest = false }: BiblePanelProps) 
         disabled={!bookSlug}
         title={t('study.bible.nextChapter')}
         aria-label={t('study.bible.nextChapter')}
-        className="w-7 h-7 flex items-center justify-center rounded-md text-text-muted hover:text-text-primary hover:bg-bg-tertiary transition-colors disabled:opacity-30"
+        className="flex h-11 w-11 items-center justify-center rounded-md text-text-muted transition-colors hover:bg-bg-tertiary hover:text-text-primary disabled:opacity-30 md:h-7 md:w-7"
       >
         <ChevronRight className="w-4 h-4" />
       </button>
       <button
         onClick={onClose}
         aria-label={t('common.close')}
-        className="w-7 h-7 flex items-center justify-center rounded-md text-text-muted hover:text-text-primary hover:bg-bg-tertiary transition-colors"
+        className="flex h-11 w-11 items-center justify-center rounded-md text-text-muted transition-colors hover:bg-bg-tertiary hover:text-text-primary md:h-7 md:w-7"
       >
         <X className="w-4 h-4" />
       </button>

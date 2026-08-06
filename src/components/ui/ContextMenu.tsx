@@ -160,7 +160,7 @@ function ContextMenuSurface() {
     <>
       {/* Invisible backdrop — catches clicks & right-clicks outside */}
       <div
-        className="fixed inset-0 z-[998]"
+        className="safe-area-fixed fixed inset-0 z-[998]"
         onClick={closeMenu}
         onContextMenu={(e) => { e.preventDefault(); closeMenu() }}
       />
@@ -173,7 +173,7 @@ function ContextMenuSurface() {
         onKeyDown={handleKeyDown}
         style={{ left: pos.x, top: pos.y }}
         className={cn(
-          'fixed z-[999] min-w-[192px] rounded-lg py-1 outline-none',
+          'fixed z-[999] max-h-[calc(100dvh-2rem)] min-w-[220px] overflow-y-auto rounded-lg py-1 outline-none md:min-w-[192px]',
           'bg-bg-secondary border border-border-subtle shadow-xl',
           'transition-opacity duration-100',
           visible ? 'opacity-100' : 'opacity-0 pointer-events-none',
@@ -207,8 +207,8 @@ function ContextMenuSurface() {
               onClick={() => activate(i)}
               onMouseEnter={() => !item.disabled && setActiveIndex(i)}
               className={cn(
-                'group w-full flex items-center gap-2.5 px-3 py-[6px] text-left',
-                'text-[13px] transition-colors duration-75 outline-none',
+                'group flex min-h-11 w-full items-center gap-2.5 px-3 py-2.5 text-left md:min-h-0 md:py-[6px]',
+                'text-[15px] transition-colors duration-75 outline-none md:text-[13px]',
                 item.danger
                   ? 'text-red-400 hover:bg-red-500/10 hover:text-red-300 focus-visible:bg-red-500/10'
                   : 'text-text-secondary hover:bg-bg-tertiary hover:text-text-primary focus-visible:bg-bg-tertiary focus-visible:text-text-primary',

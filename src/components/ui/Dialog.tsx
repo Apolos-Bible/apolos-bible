@@ -112,7 +112,7 @@ function DialogSurface({
   return createPortal(
     <div
       className={cn(
-        'fixed inset-0 z-50 flex items-center justify-center',
+        'safe-area-fixed fixed inset-0 z-50 flex items-center justify-center overflow-y-auto overscroll-contain p-4',
         !bare && 'bg-black/60 backdrop-blur-sm',
         overlayClassName,
       )}

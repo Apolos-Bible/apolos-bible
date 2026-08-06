@@ -267,7 +267,7 @@ export function GuidedPanel({ slug, sessionId, doc, synced, open, onClose, isGue
             type="button"
             onClick={onClose}
             aria-label={t('common.close')}
-            className="w-7 h-7 shrink-0 flex items-center justify-center rounded-md text-text-muted hover:text-text-primary hover:bg-bg-tertiary transition-colors"
+            className="flex h-11 w-11 shrink-0 items-center justify-center rounded-md text-text-muted transition-colors hover:bg-bg-tertiary hover:text-text-primary md:h-7 md:w-7"
           >
             <X className="w-4 h-4" />
           </button>

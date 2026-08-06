@@ -20,6 +20,7 @@ export type FontSize    = 'sm' | 'base' | 'lg'
 export type Theme       = 'dark' | 'light' | 'system'
 export type Locale      = AppLocale
 export type Panel       = 'favorites' | 'my-notes' | 'friends' | 'chat' | 'my-studies'
+export type MobileHub   = 'explore' | 'you'
 export type ReadingMode = 'flow' | 'verse'
 export type ReaderFont  = 'reading' | 'sans' | 'serif'
 export type LineHeight  = 'compact' | 'comfortable' | 'relaxed'
@@ -50,6 +51,7 @@ type UIStore = {
   mobileSidebarOpen: boolean
   mobileBookPickerOpen: boolean
   mobileSearchOpen: boolean
+  mobileHub: MobileHub | null
   mobileChromeCollapsed: boolean
   desktopSidebarCollapsed: boolean
   setMobileChromeCollapsed: (v: boolean) => void
@@ -84,6 +86,8 @@ type UIStore = {
   closeMobileBookPicker: () => void
   openMobileSearch: () => void
   closeMobileSearch: () => void
+  openMobileHub: (hub: MobileHub) => void
+  closeMobileHub: () => void
   addToast: (message: string, type?: Toast['type'], options?: { action?: Toast['action']; duration?: number }) => string
   removeToast: (id: string) => void
   openPanel: (panel: Panel) => void
@@ -142,6 +146,7 @@ export const useUIStore = create<UIStore>((set) => ({
   mobileSidebarOpen: false,
   mobileBookPickerOpen: false,
   mobileSearchOpen: false,
+  mobileHub: null,
   mobileChromeCollapsed: false,
   desktopSidebarCollapsed: savedDesktopSidebarCollapsed,
   setMobileChromeCollapsed: (v) => set({ mobileChromeCollapsed: v }),
@@ -190,8 +195,10 @@ export const useUIStore = create<UIStore>((set) => ({
   toggleMobileSidebar: () => set((s) => ({ mobileSidebarOpen: !s.mobileSidebarOpen })),
   openMobileBookPicker: () => set({ mobileBookPickerOpen: true }),
   closeMobileBookPicker: () => set({ mobileBookPickerOpen: false }),
-  openMobileSearch: () => set({ mobileSearchOpen: true }),
+  openMobileSearch: () => set({ mobileSearchOpen: true, mobileHub: null, activePanel: null }),
   closeMobileSearch: () => set({ mobileSearchOpen: false }),
+  openMobileHub: (hub) => set({ mobileHub: hub, mobileSearchOpen: false, activePanel: null }),
+  closeMobileHub: () => set({ mobileHub: null }),
 
   addToast: (message, type = 'info', options) => {
     const id = `toast-${++_toastSeq}-${Date.now()}`
