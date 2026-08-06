@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
-import { Database, Download, Loader2, Trash2 } from 'lucide-react'
+import { Check, Database, Download, Loader2, Trash2 } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { bibleApi, type ApiVersion } from '@/lib/bibleApi'
 import { db } from '@/lib/db'
@@ -35,19 +35,22 @@ export function StorageSettings({ versions }: { versions: ApiVersion[] }) {
   const [busy, setBusy] = useState<number | null>(null)
   const [progress, setProgress] = useState<{ done: number; total: number } | null>(null)
 
+  const selectedVersionId = localVersions.some((version) => version.id === selected)
+    ? selected
+    : localVersions[0]?.id ?? null
+  const selectedIsDownloaded = selectedVersionId !== null
+    && cached.some((version) => version.versionId === selectedVersionId)
+
   const refresh = () => cachedVersions().then(setCached)
   useEffect(() => { void refresh() }, [])
-  useEffect(() => {
-    if (selected === null && localVersions[0]) setSelected(localVersions[0].id)
-  }, [localVersions, selected])
 
   async function downloadVersion() {
-    if (selected === null) return
-    setBusy(selected)
+    if (selectedVersionId === null) return
+    setBusy(selectedVersionId)
     setProgress(null)
     try {
-      const books = await bibleApi.books(selected)
-      await prefetchVersion(selected, books, (done, total) => setProgress({ done, total }))
+      const books = await bibleApi.books(selectedVersionId)
+      await prefetchVersion(selectedVersionId, books, (done, total) => setProgress({ done, total }))
       await refresh()
     } finally {
       setBusy(null)
@@ -77,16 +80,23 @@ export function StorageSettings({ versions }: { versions: ApiVersion[] }) {
         <SectionLabel>{t('settings.storage.downloadBible')}</SectionLabel>
         <div className="mt-4 flex flex-col gap-3 sm:flex-row">
           <Select
-            value={selected ?? ''}
+            value={selectedVersionId ?? ''}
             onChange={(value) => setSelected(Number(value))}
             ariaLabel={t('settings.storage.version')}
             options={localVersions.map((version) => ({ value: version.id, label: `${version.abbreviation} — ${version.name}` }))}
             className="flex-1"
           />
-          <button type="button" onClick={() => void downloadVersion()} disabled={busy !== null || selected === null} className="inline-flex h-10 items-center justify-center gap-2 rounded-full bg-accent px-4 text-sm font-medium text-white disabled:opacity-50">
-            {busy === selected ? <Loader2 size={15} className="animate-spin" /> : <Download size={15} />}
-            {progress ? `${progress.done}/${progress.total}` : t('settings.storage.download')}
-          </button>
+          {selectedIsDownloaded ? (
+            <span role="status" className="inline-flex h-10 items-center justify-center gap-2 rounded-full border border-emerald-500/25 bg-emerald-500/10 px-4 text-sm font-medium text-emerald-500">
+              <Check size={15} />
+              {t('settings.storage.downloaded')}
+            </span>
+          ) : (
+            <button type="button" onClick={() => void downloadVersion()} disabled={busy !== null || selectedVersionId === null} className="inline-flex h-10 items-center justify-center gap-2 rounded-full bg-accent px-4 text-sm font-medium text-white disabled:opacity-50">
+              {busy === selectedVersionId ? <Loader2 size={15} className="animate-spin" /> : <Download size={15} />}
+              {progress ? `${progress.done}/${progress.total}` : t('settings.storage.download')}
+            </button>
+          )}
         </div>
       </section>
 
