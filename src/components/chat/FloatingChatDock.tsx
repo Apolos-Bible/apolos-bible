@@ -83,7 +83,7 @@ export function FloatingChatDock({ rightPanelOpen }: FloatingChatDockProps) {
   return (
     <div
       className={cn(
-        'fixed bottom-3 md:bottom-4 right-3 z-40 flex max-w-[calc(100vw-1.5rem)] items-end gap-2 transition-[right] duration-300 ease-in-out md:right-4',
+        'mobile-floating-stack fixed bottom-3 right-3 z-40 flex max-w-[calc(100vw-1.5rem)] items-end gap-2 transition-[right] duration-300 ease-in-out md:bottom-4 md:right-4',
         rightPanelOpen && 'md:right-[436px]',
       )}
     >

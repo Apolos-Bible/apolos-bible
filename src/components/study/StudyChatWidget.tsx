@@ -6,6 +6,7 @@ import { chatApi, type ChatMessage, type Conversation } from '@/lib/chatApi'
 import { useChatStore } from '@/lib/store/useChatStore'
 import { useAuthStore } from '@/lib/store/useAuthStore'
 import { ChatThread } from '@/components/chat/ChatThread'
+import { useIsMobile } from '@/lib/useIsMobile'
 
 const EMPTY_MESSAGES: ChatMessage[] = []
 
@@ -32,6 +33,7 @@ interface StudyChatWidgetProps {
  */
 export function StudyChatWidget({ conversationId, open: controlledOpen, onOpenChange, rightInset = 0 }: StudyChatWidgetProps) {
   const { t } = useTranslation()
+  const isMobile = useIsMobile()
   const userId = useAuthStore(s => s.user?.id)
 
   const conversations = useChatStore(s => s.conversations)
@@ -116,8 +118,8 @@ export function StudyChatWidget({ conversationId, open: controlledOpen, onOpenCh
     <>
       {/* Bubble */}
       <div
-        className="fixed bottom-5 z-40 transition-[right] duration-300"
-        style={rightStyle}
+        className={cn('absolute bottom-20 right-5 z-40 transition-[right] duration-300 md:bottom-5 md:right-auto', open && 'hidden md:block')}
+        style={isMobile ? undefined : rightStyle}
       >
         {/* Expanding ring on new message; remounts via pingKey so the
             keyframe replays for each ping. */}
@@ -152,12 +154,12 @@ export function StudyChatWidget({ conversationId, open: controlledOpen, onOpenCh
       {open && (
         <div
           className={cn(
-            'fixed bottom-20 z-40 transition-[right] duration-300',
-            'w-[360px] max-w-[calc(100vw-2.5rem)] h-[520px] max-h-[calc(100vh-7rem)]',
+            'absolute inset-x-3 bottom-3 top-3 z-40 transition-[right] duration-300',
+            'h-auto w-auto max-w-none md:inset-x-auto md:bottom-20 md:top-auto md:h-[520px] md:max-h-[calc(100vh-7rem)] md:w-[360px] md:max-w-[calc(100vw-2.5rem)]',
             'bg-surface border border-border rounded-xl shadow-2xl',
             'flex flex-col overflow-hidden',
           )}
-          style={rightStyle}
+          style={isMobile ? undefined : rightStyle}
         >
           {/* ChatThread's back arrow already calls onBack and the bubble
               click toggles the panel — no extra close icon needed. */}

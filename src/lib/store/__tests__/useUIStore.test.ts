@@ -38,6 +38,9 @@ beforeEach(() => {
     studyMode: false,
     commentaryOpen: false,
     mobileSidebarOpen: false,
+    mobileBookPickerOpen: false,
+    mobileSearchOpen: false,
+    mobileHub: null,
     desktopSidebarCollapsed: false,
     showOthersNotes: false,
     toasts: [],
@@ -116,6 +119,21 @@ describe('useUIStore — modals & panels', () => {
     expect(useUIStore.getState().mobileSidebarOpen).toBe(false)
     store.toggleMobileSidebar()
     expect(useUIStore.getState().mobileSidebarOpen).toBe(true)
+  })
+
+  it('keeps mobile search, hubs, and side panels mutually exclusive', () => {
+    useUIStore.setState({ mobileSearchOpen: true, activePanel: 'favorites' })
+
+    useUIStore.getState().openMobileHub('explore')
+    expect(useUIStore.getState().mobileHub).toBe('explore')
+    expect(useUIStore.getState().mobileSearchOpen).toBe(false)
+    expect(useUIStore.getState().activePanel).toBeNull()
+
+    useUIStore.setState({ activePanel: 'my-notes' })
+    useUIStore.getState().openMobileSearch()
+    expect(useUIStore.getState().mobileHub).toBeNull()
+    expect(useUIStore.getState().mobileSearchOpen).toBe(true)
+    expect(useUIStore.getState().activePanel).toBeNull()
   })
 
   it('desktop sidebar compact mode persists', () => {

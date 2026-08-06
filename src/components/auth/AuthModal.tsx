@@ -126,7 +126,7 @@ export function AuthModal({ open, onClose, initialMode = 'login' }: AuthModalPro
       open={open}
       onClose={handleClose}
       label={t('auth.dialogLabel')}
-      className="max-w-sm w-full bg-bg-secondary rounded-xl border border-border-subtle shadow-2xl p-6 mx-4"
+      className="max-h-full w-full max-w-sm overflow-y-auto rounded-xl border border-border-subtle bg-bg-secondary p-4 shadow-2xl sm:p-6"
     >
         {/* Header */}
         {isResetPassword ? (
