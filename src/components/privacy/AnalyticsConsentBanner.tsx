@@ -24,7 +24,7 @@ export function AnalyticsConsentBanner() {
       role="dialog"
       aria-modal="false"
       aria-labelledby="analytics-consent-title"
-      className="fixed inset-x-4 bottom-[calc(72px+env(safe-area-inset-bottom))] z-[100] ml-auto flex max-w-md flex-col gap-4 rounded-xl border border-border-subtle bg-bg-secondary p-4 md:bottom-4 md:right-4"
+      className="mobile-floating-stack fixed inset-x-4 z-[100] ml-auto flex max-w-md flex-col gap-4 rounded-xl border border-border-subtle bg-bg-secondary p-4 shadow-xl md:right-4"
     >
       <div className="flex flex-col gap-1.5">
         <h2 id="analytics-consent-title" className="text-md font-semibold text-text-primary">

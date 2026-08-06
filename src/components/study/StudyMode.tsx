@@ -217,15 +217,15 @@ function StudyModeSurface() {
   }, [tool, spaceHeld])
 
   return (
-    <div className="fixed inset-0 z-50 bg-bg-primary flex flex-col">
+    <div className="safe-area-fixed fixed inset-0 z-50 flex flex-col bg-bg-primary">
       <StudyTopBar users={users} isGuest={isGuest} doc={doc} />
       {isGuest && (
-        <div className="h-8 bg-accent/10 border-b border-accent/20 flex items-center justify-center gap-2 shrink-0">
+        <div className="min-h-9 shrink-0 border-b border-accent/20 bg-accent/10 px-3 py-1.5 flex items-center justify-center gap-2">
           <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" className="w-3.5 h-3.5 text-accent">
             <rect x="2" y="6" width="12" height="8" rx="1" />
             <path d="M5 6V4a3 3 0 0 1 6 0v2" strokeLinecap="round" />
           </svg>
-          <span className="text-2xs text-accent">
+          <span className="min-w-0 truncate text-2xs text-accent">
             You are viewing this study as a guest
           </span>
           <button

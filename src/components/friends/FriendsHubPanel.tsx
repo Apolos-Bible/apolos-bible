@@ -1,12 +1,12 @@
 import { useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
-import { UserRoundPlus } from 'lucide-react'
+import { MessagesSquare, UserRoundPlus } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import { paths } from '@/router/paths'
 import { UserAvatar } from '@/components/auth/UserAvatar'
 import { useFriendStore } from '@/lib/store/useFriendStore'
 import { useUIStore } from '@/lib/store/useUIStore'
-import { PanelHeader } from '@/components/layout/PanelHeader'
+import { PanelHeader, PanelHeaderButton } from '@/components/layout/PanelHeader'
 import { FriendSearch } from './FriendSearch'
 import { FriendRequestCard } from './FriendRequestCard'
 import { FriendCard } from './FriendCard'
@@ -14,6 +14,7 @@ import { FriendCard } from './FriendCard'
 export function FriendsHubPanel() {
   const { t } = useTranslation()
   const closePanel = useUIStore((s) => s.closePanel)
+  const openPanel = useUIStore((s) => s.openPanel)
   const addToast = useUIStore((s) => s.addToast)
   const load = useFriendStore((s) => s.load)
   const received = useFriendStore((s) => s.received)
@@ -51,6 +52,11 @@ export function FriendsHubPanel() {
         description={t('friends.hubDescription')}
         onClose={closePanel}
         closeLabel={t('friends.closePanel')}
+        actions={
+          <PanelHeaderButton className="md:hidden" onClick={() => openPanel('chat')} aria-label={t('nav.chats')} title={t('nav.chats')}>
+            <MessagesSquare className="h-5 w-5 md:h-4 md:w-4" strokeWidth={1.75} />
+          </PanelHeaderButton>
+        }
       />
       <div className="min-h-0 flex-1 overflow-y-auto">
         <div className="border-b border-border-subtle pt-3">

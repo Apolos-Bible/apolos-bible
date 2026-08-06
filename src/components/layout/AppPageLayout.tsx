@@ -1,6 +1,6 @@
 import { useEffect, type ReactNode } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
-import { ChevronLeft } from 'lucide-react'
+import { ChevronLeft, Search } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { Sidebar } from '@/components/sidebar/Sidebar'
 import { FloatingChatDock } from '@/components/chat/FloatingChatDock'
@@ -10,6 +10,7 @@ import { useVerseStore } from '@/lib/store/useVerseStore'
 import { useIsMobile } from '@/lib/useIsMobile'
 import { MobileBottomNav } from './MobileBottomNav'
 import { MobileSearchView } from './MobileSearchView'
+import { MobileHubView } from './MobileHubView'
 import { WorkspaceSidePanel } from './WorkspaceSidePanel'
 import { WorkspaceTabs } from './WorkspaceTabs'
 import { useWorkspacePane } from './WorkspacePaneContext'
@@ -41,9 +42,11 @@ export function AppPageLayout({ title, mobileActions, children }: AppPageLayoutP
   const activePanel = useUIStore((state) => state.activePanel)
   const closePanel = useUIStore((state) => state.closePanel)
   const mobileSearchOpen = useUIStore((state) => state.mobileSearchOpen)
+  const mobileHub = useUIStore((state) => state.mobileHub)
   const closeMobileSearch = useUIStore((state) => state.closeMobileSearch)
   const closeMobileSidebar = useUIStore((state) => state.closeMobileSidebar)
   const closeMobileBookPicker = useUIStore((state) => state.closeMobileBookPicker)
+  const closeMobileHub = useUIStore((state) => state.closeMobileHub)
   const workspacePane = useWorkspacePane()
 
   // Panels belong to the reader/workspace route. Clear any reader chrome when
@@ -55,7 +58,8 @@ export function AppPageLayout({ title, mobileActions, children }: AppPageLayoutP
     closeMobileSearch()
     closeMobileSidebar()
     closeMobileBookPicker()
-  }, [isMobile, pathname, closePanel, closeMobileSearch, closeMobileSidebar, closeMobileBookPicker])
+    closeMobileHub()
+  }, [isMobile, pathname, closePanel, closeMobileSearch, closeMobileSidebar, closeMobileBookPicker, closeMobileHub])
 
   // On a hard refresh of /perfil or /ajustes the reader never mounts, so
   // nobody loads the Bible book list the sidebar shows. Fetch it here
@@ -73,7 +77,7 @@ export function AppPageLayout({ title, mobileActions, children }: AppPageLayoutP
     else navigate('/')
   }
 
-  const mobilePageVisible = !activePanel && !mobileSearchOpen
+  const mobilePageVisible = !activePanel && !mobileSearchOpen && !mobileHub
 
   if (workspacePane) {
     return (
@@ -101,6 +105,15 @@ export function AppPageLayout({ title, mobileActions, children }: AppPageLayoutP
           <ChevronLeft className="h-5 w-5" strokeWidth={1.8} />
         </button>
         <span className="flex-1 truncate text-[15px] font-semibold text-text-primary">{title}</span>
+        <button
+          type="button"
+          onClick={() => useUIStore.getState().openMobileSearch()}
+          data-tour="search"
+          aria-label={t('layout.search')}
+          className="inline-flex h-9 w-9 items-center justify-center rounded-md text-text-secondary transition-colors hover:bg-bg-tertiary hover:text-text-primary"
+        >
+          <Search className="h-[18px] w-[18px]" strokeWidth={1.75} />
+        </button>
         {mobileActions}
       </header>
 
@@ -150,6 +163,15 @@ export function AppPageLayout({ title, mobileActions, children }: AppPageLayoutP
         )}
       >
         <MobileSearchView />
+      </div>
+
+      <div
+        className={cn(
+          'min-h-0 flex-1 overflow-hidden md:hidden',
+          mobileHub ? 'block' : 'hidden',
+        )}
+      >
+        <MobileHubView />
       </div>
 
       <div className="md:hidden shrink-0">
