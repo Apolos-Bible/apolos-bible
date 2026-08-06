@@ -23,7 +23,7 @@ function ToolbarButton({
     <button
       onClick={onClick}
       className={cn(
-        'w-8 h-8 flex items-center justify-center rounded-lg text-text-secondary hover:text-text-primary hover:bg-bg-tertiary transition-colors',
+        'flex h-11 w-11 shrink-0 items-center justify-center rounded-lg text-text-secondary transition-colors hover:bg-bg-tertiary hover:text-text-primary md:h-8 md:w-8',
         active && 'text-accent bg-bg-tertiary',
         disabled && 'opacity-40 cursor-not-allowed hover:text-text-secondary hover:bg-transparent',
       )}
@@ -116,10 +116,10 @@ export function StudyToolbar({ tool, onToolChange, showInsertVerse, onOpenInsert
   return (
     <>
       <div className={cn(
-        'absolute top-1/2 -translate-y-1/2 z-10 transition-all duration-300',
-        biblePanelOpen ? 'left-[436px]' : 'left-4',
+        'absolute inset-x-3 bottom-3 z-10 transition-all duration-300 md:inset-x-auto md:bottom-auto md:top-1/2 md:-translate-y-1/2',
+        biblePanelOpen ? 'md:left-[436px]' : 'md:left-4',
       )}>
-        <div className="rounded-2xl bg-surface/90 backdrop-blur shadow-lg p-1.5 flex flex-col gap-1">
+        <div className="flex max-w-full flex-row gap-1 overflow-x-auto rounded-2xl bg-surface/90 p-1.5 shadow-lg backdrop-blur md:flex-col md:overflow-visible">
           {/* Tools */}
           <Tooltip label={t('study.toolbar.select')} side="right">
             <ToolbarButton icon={<MousePointer2 className="w-4 h-4" />} active={tool === 'select'} onClick={() => onToolChange('select')} />
@@ -128,7 +128,7 @@ export function StudyToolbar({ tool, onToolChange, showInsertVerse, onOpenInsert
             <ToolbarButton icon={<Hand className="w-4 h-4" />} active={tool === 'hand'} onClick={() => onToolChange('hand')} />
           </Tooltip>
 
-          <div className="h-px bg-border mx-1" />
+          <div className="my-1 h-8 w-px shrink-0 bg-border md:mx-1 md:my-0 md:h-px md:w-auto" />
 
           {/* Create */}
           <Tooltip label={isGuest ? 'Log in to edit' : t('study.toolbar.stickyNote')} side="right">
@@ -157,7 +157,7 @@ export function StudyToolbar({ tool, onToolChange, showInsertVerse, onOpenInsert
             />
           </Tooltip>
 
-          <div className="h-px bg-border mx-1" />
+          <div className="my-1 h-8 w-px shrink-0 bg-border md:mx-1 md:my-0 md:h-px md:w-auto" />
 
           {/* Draw */}
           <Tooltip label={isGuest ? 'Log in to edit' : 'Draw (D)'} side="right">
@@ -167,7 +167,7 @@ export function StudyToolbar({ tool, onToolChange, showInsertVerse, onOpenInsert
             <ToolbarButton icon={<Eraser className="w-4 h-4" />} active={tool === 'erase'} onClick={handleErase} disabled={isGuest} />
           </Tooltip>
 
-          <div className="h-px bg-border mx-1" />
+          <div className="my-1 h-8 w-px shrink-0 bg-border md:mx-1 md:my-0 md:h-px md:w-auto" />
 
           {/* Bible */}
           <Tooltip label={t('study.toolbar.bible')} side="right">
@@ -202,7 +202,7 @@ export function StudyToolbar({ tool, onToolChange, showInsertVerse, onOpenInsert
             </Tooltip>
           )}
 
-          {!isGuest && <div className="h-px bg-border mx-1" />}
+          {!isGuest && <div className="my-1 h-8 w-px shrink-0 bg-border md:mx-1 md:my-0 md:h-px md:w-auto" />}
 
           {/* History */}
           {!isGuest && <Tooltip label={t('study.toolbar.undo', { modKey })} side="right">
@@ -212,7 +212,7 @@ export function StudyToolbar({ tool, onToolChange, showInsertVerse, onOpenInsert
             <ToolbarButton icon={<Redo className="w-4 h-4" />} onClick={handleRedo} />
           </Tooltip>}
 
-          {!isGuest && <div className="h-px bg-border mx-1" />}
+          {!isGuest && <div className="my-1 h-8 w-px shrink-0 bg-border md:mx-1 md:my-0 md:h-px md:w-auto" />}
 
           {/* View controls */}
           <Tooltip label={t('study.toolbar.zoomIn')} side="right">
@@ -237,8 +237,8 @@ export function StudyToolbar({ tool, onToolChange, showInsertVerse, onOpenInsert
       {drawPopoverOpen && (
         <div
           className={cn(
-            'absolute top-1/2 -translate-y-1/2 z-10 transition-all duration-300',
-            biblePanelOpen ? 'left-[492px]' : 'left-[60px]',
+            'absolute inset-x-3 bottom-[72px] z-10 transition-all duration-300 md:inset-x-auto md:bottom-auto md:top-1/2 md:-translate-y-1/2',
+            biblePanelOpen ? 'md:left-[492px]' : 'md:left-[60px]',
           )}
         >
           <div className="rounded-2xl bg-surface/95 backdrop-blur shadow-lg border border-border p-2 flex flex-col gap-2 min-w-[160px]">
@@ -249,7 +249,7 @@ export function StudyToolbar({ tool, onToolChange, showInsertVerse, onOpenInsert
                   <button
                     onClick={() => onDrawSettingsChange({ ...drawSettings, kind })}
                     className={cn(
-                      'w-7 h-7 flex items-center justify-center rounded-md text-text-secondary hover:text-text-primary hover:bg-bg-tertiary transition-colors',
+                      'flex h-10 w-10 items-center justify-center rounded-md text-text-secondary transition-colors hover:bg-bg-tertiary hover:text-text-primary md:h-7 md:w-7',
                       drawSettings.kind === kind && 'text-accent bg-bg-tertiary',
                     )}
                   >
@@ -266,7 +266,7 @@ export function StudyToolbar({ tool, onToolChange, showInsertVerse, onOpenInsert
                   <button
                     onClick={() => onDrawSettingsChange({ ...drawSettings, color: c })}
                     className={cn(
-                      'w-5 h-5 rounded-full border transition-transform',
+                      'h-8 w-8 rounded-full border transition-transform md:h-5 md:w-5',
                       drawSettings.color === c ? 'border-text-primary scale-110' : 'border-border',
                     )}
                     style={{ backgroundColor: c }}
@@ -283,7 +283,7 @@ export function StudyToolbar({ tool, onToolChange, showInsertVerse, onOpenInsert
                   <button
                     onClick={() => onDrawSettingsChange({ ...drawSettings, size: sz })}
                     className={cn(
-                      'h-7 px-2 rounded-md flex items-center justify-center hover:bg-bg-tertiary transition-colors',
+                      'flex h-10 min-w-10 items-center justify-center rounded-md px-2 transition-colors hover:bg-bg-tertiary md:h-7 md:min-w-0',
                       drawSettings.size === sz && 'bg-bg-tertiary',
                     )}
                   >

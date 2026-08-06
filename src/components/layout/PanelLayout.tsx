@@ -13,6 +13,7 @@ import { KeyboardScope, useCommands } from '@/lib/keyboard'
 import { MobileTopBar } from './MobileTopBar'
 import { MobileBottomNav } from './MobileBottomNav'
 import { MobileSearchView } from './MobileSearchView'
+import { MobileHubView } from './MobileHubView'
 import { BookSelector } from '@/components/sidebar/BookSelector'
 import { FloatingChatDock } from '@/components/chat/FloatingChatDock'
 import { WorkspaceTabs } from './WorkspaceTabs'
@@ -58,6 +59,7 @@ function PanelLayoutSurface({ sidebar, main, panel, leftPanel }: PanelLayoutProp
   const openMobileBookPicker = useUIStore((s) => s.openMobileBookPicker)
   const closeMobileBookPicker = useUIStore((s) => s.closeMobileBookPicker)
   const mobileSearchOpen = useUIStore((s) => s.mobileSearchOpen)
+  const mobileHub = useUIStore((s) => s.mobileHub)
   const togglePanel = useUIStore((s) => s.togglePanel)
   const readingMode = useActiveBiblePaneStore((s) => s.readingMode)
   const setReadingMode = useActiveBiblePaneStore((s) => s.setReadingMode)
@@ -128,6 +130,10 @@ function PanelLayoutSurface({ sidebar, main, panel, leftPanel }: PanelLayoutProp
           <div className="min-h-0 flex-1 overflow-hidden">
             <MobileSearchView />
           </div>
+        ) : mobileHub ? (
+          <div className="min-h-0 flex-1 overflow-hidden">
+            <MobileHubView />
+          </div>
         ) : leftPanel ? (
           <div className="min-h-0 flex-1 overflow-hidden">
             {leftPanel}
@@ -189,7 +195,7 @@ function PanelLayoutSurface({ sidebar, main, panel, leftPanel }: PanelLayoutProp
             actually keeps them out of the tab order — opacity-0 does not. */}
         <div
           className={cn(
-            'fixed inset-0 z-40 transition-opacity duration-200 md:hidden',
+              'safe-area-fixed fixed inset-0 z-40 transition-opacity duration-200 md:hidden',
             mobileBookPickerOpen ? 'pointer-events-auto opacity-100' : 'pointer-events-none opacity-0',
           )}
           inert={mobileBookPickerOpen ? undefined : ''}

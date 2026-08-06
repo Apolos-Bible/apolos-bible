@@ -202,7 +202,7 @@ export function TutorialOverlay() {
   const spotHeight = rect ? rect.height + PAD * 2 : 0
 
   return (
-    <div className="fixed inset-0 z-50" role="dialog" aria-modal="true" aria-labelledby="apolos-tour-title" aria-describedby="apolos-tour-description">
+    <div className="safe-area-fixed fixed inset-0 z-50" role="dialog" aria-modal="true" aria-labelledby="apolos-tour-title" aria-describedby="apolos-tour-description">
       <style>{`
         @keyframes apolos-tour-pulse {
           0%, 100% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--accent) 55%, transparent), 0 0 40px 8px color-mix(in srgb, var(--accent) 25%, transparent); }

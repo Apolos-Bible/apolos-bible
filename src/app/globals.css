@@ -140,6 +140,29 @@ body {
   height: 100%;
 }
 
+/* Fixed and portalled UI does not inherit #root's safe-area padding. These
+   shared primitives keep every full-screen layer and every bottom-floating
+   surface on the same mobile geometry. */
+.safe-area-fixed {
+  top: max(env(safe-area-inset-top, 0px), var(--android-safe-area-inset-top, 0px));
+  right: max(env(safe-area-inset-right, 0px), var(--android-safe-area-inset-right, 0px));
+  bottom: max(env(safe-area-inset-bottom, 0px), var(--android-safe-area-inset-bottom, 0px));
+  left: max(env(safe-area-inset-left, 0px), var(--android-safe-area-inset-left, 0px));
+}
+
+.mobile-floating-stack {
+  bottom: calc(
+    68px + 0.75rem +
+    max(env(safe-area-inset-bottom, 0px), var(--android-safe-area-inset-bottom, 0px))
+  );
+}
+
+@media (min-width: 768px) {
+  .mobile-floating-stack {
+    bottom: 1rem;
+  }
+}
+
 .max-app-viewport-minus-16 {
   max-height: calc(100% - 4rem);
 }

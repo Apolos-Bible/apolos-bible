@@ -10,6 +10,7 @@ export function MobileTopBar() {
   const selectedChapter = useActiveVerseStore((s) => s.selectedChapter)
   const navigateChapter = useActiveVerseStore((s) => s.navigateChapter)
   const openMobileBookPicker = useUIStore((s) => s.openMobileBookPicker)
+  const openMobileSearch = useUIStore((s) => s.openMobileSearch)
   const collapsed = useUIStore((s) => s.mobileChromeCollapsed)
 
   const book = books.find((b) => b.slug === selectedBook)
@@ -55,6 +56,19 @@ export function MobileTopBar() {
       >
         <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.75" className="h-5 w-5">
           <path d="M6 3l5 5-5 5" strokeLinecap="round" strokeLinejoin="round" />
+        </svg>
+      </button>
+
+      <button
+        type="button"
+        onClick={openMobileSearch}
+        data-tour="search"
+        className="inline-flex h-11 w-11 items-center justify-center rounded-md text-text-secondary transition-colors hover:bg-bg-tertiary hover:text-text-primary"
+        aria-label={t('layout.search')}
+      >
+        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.6" className="h-5 w-5" aria-hidden="true">
+          <circle cx="7" cy="7" r="4.25" />
+          <path d="m10.25 10.25 3 3" strokeLinecap="round" />
         </svg>
       </button>
     </header>

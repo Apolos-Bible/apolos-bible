@@ -1,16 +1,17 @@
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Plus } from 'lucide-react'
+import { Plus, UsersRound } from 'lucide-react'
 import { useUIStore } from '@/lib/store/useUIStore'
 import { useChatStore } from '@/lib/store/useChatStore'
 import { ConversationList } from '@/components/chat/ConversationList'
 import { NewChatDialog } from '@/components/chat/NewChatDialog'
-import { PanelHeader } from '@/components/layout/PanelHeader'
+import { PanelHeader, PanelHeaderButton } from '@/components/layout/PanelHeader'
 
 /** The social inbox: direct messages and group conversations share one list. */
 export function FriendsPanel() {
   const { t } = useTranslation()
   const closePanel = useUIStore((s) => s.closePanel)
+  const openPanel = useUIStore((s) => s.openPanel)
   const openFloating = useChatStore((s) => s.openFloating)
   const archivedCount = useChatStore((s) => s.conversations.filter((conversation) => conversation.archived_at !== null).length)
   const [composerOpen, setComposerOpen] = useState(false)
@@ -25,15 +26,20 @@ export function FriendsPanel() {
         onClose={closePanel}
         closeLabel={t('chat.closeChats')}
         actions={
-          <button
-            type="button"
-            onClick={() => setComposerOpen(true)}
-            aria-label={t('common.newChat')}
-            title={t('common.newChat')}
-            className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-accent/10 text-accent transition-colors hover:bg-accent/20 md:h-8 md:w-8"
-          >
-            <Plus className="h-5 w-5 md:h-4 md:w-4" strokeWidth={1.75} />
-          </button>
+          <>
+            <PanelHeaderButton className="md:hidden" onClick={() => openPanel('friends')} aria-label={t('nav.friends')} title={t('nav.friends')}>
+              <UsersRound className="h-5 w-5 md:h-4 md:w-4" strokeWidth={1.75} />
+            </PanelHeaderButton>
+            <button
+              type="button"
+              onClick={() => setComposerOpen(true)}
+              aria-label={t('common.newChat')}
+              title={t('common.newChat')}
+              className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-accent/10 text-accent transition-colors hover:bg-accent/20 md:h-8 md:w-8"
+            >
+              <Plus className="h-5 w-5 md:h-4 md:w-4" strokeWidth={1.75} />
+            </button>
+          </>
         }
       />
 

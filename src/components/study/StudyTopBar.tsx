@@ -84,13 +84,14 @@ export function StudyTopBar({ users, isGuest, doc }: { users: AwarenessUser[]; i
   }
 
   return (
-    <div className="h-12 border-b border-border flex items-center px-4 gap-3 shrink-0">
+    <div className="flex h-14 shrink-0 items-center gap-1 border-b border-border px-2 md:h-12 md:gap-3 md:px-4">
       <button
         onClick={handleExit}
-        className="flex items-center gap-1.5 text-sm text-text-secondary hover:text-text-primary transition-colors shrink-0"
+        className="flex h-11 w-11 shrink-0 items-center justify-center gap-1.5 rounded-md text-sm text-text-secondary transition-colors hover:bg-bg-tertiary hover:text-text-primary md:h-auto md:w-auto md:justify-start md:hover:bg-transparent"
+        aria-label={t('study.topBar.exit')}
       >
         <ChevronLeft className="w-4 h-4" />
-        <span>{t('study.topBar.exit')}</span>
+        <span className="hidden md:inline">{t('study.topBar.exit')}</span>
       </button>
 
       {isGuest && (
@@ -107,13 +108,14 @@ export function StudyTopBar({ users, isGuest, doc }: { users: AwarenessUser[]; i
         className="text-sm font-medium bg-transparent border-none outline-none text-text-primary min-w-0 flex-1"
       />
 
-      {!isGuest && <StudyParticipants users={users} />}
+      {!isGuest && <div className="hidden md:block"><StudyParticipants users={users} /></div>}
 
       {!isGuest && user && (
         <button
           onClick={() => setShowInvite(true)}
-          className="w-7 h-7 flex items-center justify-center rounded-md text-text-secondary hover:text-text-primary hover:bg-bg-tertiary transition-colors"
+          className="flex h-11 w-11 shrink-0 items-center justify-center rounded-md text-text-secondary transition-colors hover:bg-bg-tertiary hover:text-text-primary md:h-7 md:w-7"
           title={t('study.topBar.invite')}
+          aria-label={t('study.topBar.invite')}
         >
           <UserPlus className="w-4 h-4" />
         </button>
@@ -122,8 +124,9 @@ export function StudyTopBar({ users, isGuest, doc }: { users: AwarenessUser[]; i
       {user && !isGuest && (
         <button
           onClick={handleShare}
-          className="w-7 h-7 flex items-center justify-center rounded-md text-text-secondary hover:text-text-primary hover:bg-bg-tertiary transition-colors"
+          className="hidden h-7 w-7 items-center justify-center rounded-md text-text-secondary transition-colors hover:bg-bg-tertiary hover:text-text-primary md:flex"
           title="Copy share link"
+          aria-label="Copy share link"
         >
           <Share2 className="w-4 h-4" />
         </button>
@@ -132,7 +135,7 @@ export function StudyTopBar({ users, isGuest, doc }: { users: AwarenessUser[]; i
       {user && !isGuest && (
         <button
           onClick={handleExportText}
-          className="w-7 h-7 flex items-center justify-center rounded-md text-text-secondary hover:text-text-primary hover:bg-bg-tertiary transition-colors"
+          className="hidden h-7 w-7 items-center justify-center rounded-md text-text-secondary transition-colors hover:bg-bg-tertiary hover:text-text-primary md:flex"
           title={t('study.topBar.exportText')}
           aria-label={t('study.topBar.exportText')}
         >
@@ -144,18 +147,33 @@ export function StudyTopBar({ users, isGuest, doc }: { users: AwarenessUser[]; i
         <div className="relative">
           <button
             onClick={() => setShowMenu(!showMenu)}
-            className="w-7 h-7 flex items-center justify-center rounded-md text-text-secondary hover:text-text-primary hover:bg-bg-tertiary transition-colors"
+            className="flex h-11 w-11 items-center justify-center rounded-md text-text-secondary transition-colors hover:bg-bg-tertiary hover:text-text-primary md:h-7 md:w-7"
             title={t('study.topBar.more')}
+            aria-label={t('study.topBar.more')}
           >
             <MoreHorizontal className="w-4 h-4" />
           </button>
           {showMenu && (
             <>
               <div className="fixed inset-0 z-10" onClick={() => setShowMenu(false)} />
-              <div className="absolute right-0 top-full mt-1 z-20 bg-surface border border-border rounded-lg shadow-lg py-1 min-w-[160px]">
+              <div className="absolute right-0 top-full z-20 mt-1 min-w-[200px] rounded-lg border border-border bg-surface py-1 shadow-lg">
+                <button
+                  onClick={() => { setShowMenu(false); void handleShare() }}
+                  className="flex min-h-11 w-full items-center gap-2 px-3 text-left text-sm text-text-secondary transition-colors hover:bg-bg-tertiary hover:text-text-primary md:hidden"
+                >
+                  <Share2 className="h-4 w-4" />
+                  Copy share link
+                </button>
+                <button
+                  onClick={() => { setShowMenu(false); void handleExportText() }}
+                  className="flex min-h-11 w-full items-center gap-2 px-3 text-left text-sm text-text-secondary transition-colors hover:bg-bg-tertiary hover:text-text-primary md:hidden"
+                >
+                  <Download className="h-4 w-4" />
+                  {t('study.topBar.exportText')}
+                </button>
                 <button
                   onClick={handleEndSession}
-                  className="w-full text-left px-3 py-1.5 text-sm text-red-400 hover:bg-bg-tertiary transition-colors"
+                  className="min-h-11 w-full px-3 text-left text-sm text-red-400 transition-colors hover:bg-bg-tertiary"
                 >
                   {t('study.topBar.endSession')}
                 </button>
@@ -168,7 +186,7 @@ export function StudyTopBar({ users, isGuest, doc }: { users: AwarenessUser[]; i
       {isGuest && (
         <button
           onClick={() => openAuthModal('login')}
-          className="text-xs text-accent hover:underline shrink-0"
+          className="h-11 shrink-0 rounded-md px-2 text-xs text-accent hover:bg-accent/10"
         >
           Log in to edit
         </button>

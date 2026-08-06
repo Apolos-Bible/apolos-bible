@@ -2,11 +2,10 @@ import { useNavigate, useLocation } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import {
   BookOpen,
+  Compass,
   GraduationCap,
-  Gamepad2,
-  MessagesSquare,
-  Search,
   UserRound,
+  UsersRound,
   type LucideIcon,
 } from 'lucide-react'
 import { paths, isPageRoute } from '@/router/paths'
@@ -35,7 +34,7 @@ function NavButton({ icon: Icon, label, active = false, badge, onClick, dataTour
       aria-label={label}
       data-tour={dataTour}
       className={cn(
-        'relative flex h-full flex-1 flex-col items-center justify-center gap-1 transition-colors',
+        'relative flex h-full min-w-0 flex-1 flex-col items-center justify-center gap-1 px-1 transition-colors',
         active ? 'text-accent' : 'text-text-muted hover:text-text-primary',
       )}
     >
@@ -47,7 +46,7 @@ function NavButton({ icon: Icon, label, active = false, badge, onClick, dataTour
           </span>
         )}
       </span>
-      <span className="text-[11px] font-medium leading-none">{label}</span>
+      <span className="max-w-full truncate text-[10px] font-medium leading-none min-[360px]:text-[11px]">{label}</span>
     </button>
   )
 }
@@ -68,7 +67,7 @@ function BibleButton({ label, active, onClick, dataTour }: BibleButtonProps) {
       aria-label={label}
       data-tour={dataTour}
       className={cn(
-        'relative flex h-full flex-1 flex-col items-center justify-center gap-1 transition-colors',
+        'relative flex h-full min-w-0 flex-1 flex-col items-center justify-center gap-1 px-1 transition-colors',
         active ? 'text-accent' : 'text-text-secondary hover:text-text-primary',
       )}
     >
@@ -82,7 +81,7 @@ function BibleButton({ label, active, onClick, dataTour }: BibleButtonProps) {
       >
         <BookOpen className="h-[18px] w-[18px]" strokeWidth={1.75} />
       </span>
-      <span className="text-[11px] font-medium leading-none">{label}</span>
+      <span className="max-w-full truncate text-[10px] font-medium leading-none min-[360px]:text-[11px]">{label}</span>
     </button>
   )
 }
@@ -95,8 +94,10 @@ export function MobileBottomNav() {
   const closePanel = useUIStore((s) => s.closePanel)
   const activePanel = useUIStore((s) => s.activePanel)
   const closeMobileSidebar = useUIStore((s) => s.closeMobileSidebar)
+  const mobileHub = useUIStore((s) => s.mobileHub)
+  const openMobileHub = useUIStore((s) => s.openMobileHub)
+  const closeMobileHub = useUIStore((s) => s.closeMobileHub)
   const mobileSearchOpen = useUIStore((s) => s.mobileSearchOpen)
-  const openMobileSearch = useUIStore((s) => s.openMobileSearch)
   const closeMobileSearch = useUIStore((s) => s.closeMobileSearch)
   const openAuthModal = useUIStore((s) => s.openAuthModal)
   const user = useAuthStore((s) => s.user)
@@ -112,16 +113,8 @@ export function MobileBottomNav() {
   const clearOthers = () => {
     closeMobileSearch()
     closeMobileSidebar()
+    closeMobileHub()
     closePanel()
-  }
-
-  const goToSearch = () => {
-    if (mobileSearchOpen) {
-      closeMobileSearch()
-      return
-    }
-    clearOthers()
-    openMobileSearch()
   }
 
   const goToPanel = (panel: Parameters<typeof togglePanel>[0]) => () => {
@@ -138,18 +131,13 @@ export function MobileBottomNav() {
     togglePanel(panel)
   }
 
-  const goToProfile = () => {
-    clearOthers()
-    navigate(paths.profile())
-  }
-
-  const goToGames = () => {
-    clearOthers()
-    if (!user) {
-      openAuthModal()
+  const goToHub = (hub: 'explore' | 'you') => () => {
+    if (mobileHub === hub && !mobileSearchOpen && activePanel === null) {
+      closeMobileHub()
       return
     }
-    navigate(paths.games())
+    clearOthers()
+    openMobileHub(hub)
   }
 
   const goToBible = () => {
@@ -157,13 +145,24 @@ export function MobileBottomNav() {
     if (onPage) navigate(paths.root())
   }
 
-  const isReader = !onPage && !mobileSearchOpen && activePanel === null
+  const isReader = !onPage && !mobileSearchOpen && mobileHub === null && activePanel === null
+  const isExplore = mobileHub === 'explore' || (
+    mobileHub === null
+    && activePanel === null
+    && (pathname.startsWith('/marketplace') || pathname.startsWith('/juegos') || pathname.startsWith('/mis-rutas'))
+  )
   const isProfile = activePanel === null
     && !mobileSearchOpen
     && (
-      pathname.startsWith('/perfil')
-      || pathname.startsWith('/ajustes')
-      || pathname.startsWith('/u/')
+      mobileHub === 'you'
+      || (
+        mobileHub === null
+        && (
+          pathname.startsWith('/perfil')
+          || pathname.startsWith('/ajustes')
+          || pathname.startsWith('/u/')
+        )
+      )
     )
   const hidden = collapsed && isReader
 
@@ -179,12 +178,18 @@ export function MobileBottomNav() {
       // keeps its buttons out of the tab order.
       inert={hidden ? '' : undefined}
     >
+      <BibleButton
+        label={t('nav.bible')}
+        active={isReader}
+        onClick={goToBible}
+        dataTour="bible"
+      />
       <NavButton
-        icon={Search}
-        label={t('layout.search')}
-        active={mobileSearchOpen}
-        onClick={goToSearch}
-        dataTour="search"
+        icon={Compass}
+        label={t('nav.explore', 'Explorar')}
+        active={isExplore}
+        onClick={goToHub('explore')}
+        dataTour="explore"
       />
       <NavButton
         icon={GraduationCap}
@@ -195,21 +200,8 @@ export function MobileBottomNav() {
         dataTour="my-studies"
       />
       <NavButton
-        icon={Gamepad2}
-        label={t('nav.games')}
-        active={pathname.startsWith('/juegos')}
-        onClick={goToGames}
-        dataTour="games"
-      />
-      <BibleButton
-        label={t('nav.bible')}
-        active={isReader}
-        onClick={goToBible}
-        dataTour="bible"
-      />
-      <NavButton
-        icon={MessagesSquare}
-        label={t('nav.chats')}
+        icon={UsersRound}
+        label={t('nav.community', 'Comunidad')}
         active={activePanel === 'friends' || activePanel === 'chat'}
         badge={chatUnread + friendsUnread}
         onClick={goToPanel('friends')}
@@ -217,10 +209,9 @@ export function MobileBottomNav() {
       />
       <NavButton
         icon={UserRound}
-        label={t('nav.profile')}
+        label={t('nav.you', 'Tú')}
         active={isProfile}
-        badge={friendsUnread}
-        onClick={goToProfile}
+        onClick={goToHub('you')}
         dataTour="profile"
       />
     </nav>
