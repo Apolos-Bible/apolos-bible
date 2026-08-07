@@ -1,6 +1,25 @@
 import { expect, test } from '@playwright/test'
 import { installApiMock } from './support/mockApi'
 
+test('[SEARCH-OPEN-01] abre, enfoca y cierra la búsqueda', async ({ page }, testInfo) => {
+  await installApiMock(page)
+  await page.goto('/bible/genesis/1', { waitUntil: 'domcontentloaded' })
+  await expect(page.getByRole('option', { name: /En el principio cre.* Dios/i }).first()).toBeVisible()
+  await page.getByRole('button', { name: /Search Bible|Buscar Biblia|Search|Buscar/i }).first().click()
+
+  if (testInfo.project.name === 'mobile-chromium') {
+    const search = page.locator('input[type="search"]')
+    await expect(search).toBeFocused()
+    await page.getByRole('button', { name: /Back|Volver/i }).click()
+    await expect(search).toHaveCount(0)
+  } else {
+    const search = page.locator('[cmdk-input]')
+    await expect(search).toBeFocused()
+    await page.keyboard.press('Escape')
+    await expect(search).toHaveCount(0)
+  }
+})
+
 test('[SEARCH-BOOK-01] buscar Juan abre el libro seleccionado', async ({ page }, testInfo) => {
   await installApiMock(page)
   await page.goto('/bible/genesis/1', { waitUntil: 'domcontentloaded' })

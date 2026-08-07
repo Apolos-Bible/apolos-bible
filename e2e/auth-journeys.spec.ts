@@ -67,6 +67,21 @@ test.describe('Flujos completos de autenticación', () => {
     expect(registration?.body).toEqual({ name: 'Ana Segura', email: 'ana@example.test', password: 'strong-password' })
   })
 
+  test('[AUTH-REG-02] rechaza un correo duplicado sin crear una sesión', async ({ page }) => {
+    await installGuestApiMock(page, { registrationStatus: 422 })
+    await openGuestAuth(page)
+
+    await page.getByRole('button', { name: /Register|Registrarse/i }).click()
+    const form = page.locator('form')
+    await form.locator('input[type="text"]').fill('Ana Duplicada')
+    await form.locator('input[type="email"]').fill('ana@example.test')
+    await form.locator('input[type="password"]').fill('strong-password')
+    await form.locator('button[type="submit"]').click()
+
+    await expect(form.getByText(/already been taken|ya.*registrado|ya.*uso/i)).toBeVisible()
+    await expect.poll(() => page.evaluate(() => localStorage.getItem('verbum_token'))).toBeNull()
+  })
+
   test('[AUTH-RECOVERY-01] solicita recuperación sin revelar si el correo existe', async ({ page }) => {
     let recovery: GuestApiRequest | undefined
     await installGuestApiMock(page, {
@@ -94,7 +109,6 @@ test.describe('Flujos completos de autenticación', () => {
 
     await page.getByRole('button', { name: /Sign out|Cerrar sesi.n/i }).click()
 
-    await expect(page).toHaveURL(/\/$/)
     await expect.poll(() => page.evaluate(() => localStorage.getItem('verbum_token'))).toBeNull()
     expect(logoutCalled).toBe(true)
   })

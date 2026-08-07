@@ -34,4 +34,20 @@ test.describe('Autenticación, cuenta y sesiones', () => {
     const currentRow = page.getByText('Windows · Apolos').locator('..').locator('..')
     await expect(currentRow.getByRole('button', { name: /Close|Revocar/i })).toHaveCount(0)
   })
+
+  test('[AUTH-SESSION-04] revoca todas las demás sesiones y conserva la actual', async ({ page }) => {
+    let revokeOthers = false
+    await installApiMock(page, (path, method) => {
+      if (path === '/api/user/sessions/others' && method === 'POST') revokeOthers = true
+    })
+    await page.goto('/ajustes#seguridad', { waitUntil: 'domcontentloaded' })
+
+    const closeOthers = page.getByRole('button', { name: /Close (?:the )?others|Cerrar otras sesiones/i })
+    await closeOthers.click()
+
+    await expect.poll(() => revokeOthers).toBe(true)
+    await expect(page.getByText('Windows · Apolos')).toBeVisible()
+    await expect(page.getByText('Mac · Apolos')).toHaveCount(0)
+    await expect(closeOthers).toHaveCount(0)
+  })
 })
