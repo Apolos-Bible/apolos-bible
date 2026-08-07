@@ -1,5 +1,6 @@
 import { isTauri } from '@tauri-apps/api/core'
 import { onOpenUrl, getCurrent } from '@tauri-apps/plugin-deep-link'
+import { authDeepLinkTarget } from '@/lib/authDeepLinkUrl'
 
 type Navigate = (to: string, opts?: { replace?: boolean }) => void
 
@@ -19,33 +20,13 @@ export function registerAuthDeepLink(navigate: Navigate): () => void {
   if (!isTauri()) return () => {}
 
   const handle = (url: string) => {
-    console.log('[deepLink] received:', url)
     if (typeof url !== 'string' || !url) return
 
-    const match = url.match(/^tulia:\/*([^/?#]*)([^?#]*)(\?[^#]*)?(#.*)?$/i)
-    if (!match) {
-      console.warn('[deepLink] no scheme match:', url)
+    const target = authDeepLinkTarget(url)
+    if (!target) {
+      console.warn('[deepLink] ignored unsupported URL')
       return
     }
-    const [, host, path, search = '', hash = ''] = match
-    console.log('[deepLink] parsed:', { host, path, search, hash })
-
-    const isAuthFinish =
-      (host === 'auth' && (path === '/finish' || path === '')) ||
-      (host === '' && /^\/*auth\/finish\/?$/.test(path)) ||
-      /auth\/finish/i.test(`${host}${path}`)
-
-    if (!isAuthFinish) {
-      console.warn('[deepLink] not auth/finish:', `${host}${path}`)
-      return
-    }
-
-    const searchParams = new URLSearchParams(search.startsWith('?') ? search.slice(1) : search)
-    const provider = searchParams.get('provider') === 'youversion' ? 'youversion' : 'google'
-    searchParams.delete('provider')
-    const remainingSearch = searchParams.size > 0 ? `?${searchParams.toString()}` : ''
-    const target = `/auth/${provider}/finish${remainingSearch}${hash}`
-    console.log('[deepLink] navigating to', target)
     navigate(target, { replace: true })
   }
 
@@ -53,7 +34,6 @@ export function registerAuthDeepLink(navigate: Navigate): () => void {
 
   void getCurrent()
     .then((urls) => {
-      console.log('[deepLink] getCurrent:', urls)
       if (urls && urls.length > 0) handle(urls[0])
     })
     .catch((err) => {
@@ -61,7 +41,6 @@ export function registerAuthDeepLink(navigate: Navigate): () => void {
     })
 
   void onOpenUrl((urls) => {
-    console.log('[deepLink] onOpenUrl:', urls)
     if (urls && urls.length > 0) handle(urls[0])
   }).then((fn) => {
     unlisten = fn
