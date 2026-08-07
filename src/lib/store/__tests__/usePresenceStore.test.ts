@@ -56,6 +56,8 @@ vi.mock('../useActivityStore', () => ({
 import { usePresenceStore } from '../usePresenceStore'
 
 beforeEach(() => {
+  localStorage.setItem('verbum_token', 'test-token')
+  usePresenceStore.getState().leaveChapter()
   vi.clearAllMocks()
   usePresenceStore.setState({ others: [] })
 })

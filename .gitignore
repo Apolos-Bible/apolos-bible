@@ -30,3 +30,9 @@ skills-lock.json
 .firebase/
 .DS_Store
 public/sitemap.xml
+
+# tests
+coverage/
+playwright-report/
+test-results/
+playwright/.auth/
