@@ -115,6 +115,8 @@ test.describe('Lector bíblico y acciones de versículo', () => {
     await chooseMoreAction(page, /Add to favorites|A.adir a favoritos/i)
     await expect.poll(() => mutations.length).toBe(1)
     expect(mutations[0]).toEqual({})
+    await page.reload({ waitUntil: 'domcontentloaded' })
+    await (await firstVerse(page)).click()
     await chooseMoreAction(page, /Remove from favorites|Quitar de favoritos/i)
     await expect.poll(() => mutations.length).toBe(2)
     expect(mutations[1]).toEqual({ _method: 'DELETE' })
@@ -122,8 +124,14 @@ test.describe('Lector bíblico y acciones de versículo', () => {
 
   test('[VERSE-HIGHLIGHT-01] crea y elimina un resaltado completo', async ({ page }) => {
     const paths: string[] = []
+    const mutations: Array<Record<string, unknown>> = []
     await installApiMock(page, (path) => {
       if (path.includes('/highlights')) paths.push(path)
+    })
+    page.on('request', (request) => {
+      if (/\/api\/verses\/\d+\/highlights$/.test(request.url()) && request.method() === 'POST') {
+        mutations.push(request.postDataJSON() as Record<string, unknown>)
+      }
     })
     await page.goto('/bible/juan/1', { waitUntil: 'domcontentloaded' })
     await (await firstVerse(page)).click()
@@ -131,7 +139,10 @@ test.describe('Lector bíblico y acciones de versículo', () => {
     const toggle = page.getByRole('button', { name: /Highlight verse|Resaltar vers/i })
     await toggle.click()
     await expect.poll(() => paths.some((path) => /\/api\/verses\/\d+\/highlights/.test(path))).toBe(true)
-    await toggle.click()
+    await expect.poll(() => mutations).toContainEqual({ start_index: 0, end_index: 29, color: 'yellow' })
+    await page.reload({ waitUntil: 'domcontentloaded' })
+    await (await firstVerse(page)).click()
+    await page.getByRole('button', { name: /Highlight verse|Resaltar vers/i }).click()
     await expect.poll(() => paths).toContain('/api/highlights/8001')
   })
 
