@@ -2,12 +2,13 @@ import { expect, test } from '@playwright/test'
 import { installApiMock } from './support/mockApi'
 
 test.describe('Seguridad de la cuenta', () => {
-  test('[ACCOUNT-PROFILE-01] guarda el nombre normalizado', async ({ page }) => {
-    let profileBody: Record<string, unknown> | undefined
+  test('[ACCOUNT-PROFILE-01] guarda nombre y biografía normalizados tras recargar', async ({ page }) => {
+    const profileBodies: Array<Record<string, unknown>> = []
     await installApiMock(page, (_path, _method) => {})
     page.on('request', (request) => {
       if (new URL(request.url()).pathname === '/api/user' && request.method() === 'POST') {
-        profileBody = request.postDataJSON() as Record<string, unknown>
+        const body = request.postDataJSON() as Record<string, unknown>
+        if (body._method === 'PATCH') profileBodies.push(body)
       }
     })
     await page.goto('/ajustes#cuenta', { waitUntil: 'domcontentloaded' })
@@ -16,7 +17,16 @@ test.describe('Seguridad de la cuenta', () => {
     await name.fill('  Ana Renovada  ')
     await name.locator('..').getByRole('button', { name: /Save|Guardar/i }).click()
 
-    await expect.poll(() => profileBody).toEqual({ _method: 'PATCH', name: 'Ana Renovada' })
+    await expect.poll(() => profileBodies).toContainEqual({ _method: 'PATCH', name: 'Ana Renovada' })
+
+    const bio = page.getByLabel(/Bio|Biograf.a/i)
+    await bio.fill('  Estudio seguro y comunitario.  ')
+    await bio.locator('..').getByRole('button', { name: /Save|Guardar/i }).click()
+    await expect.poll(() => profileBodies).toContainEqual({ _method: 'PATCH', bio: 'Estudio seguro y comunitario.' })
+
+    await page.reload({ waitUntil: 'domcontentloaded' })
+    await expect(page.getByLabel(/Name|Nombre/i)).toHaveValue('Ana Renovada')
+    await expect(page.getByLabel(/Bio|Biograf.a/i)).toHaveValue('Estudio seguro y comunitario.')
   })
 
   test('[ACCOUNT-PASSWORD-01] exige confirmación y envía el cambio completo', async ({ page }) => {

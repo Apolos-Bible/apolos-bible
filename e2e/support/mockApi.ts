@@ -54,6 +54,7 @@ async function fulfill(route: Route, json: unknown, status = 200) {
 }
 
 export async function installApiMock(page: Page, onRequest?: (path: string, method: string) => void) {
+  let currentUser: Record<string, unknown> = { ...testUser }
   let notes: Array<Record<string, unknown>> = []
   let nextNoteId = 7001
   let bookmarks: Array<Record<string, unknown>> = []
@@ -76,7 +77,14 @@ export async function installApiMock(page: Page, onRequest?: (path: string, meth
     const path = url.pathname
     onRequest?.(path, request.method())
 
-    if (path === '/api/user') return fulfill(route, testUser)
+    if (path === '/api/user') {
+      if (request.method() === 'GET') return fulfill(route, currentUser)
+      const body = request.postDataJSON?.() ?? {}
+      if (body._method === 'DELETE') return fulfill(route, { ok: true })
+      const { _method: _ignored, ...updates } = body
+      currentUser = { ...currentUser, ...updates }
+      return fulfill(route, currentUser)
+    }
     if (path === '/api/user/settings') return fulfill(route, {})
     if (path === '/api/user/sessions' && request.method() === 'GET') return fulfill(route, sessions)
     if (path === '/api/user/sessions/others') {
