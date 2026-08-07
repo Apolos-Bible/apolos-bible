@@ -12,8 +12,7 @@ import { prefetchVersion, shouldAutoPrefetch } from '@/lib/prefetchBible'
 import { pingReadingActivity } from '@/lib/readingActivity'
 import { fromYouVersionClientId } from '@/lib/youVersion'
 import { resolveReferenceBook } from '@/lib/bibleRefs'
-
-const LAST_READING_KEY = 'verbum_last_reading'
+import { LAST_READING_KEY } from '@/lib/lastReading'
 
 export interface Book {
   id: string  // slug used as id for compatibility
