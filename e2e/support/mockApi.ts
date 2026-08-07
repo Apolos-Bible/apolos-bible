@@ -17,6 +17,12 @@ const versions = [{
   abbreviation: 'RVR1960',
   language: 'es',
   provider: 'local',
+}, {
+  id: 2,
+  name: 'Nueva Versión Internacional',
+  abbreviation: 'NVI',
+  language: 'es',
+  provider: 'local',
 }]
 
 const books = [
@@ -33,11 +39,13 @@ function chapterResponse(path: string) {
     book: { number: isJohn ? 43 : 1, name: isJohn ? 'Juan' : 'Génesis', slug },
     chapter,
     chapter_id: (isJohn ? 43000 : 1000) + chapter,
-    verses: [{
-      id: (isJohn ? 4300000 : 1000000) + chapter * 1000 + 1,
-      number: 1,
-      text: isJohn ? 'En el principio era el Verbo.' : 'En el principio creó Dios.',
-    }],
+    verses: [1, 2, 3].map((number) => ({
+      id: (isJohn ? 4300000 : 1000000) + chapter * 1000 + number,
+      number,
+      text: isJohn
+        ? ['En el principio era el Verbo.', 'Él estaba con Dios.', 'Todas las cosas por él fueron hechas.'][number - 1]
+        : ['En el principio creó Dios.', 'La tierra estaba desordenada.', 'Y dijo Dios: Sea la luz.'][number - 1],
+    })),
   }
 }
 
@@ -67,10 +75,37 @@ export async function installApiMock(page: Page, onRequest?: (path: string, meth
       { id: 12, name: 'Mac · Apolos', current: false, last_used_at: '2026-08-06T20:00:00Z', created_at: '2026-08-01T10:00:00Z' },
     ])
     if (path === '/api/versions') return fulfill(route, versions)
-    if (path === '/api/versions/1/books') return fulfill(route, books)
+    if (/^\/api\/versions\/\d+\/books$/.test(path)) return fulfill(route, books)
     if (path.includes('/chapters/')) return fulfill(route, chapterResponse(path))
+    if (/^\/api\/versions\/\d+\/search$/.test(path)) return fulfill(route, [{
+      id: 43002001,
+      book: 'Juan',
+      slug: 'juan',
+      chapter: 2,
+      verse: 1,
+      text: 'Al tercer día se hicieron unas bodas en Caná.',
+    }])
     if (path === '/api/youversion/versions') return fulfill(route, { data: [] })
     if (path === '/api/user/bookmarks' || path === '/api/friends' || path === '/api/conversations') return fulfill(route, [])
+    if (path === '/api/highlights/batch') return fulfill(route, [])
+    const bookmark = path.match(/^\/api\/verses\/(\d+)\/bookmark$/)
+    if (bookmark) {
+      const verseId = Number(bookmark[1])
+      const deleting = request.postDataJSON?.()?._method === 'DELETE'
+      return fulfill(route, deleting ? { ok: true } : {
+        id: 9001,
+        verse_id: verseId,
+        note: null,
+        created_at: '2026-08-07T20:00:00Z',
+        verse: { id: verseId, number: 1, text: 'En el principio era el Verbo.', chapter: 1, book: 'Juan', slug: 'juan' },
+      })
+    }
+    const highlight = path.match(/^\/api\/verses\/(\d+)\/highlights$/)
+    if (highlight) {
+      const body = request.postDataJSON?.() ?? {}
+      return fulfill(route, { id: 8001, verse_id: Number(highlight[1]), ...body })
+    }
+    if (/^\/api\/highlights\/\d+$/.test(path)) return fulfill(route, { ok: true })
     if (path.startsWith('/api/user/sessions/') && request.method() === 'POST') return fulfill(route, { ok: true })
     if (path === '/api/push/preferences') return fulfill(route, {})
     if (path === '/api/push/subscriptions') return fulfill(route, [])
