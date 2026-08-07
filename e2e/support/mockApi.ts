@@ -98,6 +98,16 @@ export async function installApiMock(
       return fulfill(route, currentUser)
     }
     if (path === '/api/user/settings') return fulfill(route, {})
+    if (path === '/api/user/avatar'
+      && request.headers()['content-type']?.includes('application/json')
+      && request.postDataJSON()?._method === 'DELETE') {
+      currentUser.avatar_url = null
+      return fulfill(route, { avatar_url: null })
+    }
+    if (path === '/api/user/avatar' && request.method() === 'POST') {
+      currentUser.avatar_url = 'data:image/png;base64,iVBORw0KGgo='
+      return fulfill(route, { avatar_url: currentUser.avatar_url })
+    }
     if (path === '/api/auth/email/resend-verification') {
       if (options.resendVerificationStatus && options.resendVerificationStatus !== 200) {
         return fulfill(route, { message: 'Too Many Attempts.' }, options.resendVerificationStatus)
