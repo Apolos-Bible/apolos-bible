@@ -56,6 +56,10 @@ async function fulfill(route: Route, json: unknown, status = 200) {
 export async function installApiMock(page: Page, onRequest?: (path: string, method: string) => void) {
   let notes: Array<Record<string, unknown>> = []
   let nextNoteId = 7001
+  let sessions = [
+    { id: 11, name: 'Windows · Apolos', current: true, last_used_at: '2026-08-07T20:00:00Z', created_at: '2026-08-01T10:00:00Z' },
+    { id: 12, name: 'Mac · Apolos', current: false, last_used_at: '2026-08-06T20:00:00Z', created_at: '2026-08-01T10:00:00Z' },
+  ]
   await page.addInitScript(({ user }) => {
     localStorage.setItem('verbum_token', 'e2e-token')
     localStorage.setItem('analytics_consent', 'denied')
@@ -72,10 +76,16 @@ export async function installApiMock(page: Page, onRequest?: (path: string, meth
 
     if (path === '/api/user') return fulfill(route, testUser)
     if (path === '/api/user/settings') return fulfill(route, {})
-    if (path === '/api/user/sessions') return fulfill(route, [
-      { id: 11, name: 'Windows · Apolos', current: true, last_used_at: '2026-08-07T20:00:00Z', created_at: '2026-08-01T10:00:00Z' },
-      { id: 12, name: 'Mac · Apolos', current: false, last_used_at: '2026-08-06T20:00:00Z', created_at: '2026-08-01T10:00:00Z' },
-    ])
+    if (path === '/api/user/sessions' && request.method() === 'GET') return fulfill(route, sessions)
+    if (path === '/api/user/sessions/others') {
+      sessions = sessions.filter((session) => session.current)
+      return fulfill(route, { ok: true })
+    }
+    const sessionMutation = path.match(/^\/api\/user\/sessions\/(\d+)$/)
+    if (sessionMutation && request.method() === 'POST') {
+      sessions = sessions.filter((session) => session.id !== Number(sessionMutation[1]) || session.current)
+      return fulfill(route, { ok: true })
+    }
     if (path === '/api/versions') return fulfill(route, versions)
     if (/^\/api\/versions\/\d+\/books$/.test(path)) return fulfill(route, books)
     if (path.includes('/chapters/')) return fulfill(route, chapterResponse(path))
@@ -160,7 +170,6 @@ export async function installApiMock(page: Page, onRequest?: (path: string, meth
       return fulfill(route, { id: 8001, verse_id: Number(highlight[1]), ...body })
     }
     if (/^\/api\/highlights\/\d+$/.test(path)) return fulfill(route, { ok: true })
-    if (path.startsWith('/api/user/sessions/') && request.method() === 'POST') return fulfill(route, { ok: true })
     if (path === '/api/push/preferences') return fulfill(route, {})
     if (path === '/api/push/subscriptions') return fulfill(route, [])
 
@@ -176,6 +185,7 @@ export interface GuestApiRequest {
 
 interface GuestApiMockOptions {
   loginStatus?: number
+  registrationStatus?: number
   onRequest?: (request: GuestApiRequest) => void
 }
 
@@ -200,6 +210,9 @@ export async function installGuestApiMock(page: Page, options: GuestApiMockOptio
       return fulfill(route, { token: 'authenticated-e2e-token', user: testUser })
     }
     if (path === '/api/auth/register') {
+      if (options.registrationStatus && options.registrationStatus !== 201) {
+        return fulfill(route, { message: 'The email has already been taken.' }, options.registrationStatus)
+      }
       return fulfill(route, { token: 'registered-e2e-token', user: testUser }, 201)
     }
     if (path === '/api/auth/forgot-password') {

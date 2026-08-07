@@ -16,6 +16,18 @@ async function chooseMoreAction(
 }
 
 test.describe('Lector bíblico y acciones de versículo', () => {
+  test('[SETTINGS-APPEAR-01] persiste el ancho del lector', async ({ page }, testInfo) => {
+    test.skip(testInfo.project.name === 'mobile-chromium', 'El control de ancho solo existe en el lector de escritorio')
+    await installApiMock(page)
+    await page.goto('/bible/juan/1', { waitUntil: 'domcontentloaded' })
+
+    const width = page.getByRole('slider', { name: /Reader width|Ancho del lector/i })
+    await width.press('End')
+    await expect.poll(() => page.evaluate(() => localStorage.getItem('readerWidth'))).toBe('wide')
+    await page.reload({ waitUntil: 'domcontentloaded' })
+    await expect(page.getByRole('slider', { name: /Reader width|Ancho del lector/i })).toHaveValue('2')
+  })
+
   test('[BIBLE-NAV-01] abre un deep link localizado y selecciona el versículo', async ({ page }) => {
     await installApiMock(page)
     await page.goto('/es/bible/juan/2/2', { waitUntil: 'domcontentloaded' })
