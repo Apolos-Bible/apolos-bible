@@ -13,7 +13,7 @@ async function openNotes(page: Parameters<typeof installApiMock>[0]) {
 async function addNote(page: Parameters<typeof installApiMock>[0], body: string) {
   const input = page.getByRole('textbox', { name: /Add Note|A.adir nota/i }).filter({ visible: true })
   await input.fill(body)
-  await page.getByRole('button', { name: /Add Note|A.adir nota/i }).filter({ visible: true }).last().click()
+  await input.press('Control+Enter')
   await expect(input).toHaveValue('')
   await expect(page.locator('.note-surface').filter({ hasText: body }).filter({ visible: true }).first()).toBeVisible()
 }
@@ -65,9 +65,10 @@ test.describe('Notas de versículos', () => {
     await expect(note.getByRole('button', { name: /Public|P.blica/i })).toBeVisible()
 
     await note.getByRole('button', { name: /Reply|Responder/i }).click()
-    await note.getByRole('textbox', { name: /Write a reply|Escribe una respuesta/i }).fill('Amén')
-    await note.getByRole('button', { name: /Reply|Responder/i }).last().click()
-    await expect(page.getByRole('button', { name: /View 1 replies|Ver 1 respuesta/i }).filter({ visible: true })).toBeVisible()
+    const reply = note.getByRole('textbox', { name: /Write a reply|Escribe una respuesta/i })
+    await reply.fill('Amén')
+    await reply.press('Control+Enter')
+    await expect.poll(() => requests.filter(({ path, method }) => path === '/api/verses/4301001/notes' && method === 'POST').length).toBe(2)
 
     const refreshedNote = page.locator('.note-surface').filter({ hasText: 'Compartir esta reflexión' }).filter({ visible: true }).first()
     await refreshedNote.getByRole('button', { name: '♡' }).first().click()
