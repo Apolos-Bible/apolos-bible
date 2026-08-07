@@ -2,7 +2,7 @@
 
 A desktop Bible study app built for focus, depth, and collaboration.
 
-> **Landing:** [apolos.io](https://apolos.io) · **Privacy:** [apolos.io/privacy](https://apolos.io/privacy) · **Terms:** [apolos.io/terms](https://apolos.io/terms) · **GitHub:** [Tulia-Study/tulia-bible](https://github.com/Tulia-Study/tulia-bible)
+> **Landing:** [apolos.io](https://apolos.io) · **Privacy:** [apolos.io/privacy](https://apolos.io/privacy) · **Terms:** [apolos.io/terms](https://apolos.io/terms)
 
 <img width="1680" height="960" alt="Reading view with friends panel open — Genesis 1 with accepted friends visible in the sidebar" src="https://github.com/user-attachments/assets/7c0a9ca9-33ea-47bc-9cb8-3067a0514508" />
 <img width="3360" height="1918" alt="Command palette — search and jump to any book, chapter, or verse in a keystroke" src="https://github.com/user-attachments/assets/90be971d-51f7-449a-bb77-8ede0ae4b918" />
@@ -72,7 +72,7 @@ In the future, some features that cost money to run — AI-powered search, exten
 
 ### macOS — first-time open
 
-The macOS builds aren't signed with an Apple Developer certificate yet (it's $99/year and the app is still early). Gatekeeper will say *"Apple could not verify Apolos is free of malware..."*. The code is open source — you can read every line in this repo. To open it the first time:
+The macOS builds aren't signed with an Apple Developer certificate yet (it's $99/year and the app is still early). Gatekeeper will say *"Apple could not verify Apolos is free of malware..."*. To open it the first time:
 
 - **macOS 14 and earlier**: in Finder, right-click `Apolos.app` → **Open**. The same warning appears, but now with an **Open** button. Only needed once.
 - **macOS 15 (Sequoia) and later**: open **System Settings → Privacy & Security**, scroll down, you'll see *"Apolos was blocked..."* → click **Open Anyway**.
@@ -81,15 +81,15 @@ After that first launch, double-clicking works normally.
 
 ### Windows — SmartScreen warning
 
-Windows may show *"Windows protected your PC"* when you first run the installer. This is because the app is not code-signed with an EV certificate yet. The code is open source — click **More info** → **Run anyway** to proceed.
+Windows may show *"Windows protected your PC"* when you first run the installer. This is because the app is not code-signed with an EV certificate yet. Click **More info** → **Run anyway** to proceed.
 
 ### Linux
 
-Download the AppImage or .deb from [GitHub Releases](https://github.com/Tulia-Study/tulia-bible/releases/latest). Make the AppImage executable with `chmod +x` before running.
+Download the AppImage from [apolos.io](https://apolos.io/#download). Make it executable with `chmod +x` before running.
 
 ### Android
 
-Download the .apk from [GitHub Releases](https://github.com/Tulia-Study/tulia-bible/releases/latest). You may need to allow installation from unknown sources in your device settings.
+Download the .apk from [apolos.io](https://apolos.io/#download). You may need to allow installation from unknown sources in your device settings.
 
 ### Web (offline / PWA)
 
@@ -136,9 +136,3 @@ Apolos is built on the shoulders of people who did the hard work of digitizing a
 **Cross-references**
 
 - [OpenBible.info](https://www.openbible.info) — crowd-verified cross-reference dataset, CC-BY.
-
----
-
-## License
-
-MIT
