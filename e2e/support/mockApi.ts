@@ -86,6 +86,14 @@ export async function installApiMock(page: Page, onRequest?: (path: string, meth
       return fulfill(route, currentUser)
     }
     if (path === '/api/user/settings') return fulfill(route, {})
+    if (path === '/api/user/notes') return fulfill(route, [{
+      id: 7101,
+      body: '<!--apolos-rich-note--><p>Esperanza personal</p>',
+      created_at: '2026-08-07T20:00:00Z',
+      is_public: false,
+      note_type: 'insight',
+      verse: { id: 4301001, number: 1, text: 'En el principio era el Verbo.', chapter: 1, book: 'Juan', slug: 'juan' },
+    }])
     if (path === '/api/user/export') {
       const markdown = url.searchParams.get('format') === 'markdown'
       return route.fulfill({
