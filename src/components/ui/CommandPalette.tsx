@@ -19,7 +19,6 @@ export function CommandPalette() {
   const { t } = useTranslation()
   const navigate = useNavigate()
   const { commandPaletteOpen, closeCommandPalette } = useUIStore()
-  const { selectBook, openVerse } = useVerseStore()
   const books = useVerseStore((s) => s.books)
   const versionId = useVerseStore((s) => s.versionId)
   const user = useAuthStore((s) => s.user)
@@ -86,9 +85,13 @@ export function CommandPalette() {
       ].filter((c) => normalizeText(c.label).includes(normalizeText(query)))
     : []
 
-  const handleBookSelect = (bookId: string) => {
-    selectBook(bookId)
-    closeCommandPalette()
+  const openBibleLocation = (book: string, chapter: number, verse?: number) => {
+    runNav(paths.bible({
+      lang: useUIStore.getState().locale,
+      book,
+      chapter,
+      verse,
+    }))
   }
 
   return (
@@ -164,8 +167,8 @@ export function CommandPalette() {
                   <Command.Item
                     key={book.id}
                     value={book.name}
-                    onSelect={() => handleBookSelect(book.id)}
-                    onClick={() => handleBookSelect(book.id)}
+                    onSelect={() => openBibleLocation(book.slug, 1)}
+                    onClick={() => openBibleLocation(book.slug, 1)}
                     className={cn(
                       'px-4 py-2 cursor-pointer text-sm text-text-secondary',
                       'hover:bg-bg-tertiary hover:text-text-primary',
@@ -195,14 +198,8 @@ export function CommandPalette() {
                   <Command.Item
                     key={verse.id}
                     value={`${verse.book} ${verse.chapter}:${verse.verse} ${verse.text}`}
-                    onSelect={() => {
-                      void openVerse(verse.slug, verse.chapter, verse.verse)
-                      closeCommandPalette()
-                    }}
-                    onClick={() => {
-                      void openVerse(verse.slug, verse.chapter, verse.verse)
-                      closeCommandPalette()
-                    }}
+                    onSelect={() => openBibleLocation(verse.slug, verse.chapter, verse.verse)}
+                    onClick={() => openBibleLocation(verse.slug, verse.chapter, verse.verse)}
                     className={cn(
                       'px-4 py-2 cursor-pointer text-sm text-text-secondary',
                       'hover:bg-bg-tertiary hover:text-text-primary',

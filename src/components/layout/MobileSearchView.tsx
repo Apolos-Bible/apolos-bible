@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
+import { useNavigate } from 'react-router-dom'
 import { useUIStore } from '@/lib/store/useUIStore'
 import { UserAvatar } from '@/components/auth/UserAvatar'
 import { useVerseStore } from '@/lib/store/useVerseStore'
@@ -13,6 +14,7 @@ import type { Book } from '@/lib/store/useVerseStore'
 import { api } from '@/lib/api'
 import { cn } from '@/lib/cn'
 import { noteToPlainText } from '@/lib/richNotes'
+import { paths } from '@/router/paths'
 
 type Scope = 'all' | 'bible' | 'notes' | 'people'
 
@@ -29,11 +31,11 @@ interface UserNote {
 
 export function MobileSearchView() {
   const { t } = useTranslation()
+  const navigate = useNavigate()
   const mobileSearchOpen = useUIStore((s) => s.mobileSearchOpen)
   const closeMobileSearch = useUIStore((s) => s.closeMobileSearch)
   const addToast = useUIStore((s) => s.addToast)
   const versionId = useVerseStore((s) => s.versionId)
-  const openVerse = useVerseStore((s) => s.openVerse)
   const books = useVerseStore((s) => s.books)
   const user = useAuthStore((s) => s.user)
   const searchUsers = useFriendStore((s) => s.searchUsers)
@@ -43,6 +45,16 @@ export function MobileSearchView() {
   const sendRequest = useFriendStore((s) => s.sendRequest)
   const sent = useFriendStore((s) => s.sent)
   const friends = useFriendStore((s) => s.friends)
+
+  const openBibleLocation = (book: string, chapter: number, verse?: number) => {
+    closeMobileSearch()
+    navigate(paths.bible({
+      lang: useUIStore.getState().locale,
+      book,
+      chapter,
+      verse,
+    }))
+  }
 
   const [scope, setScope] = useState<Scope>('bible')
   const [query, setQuery] = useState('')
@@ -152,24 +164,20 @@ export function MobileSearchView() {
   const friendIds = useMemo(() => new Set(friends.map((f) => f.id)), [friends])
 
   const handleVerseClick = (v: ApiSearchResult) => {
-    void openVerse(v.slug, v.chapter, v.verse)
-    closeMobileSearch()
+    openBibleLocation(v.slug, v.chapter, v.verse)
   }
 
   const handleBookClick = (b: Book) => {
-    void openVerse(b.slug, 1, 1)
-    closeMobileSearch()
+    openBibleLocation(b.slug, 1)
   }
 
   const handleParsedRefClick = () => {
     if (!parsedRef) return
-    void openVerse(parsedRef.slug, parsedRef.chapter, parsedRef.verse ?? 1)
-    closeMobileSearch()
+    openBibleLocation(parsedRefBook?.slug ?? parsedRef.slug, parsedRef.chapter, parsedRef.verse ?? undefined)
   }
 
   const handleNoteClick = (n: UserNote) => {
-    void openVerse(n.verse.slug, n.verse.chapter, n.verse.number)
-    closeMobileSearch()
+    openBibleLocation(n.verse.slug, n.verse.chapter, n.verse.number)
   }
 
   const handleSendRequest = async (userId: number, name: string) => {
