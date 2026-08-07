@@ -100,6 +100,47 @@ test.describe('Flujos completos de autenticación', () => {
     expect(recovery?.body).toEqual({ email: 'unknown@example.test' })
   })
 
+  test('[AUTH-RECOVERY-02] restablece la contraseña desde el enlace recibido', async ({ page }) => {
+    let resetRequest: GuestApiRequest | undefined
+    await installGuestApiMock(page, {
+      onRequest: (request) => {
+        if (request.path === '/api/auth/reset-password') resetRequest = request
+      },
+    })
+    await page.goto('/auth/reset-password?token=valid-reset-token&email=ana%40example.test', { waitUntil: 'domcontentloaded' })
+
+    const dialog = page.getByRole('dialog')
+    await expect(dialog.getByRole('heading', { name: /Set new password|Nueva contraseña/i })).toBeVisible()
+    await expect(dialog.locator('input[type="email"]')).toHaveValue('ana@example.test')
+    const passwords = dialog.locator('input[type="password"]')
+    await passwords.nth(0).fill('new-secure-password')
+    await passwords.nth(1).fill('new-secure-password')
+    await dialog.getByRole('button', { name: /Reset password|Cambiar contraseña/i }).click()
+
+    await expect(dialog.getByRole('heading', { name: /Sign in to Apolos|Inicia sesi.n en Apolos/i })).toBeVisible()
+    expect(resetRequest?.body).toEqual({
+      email: 'ana@example.test',
+      token: 'valid-reset-token',
+      password: 'new-secure-password',
+      password_confirmation: 'new-secure-password',
+    })
+  })
+
+  test('[AUTH-RECOVERY-03] conserva el formulario y rechaza un token inválido o expirado', async ({ page }) => {
+    await installGuestApiMock(page, { resetPasswordStatus: 422 })
+    await page.goto('/auth/reset-password?token=expired-reset-token&email=ana%40example.test', { waitUntil: 'domcontentloaded' })
+
+    const dialog = page.getByRole('dialog')
+    const passwords = dialog.locator('input[type="password"]')
+    await passwords.nth(0).fill('new-secure-password')
+    await passwords.nth(1).fill('new-secure-password')
+    await dialog.getByRole('button', { name: /Reset password|Cambiar contraseña/i }).click()
+
+    await expect(dialog.getByText(/Invalid or expired reset token/i)).toBeVisible()
+    await expect(dialog.locator('input[type="email"]')).toHaveValue('ana@example.test')
+    await expect(dialog.getByRole('heading', { name: /Set new password|Nueva contraseña/i })).toBeVisible()
+  })
+
   test('[AUTH-LOGOUT-01] cierra la sesión local aunque el API responda correctamente', async ({ page }) => {
     let logoutCalled = false
     await installApiMock(page, (path) => {

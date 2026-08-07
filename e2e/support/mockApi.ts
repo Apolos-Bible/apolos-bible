@@ -251,6 +251,7 @@ export interface GuestApiRequest {
 interface GuestApiMockOptions {
   loginStatus?: number
   registrationStatus?: number
+  resetPasswordStatus?: number
   onRequest?: (request: GuestApiRequest) => void
 }
 
@@ -282,6 +283,12 @@ export async function installGuestApiMock(page: Page, options: GuestApiMockOptio
     }
     if (path === '/api/auth/forgot-password') {
       return fulfill(route, { message: 'Reset link sent' })
+    }
+    if (path === '/api/auth/reset-password') {
+      if (options.resetPasswordStatus && options.resetPasswordStatus !== 200) {
+        return fulfill(route, { message: 'Invalid or expired reset token.' }, options.resetPasswordStatus)
+      }
+      return fulfill(route, { message: 'Password reset successfully.' })
     }
     if (path === '/api/auth/logout') return fulfill(route, { ok: true })
     if (path === '/api/user/settings') return fulfill(route, {})
