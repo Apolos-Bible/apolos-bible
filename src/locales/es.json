@@ -74,6 +74,8 @@
   "auth.signingIn": "Iniciando sesión…",
   "auth.creatingAccount": "Creando cuenta…",
   "auth.somethingWentWrong": "Algo salió mal",
+  "auth.emailVerified": "Correo verificado.",
+  "auth.emailVerifyFailed": "No pudimos verificar el correo. El enlace puede haber caducado.",
   "auth.logIn": "Inicia sesión",
   "auth.forgotPassword": "¿Olvidaste tu contraseña?",
   "auth.forgotPasswordTitle": "Restablecer contraseña",
