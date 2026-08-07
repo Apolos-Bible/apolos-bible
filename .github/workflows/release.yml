@@ -203,6 +203,39 @@ jobs:
           track: alpha
           status: completed
 
+  publish-releases:
+    if: github.event_name == 'release'
+    needs: [bump-version, desktop, android]
+    runs-on: ubuntu-latest
+    env:
+      AWS_ACCESS_KEY_ID: ${{ secrets.RELEASES_S3_ACCESS_KEY_ID }}
+      AWS_SECRET_ACCESS_KEY: ${{ secrets.RELEASES_S3_SECRET_ACCESS_KEY }}
+      AWS_DEFAULT_REGION: eu-central-003
+      RELEASES_BUCKET: ${{ vars.RELEASES_S3_BUCKET }}
+      RELEASES_ENDPOINT: ${{ vars.RELEASES_S3_ENDPOINT }}
+      RELEASES_PUBLIC_URL: ${{ vars.RELEASES_PUBLIC_URL }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.bump-version.outputs.sha }}
+
+      - name: Download signed release assets
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: gh release download "${{ github.event.release.tag_name }}" --dir release-assets
+
+      - name: Prepare public manifests and aliases
+        run: node scripts/prepare-release-publish.mjs release-assets publish "${{ needs.bump-version.outputs.version }}" "$RELEASES_PUBLIC_URL"
+
+      - name: Upload immutable versioned artifacts
+        run: aws s3 sync "publish/releases/${{ needs.bump-version.outputs.version }}" "s3://$RELEASES_BUCKET/releases/${{ needs.bump-version.outputs.version }}/" --endpoint-url "$RELEASES_ENDPOINT" --cache-control "public, max-age=31536000, immutable"
+
+      - name: Upload latest installers and manifests
+        run: |
+          aws s3 sync publish/latest "s3://$RELEASES_BUCKET/latest/" --endpoint-url "$RELEASES_ENDPOINT" --cache-control "public, max-age=300, must-revalidate"
+          aws s3 cp publish/latest.json "s3://$RELEASES_BUCKET/latest.json" --endpoint-url "$RELEASES_ENDPOINT" --content-type application/json --cache-control "public, max-age=300, must-revalidate"
+          aws s3 cp publish/release-manifest.json "s3://$RELEASES_BUCKET/release-manifest.json" --endpoint-url "$RELEASES_ENDPOINT" --content-type application/json --cache-control "public, max-age=300, must-revalidate"
+
   web:
     needs: bump-version
     runs-on: ubuntu-latest
