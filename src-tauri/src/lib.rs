@@ -57,6 +57,13 @@ pub fn run() {
 
             #[cfg(any(target_os = "macos", windows, target_os = "linux"))]
             {
+                use tauri_plugin_deep_link::DeepLinkExt;
+
+                let app_handle = app.handle().clone();
+                app.deep_link().on_open_url(move |_event| {
+                    show_main_window(&app_handle);
+                });
+
                 let show_item = MenuItem::with_id(app, "show", "Open Apolos", true, None::<&str>)?;
                 let quit_item = MenuItem::with_id(app, "quit", "Quit", true, None::<&str>)?;
                 let menu = Menu::with_items(app, &[&show_item, &quit_item])?;
