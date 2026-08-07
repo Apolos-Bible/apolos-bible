@@ -109,14 +109,17 @@ export async function installApiMock(page: Page, onRequest?: (path: string, meth
     if (path === '/api/versions') return fulfill(route, versions)
     if (/^\/api\/versions\/\d+\/books$/.test(path)) return fulfill(route, books)
     if (path.includes('/chapters/')) return fulfill(route, chapterResponse(path))
-    if (/^\/api\/versions\/\d+\/search$/.test(path)) return fulfill(route, [{
-      id: 43002001,
-      book: 'Juan',
-      slug: 'juan',
-      chapter: 2,
-      verse: 1,
-      text: 'Al tercer día se hicieron unas bodas en Caná.',
-    }])
+    if (/^\/api\/versions\/\d+\/search$/.test(path)) {
+      if (url.searchParams.get('q')?.includes('inexistente')) return fulfill(route, [])
+      return fulfill(route, [{
+        id: 43002001,
+        book: 'Juan',
+        slug: 'juan',
+        chapter: 2,
+        verse: 1,
+        text: 'Al tercer día se hicieron unas bodas en Caná.',
+      }])
+    }
     if (path === '/api/youversion/versions') return fulfill(route, { data: [] })
     if (path === '/api/user/bookmarks') return fulfill(route, bookmarks)
     if (path === '/api/friends' || path === '/api/conversations') return fulfill(route, [])
