@@ -56,6 +56,8 @@ async function fulfill(route: Route, json: unknown, status = 200) {
 export async function installApiMock(page: Page, onRequest?: (path: string, method: string) => void) {
   let notes: Array<Record<string, unknown>> = []
   let nextNoteId = 7001
+  let bookmarks: Array<Record<string, unknown>> = []
+  let highlights: Array<Record<string, unknown>> = []
   let sessions = [
     { id: 11, name: 'Windows · Apolos', current: true, last_used_at: '2026-08-07T20:00:00Z', created_at: '2026-08-01T10:00:00Z' },
     { id: 12, name: 'Mac · Apolos', current: false, last_used_at: '2026-08-06T20:00:00Z', created_at: '2026-08-01T10:00:00Z' },
@@ -98,8 +100,9 @@ export async function installApiMock(page: Page, onRequest?: (path: string, meth
       text: 'Al tercer día se hicieron unas bodas en Caná.',
     }])
     if (path === '/api/youversion/versions') return fulfill(route, { data: [] })
-    if (path === '/api/user/bookmarks' || path === '/api/friends' || path === '/api/conversations') return fulfill(route, [])
-    if (path === '/api/highlights/batch') return fulfill(route, [])
+    if (path === '/api/user/bookmarks') return fulfill(route, bookmarks)
+    if (path === '/api/friends' || path === '/api/conversations') return fulfill(route, [])
+    if (path === '/api/highlights/batch') return fulfill(route, highlights)
     const verseNotes = path.match(/^\/api\/verses\/(\d+)\/notes$/)
     if (verseNotes) {
       if (request.method() === 'GET') return fulfill(route, notes)
@@ -156,20 +159,36 @@ export async function installApiMock(page: Page, onRequest?: (path: string, meth
     if (bookmark) {
       const verseId = Number(bookmark[1])
       const deleting = request.postDataJSON?.()?._method === 'DELETE'
-      return fulfill(route, deleting ? { ok: true } : {
+      if (deleting) {
+        bookmarks = bookmarks.filter((entry) => Number(entry.verse_id) !== verseId)
+        return fulfill(route, { ok: true })
+      }
+      const created = {
         id: 9001,
         verse_id: verseId,
         note: null,
         created_at: '2026-08-07T20:00:00Z',
         verse: { id: verseId, number: 1, text: 'En el principio era el Verbo.', chapter: 1, book: 'Juan', slug: 'juan' },
-      })
+      }
+      bookmarks.push(created)
+      return fulfill(route, created)
     }
     const highlight = path.match(/^\/api\/verses\/(\d+)\/highlights$/)
     if (highlight) {
+      const verseId = Number(highlight[1])
+      if (request.method() === 'GET') {
+        return fulfill(route, highlights.filter((entry) => Number(entry.verse_id) === verseId))
+      }
       const body = request.postDataJSON?.() ?? {}
-      return fulfill(route, { id: 8001, verse_id: Number(highlight[1]), ...body })
+      const created = { id: 8001, verse_id: verseId, ...body }
+      highlights.push(created)
+      return fulfill(route, created)
     }
-    if (/^\/api\/highlights\/\d+$/.test(path)) return fulfill(route, { ok: true })
+    const highlightMutation = path.match(/^\/api\/highlights\/(\d+)$/)
+    if (highlightMutation) {
+      highlights = highlights.filter((entry) => Number(entry.id) !== Number(highlightMutation[1]))
+      return fulfill(route, { ok: true })
+    }
     if (path === '/api/push/preferences') return fulfill(route, {})
     if (path === '/api/push/subscriptions') return fulfill(route, [])
 
