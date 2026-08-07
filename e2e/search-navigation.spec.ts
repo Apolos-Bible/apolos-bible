@@ -97,3 +97,19 @@ test('[SEARCH-NOTE-01] busca únicamente las notas propias y abre su pasaje', as
   await expect(page).toHaveURL(/\/bible\/juan\/1\/1$/)
   await expect(page.getByRole('option').filter({ hasText: 'En el principio era el Verbo.' }).first()).toHaveAttribute('aria-selected', 'true')
 })
+
+test('[SEARCH-PEOPLE-01] respeta la privacidad de descubrimiento y permite solicitar amistad', async ({ page }, testInfo) => {
+  test.skip(testInfo.project.name !== 'mobile-chromium', 'La búsqueda de personas pertenece a la vista de búsqueda móvil')
+  await installApiMock(page)
+  await page.goto('/bible/genesis/1', { waitUntil: 'domcontentloaded' })
+  await page.getByRole('button', { name: /Search Bible|Buscar Biblia|Search|Buscar/i }).first().click()
+  await page.getByRole('button', { name: /^People$|^Personas$/i }).click()
+  await page.locator('input[type="search"]').fill('lucia.visible@example.test')
+
+  await expect(page.getByText('Lucia Visible')).toBeVisible()
+  await expect(page.getByText('lucia.visible@example.test')).toBeVisible()
+  await expect(page.getByText(/Private Person|hidden-person@example\.com/i)).toHaveCount(0)
+
+  await page.getByRole('button', { name: /^Add$|^Agregar$/i }).click()
+  await expect(page.getByText(/Request sent|Solicitud enviada/i)).toBeVisible()
+})
