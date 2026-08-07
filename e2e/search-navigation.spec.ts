@@ -84,3 +84,16 @@ test('[SEARCH-TEXT-01] muestra un estado vacío sin resultados', async ({ page }
 
   await expect(page.getByText(/No results|Sin resultados|No se encontraron/i).filter({ visible: true })).toBeVisible()
 })
+
+test('[SEARCH-NOTE-01] busca únicamente las notas propias y abre su pasaje', async ({ page }, testInfo) => {
+  test.skip(testInfo.project.name !== 'mobile-chromium', 'La búsqueda de notas pertenece a la vista de búsqueda móvil')
+  await installApiMock(page)
+  await page.goto('/bible/genesis/1', { waitUntil: 'domcontentloaded' })
+  await page.getByRole('button', { name: /Search Bible|Buscar Biblia|Search|Buscar/i }).first().click()
+  await page.getByRole('button', { name: /^Notes$|^Notas$/i }).click()
+  await page.locator('input[type="search"]').fill('esperanza')
+  await page.getByRole('button', { name: /Juan 1:1.*Esperanza personal/i }).click()
+
+  await expect(page).toHaveURL(/\/bible\/juan\/1\/1$/)
+  await expect(page.getByRole('option').filter({ hasText: 'En el principio era el Verbo.' }).first()).toHaveAttribute('aria-selected', 'true')
+})
