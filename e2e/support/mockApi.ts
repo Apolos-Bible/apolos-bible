@@ -98,6 +98,12 @@ export async function installApiMock(
       return fulfill(route, currentUser)
     }
     if (path === '/api/user/settings') return fulfill(route, {})
+    if (path === '/api/user/password') {
+      currentUser.has_password = true
+      const providers = Array.isArray(currentUser.connected_providers) ? currentUser.connected_providers : []
+      currentUser.connected_providers = [...new Set([...providers, 'password'])]
+      return fulfill(route, { message: 'Password updated.' })
+    }
     if (path === '/api/user/avatar'
       && request.headers()['content-type']?.includes('application/json')
       && request.postDataJSON()?._method === 'DELETE') {
