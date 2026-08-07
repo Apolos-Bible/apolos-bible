@@ -19,7 +19,27 @@ const versions = [{
   provider: 'local',
 }]
 
-const books = [{ id: 43, number: 43, name: 'Juan', slug: 'juan', chapters_count: 21 }]
+const books = [
+  { id: 1, number: 1, name: 'Génesis', slug: 'genesis', chapters_count: 50 },
+  { id: 43, number: 43, name: 'Juan', slug: 'juan', chapters_count: 21 },
+]
+
+function chapterResponse(path: string) {
+  const match = path.match(/\/books\/([^/]+)\/chapters\/(\d+)/)
+  const slug = match?.[1] ?? 'juan'
+  const chapter = Number(match?.[2] ?? 1)
+  const isJohn = slug === 'juan'
+  return {
+    book: { number: isJohn ? 43 : 1, name: isJohn ? 'Juan' : 'Génesis', slug },
+    chapter,
+    chapter_id: (isJohn ? 43000 : 1000) + chapter,
+    verses: [{
+      id: (isJohn ? 4300000 : 1000000) + chapter * 1000 + 1,
+      number: 1,
+      text: isJohn ? 'En el principio era el Verbo.' : 'En el principio creó Dios.',
+    }],
+  }
+}
 
 async function fulfill(route: Route, json: unknown, status = 200) {
   await route.fulfill({ status, contentType: 'application/json', body: JSON.stringify(json) })
@@ -48,12 +68,7 @@ export async function installApiMock(page: Page, onRequest?: (path: string, meth
     ])
     if (path === '/api/versions') return fulfill(route, versions)
     if (path === '/api/versions/1/books') return fulfill(route, books)
-    if (path.includes('/chapters/')) return fulfill(route, {
-      book: { number: 43, name: 'Juan', slug: 'juan' },
-      chapter: 3,
-      chapter_id: 43003,
-      verses: [{ id: 4300316, number: 16, text: 'Porque de tal manera amó Dios al mundo…' }],
-    })
+    if (path.includes('/chapters/')) return fulfill(route, chapterResponse(path))
     if (path === '/api/youversion/versions') return fulfill(route, { data: [] })
     if (path === '/api/user/bookmarks' || path === '/api/friends' || path === '/api/conversations') return fulfill(route, [])
     if (path.startsWith('/api/user/sessions/') && request.method() === 'POST') return fulfill(route, { ok: true })
@@ -106,6 +121,7 @@ export async function installGuestApiMock(page: Page, options: GuestApiMockOptio
     if (path === '/api/user') return fulfill(route, testUser)
     if (path === '/api/versions') return fulfill(route, versions)
     if (path === '/api/versions/1/books') return fulfill(route, books)
+    if (path.includes('/chapters/')) return fulfill(route, chapterResponse(path))
     if (path === '/api/youversion/versions') return fulfill(route, { data: [] })
     if (path === '/api/user/bookmarks' || path === '/api/friends' || path === '/api/conversations') return fulfill(route, [])
 
