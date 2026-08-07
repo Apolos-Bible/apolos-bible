@@ -130,6 +130,20 @@ export async function installApiMock(page: Page, onRequest?: (path: string, meth
     }
     if (path === '/api/youversion/versions') return fulfill(route, { data: [] })
     if (path === '/api/user/bookmarks') return fulfill(route, bookmarks)
+    if (path === '/api/users/search') return fulfill(route, [{
+      id: 21,
+      name: 'Lucia Visible',
+      email: 'lucia.visible@example.test',
+      avatar_url: null,
+    }])
+    if (path === '/api/friends/21' && request.method() === 'POST') return fulfill(route, {
+      id: 501,
+      user_id: testUser.id,
+      friend_id: 21,
+      status: 'pending',
+      user: testUser,
+      friend: { id: 21, name: 'Lucia Visible', email: 'lucia.visible@example.test', avatar_url: null },
+    }, 201)
     if (path === '/api/friends' || path === '/api/conversations') return fulfill(route, [])
     if (path === '/api/highlights/batch') return fulfill(route, highlights)
     const verseNotes = path.match(/^\/api\/verses\/(\d+)\/notes$/)
