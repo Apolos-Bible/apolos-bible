@@ -55,3 +55,32 @@ test('[SEARCH-REF-01] una referencia exacta abre capítulo y versículo', async 
   await expect(page.getByRole('option').filter({ hasText: 'En el principio era el Verbo.' }).first())
     .toHaveAttribute('aria-selected', 'true')
 })
+
+test('[SEARCH-TEXT-01] busca texto bíblico y abre el resultado', async ({ page }, testInfo) => {
+  await installApiMock(page)
+  await page.goto('/bible/genesis/1', { waitUntil: 'domcontentloaded' })
+  await page.getByRole('button', { name: /Search Bible|Buscar Biblia|Search|Buscar/i }).first().click()
+
+  if (testInfo.project.name === 'mobile-chromium') {
+    await page.locator('input[type="search"]').fill('bodas')
+    await page.getByRole('button', { name: /bodas en Can/i }).click()
+  } else {
+    await page.locator('[cmdk-input]').fill('bodas')
+    await page.getByRole('option', { name: /bodas en Can/i }).click()
+  }
+
+  await expect(page).toHaveURL(/\/bible\/juan\/2\/1$/)
+  await expect(page.getByRole('option').filter({ hasText: 'En el principio era el Verbo.' }).first()).toHaveAttribute('aria-selected', 'true')
+})
+
+test('[SEARCH-TEXT-01] muestra un estado vacío sin resultados', async ({ page }, testInfo) => {
+  await installApiMock(page)
+  await page.goto('/bible/genesis/1', { waitUntil: 'domcontentloaded' })
+  await page.getByRole('button', { name: /Search Bible|Buscar Biblia|Search|Buscar/i }).first().click()
+  const search = testInfo.project.name === 'mobile-chromium'
+    ? page.locator('input[type="search"]')
+    : page.locator('[cmdk-input]')
+  await search.fill('inexistente')
+
+  await expect(page.getByText(/No results|Sin resultados|No se encontraron/i).filter({ visible: true })).toBeVisible()
+})
