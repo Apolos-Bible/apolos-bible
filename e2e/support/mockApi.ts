@@ -63,3 +63,52 @@ export async function installApiMock(page: Page, onRequest?: (path: string, meth
     return fulfill(route, [])
   })
 }
+
+export interface GuestApiRequest {
+  path: string
+  method: string
+  body: unknown
+}
+
+interface GuestApiMockOptions {
+  loginStatus?: number
+  onRequest?: (request: GuestApiRequest) => void
+}
+
+/** Public API fixture for auth journeys that must start without a local token. */
+export async function installGuestApiMock(page: Page, options: GuestApiMockOptions = {}) {
+  await page.addInitScript(() => {
+    localStorage.removeItem('verbum_token')
+    localStorage.setItem('analytics_consent', 'denied')
+    localStorage.setItem('verbum_tutorial_completed', 'true')
+  })
+
+  await page.route('**/api/**', async (route) => {
+    const request = route.request()
+    const path = new URL(request.url()).pathname
+    const body = request.postDataJSON?.() ?? null
+    options.onRequest?.({ path, method: request.method(), body })
+
+    if (path === '/api/auth/login') {
+      if (options.loginStatus && options.loginStatus !== 200) {
+        return fulfill(route, { message: 'Invalid credentials' }, options.loginStatus)
+      }
+      return fulfill(route, { token: 'authenticated-e2e-token', user: testUser })
+    }
+    if (path === '/api/auth/register') {
+      return fulfill(route, { token: 'registered-e2e-token', user: testUser }, 201)
+    }
+    if (path === '/api/auth/forgot-password') {
+      return fulfill(route, { message: 'Reset link sent' })
+    }
+    if (path === '/api/auth/logout') return fulfill(route, { ok: true })
+    if (path === '/api/user/settings') return fulfill(route, {})
+    if (path === '/api/user') return fulfill(route, testUser)
+    if (path === '/api/versions') return fulfill(route, versions)
+    if (path === '/api/versions/1/books') return fulfill(route, books)
+    if (path === '/api/youversion/versions') return fulfill(route, { data: [] })
+    if (path === '/api/user/bookmarks' || path === '/api/friends' || path === '/api/conversations') return fulfill(route, [])
+
+    return fulfill(route, [])
+  })
+}
