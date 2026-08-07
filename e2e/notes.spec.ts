@@ -64,6 +64,22 @@ test.describe('Notas de versículos', () => {
     ]))
   })
 
+  test('[NOTES-TYPE-01] conserva la categoría de la nota tras recargar', async ({ page }) => {
+    await installApiMock(page)
+    await openNotes(page)
+    await addNote(page, 'Petición persistente')
+
+    let note = page.locator('.note-surface').filter({ hasText: 'Petición persistente' }).filter({ visible: true }).first()
+    await note.getByRole('button', { name: /Note settings|Ajustes de nota/i }).click()
+    await note.getByRole('button', { name: /Prayer|Oraci.n/i }).click()
+    await page.reload({ waitUntil: 'domcontentloaded' })
+    await openNotes(page)
+
+    note = page.locator('.note-surface').filter({ hasText: 'Petición persistente' }).filter({ visible: true }).first()
+    await note.getByRole('button', { name: /Note settings|Ajustes de nota/i }).click()
+    await expect(note.getByRole('button', { name: /Prayer|Oraci.n/i })).not.toHaveClass(/border-transparent/)
+  })
+
   test('[NOTES-TYPE-01][NOTES-VISIBILITY-01][NOTES-THREAD-01][NOTES-LIKE-01] publica, responde y marca una nota como favorita', async ({ page }) => {
     const requests: Array<{ path: string; method: string }> = []
     await installApiMock(page, (path, method) => {
