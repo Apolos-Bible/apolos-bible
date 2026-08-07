@@ -74,6 +74,8 @@
   "auth.signingIn": "Signing in…",
   "auth.creatingAccount": "Creating account…",
   "auth.somethingWentWrong": "Something went wrong",
+  "auth.emailVerified": "Email verified.",
+  "auth.emailVerifyFailed": "We could not verify the email. The link may have expired.",
   "auth.logIn": "Log in",
   "auth.forgotPassword": "Forgot password?",
   "auth.forgotPasswordTitle": "Reset your password",

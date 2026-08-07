@@ -53,8 +53,17 @@ async function fulfill(route: Route, json: unknown, status = 200) {
   await route.fulfill({ status, contentType: 'application/json', body: JSON.stringify(json) })
 }
 
-export async function installApiMock(page: Page, onRequest?: (path: string, method: string) => void) {
-  let currentUser: Record<string, unknown> = { ...testUser }
+interface ApiMockOptions {
+  user?: Record<string, unknown>
+  resendVerificationStatus?: number
+}
+
+export async function installApiMock(
+  page: Page,
+  onRequest?: (path: string, method: string) => void,
+  options: ApiMockOptions = {},
+) {
+  let currentUser: Record<string, unknown> = { ...(options.user ?? testUser) }
   let notes: Array<Record<string, unknown>> = []
   let nextNoteId = 7001
   let bookmarks: Array<Record<string, unknown>> = []
@@ -72,7 +81,7 @@ export async function installApiMock(page: Page, onRequest?: (path: string, meth
     localStorage.setItem('verbum_tutorial_completed', 'true')
     localStorage.setItem('lastReading', JSON.stringify({ book: 'juan', chapter: 3, verse: 16 }))
     localStorage.setItem('e2e_user', JSON.stringify(user))
-  }, { user: testUser })
+  }, { user: currentUser })
 
   await page.route('**/api/**', async (route) => {
     const request = route.request()
@@ -89,6 +98,12 @@ export async function installApiMock(page: Page, onRequest?: (path: string, meth
       return fulfill(route, currentUser)
     }
     if (path === '/api/user/settings') return fulfill(route, {})
+    if (path === '/api/auth/email/resend-verification') {
+      if (options.resendVerificationStatus && options.resendVerificationStatus !== 200) {
+        return fulfill(route, { message: 'Too Many Attempts.' }, options.resendVerificationStatus)
+      }
+      return fulfill(route, { message: 'Verification email sent.', verified: false })
+    }
     if (path === '/api/user/notes') return fulfill(route, [{
       id: 7101,
       body: '<!--apolos-rich-note--><p>Esperanza personal</p>',

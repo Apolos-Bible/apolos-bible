@@ -3,6 +3,10 @@ import { useUIStore } from '@/lib/store/useUIStore'
 import { paths } from '@/router/paths'
 import { readLastReading } from '@/lib/lastReading'
 
+export function preserveRootCallbackLocation(target: string, search: string, hash: string): string {
+  return `${target}${search}${hash}`
+}
+
 export function RootRedirect() {
   const locale = useUIStore.getState().locale
   const last = readLastReading()
@@ -12,5 +16,7 @@ export function RootRedirect() {
     chapter: last?.chapter ?? 1,
     verse: last?.verse ?? null,
   })
-  return <Navigate to={target} replace />
+  // Preserve backend callback flags until RootLayout has consumed them.
+  // RootLayout removes only its own flag and retains unrelated parameters.
+  return <Navigate to={preserveRootCallbackLocation(target, window.location.search, window.location.hash)} replace />
 }
