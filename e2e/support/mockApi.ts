@@ -64,7 +64,10 @@ export async function installApiMock(page: Page, onRequest?: (path: string, meth
     { id: 12, name: 'Mac · Apolos', current: false, last_used_at: '2026-08-06T20:00:00Z', created_at: '2026-08-01T10:00:00Z' },
   ]
   await page.addInitScript(({ user }) => {
-    localStorage.setItem('verbum_token', 'e2e-token')
+    if (sessionStorage.getItem('apolos_e2e_api_initialized') !== 'true') {
+      localStorage.setItem('verbum_token', 'e2e-token')
+      sessionStorage.setItem('apolos_e2e_api_initialized', 'true')
+    }
     localStorage.setItem('analytics_consent', 'denied')
     localStorage.setItem('verbum_tutorial_completed', 'true')
     localStorage.setItem('lastReading', JSON.stringify({ book: 'juan', chapter: 3, verse: 16 }))

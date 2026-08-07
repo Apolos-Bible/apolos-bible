@@ -111,5 +111,9 @@ test.describe('Flujos completos de autenticación', () => {
 
     await expect.poll(() => page.evaluate(() => localStorage.getItem('verbum_token'))).toBeNull()
     expect(logoutCalled).toBe(true)
+
+    await page.reload({ waitUntil: 'domcontentloaded' })
+    await expect.poll(() => page.evaluate(() => localStorage.getItem('verbum_token'))).toBeNull()
+    await expect(page.getByRole('button', { name: /Sign out|Cerrar sesi.n/i })).toHaveCount(0)
   })
 })
