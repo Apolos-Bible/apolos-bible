@@ -19,6 +19,24 @@ async function addNote(page: Parameters<typeof installApiMock>[0], body: string)
 }
 
 test.describe('Notas de versículos', () => {
+  test('[NOTES-RICH-01] renderiza formato seguro y elimina HTML peligroso', async ({ page }) => {
+    await page.addInitScript(() => {
+      ;(window as unknown as { __unsafeNoteExecuted?: boolean }).__unsafeNoteExecuted = false
+    })
+    await installApiMock(page)
+    await openNotes(page)
+
+    const input = page.getByRole('textbox', { name: /Add Note|A.adir nota/i }).filter({ visible: true })
+    await input.fill('<!--apolos-rich-note--><strong>Texto seguro</strong><img src=x onerror="window.__unsafeNoteExecuted=true"><script>window.__unsafeNoteExecuted=true</script>')
+    await input.press('Control+Enter')
+
+    const note = page.locator('.note-surface').filter({ hasText: 'Texto seguro' }).filter({ visible: true }).first()
+    const content = note.locator('.note-rich-content')
+    await expect(content.locator('strong')).toHaveText('Texto seguro')
+    await expect(content.locator('img, script')).toHaveCount(0)
+    await expect.poll(() => page.evaluate(() => (window as unknown as { __unsafeNoteExecuted?: boolean }).__unsafeNoteExecuted)).toBe(false)
+  })
+
   test('[NOTES-CRUD-01] crea, edita y elimina una nota con postcondiciones de API', async ({ page }) => {
     const mutations: Array<{ path: string; method: string }> = []
     await installApiMock(page, (path, method) => {
