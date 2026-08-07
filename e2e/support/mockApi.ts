@@ -56,6 +56,7 @@ async function fulfill(route: Route, json: unknown, status = 200) {
 interface ApiMockOptions {
   user?: Record<string, unknown>
   resendVerificationStatus?: number
+  initialNotes?: Array<Record<string, unknown>>
 }
 
 export async function installApiMock(
@@ -64,7 +65,7 @@ export async function installApiMock(
   options: ApiMockOptions = {},
 ) {
   let currentUser: Record<string, unknown> = { ...(options.user ?? testUser) }
-  let notes: Array<Record<string, unknown>> = []
+  let notes: Array<Record<string, unknown>> = options.initialNotes?.map((note) => ({ ...note })) ?? []
   let nextNoteId = 7001
   let bookmarks: Array<Record<string, unknown>> = []
   let highlights: Array<Record<string, unknown>> = []
