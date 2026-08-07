@@ -54,6 +54,8 @@ async function fulfill(route: Route, json: unknown, status = 200) {
 }
 
 export async function installApiMock(page: Page, onRequest?: (path: string, method: string) => void) {
+  let notes: Array<Record<string, unknown>> = []
+  let nextNoteId = 7001
   await page.addInitScript(({ user }) => {
     localStorage.setItem('verbum_token', 'e2e-token')
     localStorage.setItem('analytics_consent', 'denied')
@@ -88,6 +90,58 @@ export async function installApiMock(page: Page, onRequest?: (path: string, meth
     if (path === '/api/youversion/versions') return fulfill(route, { data: [] })
     if (path === '/api/user/bookmarks' || path === '/api/friends' || path === '/api/conversations') return fulfill(route, [])
     if (path === '/api/highlights/batch') return fulfill(route, [])
+    const verseNotes = path.match(/^\/api\/verses\/(\d+)\/notes$/)
+    if (verseNotes) {
+      if (request.method() === 'GET') return fulfill(route, notes)
+      const body = request.postDataJSON?.() ?? {}
+      const note = {
+        id: nextNoteId++,
+        verse_id: Number(verseNotes[1]),
+        parent_id: body.parent_id ?? null,
+        body: body.body ?? '',
+        is_public: body.is_public ?? false,
+        note_type: body.note_type ?? 'note',
+        created_at: '2026-08-07T20:00:00Z',
+        user: testUser,
+        likes_count: 0,
+        is_liked: false,
+      }
+      notes.push(note)
+      return fulfill(route, note, 201)
+    }
+    const noteMutation = path.match(/^\/api\/notes\/(\d+)$/)
+    if (noteMutation) {
+      const noteId = Number(noteMutation[1])
+      if (request.method() === 'DELETE') {
+        const removed = new Set([noteId])
+        let changed = true
+        while (changed) {
+          changed = false
+          for (const note of notes) {
+            if (removed.has(Number(note.parent_id)) && !removed.has(Number(note.id))) {
+              removed.add(Number(note.id))
+              changed = true
+            }
+          }
+        }
+        notes = notes.filter((note) => !removed.has(Number(note.id)))
+        return fulfill(route, { ok: true })
+      }
+      const body = request.postDataJSON?.() ?? {}
+      const current = notes.find((note) => Number(note.id) === noteId)
+      if (!current) return fulfill(route, { message: 'Note not found' }, 404)
+      Object.assign(current, body)
+      return fulfill(route, current)
+    }
+    const noteLike = path.match(/^\/api\/notes\/(\d+)\/like$/)
+    if (noteLike) {
+      const current = notes.find((note) => Number(note.id) === Number(noteLike[1]))
+      if (!current) return fulfill(route, { message: 'Note not found' }, 404)
+      const liked = request.method() !== 'DELETE'
+      current.is_liked = liked
+      current.likes_count = liked ? 1 : 0
+      return fulfill(route, { likes_count: current.likes_count })
+    }
     const bookmark = path.match(/^\/api\/verses\/(\d+)\/bookmark$/)
     if (bookmark) {
       const verseId = Number(bookmark[1])

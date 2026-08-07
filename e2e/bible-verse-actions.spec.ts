@@ -80,9 +80,9 @@ test.describe('Lector bíblico y acciones de versículo', () => {
     const third = verses.filter({ hasText: 'Todas las cosas por él fueron hechas.' }).first()
     await first.click()
     await expect(first).toHaveAttribute('aria-selected', 'true')
-    await page.keyboard.press('Shift+J')
+    await page.keyboard.press('Shift+ArrowDown')
     await expect(verses.filter({ hasText: 'Él estaba con Dios.' }).first()).toHaveAttribute('aria-selected', 'true')
-    await page.keyboard.press('Shift+J')
+    await page.keyboard.press('Shift+ArrowDown')
 
     await expect(first).toHaveAttribute('aria-selected', 'true')
     await expect(verses.filter({ hasText: 'Él estaba con Dios.' }).first()).toHaveAttribute('aria-selected', 'true')
