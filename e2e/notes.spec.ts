@@ -1,6 +1,19 @@
 import { expect, test } from '@playwright/test'
 import { installApiMock } from './support/mockApi'
 
+const sharedFriendNote = {
+  id: 7200,
+  verse_id: 4301001,
+  parent_id: null,
+  body: 'Reflexión compartida por Lucía',
+  is_public: true,
+  note_type: 'insight',
+  created_at: '2026-08-07T20:00:00Z',
+  user: { id: 21, name: 'Lucia Visible', email: 'lucia.visible@example.test', avatar_url: null },
+  likes_count: 0,
+  is_liked: false,
+}
+
 async function openNotes(page: Parameters<typeof installApiMock>[0]) {
   await page.goto('/bible/juan/1', { waitUntil: 'domcontentloaded' })
   const verse = page.getByRole('option').filter({ hasText: 'En el principio era el Verbo.' }).first()
@@ -112,5 +125,38 @@ test.describe('Notas de versículos', () => {
       { path: '/api/verses/4301001/notes', method: 'POST' },
       { path: '/api/notes/7001/like', method: 'POST' },
     ]))
+  })
+
+  test('[NOTES-VISIBILITY-01][NOTES-THREAD-01] limita a un amigo a responder sin editar la nota ajena', async ({ page }) => {
+    let replyBody: Record<string, unknown> | undefined
+    await installApiMock(page, undefined, { initialNotes: [sharedFriendNote] })
+    page.on('request', (request) => {
+      if (new URL(request.url()).pathname === '/api/verses/4301001/notes' && request.method() === 'POST') {
+        replyBody = request.postDataJSON() as Record<string, unknown>
+      }
+    })
+    await openNotes(page)
+    await page.getByRole('switch', { name: /Show notes from others|Mostrar notas de otros/i }).check()
+
+    const note = page.locator('.note-surface').filter({ hasText: 'Reflexión compartida por Lucía' }).filter({ visible: true }).first()
+    await expect(note).toBeVisible()
+    await expect(note.getByRole('button', { name: /Note settings|Ajustes de nota/i })).toHaveCount(0)
+    await note.getByRole('button', { name: /Reply|Responder/i }).click()
+    const reply = note.getByRole('textbox', { name: /Write a reply|Escribe una respuesta/i })
+    await reply.fill('Respuesta autorizada')
+    await reply.press('Control+Enter')
+
+    await expect.poll(() => replyBody).toMatchObject({
+      body: 'Respuesta autorizada',
+      parent_id: 7200,
+    })
+  })
+
+  test('[NOTES-VISIBILITY-01] no renderiza notas que el API oculta a un desconocido', async ({ page }) => {
+    await installApiMock(page, undefined, { initialNotes: [] })
+    await openNotes(page)
+    await page.getByRole('switch', { name: /Show notes from others|Mostrar notas de otros/i }).check()
+
+    await expect(page.getByText('Reflexión compartida por Lucía')).toHaveCount(0)
   })
 })
