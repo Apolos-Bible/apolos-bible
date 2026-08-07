@@ -86,6 +86,16 @@ export async function installApiMock(page: Page, onRequest?: (path: string, meth
       return fulfill(route, currentUser)
     }
     if (path === '/api/user/settings') return fulfill(route, {})
+    if (path === '/api/user/export') {
+      const markdown = url.searchParams.get('format') === 'markdown'
+      return route.fulfill({
+        status: 200,
+        contentType: markdown ? 'text/markdown' : 'application/json',
+        body: markdown
+          ? '# Apolos export\n\nAna Segura — Juan 1:1\n'
+          : JSON.stringify({ user: { id: 7, name: 'Ana Segura' }, notes: [{ verse: 'Juan 1:1', body: 'Mi nota' }] }),
+      })
+    }
     if (path === '/api/user/sessions' && request.method() === 'GET') return fulfill(route, sessions)
     if (path === '/api/user/sessions/others') {
       sessions = sessions.filter((session) => session.current)

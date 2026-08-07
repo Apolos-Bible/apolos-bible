@@ -1,4 +1,5 @@
 import { expect, test } from '@playwright/test'
+import { readFile } from 'node:fs/promises'
 import { installApiMock } from './support/mockApi'
 
 test.describe('Seguridad de la cuenta', () => {
@@ -53,6 +54,25 @@ test.describe('Seguridad de la cuenta', () => {
       password: 'new-password-123',
       password_confirmation: 'new-password-123',
     })
+  })
+
+  test('[ACCOUNT-EXPORT-01] descarga exportaciones JSON y Markdown del usuario', async ({ page }) => {
+    await installApiMock(page)
+    await page.goto('/ajustes#seguridad', { waitUntil: 'domcontentloaded' })
+
+    const jsonDownload = page.waitForEvent('download')
+    await page.getByRole('button', { name: /(?:Download|Exportar) JSON/i }).click()
+    const json = await jsonDownload
+    expect(json.suggestedFilename()).toMatch(/^apolos-data-\d{4}-\d{2}-\d{2}\.json$/)
+    const jsonBody = JSON.parse(await readFile(await json.path() as string, 'utf8')) as { user: { id: number }; notes: unknown[] }
+    expect(jsonBody.user.id).toBe(7)
+    expect(jsonBody.notes).toHaveLength(1)
+
+    const markdownDownload = page.waitForEvent('download')
+    await page.getByRole('button', { name: /(?:Download|Exportar) Markdown/i }).click()
+    const markdown = await markdownDownload
+    expect(markdown.suggestedFilename()).toMatch(/^apolos-data-\d{4}-\d{2}-\d{2}\.md$/)
+    await expect.poll(async () => readFile(await markdown.path() as string, 'utf8')).toContain('Ana Segura — Juan 1:1')
   })
 
   test('[ACCOUNT-DELETE-01] requiere contraseña antes de eliminar y limpia la sesión', async ({ page }) => {
