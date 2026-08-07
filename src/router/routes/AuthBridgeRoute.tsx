@@ -1,11 +1,12 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
+import { buildAuthBridgeDeepLink } from '@/lib/authDeepLinkUrl'
 
 /**
  * Bridge page for OAuth handoff from the system browser back into the
  * installed Tauri app. The backend lands the user here (https) and we
- * trigger `tulia://auth/finish#token=...` from a user-initiated click —
+ * trigger `tulia://auth/finish?...` from a user-initiated click —
  * required because iOS Safari / Android Chrome silently drop server-side
  * 302s to non-http schemes.
  */
@@ -19,14 +20,12 @@ export function AuthBridgeRoute() {
   const dataExchange = searchParams.get('data_exchange')
 
   const deepLink = useMemo(() => {
-    const hash = window.location.hash.startsWith('#')
-      ? window.location.hash.slice(1)
-      : window.location.hash
-    const params = new URLSearchParams({ provider })
-    if (error) params.set('error', error)
-    if (dataExchange) params.set('data_exchange', dataExchange)
-    const qs = `?${params.toString()}`
-    return `tulia://auth/finish${qs}${hash ? `#${hash}` : ''}`
+    return buildAuthBridgeDeepLink({
+      provider,
+      error,
+      dataExchange,
+      fragment: window.location.hash,
+    })
   }, [dataExchange, error, provider])
 
   useEffect(() => {
