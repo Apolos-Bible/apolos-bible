@@ -42,6 +42,22 @@ test.describe('Lector bíblico y acciones de versículo', () => {
     await expect(page).toHaveURL(/\/bible\/genesis\/2$/)
     await expect.poll(() => page.evaluate(() => localStorage.getItem('verbum_last_reading')))
       .toBe(JSON.stringify({ book: 'genesis', chapter: 2 }))
+    await page.goto('/', { waitUntil: 'domcontentloaded' })
+    await expect(page).toHaveURL(/\/bible\/genesis\/2$/)
+    await expect(page.getByRole('option').filter({ hasText: 'En el principio creó Dios.' }).first()).toBeVisible()
+  })
+
+  test('[BIBLE-NAV-02] no avanza después del último capítulo disponible', async ({ page }, testInfo) => {
+    await installApiMock(page)
+    await page.goto('/bible/juan/21', { waitUntil: 'domcontentloaded' })
+
+    const next = page.getByRole('button', { name: /Next chapter|Cap.tulo siguiente/i }).filter({ visible: true }).first()
+    if (testInfo.project.name === 'mobile-chromium') {
+      await next.click()
+      await expect(page).toHaveURL(/\/bible\/juan\/21$/)
+    } else {
+      await expect(next).toBeDisabled()
+    }
   })
 
   test('[BIBLE-SELECT-01] selecciona un versículo y expone sus acciones', async ({ page }) => {
@@ -53,6 +69,24 @@ test.describe('Lector bíblico y acciones de versículo', () => {
 
     await expect(verse).toHaveAttribute('aria-selected', 'true')
     await expect(page.getByRole('group', { name: /Actions for selected verses|Acciones.*vers/i })).toBeVisible()
+  })
+
+  test('[BIBLE-SELECT-01] extiende una selección contigua con teclado', async ({ page }) => {
+    await installApiMock(page)
+    await page.goto('/bible/juan/1', { waitUntil: 'domcontentloaded' })
+
+    const verses = page.getByRole('option')
+    const first = verses.filter({ hasText: 'En el principio era el Verbo.' }).first()
+    const third = verses.filter({ hasText: 'Todas las cosas por él fueron hechas.' }).first()
+    await first.click()
+    await expect(first).toHaveAttribute('aria-selected', 'true')
+    await page.keyboard.press('Shift+J')
+    await expect(verses.filter({ hasText: 'Él estaba con Dios.' }).first()).toHaveAttribute('aria-selected', 'true')
+    await page.keyboard.press('Shift+J')
+
+    await expect(first).toHaveAttribute('aria-selected', 'true')
+    await expect(verses.filter({ hasText: 'Él estaba con Dios.' }).first()).toHaveAttribute('aria-selected', 'true')
+    await expect(third).toHaveAttribute('aria-selected', 'true')
   })
 
   test('[VERSE-FAVORITE-01] añade y quita el favorito con postcondición de API', async ({ page }) => {
