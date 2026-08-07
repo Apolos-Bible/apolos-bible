@@ -2,7 +2,12 @@ import { expect, test } from '@playwright/test'
 import { installApiMock, installGuestApiMock, type GuestApiRequest } from './support/mockApi'
 
 async function openGuestAuth(page: Parameters<typeof installGuestApiMock>[0]) {
-  await page.goto('/juegos', { waitUntil: 'domcontentloaded' })
+  if ((page.viewportSize()?.width ?? 1280) < 768) {
+    await page.goto('/juegos', { waitUntil: 'domcontentloaded' })
+  } else {
+    await page.goto('/', { waitUntil: 'domcontentloaded' })
+    await page.getByRole('button', { name: /Sign in|Iniciar sesi.n/i }).filter({ visible: true }).first().click()
+  }
   await expect(page.getByRole('heading', { name: /Sign in to Apolos|Inicia sesi.n en Apolos/i })).toBeVisible()
 }
 
