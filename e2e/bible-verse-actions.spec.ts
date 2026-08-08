@@ -165,4 +165,24 @@ test.describe('Lector bíblico y acciones de versículo', () => {
     await expect.poll(() => page.evaluate(() => (window as unknown as { __copied?: string }).__copied)).toContain('Juan 1:1')
     await expect.poll(() => page.evaluate(() => (window as unknown as { __copied?: string }).__copied)).toContain('/es/bible/juan/1/1')
   })
+
+  test('[VERSE-COPY-01] conserva la atribución al copiar una versión remota', async ({ page }) => {
+    await page.addInitScript(() => {
+      Object.defineProperty(navigator, 'clipboard', {
+        configurable: true,
+        value: { writeText: (value: string) => { (window as unknown as { __copied: string }).__copied = value; return Promise.resolve() } },
+      })
+    })
+    await installApiMock(page)
+    await page.goto('/ajustes#biblia', { waitUntil: 'domcontentloaded' })
+    const version = page.getByRole('combobox', { name: /^Version$|^Versi.n$/i }).first()
+    await version.click()
+    await page.getByRole('option', { name: /NVI-YV.*YouVersion/i }).click()
+    await page.goto('/bible/juan/1', { waitUntil: 'domcontentloaded' })
+
+    await (await firstVerse(page)).click()
+    await chooseMoreAction(page, /Copy verse text|Copiar vers.culo/i)
+    await expect.poll(() => page.evaluate(() => (window as unknown as { __copied?: string }).__copied)).toContain('En el principio era el Verbo.')
+    await expect.poll(() => page.evaluate(() => (window as unknown as { __copied?: string }).__copied)).toContain('(NVI-YV)')
+  })
 })
