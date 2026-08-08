@@ -20,6 +20,7 @@ beforeEach(() => {
   mocks.isTauri.mockReturnValue(true)
   mocks.getCurrent.mockResolvedValue(null)
   mocks.onOpenUrl.mockResolvedValue(mocks.unlisten)
+  vi.unstubAllEnvs()
 })
 
 describe('[AUTH-DEEPLINK-01][NATIVE-DEEPLINK-01][LANDING-BRIDGE-01] Tauri deep-link adapter', () => {
@@ -86,5 +87,24 @@ describe('[AUTH-DEEPLINK-01][NATIVE-DEEPLINK-01][LANDING-BRIDGE-01] Tauri deep-l
     dispose()
     expect(mocks.getCurrent).not.toHaveBeenCalled()
     expect(mocks.onOpenUrl).not.toHaveBeenCalled()
+  })
+
+  it('reports only a sanitized route from native acceptance builds', async () => {
+    vi.stubEnv('VITE_NATIVE_ACCEPTANCE_URL', 'http://127.0.0.1:43119/accepted')
+    mocks.getCurrent.mockResolvedValue([
+      'tulia://auth/finish?provider=google&token=never-expose-this',
+    ])
+    const fetchMock = vi.spyOn(globalThis, 'fetch').mockResolvedValue(new Response(null, { status: 204 }))
+
+    registerAuthDeepLink(vi.fn())
+    await vi.waitFor(() => expect(fetchMock).toHaveBeenCalledWith(
+      'http://127.0.0.1:43119/accepted',
+      expect.objectContaining({
+        method: 'POST',
+        body: '/auth/google/finish#token=<present>',
+      }),
+    ))
+    expect(JSON.stringify(fetchMock.mock.calls)).not.toContain('never-expose-this')
+    fetchMock.mockRestore()
   })
 })

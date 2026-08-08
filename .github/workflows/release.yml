@@ -120,6 +120,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
           TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
+          VITE_NATIVE_ACCEPTANCE_URL: ${{ github.event_name == 'workflow_dispatch' && 'http://127.0.0.1:43119/accepted' || '' }}
           # Apple/Windows code-signing env vars are intentionally NOT exported here.
           # tauri-action and tauri-bundler trigger the signing path when these are
           # set to *any* value (including empty string), so leaving them out
@@ -129,6 +130,63 @@ jobs:
           tagName: ${{ github.event.release.tag_name }}
           releaseName: ${{ github.event.release.name || github.event.release.tag_name }}
           args: ${{ matrix.args }}
+
+      - name: Install and exercise Windows protocol handoff
+        if: github.event_name == 'workflow_dispatch' && matrix.platform == 'windows-latest'
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $installer = Get-ChildItem src-tauri\target\release\bundle\nsis -Filter '*-setup.exe' | Select-Object -First 1
+          if (-not $installer) { throw 'NSIS installer was not produced' }
+          $installDir = Join-Path $env:RUNNER_TEMP 'ApolosAcceptance'
+          $result = Join-Path $env:RUNNER_TEMP 'native-acceptance.txt'
+          $server = Start-Process node -ArgumentList @('scripts/native-acceptance-server.mjs', $result) -PassThru -WindowStyle Hidden
+          try {
+            Start-Process $installer.FullName -ArgumentList @('/S', "/D=$installDir") -Wait
+            $app = Join-Path $installDir 'Apolos.exe'
+            if (-not (Test-Path $app)) { throw 'Installed Apolos executable was not found' }
+            Start-Process $app
+            $deadline = (Get-Date).AddSeconds(30)
+            while (-not (Get-Process Apolos -ErrorAction SilentlyContinue) -and (Get-Date) -lt $deadline) { Start-Sleep -Milliseconds 250 }
+            Start-Process 'tulia://auth/finish?provider=google&token=native-acceptance-token'
+            while (-not (Test-Path $result) -and (Get-Date) -lt $deadline) { Start-Sleep -Milliseconds 250 }
+            if ((Get-Content $result -Raw).Trim() -ne '/auth/google/finish#token=<present>') { throw 'Packaged OAuth route was not observed' }
+            if (@(Get-Process Apolos -ErrorAction SilentlyContinue).Count -ne 1) { throw 'Deep link opened more than one Apolos instance' }
+          } finally {
+            Get-Process Apolos -ErrorAction SilentlyContinue | Stop-Process -Force
+            $uninstaller = Join-Path $installDir 'uninstall.exe'
+            if (Test-Path $uninstaller) { Start-Process $uninstaller -ArgumentList '/S' -Wait }
+            if (-not $server.HasExited) { Stop-Process -Id $server.Id -Force }
+          }
+
+      - name: Install and exercise macOS protocol handoff
+        if: github.event_name == 'workflow_dispatch' && matrix.platform == 'macos-latest'
+        shell: bash
+        run: |
+          set -euo pipefail
+          DMG=$(find src-tauri/target/universal-apple-darwin/release/bundle/dmg -name '*.dmg' -print -quit)
+          test -n "$DMG"
+          MOUNT="$RUNNER_TEMP/apolos-dmg"
+          APP="$RUNNER_TEMP/Apolos.app"
+          RESULT="$RUNNER_TEMP/native-acceptance.txt"
+          mkdir -p "$MOUNT"
+          hdiutil attach "$DMG" -nobrowse -mountpoint "$MOUNT"
+          cp -R "$MOUNT/Apolos.app" "$APP"
+          hdiutil detach "$MOUNT"
+          node scripts/native-acceptance-server.mjs "$RESULT" &
+          SERVER_PID=$!
+          cleanup() {
+            pkill -x Apolos >/dev/null 2>&1 || true
+            kill "$SERVER_PID" >/dev/null 2>&1 || true
+          }
+          trap cleanup EXIT
+          open "$APP"
+          for _ in {1..60}; do pgrep -x Apolos >/dev/null && break; sleep 0.5; done
+          pgrep -x Apolos >/dev/null
+          open 'tulia://auth/finish?provider=google&token=native-acceptance-token'
+          for _ in {1..60}; do test -f "$RESULT" && break; sleep 0.5; done
+          test "$(tr -d '\r\n' < "$RESULT")" = '/auth/google/finish#token=<present>'
+          test "$(pgrep -x Apolos | wc -l | tr -d ' ')" = '1'
 
       - name: Retain unpublished desktop bundles
         if: github.event_name == 'workflow_dispatch'
