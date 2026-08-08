@@ -59,7 +59,7 @@ export interface VerseState {
   loadVersions: () => Promise<void>
   setVersion: (id: number, options?: { sync?: boolean }) => Promise<void>
   setDefaultVersionForLocale: (locale: string) => Promise<void>
-  loadBooks: (initialRoute?: { book: string; chapter: number; verse?: number; endVerse?: number }) => Promise<void>
+  loadBooks: (initialRoute?: { book: string; chapter: number; verse?: number; endVerse?: number }) => Promise<boolean>
   ensureBooks: () => Promise<void>
   selectBook: (slug: string) => void
   selectChapter: (chapter: number) => void
@@ -127,12 +127,13 @@ export function createVerseStore() {
   },
 
   setVersion: async (id, options) => {
+    const previous = get()
     const {
       selectedBook,
       selectedChapter,
       selectedVerseId,
       verses,
-    } = get()
+    } = previous
     const selectedVerse = verses.find((verse) => verse.id === selectedVerseId)?.verse
     const currentRoute = selectedBook
       ? {
@@ -144,6 +145,26 @@ export function createVerseStore() {
 
     localStorage.setItem(BIBLE_VERSION_STORAGE_KEY, String(id))
     set({ versionId: id, books: [], verses: [], selectedVerseId: null, selectedVerseIds: [], cursorVerseId: null, selectionAnchorId: null, studyVerseId: null })
+    const loaded = await get().loadBooks(currentRoute)
+    if (!loaded) {
+      localStorage.setItem(BIBLE_VERSION_STORAGE_KEY, String(previous.versionId))
+      set({
+        versionId: previous.versionId,
+        books: previous.books,
+        selectedBook: previous.selectedBook,
+        selectedChapter: previous.selectedChapter,
+        selectedVerseId: previous.selectedVerseId,
+        selectedVerseIds: previous.selectedVerseIds,
+        cursorVerseId: previous.cursorVerseId,
+        selectionAnchorId: previous.selectionAnchorId,
+        studyVerseId: previous.studyVerseId,
+        chapterId: previous.chapterId,
+        verses: previous.verses,
+        loadingVerses: previous.loadingVerses,
+      })
+      throw new Error('Unable to load the selected Bible version.')
+    }
+
     if (options?.sync !== false) {
       const youVersionId = fromYouVersionClientId(id)
       saveUserSettingsSilently(youVersionId === null ? {
@@ -156,7 +177,6 @@ export function createVerseStore() {
         preferred_bible_provider_id: youVersionId,
       })
     }
-    await get().loadBooks(currentRoute)
   },
 
   setDefaultVersionForLocale: async (locale) => {
@@ -203,7 +223,7 @@ export function createVerseStore() {
       const apiBooks: ApiBook[] = await bibleApi.books(versionId)
       if (!Array.isArray(apiBooks)) {
         console.error('[bibleApi.books] non-array response', { versionId, apiBooks })
-        return
+        return false
       }
       if (fromYouVersionClientId(versionId) === null && shouldAutoPrefetch()) {
         prefetchVersion(versionId, apiBooks)
@@ -218,7 +238,7 @@ export function createVerseStore() {
       }))
       set({ books })
 
-      if (books.length === 0) return
+      if (books.length === 0) return true
 
       if (initialRoute) {
         const matchedBook = resolveReferenceBook(books, initialRoute.book)
@@ -232,7 +252,7 @@ export function createVerseStore() {
           } else {
             get().loadChapter(matchedBook.slug, chapter)
           }
-          return
+          return true
         }
       }
 
@@ -246,7 +266,7 @@ export function createVerseStore() {
             if (matchedBook && parsed.chapter >= 1 && parsed.chapter <= matchedBook.chapters) {
               set({ selectedBook: matchedBook.slug, selectedChapter: parsed.chapter })
               get().loadChapter(matchedBook.slug, parsed.chapter)
-              return
+              return true
             }
           }
         }
@@ -255,8 +275,10 @@ export function createVerseStore() {
       }
       set({ selectedBook: defaultBook.slug })
       get().loadChapter(defaultBook.slug, 1)
+      return true
     } catch (e) {
       console.error('Failed to load books', e)
+      return false
     }
   },
 

@@ -238,6 +238,14 @@ export function SettingsRoute() {
     }
   }
 
+  const changeBibleVersion = async (id: number) => {
+    try {
+      await setBibleVersionForAllStores(id)
+    } catch {
+      addToast(t('common.error'), 'error')
+    }
+  }
+
   // On section change: reset the page scroll and move focus to the section
   // for keyboard/screen-reader continuity.
   useLayoutEffect(() => {
@@ -836,7 +844,7 @@ export function SettingsRoute() {
                 <p className="mt-1 text-xs text-text-muted">{t('settings.bible.versionHelp')}</p>
                 <Select
                   value={versionId}
-                  onChange={setBibleVersionForAllStores}
+                  onChange={changeBibleVersion}
                   ariaLabel={t('settings.bible.version')}
                   disabled={selectableVersions.length === 0}
                   placeholder={t('common.loading')}

@@ -71,6 +71,7 @@ interface ApiMockOptions {
   studyGuest?: boolean
   aiScenario?: 'success' | 'quota' | 'rate-then-success' | 'error'
   aiDocumentScenario?: 'success' | 'error-then-success'
+  youVersionScenario?: 'success' | 'rejection' | 'timeout'
 }
 
 export async function installApiMock(
@@ -328,13 +329,21 @@ export async function installApiMock(
       total_size: 1,
       language: 'es',
     })
-    if (path === '/api/youversion/bibles/128/index') return fulfill(route, {
+    if (path === '/api/youversion/bibles/128/index') {
+      if (options.youVersionScenario === 'rejection') {
+        return fulfill(route, { message: 'Bible provider is temporarily unavailable.' }, 502)
+      }
+      if (options.youVersionScenario === 'timeout') {
+        return fulfill(route, { message: 'Bible provider timed out.' }, 504)
+      }
+      return fulfill(route, {
       text_direction: 'ltr',
       books: [{
         id: 'JHN', title: 'Juan', canon: 'new_testament',
         chapters: Array.from({ length: 21 }, (_, index) => ({ id: index + 1, passage_id: `JHN.${index + 1}`, title: index + 1 })),
       }],
-    })
+      })
+    }
     if (path.startsWith('/api/youversion/bibles/128/passages/')) return fulfill(route, {
       id: path.split('/').at(-1),
       reference: 'Juan 1',

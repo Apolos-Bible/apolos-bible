@@ -38,3 +38,18 @@ test('[BIBLE-VERSION-01][SETTINGS-BIBLE-01] cambia y persiste la versión local'
   await page.reload({ waitUntil: 'domcontentloaded' })
   await expect(page.getByRole('combobox', { name: /^Version$|^Versi.n$/i }).first()).toContainText('NVI-YV')
 })
+
+for (const scenario of ['rejection', 'timeout'] as const) {
+  test(`[BIBLE-VERSION-02] revierte YouVersion tras ${scenario}`, async ({ page }) => {
+    await installApiMock(page, undefined, { youVersionScenario: scenario })
+    await page.goto('/ajustes#biblia', { waitUntil: 'domcontentloaded' })
+
+    const version = page.getByRole('combobox', { name: /^Version$|^Versi.n$/i }).first()
+    await expect(version).toContainText('RVR1960')
+    await version.click()
+    await page.getByRole('option', { name: /NVI-YV.*YouVersion/i }).click()
+
+    await expect(version).toContainText('RVR1960')
+    await expect.poll(() => page.evaluate(() => localStorage.getItem('tulia_version_id'))).toBe('1')
+  })
+}
