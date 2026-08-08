@@ -339,7 +339,7 @@ export async function installApiMock(
       return fulfill(route, { ok: true })
     }
     const sessionMutation = path.match(/^\/api\/user\/sessions\/(\d+)$/)
-    if (sessionMutation && request.method() === 'POST') {
+    if (sessionMutation && request.method() === 'POST' && request.postDataJSON()?._method === 'DELETE') {
       sessions = sessions.filter((session) => session.id !== Number(sessionMutation[1]) || session.current)
       return fulfill(route, { ok: true })
     }
