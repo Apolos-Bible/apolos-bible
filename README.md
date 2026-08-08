@@ -119,6 +119,7 @@ The backend lives in `../backend/` of this monorepo and is served locally at `ht
 
 ## Testing architecture
 
+- Whenever technically possible, every feature, bug fix, refactor, or behavior change must add or update the tests that protect it. If it cannot be automated yet, document the missing evidence and keep its matrix row `partial`.
 - Vitest proves functions, stores, adapters, focused components, native-plugin contracts, and release tooling. Run `pnpm test:unit`.
 - Playwright proves shipped browser journeys in both desktop and mobile projects. Run `pnpm test:e2e`.
 - `pnpm test:e2e:fullstack` starts Laravel and Vite and proves persistence/security against a fresh SQLite database. Set `APOLOS_BACKEND_DIR` when the backend is not at `../apolos-backend-testing`.

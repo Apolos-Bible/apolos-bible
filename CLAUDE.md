@@ -27,6 +27,7 @@ Frontend (`frontend/`):
 
 ## Testing contract
 
+- Whenever technically possible, every feature or change must be covered by tests in the same work. If it cannot be automated yet, document why, record the missing evidence, and keep the matrix row `partial`.
 - The atomic source of truth is `../docs/testing/feature-matrix.md`; every new behavior needs a stable feature ID and its own evidence.
 - Use Vitest for functions, stores, adapters, components, native-plugin boundaries, and release tooling. Use Playwright for the shipped browser journey, including desktop/mobile variants when UI differs.
 - Security and persistence boundaries require full-stack E2E with Laravel and an isolated database. API-mocked browser tests do not prove those boundaries.
