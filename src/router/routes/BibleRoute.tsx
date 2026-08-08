@@ -116,7 +116,7 @@ function BibleView({ lang, book, chapter, verse, endVerse, openCommentary }: Bib
       void state.openVerseRange(matched.slug, safeChapter, verse, endVerse)
     } else if (verse) {
       void state.openVerse(matched.slug, safeChapter, verse)
-    } else if (!sameLocation) {
+    } else if (!sameLocation || state.verses.length === 0) {
       void state.loadChapter(matched.slug, safeChapter)
     }
   }, [book, chapter, verse, endVerse, verseStore])
