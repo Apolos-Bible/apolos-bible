@@ -1,4 +1,4 @@
-import { useEffect } from 'react'
+import { useEffect, useRef } from 'react'
 import { Outlet, useLocation, useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { paths } from './paths'
@@ -38,6 +38,7 @@ export function RootLayout() {
 }
 
 function RootLayoutSurface() {
+  const handledEmailVerification = useRef(false)
   const { t } = useTranslation()
   const navigate = useNavigate()
   const location = useLocation()
@@ -81,22 +82,28 @@ function RootLayoutSurface() {
   useEffect(() => {
     const params = new URLSearchParams(window.location.search)
     const flag = params.get('email_verified')
-    if (!flag) return
+    if (!flag || handledEmailVerification.current) return
+    handledEmailVerification.current = true
+
+    // Consume the one-shot flag before producing side effects. React
+    // StrictMode runs effects twice in development; cleaning first prevents
+    // duplicate verification toasts and duplicate profile refreshes.
+    params.delete('email_verified')
+    const qs = params.toString()
+    const newUrl = window.location.pathname + (qs ? `?${qs}` : '') + window.location.hash
+    window.history.replaceState({}, '', newUrl)
 
     if (flag === '1') {
-      addToast(t('auth.emailVerified', 'Correo verificado.'), 'success')
+      addToast(t('auth.emailVerified', 'Correo verificado.'), 'success', { duration: 8000 })
       void useAuthStore.getState().refreshUser()
     } else {
       addToast(
         t('auth.emailVerifyFailed', 'No pudimos verificar el correo. El enlace puede haber caducado.'),
         'error',
+        { duration: 8000 },
       )
     }
 
-    params.delete('email_verified')
-    const qs = params.toString()
-    const newUrl = window.location.pathname + (qs ? `?${qs}` : '') + window.location.hash
-    window.history.replaceState({}, '', newUrl)
   }, [addToast, t])
 
   useEffect(() => {

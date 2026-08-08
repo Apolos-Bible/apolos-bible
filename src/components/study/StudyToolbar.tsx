@@ -51,6 +51,7 @@ interface StudyToolbarProps {
   guidedOpen?: boolean;
   onToggleGuided?: () => void;
   isGuest: boolean;
+  loginRequired?: boolean;
   drawSettings: DrawSettings;
   onDrawSettingsChange: (next: DrawSettings) => void;
 }
@@ -63,25 +64,26 @@ const STROKE_KINDS: { kind: StrokeKind; icon: React.ReactNode; label: string }[]
   { kind: 'ellipse', icon: <Circle className="w-3.5 h-3.5" />, label: 'Ellipse' },
 ];
 
-export function StudyToolbar({ tool, onToolChange, showInsertVerse, onOpenInsertVerse, onCloseInsertVerse, biblePanelOpen, onToggleBiblePanel, onOpenBiblePanel, chatOpen, onToggleChat, showChat, guidedOpen, onToggleGuided, isGuest, drawSettings, onDrawSettingsChange }: StudyToolbarProps) {
+export function StudyToolbar({ tool, onToolChange, showInsertVerse, onOpenInsertVerse, onCloseInsertVerse, biblePanelOpen, onToggleBiblePanel, onOpenBiblePanel, chatOpen, onToggleChat, showChat, guidedOpen, onToggleGuided, isGuest, loginRequired = isGuest, drawSettings, onDrawSettingsChange }: StudyToolbarProps) {
   const { t } = useTranslation();
   const getActions = useCallback(() => (window as any).__studyCanvasActions, []);
   const openAuthModal = useUIStore(s => s.openAuthModal);
   const sessionId = useStudyStore(s => s.activeSession?.id ?? null);
   const [locked, setLocked] = useState(false);
   const [fileDialogOpen, setFileDialogOpen] = useState(false);
+  const blockedLabel = loginRequired ? 'Log in to edit' : 'Read-only access';
 
   const handleSticky = useCallback(() => {
-    if (isGuest) { openAuthModal('login'); return; }
+    if (isGuest) { if (loginRequired) openAuthModal('login'); return; }
     getActions()?.addStickyNote?.();
     onToolChange('select');
-  }, [getActions, onToolChange, isGuest, openAuthModal]);
+  }, [getActions, onToolChange, isGuest, loginRequired, openAuthModal]);
 
   const handleVerse = useCallback(() => {
-    if (isGuest) { openAuthModal('login'); return; }
+    if (isGuest) { if (loginRequired) openAuthModal('login'); return; }
     onToolChange('verse');
     onOpenInsertVerse();
-  }, [onToolChange, onOpenInsertVerse, isGuest, openAuthModal]);
+  }, [onToolChange, onOpenInsertVerse, isGuest, loginRequired, openAuthModal]);
 
   const handleUndo = useCallback(() => getActions()?.undo?.(), [getActions]);
   const handleRedo = useCallback(() => getActions()?.redo?.(), [getActions]);
@@ -92,19 +94,19 @@ export function StudyToolbar({ tool, onToolChange, showInsertVerse, onOpenInsert
   }, [getActions]);
 
   const handleDraw = useCallback(() => {
-    if (isGuest) { openAuthModal('login'); return; }
+    if (isGuest) { if (loginRequired) openAuthModal('login'); return; }
     onToolChange('draw');
-  }, [isGuest, openAuthModal, onToolChange]);
+  }, [isGuest, loginRequired, openAuthModal, onToolChange]);
 
   const handleErase = useCallback(() => {
-    if (isGuest) { openAuthModal('login'); return; }
+    if (isGuest) { if (loginRequired) openAuthModal('login'); return; }
     onToolChange('erase');
-  }, [isGuest, openAuthModal, onToolChange]);
+  }, [isGuest, loginRequired, openAuthModal, onToolChange]);
 
   const handleFile = useCallback(() => {
-    if (isGuest) { openAuthModal('login'); return; }
+    if (isGuest) { if (loginRequired) openAuthModal('login'); return; }
     setFileDialogOpen(true);
-  }, [isGuest, openAuthModal]);
+  }, [isGuest, loginRequired, openAuthModal]);
 
   const handleAddFiles = useCallback((items: FileNodeData[]) => {
     getActions()?.addFileNodes?.(items);
@@ -131,10 +133,10 @@ export function StudyToolbar({ tool, onToolChange, showInsertVerse, onOpenInsert
           <div className="my-1 h-8 w-px shrink-0 bg-border md:mx-1 md:my-0 md:h-px md:w-auto" />
 
           {/* Create */}
-          <Tooltip label={isGuest ? 'Log in to edit' : t('study.toolbar.stickyNote')} side="right">
+          <Tooltip label={isGuest ? blockedLabel : t('study.toolbar.stickyNote')} side="right">
             <ToolbarButton icon={<StickyNote className="w-4 h-4" />} active={tool === 'sticky'} onClick={handleSticky} disabled={isGuest} />
           </Tooltip>
-          <Tooltip label={isGuest ? 'Log in to edit' : t('study.toolbar.insertVerse')} side="right">
+          <Tooltip label={isGuest ? blockedLabel : t('study.toolbar.insertVerse')} side="right">
             <ToolbarButton
               icon={
                 <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" className="w-4 h-4">
@@ -148,7 +150,7 @@ export function StudyToolbar({ tool, onToolChange, showInsertVerse, onOpenInsert
               disabled={isGuest}
             />
           </Tooltip>
-          <Tooltip label={isGuest ? 'Log in to edit' : t('study.toolbar.file')} side="right">
+          <Tooltip label={isGuest ? blockedLabel : t('study.toolbar.file')} side="right">
             <ToolbarButton
               icon={<Paperclip className="h-4 w-4" />}
               active={fileDialogOpen}
@@ -160,10 +162,10 @@ export function StudyToolbar({ tool, onToolChange, showInsertVerse, onOpenInsert
           <div className="my-1 h-8 w-px shrink-0 bg-border md:mx-1 md:my-0 md:h-px md:w-auto" />
 
           {/* Draw */}
-          <Tooltip label={isGuest ? 'Log in to edit' : 'Draw (D)'} side="right">
+          <Tooltip label={isGuest ? blockedLabel : 'Draw (D)'} side="right">
             <ToolbarButton icon={<Pencil className="w-4 h-4" />} active={tool === 'draw'} onClick={handleDraw} disabled={isGuest} />
           </Tooltip>
-          <Tooltip label={isGuest ? 'Log in to edit' : 'Eraser (E)'} side="right">
+          <Tooltip label={isGuest ? blockedLabel : 'Eraser (E)'} side="right">
             <ToolbarButton icon={<Eraser className="w-4 h-4" />} active={tool === 'erase'} onClick={handleErase} disabled={isGuest} />
           </Tooltip>
 

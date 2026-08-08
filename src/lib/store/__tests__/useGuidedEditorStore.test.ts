@@ -4,6 +4,7 @@ vi.mock('@/lib/study/guidedEditorApi', () => ({
   guidedEditorApi: {
     myPaths: vi.fn(() => Promise.resolve([])),
     createPath: vi.fn(),
+    requestPublication: vi.fn(),
     updatePath: vi.fn(),
     deletePath: vi.fn(),
     createStudy: vi.fn(),
@@ -231,5 +232,21 @@ describe('visibility', () => {
     await pending
     expect(useGuidedEditorStore.getState().paths[0].visibility).toBe('private')
     expect(useGuidedEditorStore.getState().error).toBe('sin conexión')
+  })
+
+  it('replaces a draft with the moderation state returned by publication', async () => {
+    const draft = {
+      slug: 'mi-ruta', title: 'Mi ruta', description: null, source: 'user', visibility: 'public',
+      is_mine: true, author: { id: 1, name: 'Yo' }, rating_avg: 0, rating_count: 0,
+      list_count: 0, studies: [], moderation_status: 'draft',
+    } as const
+    useGuidedEditorStore.setState({ paths: [draft] })
+    mockApi.requestPublication.mockResolvedValue({ ...draft, moderation_status: 'pending_review' })
+
+    const result = await useGuidedEditorStore.getState().requestPublication('mi-ruta')
+
+    expect(mockApi.requestPublication).toHaveBeenCalledWith('mi-ruta')
+    expect(result?.moderation_status).toBe('pending_review')
+    expect(useGuidedEditorStore.getState().paths[0].moderation_status).toBe('pending_review')
   })
 })

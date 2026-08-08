@@ -3,6 +3,7 @@ import { FriendsHubPanel } from '@/components/friends/FriendsHubPanel'
 import { FavoritesPanel } from '@/components/sidebar/FavoritesPanel'
 import { MyNotesPanel } from '@/components/sidebar/MyNotesPanel'
 import { MyStudiesPanel } from '@/components/study/MyStudiesPanel'
+import { NotificationsPanel } from '@/components/notifications/NotificationsPanel'
 import type { Panel } from '@/lib/store/useUIStore'
 
 export function WorkspaceSidePanel({ panel }: { panel: Panel | null }) {
@@ -11,6 +12,7 @@ export function WorkspaceSidePanel({ panel }: { panel: Panel | null }) {
     : panel === 'my-studies' ? <MyStudiesPanel />
     : panel === 'friends' ? <FriendsHubPanel />
     : panel === 'chat' ? <FriendsPanel />
+    : panel === 'notifications' ? <NotificationsPanel />
     : null
 
   if (!content) return null

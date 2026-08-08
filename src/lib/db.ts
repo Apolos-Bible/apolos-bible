@@ -50,6 +50,15 @@ class BibleDb extends Dexie {
       crossRefs: 'verseId',
       crossRefIds: 'chapterId',
     })
+    // v2 adds queryable chapter coordinates. Dexie upgrades the indexes in
+    // place, preserving every downloaded row from the original v1 schema.
+    this.version(2).stores({
+      versions: 'key',
+      books: 'versionId',
+      chapters: 'key, versionId, slug, chapter, [versionId+slug+chapter]',
+      crossRefs: 'verseId',
+      crossRefIds: 'chapterId',
+    })
   }
 }
 

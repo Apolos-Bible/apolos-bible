@@ -25,6 +25,18 @@ Frontend (`frontend/`):
 - `pnpm build:web` / `pnpm deploy` — web build + Firebase deploy
 - `pnpm test` — Vitest
 
+## Testing contract
+
+- Whenever technically possible, every feature or change must be covered by tests in the same work. If it cannot be automated yet, document why, record the missing evidence, and keep the matrix row `partial`.
+- The atomic source of truth is `../docs/testing/feature-matrix.md`; every new behavior needs a stable feature ID and its own evidence.
+- Use Vitest for functions, stores, adapters, components, native-plugin boundaries, and release tooling. Use Playwright for the shipped browser journey, including desktop/mobile variants when UI differs.
+- Security and persistence boundaries require full-stack E2E with Laravel and an isolated database. API-mocked browser tests do not prove those boundaries.
+- Run those journeys with `pnpm test:e2e:fullstack`; CI needs a fine-grained `FULLSTACK_REPO_TOKEN` restricted to read-only Contents on `apolos-backend`, plus `FULLSTACK_E2E_ENABLED=true`. `FULLSTACK_BACKEND_REF` may temporarily select a paired backend PR branch and otherwise defaults to `main`; restore it after the paired PR merges. Organization policy disables deploy keys; never use a broad personal token. A skipped job is not evidence.
+- A manual `Release` dispatch is a non-publishing packaging gate for a selected ref. It must retain Windows/macOS/Linux and Android outputs; only a real `release` event may upload releases, deploy Firebase, or publish to Google Play.
+- Native contracts run in ordinary CI, while signed install/update/deep-link/notification/autostart behavior stays `partial` until the Windows/macOS release matrix passes.
+- Assert allowed and denied roles, invalid and malicious input, provider failures, persistence after reload, and absence of leaked data.
+- Required gate: `pnpm test:unit && pnpm test:e2e && pnpm build`. Never weaken assertions, add retries, or increase timeouts merely to turn CI green.
+
 ## Notes for Claude
 
 - Treat `backend/` and `frontend/` as one product. Cross-cutting changes (auth, session protocol, API shape) usually need edits in both.

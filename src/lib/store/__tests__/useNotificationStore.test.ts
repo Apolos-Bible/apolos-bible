@@ -103,6 +103,23 @@ describe('useNotificationStore', () => {
     expect(useNotificationStore.getState().unreadCount).toBe(0)
   })
 
+  it('does not decrement the badge for an already-read or non-badge notification', async () => {
+    mockFriendApi.markRead.mockResolvedValue({ ok: true })
+    useNotificationStore.setState({
+      notifications: [
+        { ...mockNotification, id: 'read', read_at: '2024-01-01T01:00:00Z' },
+        { ...mockNotification, id: 'chat', type: 'chat_message' },
+      ],
+      unreadCount: 4,
+    })
+
+    await useNotificationStore.getState().markRead('read')
+    await useNotificationStore.getState().markRead('chat')
+    await useNotificationStore.getState().markRead('missing')
+
+    expect(useNotificationStore.getState().unreadCount).toBe(4)
+  })
+
   it('markAllRead marks all as read', async () => {
     mockFriendApi.markAllRead.mockResolvedValueOnce({ ok: true })
     useNotificationStore.setState({
@@ -118,6 +135,22 @@ describe('useNotificationStore', () => {
     useNotificationStore.getState().listenForPush('user-1')
     expect(mockEcho.private).toHaveBeenCalledWith('App.Models.User.user-1')
     expect(mockEchoOnNotification).toHaveBeenCalled()
+  })
+
+  it('[NOTIFY-REALTIME-01] deduplicates replayed push notifications', () => {
+    mockFriendApi.notifications.mockResolvedValue([])
+    useNotificationStore.getState().listenForPush('user-1')
+    const listener = mockEchoOnNotification.mock.calls[0][0]
+
+    const notification = {
+      id: 'push-1',
+      type: 'App\\Notifications\\FriendRequestReceived',
+      requester_name: 'Bob',
+    }
+    listener(notification)
+    listener(notification)
+
+    expect(useNotificationStore.getState().unreadCount).toBe(1)
   })
 
   it('listenForPush is idempotent', () => {

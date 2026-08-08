@@ -144,7 +144,7 @@ export function WorkspaceTabs({
   return (
     <div
       className="hidden h-9 shrink-0 items-stretch border-b border-border-subtle bg-bg-primary md:flex"
-      role="tablist"
+      role="toolbar"
       aria-label={t('workspace.tabs')}
       data-tour="workspace-tabs"
     >
@@ -168,7 +168,6 @@ export function WorkspaceTabs({
           return (
             <div
               key={tab.id}
-              role="presentation"
               draggable
               onDragStart={(event) => {
                 const data = { tabId: tab.id, sourceGroupId: group.id }
@@ -226,8 +225,8 @@ export function WorkspaceTabs({
                   else tabButtonRefs.current.delete(tab.id)
                 }}
                 type="button"
-                role="tab"
-                aria-selected={active}
+                data-workspace-tab
+                aria-pressed={active}
                 tabIndex={active ? 0 : -1}
                 onClick={() => selectTab(tab.id, tab.path)}
                 onKeyDown={(event) => {
