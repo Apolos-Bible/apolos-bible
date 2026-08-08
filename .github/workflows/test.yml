@@ -99,6 +99,8 @@ jobs:
 
       - run: pnpm install --frozen-lockfile
         if: env.FULLSTACK_REPO_TOKEN != ''
+      - run: pnpm --dir backend/hocuspocus install --frozen-lockfile
+        if: env.FULLSTACK_REPO_TOKEN != ''
       - run: pnpm exec playwright install --with-deps chromium
         if: env.FULLSTACK_REPO_TOKEN != ''
       - run: pnpm test:e2e:fullstack
