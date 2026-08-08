@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import {
   BookMarked,
   ChevronRight,
+  CircleHelp,
   Gamepad2,
   GraduationCap,
   NotebookPen,
@@ -102,6 +103,12 @@ export function MobileHubView() {
       label: t('settings.title'),
       description: t('settings.mobileDescription', 'Apariencia, Biblia, privacidad y cuenta.'),
       onClick: () => requireUser(() => go(paths.settings())),
+    },
+    {
+      icon: CircleHelp,
+      label: 'Ayuda y feedback',
+      description: 'Resuelve dudas o cuéntanos un problema.',
+      onClick: () => requireUser(() => go(paths.help())),
     },
   ]
 

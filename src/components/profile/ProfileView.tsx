@@ -12,6 +12,7 @@ import { UserAvatar } from '@/components/auth/UserAvatar'
 import { SectionLabel } from '@/components/ui/SectionLabel'
 import { EmptyState } from '@/components/ui/EmptyState'
 import { ProfileActionBar } from './ProfileActionBar'
+import { ReportDialog } from '@/components/moderation/ReportDialog'
 import type { ProfileData, ProfileMode, ProfileVerseRef } from '@/types'
 
 const HL_BAR: Record<string, string> = {
@@ -93,6 +94,7 @@ export function ProfileView({
   const openCommandPalette = useUIStore((s) => s.openCommandPalette)
   const addToast = useUIStore((s) => s.addToast)
   const [expanded, setExpanded] = useState(INITIAL_EXPANDED)
+  const [reportOpen, setReportOpen] = useState(false)
 
   const { user, stats, last_reading, public_notes, public_highlights, friends, studies, recent_likes } = data
   const isSelf = mode === 'self'
@@ -224,6 +226,7 @@ export function ProfileView({
               onShare={() => {
                 void shareProfile()
               }}
+              onReport={!isSelf ? () => setReportOpen(true) : undefined}
             />
           </div>
         </header>
@@ -645,6 +648,7 @@ export function ProfileView({
           </main>
         </div>
       </div>
+      {!isSelf && <ReportDialog open={reportOpen} onClose={() => setReportOpen(false)} target={{ type: 'user', id: String(user.id), subjectUserId: user.id }} />}
     </div>
   )
 }
