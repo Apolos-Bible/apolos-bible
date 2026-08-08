@@ -86,6 +86,7 @@ export async function installApiMock(
   }
   let studies: Array<Record<string, unknown>> = [{
     ...studyBase, id: 'study-active', title: 'Estudio canvas', status: 'active', ended_at: null,
+    participants: [...studyBase.participants, { id: 21, name: 'Lucia Visible', role: 'editor', cursor_color: '#ef4444', is_present: false }],
   }, {
     ...studyBase, id: 'study-ended', title: 'Estudio terminado', status: 'ended', ended_at: '2026-08-08T11:00:00Z',
   }]
@@ -130,6 +131,16 @@ export async function installApiMock(
     participants: [
       { id: testUser.id, name: currentUser.name, email: currentUser.email, avatar_url: currentUser.avatar_url ?? null, last_read_at: null },
       { id: 21, name: 'Lucia Visible', email: 'lucia.visible@example.test', avatar_url: null, last_read_at: null },
+    ],
+    last_message: chatMessages.at(-1) ?? null,
+  })
+  const studyConversation = () => ({
+    id: 501, type: 'group', name: 'Estudio canvas', description: null, created_by: testUser.id,
+    created_at: '2026-08-08T00:00:00Z', last_message_at: chatMessages.at(-1)?.created_at ?? null,
+    unread_count: 0, last_read_at: null, archived_at: null, members_can_invite: false,
+    participants: [
+      { id: testUser.id, name: currentUser.name, email: currentUser.email, avatar_url: null, last_read_at: null, role: 'admin' },
+      { id: 21, name: 'Lucia Visible', email: 'lucia.visible@example.test', avatar_url: null, last_read_at: null, role: 'member' },
     ],
     last_message: chatMessages.at(-1) ?? null,
   })
@@ -412,6 +423,22 @@ export async function installApiMock(
         ...(groupConversation ? [groupPayload()] : []),
       ])
     }
+    if (path === '/api/conversations/501' && request.method() === 'GET') return fulfill(route, studyConversation())
+    if (path === '/api/conversations/501/messages') {
+      if (request.method() === 'GET') return fulfill(route, chatMessages)
+      const body = request.postDataJSON?.() ?? {}
+      const message = {
+        id: 9950 + chatMessages.length, conversation_id: 501, user_id: testUser.id,
+        user: { id: testUser.id, name: currentUser.name, email: currentUser.email, avatar_url: null },
+        body: body.body, created_at: '2026-08-08T00:00:00Z',
+      }
+      chatMessages.push(message)
+      return fulfill(route, message, 201)
+    }
+    if (path === '/api/conversations/501/read') return fulfill(route, {
+      last_read_at: '2026-08-08T00:00:00Z', last_read_message_id: chatMessages.at(-1)?.id ?? null,
+    })
+    if (path === '/api/conversations/501/typing') return fulfill(route, { ok: true })
     if (path === '/api/conversations/902' && request.method() === 'GET') return fulfill(route, groupPayload() ?? {}, groupConversation ? 200 : 404)
     if (path === '/api/conversations/902/settings'
       && request.method() === 'POST'
