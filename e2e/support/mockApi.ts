@@ -72,6 +72,7 @@ interface ApiMockOptions {
   aiScenario?: 'success' | 'quota' | 'rate-then-success' | 'error'
   aiDocumentScenario?: 'success' | 'error-then-success'
   youVersionScenario?: 'success' | 'rejection' | 'timeout'
+  gameInvitation?: boolean
 }
 
 export async function installApiMock(
@@ -125,6 +126,13 @@ export async function installApiMock(
     type: 'trivia', category: 'Evangelios', difficulty: 1,
     prompt: '¿Quién escribió el cuarto Evangelio?', options: ['Juan', 'Pedro', 'Pablo', 'Lucas'],
     clues: [], reference: 'Juan 1:1', seconds: 60,
+  }
+  if (options.gameInvitation) {
+    gameRoom = {
+      id: 'invited-game-room', code: 'INV123', host_user_id: 21, status: 'lobby', phase: null,
+      round_count: 1, current_round: null, round_started_at: null, current_question: null, my_answer: null,
+      players: [{ id: 21, name: 'Lucia Visible', email: 'lucia.visible@example.test', avatar_url: null, score: 0, answered: false, answer_correct: null, answer_points: null }],
+    }
   }
   let studies: Array<Record<string, unknown>> = [{
     ...studyBase, id: 'study-active', title: 'Estudio canvas', status: 'active', ended_at: null,
@@ -692,7 +700,7 @@ export async function installApiMock(
     if (path === '/api/studies/invitations') return fulfill(route, [])
     if (path === '/api/games/rooms' && request.method() === 'GET') return fulfill(route, {
       rooms: gameRoom ? [{ id: gameRoom.id, code: gameRoom.code, status: gameRoom.status, host: { id: 7, name: 'Ana Segura', avatar_url: null }, players_count: gameRoom.players.length, updated_at: '2026-08-08T12:00:00Z' }] : [],
-      invitations: [],
+      invitations: options.gameInvitation && gameRoom ? [{ id: gameRoom.id, code: gameRoom.code, status: gameRoom.status, host: { id: 21, name: 'Lucia Visible', avatar_url: null }, players_count: gameRoom.players.length, updated_at: '2026-08-08T12:00:00Z' }] : [],
     })
     if (path === '/api/games/rooms' && request.method() === 'POST') {
       gameRoom = {
