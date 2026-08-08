@@ -1,6 +1,7 @@
-import { writeFileSync, mkdirSync, existsSync, readFileSync, readdirSync } from 'node:fs'
+import { writeFileSync, mkdirSync, readFileSync, rmSync } from 'node:fs'
 import { resolve, dirname } from 'node:path'
 import { fileURLToPath } from 'node:url'
+import { LOCALE_CONFIG, SITE_LOCALES, localizedBiblePath, pickSeoVersion } from './seo-config.mjs'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
 const ROOT = resolve(__dirname, '..')
@@ -24,44 +25,26 @@ const API_BASE = `${process.env.VITE_API_URL}/api`
 const SITE_BASE = process.env.VITE_SITE_URL || process.env.VITE_API_URL
 const CONCURRENCY = 8
 
-// Preferred version IDs per language (first match wins for slug ownership).
-// Later versions in the list act as fallback if earlier ones don't have a slug.
-const PREFERRED_VERSIONS = [
-  3,   // en: KJV (King James Version)
-  1,   // en: ASV (American Standard Version)
-  38,  // es: RVR1960 (Reina-Valera 1960)
-  10,  // es: RVR (Reina-Valera)
-  22,  // fr: Crampon 1923
-  25,  // de: Elberfelder 1905
-  30,  // pt: Bíblia Livre
-]
-
-function pickBestVersion(versions, lang) {
-  // Preferred versions first, then any version in that language
-  const langVersions = versions.filter(v => v.language === lang)
-  for (const prefId of PREFERRED_VERSIONS) {
-    const found = langVersions.find(v => v.id === prefId)
-    if (found) return found
-  }
-  return langVersions[0] || null
-}
-
 const OUT_DIR = resolve(ROOT, 'out')
 
-function langSlug(lang) {
-  return lang && lang !== 'en' ? `${lang}/` : ''
-}
-
 function chapterUrl(slug, n, lang) {
-  return `${SITE_BASE}/bible/${langSlug(lang)}${slug}/${n}`
+  return `${SITE_BASE}${localizedBiblePath(lang, slug, n)}`
 }
 
 function bookUrl(slug, lang) {
-  return `${SITE_BASE}/bible/${langSlug(lang)}${slug}`
+  return `${SITE_BASE}${localizedBiblePath(lang, slug)}`
 }
 
-function seoHead(bookName, slug, chapter, firstVerseText, lang) {
-  const title = `${bookName} ${chapter} — Apolos Bible`
+function alternateLinks(alternates) {
+  if (alternates.length < 2) return ''
+  const links = alternates.map(({ lang, url }) => `    <link rel="alternate" hreflang="${lang}" href="${url}" />`).join('\n')
+  const fallback = alternates.find((item) => item.lang === 'en') ?? alternates[0]
+  return `${links}\n    <link rel="alternate" hreflang="x-default" href="${fallback.url}" />\n`
+}
+
+function seoHead(bookName, slug, chapter, firstVerseText, lang, alternates) {
+  const locale = LOCALE_CONFIG[lang]
+  const title = `${bookName} ${chapter} â€” Apolos Bible`
   const description = firstVerseText
     ? `${firstVerseText.slice(0, 155).trim()}`
     : `Read ${bookName} chapter ${chapter} in Apolos Bible, the collaborative Bible study app.`
@@ -69,7 +52,7 @@ function seoHead(bookName, slug, chapter, firstVerseText, lang) {
   const breadcrumbs = [
     { '@type': 'ListItem', position: 1, name: 'Apolos Bible', item: SITE_BASE },
     { '@type': 'ListItem', position: 2, name: bookName, item: bookUrl(slug, lang) },
-    { '@type': 'ListItem', position: 3, name: `Chapter ${chapter}`, item: canonical },
+    { '@type': 'ListItem', position: 3, name: `${locale.chapter} ${chapter}`, item: canonical },
   ]
 
   const jsonLd = JSON.stringify({
@@ -83,7 +66,7 @@ function seoHead(bookName, slug, chapter, firstVerseText, lang) {
   })
 
   return `<!doctype html>
-<html lang="en" data-theme="light">
+<html lang="${locale.htmlLang}" data-theme="light">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -91,6 +74,7 @@ function seoHead(bookName, slug, chapter, firstVerseText, lang) {
     <meta name="description" content="${escapeHtml(description)}" />
     <meta name="robots" content="index, follow" />
     <link rel="canonical" href="${canonical}" />
+${alternateLinks(alternates)}
 
     <meta property="og:title" content="${escapeHtml(title)}" />
     <meta property="og:description" content="${escapeHtml(description)}" />
@@ -100,7 +84,7 @@ function seoHead(bookName, slug, chapter, firstVerseText, lang) {
     <meta property="og:image:height" content="799" />
     <meta property="og:type" content="article" />
     <meta property="og:site_name" content="Apolos Bible" />
-    <meta property="og:locale" content="en_US" />
+    <meta property="og:locale" content="${locale.ogLocale}" />
 
     <meta name="twitter:card" content="summary" />
     <meta name="twitter:title" content="${escapeHtml(title)}" />
@@ -128,7 +112,7 @@ function seoHead(bookName, slug, chapter, firstVerseText, lang) {
   </head>
   <body>
     <h1>${escapeHtml(bookName)}</h1>
-    <p class="chapter-label">Chapter ${chapter}</p>`
+    <p class="chapter-label">${locale.chapter} ${chapter}</p>`
 }
 
 function escapeHtml(str) {
@@ -141,28 +125,40 @@ function escapeHtml(str) {
 }
 
 async function fetchAllVersions() {
-  const res = await fetch(`${API_BASE}/versions`)
+  const res = await fetchWithRetry(`${API_BASE}/versions`)
   if (!res.ok) throw new Error(`Versions API returned ${res.status}`)
   return res.json()
 }
 
-async function fetchVersionBooks(versionId) {
-  const res = await fetch(`${API_BASE}/versions/${versionId}/books`)
-  if (!res.ok) throw new Error(`Books API returned ${res.status} for version ${versionId}`)
-  return res.json()
+async function fetchVersionDownload(versionId) {
+  const res = await fetchWithRetry(`${API_BASE}/versions/${versionId}/download`)
+  if (!res.ok) throw new Error(`Download API returned ${res.status} for version ${versionId}`)
+  const payload = await res.json()
+  if (!payload || !Array.isArray(payload.books)) {
+    throw new Error(`Download API returned an invalid payload for version ${versionId}`)
+  }
+  return payload
 }
 
-async function fetchChapter(slug, chapter, versionId) {
-  const url = `${API_BASE}/versions/${versionId}/books/${slug}/chapters/${chapter}`
-  const res = await fetch(url)
-  if (!res.ok) throw new Error(`Chapter API returned ${res.status} for ${slug} ${chapter}`)
-  return res.json()
+async function fetchWithRetry(url, attempts = 3) {
+  let lastError
+  for (let attempt = 1; attempt <= attempts; attempt++) {
+    try {
+      const response = await fetch(url)
+      if (response.ok || response.status < 500) return response
+      lastError = new Error(`HTTP ${response.status}`)
+    } catch (error) {
+      lastError = error
+    }
+    if (attempt < attempts) await new Promise((resolve) => setTimeout(resolve, attempt * 250))
+  }
+  throw lastError
 }
 
-function generateChapterHtml(data, lang) {
+function generateChapterHtml(data, lang, alternates) {
   const { book, chapter, verses } = data
   const firstVerseText = verses.length > 0 ? verses[0].text : null
-  let html = seoHead(book.name, book.slug, chapter, firstVerseText, lang)
+  let html = seoHead(book.name, book.slug, chapter, firstVerseText, lang, alternates)
 
   for (const v of verses) {
     html += `  <div class="verse"><span class="verse-num">${v.number}</span><span class="verse-text">${escapeHtml(v.text)}</span></div>\n`
@@ -170,20 +166,23 @@ function generateChapterHtml(data, lang) {
 
   html += `  <nav class="nav">\n    <span></span>\n    <span></span>\n  </nav>\n`
   html += `  <div class="footer">
-    <p>Read <a href="${chapterUrl(book.slug, chapter, lang)}">${escapeHtml(book.name)} ${chapter}</a> interactively on <a href="${SITE_BASE}">Apolos Bible</a> — with highlights, notes, cross-references, and collaborative study.</p>
+    <p>Read <a href="${chapterUrl(book.slug, chapter, lang)}">${escapeHtml(book.name)} ${chapter}</a> interactively on <a href="${SITE_BASE}">Apolos Bible</a> â€” with highlights, notes, cross-references, and collaborative study.</p>
   </div>\n`
   html += `</body>\n</html>\n`
   return html
 }
 
-function generateBookHtml(book, lang) {
-  const title = `${book.name} — Apolos Bible`
-  const description = `Read the book of ${book.name} (${book.chapters_count} chapters) in Apolos Bible, the collaborative Bible study app.`
+function generateBookHtml(book, lang, alternates) {
+  const locale = LOCALE_CONFIG[lang]
+  const title = `${book.name} â€” Apolos Bible`
+  const description = lang === 'es'
+    ? `Lee el libro de ${book.name} (${book.chapters_count} capÃ­tulos) en Apolos.`
+    : `Read the book of ${book.name} (${book.chapters_count} chapters) in Apolos.`
   const canonical = bookUrl(book.slug, lang)
 
   let chapterLinks = ''
   for (let c = 1; c <= book.chapters_count; c++) {
-    chapterLinks += `      <li><a href="${chapterUrl(book.slug, c, lang)}">Chapter ${c}</a></li>\n`
+    chapterLinks += `      <li><a href="${chapterUrl(book.slug, c, lang)}">${locale.chapter} ${c}</a></li>\n`
   }
 
   const jsonLd = JSON.stringify({
@@ -196,7 +195,7 @@ function generateBookHtml(book, lang) {
   })
 
   return `<!doctype html>
-<html lang="en" data-theme="light">
+<html lang="${locale.htmlLang}" data-theme="light">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -204,6 +203,7 @@ function generateBookHtml(book, lang) {
     <meta name="description" content="${escapeHtml(description)}" />
     <meta name="robots" content="index, follow" />
     <link rel="canonical" href="${canonical}" />
+${alternateLinks(alternates)}
     <meta property="og:title" content="${escapeHtml(title)}" />
     <meta property="og:description" content="${escapeHtml(description)}" />
     <meta property="og:url" content="${canonical}" />
@@ -212,7 +212,7 @@ function generateBookHtml(book, lang) {
     <meta property="og:image:height" content="799" />
     <meta property="og:type" content="website" />
     <meta property="og:site_name" content="Apolos Bible" />
-    <meta property="og:locale" content="en_US" />
+    <meta property="og:locale" content="${locale.ogLocale}" />
     <meta name="twitter:card" content="summary" />
     <meta name="twitter:title" content="${escapeHtml(title)}" />
     <meta name="twitter:description" content="${escapeHtml(description)}" />
@@ -234,7 +234,7 @@ function generateBookHtml(book, lang) {
   </head>
   <body>
     <h1>${escapeHtml(book.name)}</h1>
-    <p class="testament">${book.testament === 'old' ? 'Old Testament' : 'New Testament'} · ${book.chapters_count} chapters</p>
+    <p class="testament">${book.number <= 39 ? locale.oldTestament : locale.newTestament} Â· ${book.chapters_count} ${locale.chapters}</p>
     <ul class="chapters">
 ${chapterLinks}    </ul>
     <div class="footer">
@@ -246,136 +246,103 @@ ${chapterLinks}    </ul>
 }
 
 async function main() {
-  // Skip if already generated (Bible content never changes)
   const bibleDir = resolve(OUT_DIR, 'bible')
-  if (existsSync(bibleDir)) {
-    const files = readdirSync(bibleDir, { recursive: true })
-    if (files.length > 100) {
-      console.log('[static-chapters] Skipping: out/bible/ already populated with', files.length, 'files')
-      return
-    }
-  }
+  const spanishDir = resolve(OUT_DIR, 'es', 'bible')
+  rmSync(bibleDir, { recursive: true, force: true })
+  rmSync(spanishDir, { recursive: true, force: true })
 
-  console.log('[static-chapters] Fetching versions...')
-  const versions = await fetchAllVersions()
-  console.log(`[static-chapters] ${versions.length} versions found`)
+  console.log('[static-chapters] Fetching canonical en/es catalogs...')
+  const versions = (await fetchAllVersions()).filter((version) => SITE_LOCALES.includes(version.language))
+  const catalogs = new Map()
 
-  // Build per-language slug map: slugKey → { lang: { name, versionId, chapters } }
-  const slugLangMap = new Map()
-  for (const v of versions) {
-    let books
-    try { books = await fetchVersionBooks(v.id) }
-    catch (err) { console.error(`[static-chapters] Skipping version ${v.id}:`, err.message); continue }
-
-    for (const b of books) {
-      if (!slugLangMap.has(b.slug)) slugLangMap.set(b.slug, {})
-      const entry = slugLangMap.get(b.slug)
-      if (!entry[v.language]) {
-        entry[v.language] = { name: b.name, versionId: v.id, chapters: b.chapters_count }
-      }
-    }
-  }
-  console.log(`[static-chapters] ${slugLangMap.size} unique slugs across languages`)
-
-  // Pick best version per language per slug
-  const bestPerLangSlug = new Map() // lang → Map(slug → info)
-  for (const [slug, langs] of slugLangMap) {
-    for (const lang of Object.keys(langs)) {
-      if (!bestPerLangSlug.has(lang)) bestPerLangSlug.set(lang, new Map())
-      const langMap = bestPerLangSlug.get(lang)
-
-      // If multiple versions have this slug in this lang, pick preferred
-      if (langMap.has(slug)) continue // already picked (first preferred wins via outer loop order? no, versions are iterated in API order)
-      langMap.set(slug, langs[lang])
-    }
-  }
-
-  // Resolve: for each lang+slug, find the actual best version via pickBestVersion
-  const outputMap = new Map() // lang → Map(slug → { name, versionId, chapters })
-  for (const [lang, slugMap] of bestPerLangSlug) {
-    const bestVersion = pickBestVersion(versions, lang)
-    if (!bestVersion) continue
-
-    const langOutput = new Map()
-    outputMap.set(lang, langOutput)
-
-    for (const [slug, info] of slugMap) {
-      // Fetch books from the best version for this language to get correct name
-      try {
-        const books = await fetchVersionBooks(bestVersion.id)
-        const book = books.find(b => b.slug === slug)
-        if (book) {
-          langOutput.set(slug, { name: book.name, versionId: bestVersion.id, chapters: book.chapters_count })
-        }
-      } catch (err) {
-        // Fallback: use whatever we have
-        if (!langOutput.has(slug)) {
-          langOutput.set(slug, { name: info.name, versionId: info.versionId, chapters: info.chapters })
+  for (const lang of SITE_LOCALES) {
+    const preferred = pickSeoVersion(versions, lang)
+    if (!preferred) throw new Error(`No published Bible version is available for ${lang}`)
+    const candidates = [preferred, ...versions.filter((version) => version.language === lang && version.id !== preferred.id)]
+    const byNumber = new Map()
+    for (const version of candidates) {
+      const payload = await fetchVersionDownload(version.id)
+      for (const book of payload.books) {
+        if (book.number >= 1 && book.number <= 66 && !byNumber.has(book.number)) {
+          byNumber.set(book.number, {
+            ...book,
+            chapters_count: book.chapters.length,
+            versionId: version.id,
+          })
         }
       }
+      if (byNumber.size === 66) break
     }
+    if (byNumber.size !== 66) throw new Error(`The ${lang} catalog contains ${byNumber.size}/66 canonical books`)
+    catalogs.set(lang, [...byNumber.values()].sort((a, b) => a.number - b.number))
   }
-  console.log(`[static-chapters] ${outputMap.size} languages: ${[...outputMap.keys()].join(', ')}`)
 
-  // Ensure default language (en) is first
-  const defaultLang = 'en'
-  const languages = [defaultLang, ...[...outputMap.keys()].filter(l => l !== defaultLang)]
-  const isDefault = (lang) => lang === defaultLang
-
-  // Generate book index and chapter pages per language
-  if (!existsSync(bibleDir)) mkdirSync(bibleDir, { recursive: true })
-
-  let totalChapters = 0
   let totalBooks = 0
+  let totalChapters = 0
+  for (const lang of SITE_LOCALES) {
+    const books = catalogs.get(lang)
+    const langDir = lang === 'en' ? bibleDir : spanishDir
+    mkdirSync(langDir, { recursive: true })
 
-  for (const lang of languages) {
-    const slugMap = outputMap.get(lang)
-    if (!slugMap) continue
-
-    const langPrefix = isDefault(lang) ? '' : `${lang}/`
-    const langDir = isDefault(lang) ? bibleDir : resolve(bibleDir, lang)
-    if (!existsSync(langDir)) mkdirSync(langDir, { recursive: true })
-
-    // Book index pages
-    for (const [slug, info] of slugMap) {
-      const slugDir = resolve(langDir, slug)
-      if (!existsSync(slugDir)) mkdirSync(slugDir, { recursive: true })
-      const html = generateBookHtml({ slug, name: info.name, chapters_count: info.chapters }, lang)
-      writeFileSync(resolve(langDir, `${slug}.html`), html, 'utf-8')
+    for (const book of books) {
+      const alternates = SITE_LOCALES.map((alternateLang) => {
+        const alternate = catalogs.get(alternateLang).find((candidate) => candidate.number === book.number)
+        return { lang: alternateLang, url: bookUrl(alternate.slug, alternateLang) }
+      })
+      writeFileSync(
+        resolve(langDir, `${book.slug}.html`),
+        generateBookHtml(book, lang, alternates),
+        'utf-8',
+      )
       totalBooks++
     }
 
-    // Chapter pages
-    const chapters = []
-    for (const [slug, info] of slugMap) {
-      for (let c = 1; c <= info.chapters; c++) {
-        chapters.push({ slug, chapter: c, bookName: info.name, versionId: info.versionId, langDir, lang })
-      }
-    }
+    const chapters = books.flatMap((book) => Array.from(
+      { length: book.chapters_count },
+      (_, index) => ({ book, chapter: index + 1 }),
+    ))
     totalChapters += chapters.length
-    console.log(`[static-chapters] ${lang}: ${slugMap.size} books, ${chapters.length} chapters`)
+    console.log(`[static-chapters] ${lang}: ${books.length} books, ${chapters.length} chapters`)
 
     let done = 0
     let errors = 0
-    async function processOne({ slug, chapter, bookName, versionId, langDir, lang }) {
+    async function processOne({ book, chapter }) {
       try {
-        const data = await fetchChapter(slug, chapter, versionId)
-        const html = generateChapterHtml(data, lang)
-        const slugDir = resolve(langDir, slug)
-        if (!existsSync(slugDir)) mkdirSync(slugDir, { recursive: true })
-        writeFileSync(resolve(slugDir, `${chapter}.html`), html, 'utf-8')
-      } catch (err) {
+        const downloadedChapter = book.chapters.find((candidate) => candidate.number === chapter)
+        if (!downloadedChapter) throw new Error(`Downloaded chapter missing: ${book.slug}/${chapter}`)
+        const data = {
+          book: { number: book.number, name: book.name, slug: book.slug },
+          chapter: downloadedChapter.number,
+          chapter_id: downloadedChapter.id,
+          verses: downloadedChapter.verses,
+        }
+        const alternates = SITE_LOCALES.flatMap((alternateLang) => {
+          const alternate = catalogs.get(alternateLang).find((candidate) => candidate.number === book.number)
+          return chapter <= alternate.chapters_count
+            ? [{ lang: alternateLang, url: chapterUrl(alternate.slug, chapter, alternateLang) }]
+            : []
+        })
+        const slugDir = resolve(langDir, book.slug)
+        mkdirSync(slugDir, { recursive: true })
+        writeFileSync(
+          resolve(slugDir, `${chapter}.html`),
+          generateChapterHtml(data, lang, alternates),
+          'utf-8',
+        )
+      } catch (error) {
         errors++
-        if (errors <= 5) console.error(`[static-chapters] Error on ${slug}/${chapter}:`, err.message)
+        if (errors <= 5) console.error(`[static-chapters] Error on ${book.slug}/${chapter}:`, error.message)
       }
       done++
       if (done % 200 === 0 || done === chapters.length) {
         console.log(`[static-chapters]   ${done}/${chapters.length} (${errors} errors)`)
       }
     }
-    for (let i = 0; i < chapters.length; i += CONCURRENCY) {
-      await Promise.all(chapters.slice(i, i + CONCURRENCY).map(processOne))
+
+    for (let index = 0; index < chapters.length; index += CONCURRENCY) {
+      await Promise.all(chapters.slice(index, index + CONCURRENCY).map(processOne))
     }
+    if (errors > 0) throw new Error(`${errors} ${lang} chapter pages failed to generate`)
   }
 
   console.log(`[static-chapters] Done: ${totalBooks} book indexes, ${totalChapters} chapters`)

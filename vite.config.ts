@@ -16,12 +16,12 @@ export default defineConfig({
   },
   build: {
     outDir: 'out',
-    emptyOutDir: false,
+    emptyOutDir: true,
   },
   test: {
     environment: 'happy-dom',
     globals: true,
-    include: ['src/**/*.test.{ts,tsx}', 'src/**/__tests__/**/*.{test,spec}.{ts,tsx}'],
+    include: ['src/**/*.test.{ts,tsx}', 'src/**/__tests__/**/*.{test,spec}.{ts,tsx}', 'scripts/**/*.test.mjs'],
     exclude: ['e2e/**', 'node_modules/**', 'out/**'],
     coverage: {
       provider: 'v8',

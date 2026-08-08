@@ -226,7 +226,9 @@ export function createVerseStore() {
         return false
       }
       if (fromYouVersionClientId(versionId) === null && shouldAutoPrefetch()) {
-        prefetchVersion(versionId, apiBooks)
+        void prefetchVersion(versionId, apiBooks).catch((error) => {
+          console.warn('[offline] Automatic Bible download failed', error)
+        })
       }
       const books: Book[] = apiBooks.map(b => ({
         id: b.slug,

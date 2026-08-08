@@ -44,6 +44,7 @@ vi.mock('@/lib/prefetchBible', () => ({
 import { bibleApi } from '@/lib/bibleApi'
 import { getStoredBibleVersionId } from '@/lib/defaultBibleVersion'
 import { saveUserSettingsSilently } from '@/lib/userSettingsApi'
+import { prefetchVersion } from '@/lib/prefetchBible'
 import {
   getVerseStoreForTab,
   setBibleVersionForAllStores,
@@ -78,6 +79,7 @@ const mockChapterResponse: ApiChapterResponse = {
 
 beforeEach(() => {
   vi.clearAllMocks()
+  vi.mocked(prefetchVersion).mockResolvedValue(undefined)
   localStorage.clear()
   vi.mocked(getStoredBibleVersionId).mockReturnValue(1)
   mockBibleApi.versions.mockResolvedValue([
