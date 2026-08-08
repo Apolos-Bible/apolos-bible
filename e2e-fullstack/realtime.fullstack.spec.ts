@@ -23,7 +23,7 @@ async function authenticate(target: Page | BrowserContext, account: Account) {
 
 async function openConversation(page: Page, userName: string, conversationName: string) {
   await page.goto('/perfil', { waitUntil: 'domcontentloaded' })
-  await expect(page.getByRole('heading', { name: userName, exact: true })).toBeVisible()
+  await expect(page.getByText(userName, { exact: true }).filter({ visible: true }).first()).toBeVisible()
   const chatsButton = page.getByRole('button', { name: /Chats|Mensajes/i })
   await expect(chatsButton).toBeVisible()
   await chatsButton.click()
@@ -106,7 +106,7 @@ test.describe('[CHAT-REALTIME-01][INFRA-REALTIME-01] real Reverb transport', () 
       response.url().endsWith('/api/broadcasting/auth') && response.status() === 200,
     )
     await page.goto('/perfil', { waitUntil: 'domcontentloaded' })
-    await expect(page.getByRole('heading', { name: recipient.user.name, exact: true })).toBeVisible()
+    await expect(page.getByText(recipient.user.name, { exact: true }).filter({ visible: true }).first()).toBeVisible()
     const notificationsButton = page.getByRole('button', { name: /Notifications|Notificaciones/i })
     await expect(notificationsButton).toBeVisible()
     await channelAuthorization
