@@ -1,8 +1,7 @@
-import { bibleApi, ApiBook } from './bibleApi'
+import { bibleApi, type ApiBook } from './bibleApi'
 import { db } from './db'
 
 const inflight = new Map<number, Promise<void>>()
-const CONCURRENCY = 4
 
 export type OfflineAutoDownload = 'off' | 'wifi' | 'always'
 
@@ -32,34 +31,33 @@ export async function prefetchVersion(
   }
 
   const download = (async () => {
-    const cachedKeys = new Set((await db.chapters.where('versionId').equals(versionId).primaryKeys()) as string[])
-    const tasks: Array<{ slug: string; n: number }> = []
-    for (const book of books) {
-      for (let n = 1; n <= book.chapters_count; n++) {
-        if (!cachedKeys.has(`${versionId}:${book.slug}:${n}`)) tasks.push({ slug: book.slug, n })
-      }
-    }
-    if (!tasks.length) return
-    const total = tasks.length
-    let completed = 0
-    onProgress?.(0, total)
+    const expectedChapters = books.reduce((total, book) => total + book.chapters_count, 0)
+    const cachedChapters = await db.chapters.where('versionId').equals(versionId).count()
+    if (expectedChapters > 0 && cachedChapters === expectedChapters) return
 
-    let i = 0
-    const worker = async () => {
-      while (i < tasks.length) {
-        const idx = i++
-        const t = tasks[idx]
-        try {
-          await bibleApi.chapter(versionId, t.slug, t.n)
-          completed += 1
-          onProgress?.(completed, total)
-        } catch {
-          // network down or rate-limited; bail this worker
-          return
-        }
-      }
-    }
-    await Promise.all(Array.from({ length: CONCURRENCY }, worker))
+    const payload = await bibleApi.downloadVersion(versionId)
+    const rows = payload.books.flatMap((book) => book.chapters.map((chapter) => ({
+      key: `${versionId}:${book.slug}:${chapter.number}`,
+      versionId,
+      slug: book.slug,
+      chapter: chapter.number,
+      data: {
+        book: { number: book.number, name: book.name, slug: book.slug },
+        chapter: chapter.number,
+        chapter_id: chapter.id,
+        verses: chapter.verses,
+        provider: 'local' as const,
+      },
+    })))
+    if (rows.length === 0) throw new Error('The downloaded Bible contains no chapters')
+
+    const total = rows.length
+    onProgress?.(0, total)
+    await db.transaction('rw', db.chapters, async () => {
+      await db.chapters.where('versionId').equals(versionId).delete()
+      await db.chapters.bulkPut(rows)
+    })
+    onProgress?.(total, total)
   })()
 
   inflight.set(versionId, download)

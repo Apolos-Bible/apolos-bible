@@ -439,14 +439,15 @@ export function VerseList() {
       role: 'listitem',
       'aria-current': isSelected ? 'true' : undefined,
       tabIndex: verse.id === tabbableVerseId ? 0 : -1,
-      // Standard list semantics: plain click replaces the selection, Cmd/Ctrl
-      // adds or removes one verse, Shift takes everything back to the anchor.
+      // A plain click replaces the selection, or deselects the clicked verse
+      // when it is already selected. Cmd/Ctrl toggles without replacing and
+      // Shift takes everything back to the anchor.
       onMouseDown: (e: React.MouseEvent) => {
         // Stops the browser from painting a text selection across the range.
         if (e.shiftKey) e.preventDefault()
       },
       onClick: (e: React.MouseEvent) => {
-        pointerSelection.onVerseClick(e, verse.id)
+        pointerSelection.onVerseClick(e, verse.id, isSelected)
       },
       onFocus: () => {
         // Focus can arrive on pointer-down, before the matching click. Keep it
