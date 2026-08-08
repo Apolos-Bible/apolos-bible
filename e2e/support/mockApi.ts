@@ -77,6 +77,16 @@ export async function installApiMock(
   let currentUser: Record<string, unknown> = { ...(options.user ?? testUser) }
   let notes: Array<Record<string, unknown>> = options.initialNotes?.map((note) => ({ ...note })) ?? []
   let nextNoteId = 7001
+  const studyBase = {
+    type: 'free', anchor_ref: null, guided_study: null, host_user_id: 7,
+    conversation_id: 501, thumbnail_url: null, last_activity_at: '2026-08-08T10:00:00Z',
+    created_at: '2026-08-08T10:00:00Z', updated_at: '2026-08-08T10:00:00Z',
+    participants: [{ id: 7, name: 'Ana Segura', role: 'host', cursor_color: '#4f5dcc', is_present: false }],
+    pending_invitation_count: 0, host: { id: 7, name: 'Ana Segura' },
+  }
+  let studies: Array<Record<string, unknown>> = [{
+    ...studyBase, id: 'study-ended', title: 'Estudio terminado', status: 'ended', ended_at: '2026-08-08T11:00:00Z',
+  }]
   let profileFriendshipStatus = options.profileFriendshipStatus ?? 'none'
   let userSettings: Record<string, unknown> = {
     notes_public_default: false,
@@ -555,6 +565,23 @@ export async function installApiMock(
         return route.fulfill({ status: 204, body: '' })
       }
     }
+    if (path === '/api/studies/invitations') return fulfill(route, [])
+    if (path === '/api/studies' && request.method() === 'GET') return fulfill(route, studies)
+    if (path === '/api/studies' && request.method() === 'POST') {
+      const body = request.postDataJSON?.() ?? {}
+      const session = { ...studyBase, id: 'study-new', title: body.title, type: body.type, anchor_ref: body.anchor_ref ?? null, status: 'active', ended_at: null }
+      studies = [session, ...studies]
+      return fulfill(route, { session, ws_token: 'study-ws-token', participant: studyBase.participants[0] }, 201)
+    }
+    const reopenStudy = path.match(/^\/api\/studies\/([^/]+)\/reopen$/)
+    if (reopenStudy) {
+      const original = studies.find((study) => study.id === reopenStudy[1]) ?? studies[0]
+      const session = { ...studyBase, id: 'study-reopened', title: `${original.title} (reopened)`, status: 'active', ended_at: null }
+      studies = [session, ...studies]
+      return fulfill(route, { session, ws_token: 'reopened-ws-token', participant: studyBase.participants[0] })
+    }
+    const study = path.match(/^\/api\/studies\/([^/]+)$/)
+    if (study) return fulfill(route, studies.find((entry) => entry.id === study[1]) ?? studies[0])
 
     return fulfill(route, [])
   })
