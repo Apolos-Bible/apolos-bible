@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next'
 import {
   BookOpen,
   Compass,
-  GraduationCap,
+  House,
   UserRound,
   UsersRound,
   type LucideIcon,
@@ -149,8 +149,18 @@ export function MobileBottomNav() {
     if (onPage) navigate(paths.bible({ lang: locale, book: selectedBook || 'genesis', chapter: selectedChapter || 1 }))
   }
 
+  const goToHome = () => {
+    clearOthers()
+    if (!user) {
+      openAuthModal()
+      return
+    }
+    navigate(paths.home())
+  }
+
+  const isHome = pathname.startsWith('/inicio') && !mobileSearchOpen && mobileHub === null && activePanel === null
   const isReader = !onPage && !mobileSearchOpen && mobileHub === null && activePanel === null
-  const isExplore = mobileHub === 'explore' || (
+  const isExplore = activePanel === 'my-studies' || mobileHub === 'explore' || (
     mobileHub === null
     && activePanel === null
     && (pathname.startsWith('/marketplace') || pathname.startsWith('/juegos') || pathname.startsWith('/mis-rutas'))
@@ -182,6 +192,13 @@ export function MobileBottomNav() {
       // keeps its buttons out of the tab order.
       inert={hidden ? '' : undefined}
     >
+      <NavButton
+        icon={House}
+        label={t('nav.home', 'Inicio')}
+        active={isHome}
+        onClick={goToHome}
+        dataTour="home"
+      />
       <BibleButton
         label={t('nav.bible')}
         active={isReader}
@@ -192,16 +209,9 @@ export function MobileBottomNav() {
         icon={Compass}
         label={t('nav.explore', 'Explorar')}
         active={isExplore}
+        badge={pendingInvitations}
         onClick={goToHub('explore')}
         dataTour="explore"
-      />
-      <NavButton
-        icon={GraduationCap}
-        label={t('nav.studies')}
-        active={activePanel === 'my-studies'}
-        badge={pendingInvitations}
-        onClick={goToPanel('my-studies')}
-        dataTour="my-studies"
       />
       <NavButton
         icon={UsersRound}
