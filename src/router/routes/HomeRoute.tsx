@@ -24,7 +24,14 @@ export function HomeRoute() {
   const [commentaryPreview, setCommentaryPreview] = useState('')
   const [commentaryLoading, setCommentaryLoading] = useState(false)
 
-  useEffect(() => { if (authLoading) return; if (!user) { openAuth(); return } productApi.home().then(setData).catch(() => setError(true)) }, [user, authLoading, openAuth])
+  useEffect(() => {
+    if (authLoading) return
+    if (!user) { openAuth(); return }
+    productApi.home().then((value) => {
+      if (!value?.daily_goal || !Array.isArray(value.social_activity)) { setError(true); return }
+      setData(value)
+    }).catch(() => setError(true))
+  }, [user, authLoading, openAuth])
   useEffect(() => { if (user) closeAuth() }, [user, closeAuth])
   useEffect(() => { if (user?.tutorial_completed === false) setShowOnboarding(true) }, [user])
   useEffect(() => { if (data) setGoalTarget(data.daily_goal.target) }, [data])
@@ -39,7 +46,7 @@ export function HomeRoute() {
       .finally(() => { if (active) setCommentaryLoading(false) })
     return () => { active = false }
   }, [data?.last_reading])
-  useEffect(() => { if (!user) return; const month = new Date().toISOString().slice(0, 7); productApi.calendar(month).then((value) => setCalendar(value.days)).catch(() => setCalendar([])) }, [user])
+  useEffect(() => { if (!user) return; const month = new Date().toISOString().slice(0, 7); productApi.calendar(month).then((value) => setCalendar(Array.isArray(value?.days) ? value.days : [])).catch(() => setCalendar([])) }, [user])
   const openGoal = () => setShowGoal(true)
   const saveGoal = async () => { if (!data) return; const updated = await productApi.goal({ kind: 'chapters', target: goalTarget, active_days: [0,1,2,3,4,5,6], timezone: Intl.DateTimeFormat().resolvedOptions().timeZone, share_completions: data.daily_goal.share_completions }); setData({ ...data, daily_goal: updated }); setShowGoal(false) }
   if (authLoading) return <AppPageLayout title="Inicio"><div role="status" className="p-6 text-sm text-text-muted">Cargando tu inicio…</div></AppPageLayout>
@@ -54,7 +61,7 @@ export function HomeRoute() {
   return <AppPageLayout title="Inicio">
     {showOnboarding && <IntentOnboarding onFinish={() => setShowOnboarding(false)} />}
     <main className="mx-auto w-full max-w-5xl px-4 py-6 md:px-8">
-      <header className="flex items-end justify-between gap-4"><div><p className="text-2xs font-semibold uppercase tracking-[0.16em] text-accent">Tu espacio diario</p><h1 className="mt-2 text-2xl font-semibold tracking-[-0.02em] text-text-primary md:text-3xl">Hola, {user.name.split(' ')[0]}</h1><p className="mt-1 text-sm text-text-muted">Un momento para leer, pensar y compartir.</p></div><div className="hidden items-center gap-2 rounded-full border border-border-subtle bg-bg-secondary px-3 py-2 text-xs text-text-muted sm:flex"><Flame className="h-4 w-4 text-accent"/><strong className="text-text-primary">{data?.daily_goal.streak ?? 0}</strong> días</div></header>
+      <header className="flex items-end justify-between gap-4"><div><p className="text-2xs font-semibold uppercase tracking-[0.16em] text-accent">Tu espacio diario</p><h1 className="mt-2 text-2xl font-semibold tracking-[-0.02em] text-text-primary md:text-3xl">Hola, {user.name.split(' ')[0]}</h1><p className="mt-1 text-sm text-text-muted">Un momento para leer, pensar y compartir.</p></div><div className="hidden items-center gap-2 rounded-full border border-border-subtle bg-bg-secondary px-3 py-2 text-xs text-text-muted sm:flex"><Flame className="h-4 w-4 text-accent"/><strong className="text-text-primary">{data?.daily_goal?.streak ?? 0}</strong> días</div></header>
       {error && <div role="alert" className="mt-5 rounded-lg border border-border-subtle bg-bg-secondary p-4 text-sm text-text-muted">No pudimos actualizar el inicio. Comprueba tu conexión e inténtalo de nuevo.</div>}
       {!data && !error ? <HomeSkeleton /> : data && <>
         <section className="relative mt-6 overflow-hidden rounded-2xl border border-border-subtle bg-bg-secondary">
