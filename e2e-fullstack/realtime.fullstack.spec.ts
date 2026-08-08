@@ -230,8 +230,11 @@ test.describe('[BIBLE-PRESENCE-01][SOCIAL-PRESENCE-01] real presence transport',
         const { usePresenceStore } = await import('/src/lib/store/usePresenceStore.ts')
         return usePresenceStore.getState().others.map((user) => user.name)
       })
-      await expect.poll(() => friendNames(page)).toEqual([readerB.user.name])
-      await expect.poll(() => friendNames(readerBPage)).toEqual([readerA.user.name])
+      // Allow one complete five-second authenticated reconciliation interval.
+      // Reverb may omit member_added when it coalesces the same member identity,
+      // which is the production edge case the heartbeat is designed to repair.
+      await expect.poll(() => friendNames(page), { timeout: 10_000 }).toEqual([readerB.user.name])
+      await expect.poll(() => friendNames(readerBPage), { timeout: 10_000 }).toEqual([readerA.user.name])
 
       const reauthorization = readerBPage.waitForResponse((response) =>
         response.url().endsWith('/api/broadcasting/auth')
