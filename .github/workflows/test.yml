@@ -88,12 +88,14 @@ jobs:
         working-directory: backend
         run: |
           composer install --no-interaction --prefer-dist
+          npm ci
           cp .env.example .env
           php artisan key:generate
           touch database/fullstack.sqlite
           sed -i "s|^#\?DB_DATABASE=.*|DB_DATABASE=$PWD/database/fullstack.sqlite|" .env
           printf '\nAPP_URL=http://127.0.0.1:8000\nFRONTEND_URL=http://localhost:1420\nQUEUE_CONNECTION=sync\nMAIL_MAILER=array\n' >> .env
           php artisan migrate --force
+          npm run build
 
       - run: pnpm install --frozen-lockfile
         if: env.FULLSTACK_REPO_TOKEN != ''
