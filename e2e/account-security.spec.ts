@@ -82,7 +82,7 @@ test.describe('Seguridad de la cuenta', () => {
     await expect(page.getByRole('button', { name: /Change password|Cambiar contrase/i })).toBeVisible()
   })
 
-  test('[ACCOUNT-EXPORT-01] descarga exportaciones JSON y Markdown del usuario', async ({ page }) => {
+  test('[ACCOUNT-EXPORT-01][SETTINGS-DANGER-01] descarga exportaciones JSON y Markdown del usuario', async ({ page }) => {
     await installApiMock(page)
     await page.goto('/ajustes#seguridad', { waitUntil: 'domcontentloaded' })
 
@@ -101,7 +101,7 @@ test.describe('Seguridad de la cuenta', () => {
     await expect.poll(async () => readFile(await markdown.path() as string, 'utf8')).toContain('Ana Segura — Juan 1:1')
   })
 
-  test('[ACCOUNT-DELETE-01] requiere contraseña antes de eliminar y limpia la sesión', async ({ page }) => {
+  test('[ACCOUNT-DELETE-01][SETTINGS-DANGER-01] requiere contraseña antes de eliminar y limpia la sesión', async ({ page }) => {
     let deletionBody: Record<string, unknown> | undefined
     await installApiMock(page)
     page.on('request', (request) => {
@@ -124,7 +124,7 @@ test.describe('Seguridad de la cuenta', () => {
     await expect(page.getByRole('button', { name: /Sign in|Iniciar sesi.n/i }).first()).toBeVisible()
   })
 
-  test('[ACCOUNT-DELETE-02] elimina una cuenta OAuth confirmando el correo', async ({ page }) => {
+  test('[ACCOUNT-DELETE-02][SETTINGS-DANGER-01] elimina una cuenta OAuth confirmando el correo', async ({ page }) => {
     let deletionBody: Record<string, unknown> | undefined
     await installApiMock(page, undefined, {
       user: { ...testUser, has_password: false, connected_providers: ['google'] },
