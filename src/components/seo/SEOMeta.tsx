@@ -34,6 +34,7 @@ export function SEOMeta() {
 
   return (
     <Helmet>
+      <html lang={meta.htmlLang} />
       <title>{meta.title}</title>
       <meta name="description" content={meta.description} />
       <link rel="canonical" href={meta.canonicalUrl} />
@@ -47,7 +48,7 @@ export function SEOMeta() {
       <meta property="og:image:height" content="512" />
       <meta property="og:type" content="article" />
       <meta property="og:site_name" content="Apolos Bible" />
-      <meta property="og:locale" content="en_US" />
+      <meta property="og:locale" content={meta.ogLocale} />
 
       {/* Twitter Card */}
       <meta name="twitter:card" content={meta.twitterCard} />

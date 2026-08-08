@@ -19,7 +19,21 @@ vi.mock('./db', () => ({
   },
 }))
 
-import { prefetchVersion } from './prefetchBible'
+import { offlineAutoDownload, prefetchVersion, shouldAutoPrefetch } from './prefetchBible'
+
+describe('offline download preference', () => {
+  it('does not download a complete Bible automatically by default', () => {
+    localStorage.removeItem('offlineAutoDownload')
+
+    expect(offlineAutoDownload()).toBe('off')
+    expect(shouldAutoPrefetch()).toBe(false)
+  })
+
+  it('preserves an explicit Wi-Fi preference', () => {
+    localStorage.setItem('offlineAutoDownload', 'wifi')
+    expect(offlineAutoDownload()).toBe('wifi')
+  })
+})
 
 describe('prefetchVersion', () => {
   it('[OFFLINE-DOWNLOAD-01] makes concurrent callers await the same durable download', async () => {

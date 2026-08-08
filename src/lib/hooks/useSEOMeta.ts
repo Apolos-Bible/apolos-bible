@@ -13,6 +13,8 @@ export interface SEOMetaData {
   ogUrl: string
   ogImage: string
   twitterCard: 'summary'
+  htmlLang: 'en' | 'es'
+  ogLocale: 'en_US' | 'es_ES'
   breadcrumbs: { name: string; url: string }[]
   verseText: string | null
 }
@@ -43,29 +45,33 @@ export function useSEOMeta(): SEOMetaData {
   if (selectedVerse?.text) {
     description = `${selectedVerse.text.slice(0, 155).trim()}`
   } else if (verses.length > 0 && verses[0]?.text) {
-    description = `Read ${bookName} chapter ${selectedChapter}. ${verses[0].text.slice(0, 140).trim()}...`
+    description = locale === 'es'
+      ? `Lee ${bookName}, capítulo ${selectedChapter}. ${verses[0].text.slice(0, 140).trim()}...`
+      : `Read ${bookName} chapter ${selectedChapter}. ${verses[0].text.slice(0, 140).trim()}...`
   } else {
-    description = `Read ${bookName} chapter ${selectedChapter} in Apolos Bible, the collaborative Bible study app with cross-references, highlights, notes, and real-time study sessions.`
+    description = locale === 'es'
+      ? `Lee ${bookName}, capítulo ${selectedChapter}, en Apolos.`
+      : `Read ${bookName} chapter ${selectedChapter} in Apolos.`
   }
 
-  const langPrefix = locale && locale !== 'en' ? `${locale}/` : ''
+  const localizedBase = locale === 'es' ? `${BASE_URL}/es/bible` : `${BASE_URL}/bible`
 
   let canonicalUrl: string
   if (verseNumber) {
-    canonicalUrl = `${BASE_URL}/bible/${langPrefix}${selectedBook}/${selectedChapter}/${verseNumber}`
+    canonicalUrl = `${localizedBase}/${selectedBook}/${selectedChapter}/${verseNumber}`
   } else {
-    canonicalUrl = `${BASE_URL}/bible/${langPrefix}${selectedBook}/${selectedChapter}`
+    canonicalUrl = `${localizedBase}/${selectedBook}/${selectedChapter}`
   }
 
   const breadcrumbs = [
     { name: 'Apolos Bible', url: BASE_URL },
-    { name: bookName, url: `${BASE_URL}/bible/${langPrefix}${selectedBook}` },
+    { name: bookName, url: `${localizedBase}/${selectedBook}` },
   ]
   if (verseNumber) {
-    breadcrumbs.push({ name: `Chapter ${selectedChapter}`, url: `${BASE_URL}/bible/${langPrefix}${selectedBook}/${selectedChapter}` })
-    breadcrumbs.push({ name: `Verse ${verseNumber}`, url: canonicalUrl })
+    breadcrumbs.push({ name: locale === 'es' ? `Capítulo ${selectedChapter}` : `Chapter ${selectedChapter}`, url: `${localizedBase}/${selectedBook}/${selectedChapter}` })
+    breadcrumbs.push({ name: locale === 'es' ? `Versículo ${verseNumber}` : `Verse ${verseNumber}`, url: canonicalUrl })
   } else {
-    breadcrumbs.push({ name: `Chapter ${selectedChapter}`, url: canonicalUrl })
+    breadcrumbs.push({ name: locale === 'es' ? `Capítulo ${selectedChapter}` : `Chapter ${selectedChapter}`, url: canonicalUrl })
   }
 
   return {
@@ -77,6 +83,8 @@ export function useSEOMeta(): SEOMetaData {
     ogUrl: canonicalUrl,
     ogImage: OG_IMAGE,
     twitterCard: 'summary',
+    htmlLang: locale === 'es' ? 'es' : 'en',
+    ogLocale: locale === 'es' ? 'es_ES' : 'en_US',
     breadcrumbs,
     verseText: selectedVerse?.text ?? null,
   }
