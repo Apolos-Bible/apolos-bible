@@ -60,6 +60,7 @@ interface ApiMockOptions {
   profileFriendshipStatus?: 'none' | 'pending_sent' | 'pending_received' | 'accepted' | 'blocked' | 'blocked_by_them'
   profileLastReading?: Record<string, unknown> | null
   friends?: Array<Record<string, unknown>>
+  pushSubscriptions?: Array<Record<string, unknown>>
 }
 
 export async function installApiMock(
@@ -93,6 +94,7 @@ export async function installApiMock(
     reminder_time: null,
     reminder_timezone: null,
   }
+  let pushSubscriptions = options.pushSubscriptions?.map((subscription) => ({ ...subscription })) ?? []
   let bookmarks: Array<Record<string, unknown>> = []
   let highlights: Array<Record<string, unknown>> = []
   let chatMessages: Array<Record<string, unknown>> = []
@@ -471,7 +473,16 @@ export async function installApiMock(
       }
       return fulfill(route, pushPreferences)
     }
-    if (path === '/api/push/subscriptions') return fulfill(route, [])
+    if (path === '/api/push/subscriptions') return fulfill(route, pushSubscriptions)
+    const pushSubscription = path.match(/^\/api\/push\/subscriptions\/(.+)$/)
+    if (pushSubscription) {
+      const body = request.postDataJSON?.() ?? {}
+      if (request.method() === 'DELETE' || body._method === 'DELETE') {
+        const token = decodeURIComponent(pushSubscription[1])
+        pushSubscriptions = pushSubscriptions.filter((subscription) => subscription.token !== token)
+        return route.fulfill({ status: 204, body: '' })
+      }
+    }
 
     return fulfill(route, [])
   })
