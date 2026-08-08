@@ -221,10 +221,8 @@ test.describe('[BIBLE-PRESENCE-01][SOCIAL-PRESENCE-01] real presence transport',
     }
 
     try {
-      await Promise.all([
-        page.goto(`/juegos/${room.id}`, { waitUntil: 'domcontentloaded' }),
-        readerBPage.goto(`/juegos/${room.id}`, { waitUntil: 'domcontentloaded' }),
-      ])
+      await page.goto(`/juegos/${room.id}`, { waitUntil: 'domcontentloaded' })
+      await readerBPage.goto(`/juegos/${room.id}`, { waitUntil: 'domcontentloaded' })
       await joinPresence(page, readerA, readerB)
       await joinPresence(readerBPage, readerB, readerA)
 
@@ -235,15 +233,17 @@ test.describe('[BIBLE-PRESENCE-01][SOCIAL-PRESENCE-01] real presence transport',
       await expect.poll(() => friendNames(page)).toEqual([readerB.user.name])
       await expect.poll(() => friendNames(readerBPage)).toEqual([readerA.user.name])
 
-      await readerBPage.evaluate(async () => {
-        const [{ destroyEcho }, { usePresenceStore }] = await Promise.all([
-          import('/src/lib/echo.ts'),
-          import('/src/lib/store/usePresenceStore.ts'),
-        ])
-        usePresenceStore.getState().leaveChapter()
-        destroyEcho()
-      })
+      const reauthorization = readerBPage.waitForResponse((response) =>
+        response.url().endsWith('/api/broadcasting/auth')
+          && response.request().postData()?.includes('presence-chapter.43.3') === true
+          && response.status() === 200,
+      )
+      const dropResponse = await request.post('http://127.0.0.1:8082/drop-latest')
+      expect(dropResponse.status()).toBe(204)
       await expect.poll(() => friendNames(page), { timeout: 15_000 }).toEqual([])
+      await reauthorization
+      await expect.poll(() => friendNames(readerBPage), { timeout: 15_000 }).toEqual([readerA.user.name])
+      await expect.poll(() => friendNames(page), { timeout: 15_000 }).toEqual([readerB.user.name])
     } finally {
       if (readerBContext.pages().length > 0) {
         await readerBPage.evaluate(async () => {

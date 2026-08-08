@@ -4,6 +4,7 @@ import { initEcho, getEcho, onEchoReconnect } from '@/lib/echo'
 import { useActivityStore } from './useActivityStore'
 import { useUIStore } from './useUIStore'
 import { useFriendStore } from './useFriendStore'
+import { api } from '@/lib/api'
 
 type PresenceStore = {
   others: PresenceUser[]
@@ -14,6 +15,21 @@ type PresenceStore = {
 let _channelName: string | null = null
 let _currentChapter: { bookNumber: number; chapterNumber: number; selfId: string } | null = null
 let _stopReconnectListener: (() => void) | null = null
+let _heartbeatTimer: ReturnType<typeof setInterval> | null = null
+
+async function reconcilePresence(bookNumber: number, chapterNumber: number): Promise<void> {
+  try {
+    const response = await api.post<{ data: PresenceUser[] }>('/api/presence/heartbeat', {
+      book_number: bookNumber,
+      chapter_number: chapterNumber,
+    })
+    if (_currentChapter?.bookNumber === bookNumber && _currentChapter.chapterNumber === chapterNumber) {
+      usePresenceStore.setState({ others: response.data })
+    }
+  } catch (error) {
+    console.error('[presence] heartbeat failed', error)
+  }
+}
 
 export const usePresenceStore = create<PresenceStore>((set) => ({
   others: [],
@@ -41,7 +57,8 @@ export const usePresenceStore = create<PresenceStore>((set) => ({
     _channelName = `chapter.${bookNumber}.${chapterNumber}`
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    ;(echo.join(_channelName) as any)
+    const channel = echo.join(_channelName) as any
+    channel
       .error((error: unknown) => {
         console.error('[presence] subscription error', error)
         useUIStore.getState().addToast('Realtime presence subscription failed', 'error')
@@ -49,6 +66,11 @@ export const usePresenceStore = create<PresenceStore>((set) => ({
       .here((users: PresenceUser[]) => {
         const friendIds = new Set(useFriendStore.getState().friends.map((f) => f.id))
         set({ others: users.filter((u) => String(u.id) !== selfId && friendIds.has(u.id)) })
+        // Reverb can omit `member_added` for an immediate reconnect. A short,
+        // authenticated heartbeat reconciles that transport edge case.
+        void reconcilePresence(bookNumber, chapterNumber)
+        if (_heartbeatTimer) clearInterval(_heartbeatTimer)
+        _heartbeatTimer = setInterval(() => void reconcilePresence(bookNumber, chapterNumber), 5_000)
       })
       .joining((user: PresenceUser) => {
         const friendIds = new Set(useFriendStore.getState().friends.map((f) => f.id))
@@ -86,6 +108,8 @@ export const usePresenceStore = create<PresenceStore>((set) => ({
     _currentChapter = null
     _stopReconnectListener?.()
     _stopReconnectListener = null
+    if (_heartbeatTimer) clearInterval(_heartbeatTimer)
+    _heartbeatTimer = null
     if (_channelName) {
       getEcho()?.leave(_channelName)
       _channelName = null
