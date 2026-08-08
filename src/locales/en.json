@@ -907,6 +907,7 @@
   "settings.storage.empty": "No complete Bibles have been downloaded yet.",
   "settings.storage.chapters": "chapters",
   "settings.storage.remove": "Remove download",
+  "settings.storage.removeConfirm": "Remove the downloaded {{version}} Bible from this device?",
   "settings.security.title": "Security & data",
   "settings.security.subtitle": "Review your sign-in methods, active sessions, and personal data.",
   "settings.security.providers": "Sign-in methods",
