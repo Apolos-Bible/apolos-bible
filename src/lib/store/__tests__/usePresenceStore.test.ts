@@ -8,6 +8,7 @@ const mockJoinListen = vi.fn()
 const mockAddToast = vi.fn()
 const mockRecordActivity = vi.fn()
 const mockClearActivity = vi.fn()
+let reconnectListener: (() => void) | null = null
 
 const mockJoinResult = {
   error: mockJoinError.mockReturnValue({
@@ -29,6 +30,10 @@ const mockEcho = {
 vi.mock('@/lib/echo', () => ({
   initEcho: vi.fn(() => mockEcho),
   getEcho: vi.fn(() => mockEcho),
+  onEchoReconnect: vi.fn((listener: () => void) => {
+    reconnectListener = listener
+    return () => { reconnectListener = null }
+  }),
 }))
 
 vi.mock('../useUIStore', () => ({
@@ -97,6 +102,15 @@ describe('usePresenceStore', () => {
   it('leaveChapter does nothing when no channel', () => {
     usePresenceStore.getState().leaveChapter()
     expect(mockEcho.leave).not.toHaveBeenCalled()
+  })
+
+  it('rejoins the active chapter after the realtime connection is restored', () => {
+    usePresenceStore.getState().joinChapter(43, 3, 'user-1')
+    expect(reconnectListener).not.toBeNull()
+    reconnectListener?.()
+    expect(mockEcho.leave).toHaveBeenCalledWith('chapter.43.3')
+    expect(mockEcho.join).toHaveBeenCalledTimes(2)
+    expect(mockEcho.join).toHaveBeenLastCalledWith('chapter.43.3')
   })
 
   it('does not subscribe guests to a private presence channel', () => {
