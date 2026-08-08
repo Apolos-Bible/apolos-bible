@@ -19,6 +19,7 @@ export function MyNotesPanel() {
   const navigate = useNavigate()
   const user = useAuthStore((state) => state.user)
   const closePanel = useUIStore((state) => state.closePanel)
+  const openMobileHub = useUIStore((state) => state.openMobileHub)
   const locale = useUIStore((state) => state.locale)
   const addToast = useUIStore((state) => state.addToast)
   const [notes, setNotes] = useState<EditableUserNote[]>([])
@@ -83,7 +84,7 @@ export function MyNotesPanel() {
 
   return (
     <div className="flex h-full flex-col bg-bg-secondary">
-      <PanelHeader title={t('nav.myNotes')} onClose={closePanel} closeLabel={t('common.close')} />
+      <PanelHeader title={t('nav.myNotes')} onBack={() => { closePanel(); openMobileHub('you') }} backLabel={t('common.back')} onClose={closePanel} closeLabel={t('common.close')} />
 
       <div className="border-b border-border-subtle px-4 pb-4 pt-3">
         <div className="relative overflow-hidden rounded-2xl border border-accent/20 bg-gradient-to-br from-accent/[0.12] via-bg-primary to-bg-secondary p-4 shadow-lg shadow-accent/5">

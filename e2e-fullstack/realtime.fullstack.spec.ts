@@ -22,9 +22,11 @@ async function authenticate(target: Page | BrowserContext, account: Account) {
 }
 
 async function openConversation(page: Page, userName: string, conversationName: string) {
-  await page.goto('/', { waitUntil: 'domcontentloaded' })
+  await page.goto('/perfil', { waitUntil: 'domcontentloaded' })
   await expect(page.getByText(userName, { exact: true }).filter({ visible: true }).first()).toBeVisible()
-  await page.getByRole('button', { name: /Chats|Mensajes/i }).click()
+  const chatsButton = page.getByRole('button', { name: /Chats|Mensajes/i })
+  await expect(chatsButton).toBeVisible()
+  await chatsButton.click()
   await page.getByText(conversationName, { exact: true }).filter({ visible: true }).first().click()
   await expect(page.getByPlaceholder(/Write a message|Escribe un mensaje/i)).toBeVisible()
 }
@@ -103,8 +105,10 @@ test.describe('[CHAT-REALTIME-01][INFRA-REALTIME-01] real Reverb transport', () 
     const channelAuthorization = page.waitForResponse((response) =>
       response.url().endsWith('/api/broadcasting/auth') && response.status() === 200,
     )
-    await page.goto('/', { waitUntil: 'domcontentloaded' })
+    await page.goto('/perfil', { waitUntil: 'domcontentloaded' })
     await expect(page.getByText(recipient.user.name, { exact: true }).filter({ visible: true }).first()).toBeVisible()
+    const notificationsButton = page.getByRole('button', { name: /Notifications|Notificaciones/i })
+    await expect(notificationsButton).toBeVisible()
     await channelAuthorization
 
     const friendRequest = await request.post(`${apiUrl}/api/friends/${recipient.user.id}`, {
@@ -113,7 +117,7 @@ test.describe('[CHAT-REALTIME-01][INFRA-REALTIME-01] real Reverb transport', () 
     expect(friendRequest.status()).toBe(201)
 
     await expect(page.getByText(`${sender.user.name} sent you a friend request`, { exact: true })).toBeVisible({ timeout: 10_000 })
-    await page.getByRole('button', { name: 'Notifications' }).click()
+    await notificationsButton.click()
     await expect(page.locator('.workspace-side-panel-frame:visible').getByText(
       `${sender.user.name} sent you a friend request`,
       { exact: true },

@@ -42,6 +42,7 @@ export function BibleRoute() {
       chapter={chapter}
       verse={verse ?? null}
       endVerse={endVerse && verse && endVerse > verse ? endVerse : null}
+      openCommentary={searchParams.get('commentary') === '1'}
     />
   )
 }
@@ -52,18 +53,27 @@ type BibleViewProps = {
   chapter: number
   verse: number | null
   endVerse: number | null
+  openCommentary: boolean
 }
 
-function BibleView({ lang, book, chapter, verse, endVerse }: BibleViewProps) {
+function BibleView({ lang, book, chapter, verse, endVerse, openCommentary }: BibleViewProps) {
   const navigate = useNavigate()
   const locale = useUIStore(s => s.locale)
   const setLocale = useUIStore(s => s.setLocale)
   const activePanel = useUIStore(s => s.activePanel)
   const commentaryOpen = useActiveBiblePaneStore(s => s.commentaryOpen)
+  const toggleCommentary = useActiveBiblePaneStore(s => s.toggleCommentary)
   const studyVerseId = useActiveVerseStore(s => s.studyVerseId)
   const verseStore = useVerseStoreApi()
   const comparisonOpen = useActiveCompareStore(s => s.open)
   const insightsOpen = useActiveCrossRefStore(s => s.open)
+  const commentaryRequestHandled = useRef(false)
+
+  useEffect(() => {
+    if (!openCommentary || commentaryRequestHandled.current) return
+    commentaryRequestHandled.current = true
+    if (!commentaryOpen) toggleCommentary()
+  }, [openCommentary, commentaryOpen, toggleCommentary])
 
   // URL → locale (when navigating to a localized URL).
   // Important: depend only on `lang` so that locale changes coming from the
@@ -106,7 +116,7 @@ function BibleView({ lang, book, chapter, verse, endVerse }: BibleViewProps) {
       void state.openVerseRange(matched.slug, safeChapter, verse, endVerse)
     } else if (verse) {
       void state.openVerse(matched.slug, safeChapter, verse)
-    } else if (!sameLocation) {
+    } else if (!sameLocation || state.verses.length === 0) {
       void state.loadChapter(matched.slug, safeChapter)
     }
   }, [book, chapter, verse, endVerse, verseStore])

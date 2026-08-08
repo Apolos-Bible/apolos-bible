@@ -13,6 +13,7 @@ export function FavoritesPanel() {
   const user = useAuthStore(s => s.user)
   const { bookmarks, loading, load } = useBookmarkStore()
   const closePanel = useUIStore(s => s.closePanel)
+  const openMobileHub = useUIStore(s => s.openMobileHub)
   const locale = useUIStore(s => s.locale)
 
   useEffect(() => {
@@ -29,6 +30,8 @@ export function FavoritesPanel() {
     <div className="flex flex-col h-full bg-bg-secondary">
       <PanelHeader
         title={t('nav.favorites')}
+        onBack={() => { closePanel(); openMobileHub('you') }}
+        backLabel={t('common.back')}
         onClose={closePanel}
         closeLabel={t('common.close')}
       />

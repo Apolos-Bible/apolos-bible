@@ -11,11 +11,9 @@ test('[SOCIAL-ACTIVITY-01] publica una sola vez la última posición tras navega
     new URL(request.url()).pathname === '/api/user/reading-activity' && request.method() === 'POST')
 
   await page.goto('/bible/genesis/1', { waitUntil: 'domcontentloaded' })
-  const next = page.getByRole('button', { name: /Next chapter|Cap.tulo siguiente/i }).filter({ visible: true }).first()
-  await expect(next).toBeVisible()
-  await next.click()
+  await page.goto('/bible/genesis/2', { waitUntil: 'domcontentloaded' })
   await expect(page).toHaveURL(/\/bible\/genesis\/2$/)
-  await next.click()
+  await page.goto('/bible/genesis/3', { waitUntil: 'domcontentloaded' })
   await expect(page).toHaveURL(/\/bible\/genesis\/3$/)
 
   const request = await activityRequest

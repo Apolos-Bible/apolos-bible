@@ -548,7 +548,9 @@ export function VerseList() {
         </div>
       </div>
 
-      {verses.length === 0 ? (
+      {loadingVerses ? (
+        <BibleTextSkeleton />
+      ) : verses.length === 0 ? (
         <EmptyState message={t('verse.empty')} />
       ) : (
         <div
@@ -901,4 +903,12 @@ export function VerseList() {
 
     </div>
   )
+}
+
+function BibleTextSkeleton() {
+  const widths = [92, 78, 96, 68, 88, 73, 94, 81, 65, 90, 76, 97]
+  return <div role="status" aria-label="Cargando texto bíblico" className="flex-1 overflow-hidden px-5 py-8 sm:px-8 md:px-14">
+    <div className="mx-auto max-w-3xl motion-safe:animate-pulse"><div className="mb-8 flex items-center justify-between"><span className="block h-8 w-44 rounded-md bg-bg-tertiary"/><span className="block h-8 w-24 rounded-md bg-bg-tertiary"/></div><div className="space-y-4">{widths.map((width, index) => <div key={index} className="flex items-start gap-3"><span className="mt-0.5 block h-2.5 w-4 shrink-0 rounded bg-bg-tertiary"/><span className="block h-4 rounded bg-bg-tertiary" style={{ width: `${width}%` }}/></div>)}</div></div>
+    <span className="sr-only">Cargando el capítulo…</span>
+  </div>
 }
