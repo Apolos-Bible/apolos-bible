@@ -59,6 +59,8 @@ export interface ProfileViewProps {
   onDeclineRequest: () => void
   onRemoveFriend: () => void
   onMessage: () => void
+  onBlock: () => void
+  onUnblock: () => void
   pendingAction?: boolean
 }
 
@@ -82,6 +84,8 @@ export function ProfileView({
   onDeclineRequest,
   onRemoveFriend,
   onMessage,
+  onBlock,
+  onUnblock,
   pendingAction,
 }: ProfileViewProps) {
   const { t } = useTranslation()
@@ -215,6 +219,8 @@ export function ProfileView({
               onDecline={onDeclineRequest}
               onRemove={onRemoveFriend}
               onMessage={onMessage}
+              onBlock={onBlock}
+              onUnblock={onUnblock}
               onShare={() => {
                 void shareProfile()
               }}

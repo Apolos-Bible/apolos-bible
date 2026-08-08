@@ -65,6 +65,7 @@ export type FriendshipStatus =
   | 'pending_sent'
   | 'pending_received'
   | 'accepted'
+  | 'blocked'
   | 'blocked_by_them'
 
 export type ProfileUser = {

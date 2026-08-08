@@ -7,6 +7,7 @@ import { ProfileView } from '@/components/profile/ProfileView'
 import { ProfileSkeleton } from '@/components/profile/ProfileSkeleton'
 import { EmptyState } from '@/components/ui/EmptyState'
 import { RemoveFriendDialog } from '@/components/friends/RemoveFriendDialog'
+import { BlockUserDialog } from '@/components/friends/BlockUserDialog'
 import { profileApi } from '@/lib/profileApi'
 import { friendApi } from '@/lib/friendApi'
 import { paths } from '@/router/paths'
@@ -37,6 +38,7 @@ export function ProfileRoute({ mode }: ProfileRouteProps) {
   const [status, setStatus] = useState<'loading' | 'ready' | 'notfound' | 'error'>('loading')
   const [pendingAction, setPendingAction] = useState(false)
   const [confirmingRemove, setConfirmingRemove] = useState(false)
+  const [confirmingBlock, setConfirmingBlock] = useState(false)
 
   // Auth guard — wait for init() so a deep link to /perfil doesn't bounce a
   // logged-in user while the session is still loading.
@@ -115,6 +117,13 @@ export function ProfileRoute({ mode }: ProfileRouteProps) {
   const onCancelRequest = withFriendshipId((id) => friendApi.decline(id), 'friend.error.cancel')
   const onAcceptRequest = withFriendshipId((id) => friendApi.accept(id), 'friend.error.accept')
   const onDeclineRequest = withFriendshipId((id) => friendApi.decline(id), 'friend.error.decline')
+  const onBlock = async () => {
+    if (!targetId) return
+    await run(() => friendApi.block(targetId), 'friend.error.block')
+  }
+  const onUnblock = () => {
+    if (targetId) void run(() => friendApi.unblock(targetId), 'friend.error.unblock')
+  }
 
   const onMessage = async () => {
     if (!targetId) return
@@ -191,6 +200,8 @@ export function ProfileRoute({ mode }: ProfileRouteProps) {
               onDeclineRequest={onDeclineRequest}
               onRemoveFriend={() => setConfirmingRemove(true)}
               onMessage={onMessage}
+              onBlock={() => setConfirmingBlock(true)}
+              onUnblock={onUnblock}
             />
           </>
         )
@@ -203,6 +214,15 @@ export function ProfileRoute({ mode }: ProfileRouteProps) {
         onClose={() => setConfirmingRemove(false)}
         onConfirm={() => {
           void onRemoveFriend().finally(() => setConfirmingRemove(false))
+        }}
+      />
+      <BlockUserDialog
+        open={confirmingBlock}
+        userName={data?.user.name ?? ''}
+        busy={pendingAction}
+        onClose={() => setConfirmingBlock(false)}
+        onConfirm={() => {
+          void onBlock().finally(() => setConfirmingBlock(false))
         }}
       />
     </AppPageLayout>
