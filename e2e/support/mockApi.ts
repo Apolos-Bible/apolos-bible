@@ -217,6 +217,25 @@ export async function installApiMock(
       }])
     }
     if (path === '/api/youversion/versions') return fulfill(route, { data: [] })
+    if (path === '/api/ai/models') return fulfill(route, { models: [{
+      slug: 'deepseek/v4-flash',
+      provider: 'deepseek',
+      model: 'deepseek-v4-flash',
+      name: 'DeepSeek V4 Flash',
+      description: 'Fast public model',
+      context_window: 128000,
+      max_output_tokens: 8192,
+      supports_json: true,
+      supports_tools: true,
+      supports_vision: false,
+      supports_reasoning: false,
+    }] })
+    if (path === '/api/ai/usage') return fulfill(route, {
+      tokens_used: 250,
+      tokens_limit: 1000,
+      request_count: 3,
+      percent_used: 25,
+    })
     if (path === '/api/user/bookmarks') return fulfill(route, bookmarks)
     if (path === '/api/users/search') return fulfill(route, [{
       id: 21,
