@@ -55,6 +55,7 @@ export interface VerseState {
   studyVerseId: string | null
   chapterId: number | null
   verses: Verse[]
+  loadingBooks: boolean
   loadingVerses: boolean
   loadVersions: () => Promise<void>
   setVersion: (id: number, options?: { sync?: boolean }) => Promise<void>
@@ -111,6 +112,7 @@ export function createVerseStore() {
   studyVerseId: null,
   chapterId: null,
   verses: [],
+  loadingBooks: false,
   loadingVerses: false,
 
   loadVersions: async () => {
@@ -144,7 +146,7 @@ export function createVerseStore() {
       : undefined
 
     localStorage.setItem(BIBLE_VERSION_STORAGE_KEY, String(id))
-    set({ versionId: id, books: [], verses: [], selectedVerseId: null, selectedVerseIds: [], cursorVerseId: null, selectionAnchorId: null, studyVerseId: null })
+    set({ versionId: id, books: [], verses: [], loadingBooks: true, loadingVerses: true, selectedVerseId: null, selectedVerseIds: [], cursorVerseId: null, selectionAnchorId: null, studyVerseId: null })
     const loaded = await get().loadBooks(currentRoute)
     if (!loaded) {
       localStorage.setItem(BIBLE_VERSION_STORAGE_KEY, String(previous.versionId))
@@ -211,6 +213,7 @@ export function createVerseStore() {
   },
 
   loadBooks: async (initialRoute?: { book: string; chapter: number; verse?: number }) => {
+    set({ loadingBooks: true, loadingVerses: true })
     let { versionId, versions } = get()
     try {
       if (versions.length === 0) {
@@ -240,7 +243,10 @@ export function createVerseStore() {
       }))
       set({ books })
 
-      if (books.length === 0) return true
+      if (books.length === 0) {
+        set({ loadingVerses: false })
+        return true
+      }
 
       if (initialRoute) {
         const matchedBook = resolveReferenceBook(books, initialRoute.book)
@@ -280,7 +286,10 @@ export function createVerseStore() {
       return true
     } catch (e) {
       console.error('Failed to load books', e)
+      set({ loadingVerses: false })
       return false
+    } finally {
+      set({ loadingBooks: false })
     }
   },
 

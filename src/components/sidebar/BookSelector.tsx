@@ -201,6 +201,7 @@ export function BookSelector() {
   const oldTestament = books.filter((b) => b.testament === 'old')
   const newTestament = books.filter((b) => b.testament === 'new')
   const selectableVersions = versions
+  const loadingBooks = useActiveVerseStore((s) => s.loadingBooks)
 
   return (
     <div ref={scrollRef} className="flex-1 overflow-y-auto pb-1">
@@ -221,7 +222,7 @@ export function BookSelector() {
           searchPlaceholder={t('youVersion.searchVersion')}
         />
       </div>
-      <BookGroup
+      {loadingBooks ? <BookLibrarySkeleton /> : <><BookGroup
         label={t('sidebar.oldTestament')}
         books={oldTestament}
         selectedBook={selectedBook}
@@ -243,9 +244,17 @@ export function BookSelector() {
           onSelectChapter={handleSelectChapter}
           onChapterContextMenu={handleChapterContextMenu}
           isMobile={isMobile}
-      />
+        />
+      </div>
+      </>}
       <StartStudyModal open={showStartStudy} onClose={() => setShowStartStudy(false)} />
     </div>
-    </div>
   )
+}
+
+function BookLibrarySkeleton() {
+  return <div role="status" aria-label="Cargando libros y capítulos" className="space-y-5 px-3 py-4 motion-safe:animate-pulse">
+    {Array.from({ length: 2 }, (_, group) => <div key={group}><span className="block h-2.5 w-28 rounded bg-bg-tertiary"/><div className="mt-3 space-y-2">{Array.from({ length: group === 0 ? 8 : 5 }, (_, index) => <div key={index} className="flex items-center justify-between"><span className="block h-3.5 rounded bg-bg-tertiary" style={{ width: `${52 + (index % 4) * 9}%` }}/><span className="block h-3.5 w-5 rounded bg-bg-tertiary"/></div>)}</div></div>)}
+    <span className="sr-only">Cargando biblioteca bíblica…</span>
+  </div>
 }
