@@ -143,17 +143,24 @@ jobs:
           $server = Start-Process node -ArgumentList @('scripts/native-acceptance-server.mjs', $result) -PassThru -WindowStyle Hidden
           try {
             Start-Process $installer.FullName -ArgumentList @('/S', "/D=$installDir") -Wait
-            $app = Join-Path $installDir 'Apolos.exe'
-            if (-not (Test-Path $app)) { throw 'Installed Apolos executable was not found' }
-            Start-Process $app
+            $app = Get-ChildItem $installDir -Filter '*.exe' -Recurse |
+              Where-Object Name -NE 'uninstall.exe' |
+              Select-Object -First 1
+            if (-not $app) { throw 'Installed Apolos executable was not found' }
+            $launched = Start-Process $app.FullName -PassThru
             $deadline = (Get-Date).AddSeconds(30)
-            while (-not (Get-Process Apolos -ErrorAction SilentlyContinue) -and (Get-Date) -lt $deadline) { Start-Sleep -Milliseconds 250 }
+            while (-not (Get-Process -Id $launched.Id -ErrorAction SilentlyContinue) -and (Get-Date) -lt $deadline) { Start-Sleep -Milliseconds 250 }
             Start-Process 'tulia://auth/finish?provider=google&token=native-acceptance-token'
             while (-not (Test-Path $result) -and (Get-Date) -lt $deadline) { Start-Sleep -Milliseconds 250 }
             if ((Get-Content $result -Raw).Trim() -ne '/auth/google/finish#token=<present>') { throw 'Packaged OAuth route was not observed' }
-            if (@(Get-Process Apolos -ErrorAction SilentlyContinue).Count -ne 1) { throw 'Deep link opened more than one Apolos instance' }
+            $instances = @(Get-Process -Name $app.BaseName -ErrorAction SilentlyContinue | Where-Object Path -EQ $app.FullName)
+            if ($instances.Count -ne 1) { throw 'Deep link opened more than one Apolos instance' }
           } finally {
-            Get-Process Apolos -ErrorAction SilentlyContinue | Stop-Process -Force
+            if ($app) {
+              Get-Process -Name $app.BaseName -ErrorAction SilentlyContinue |
+                Where-Object Path -EQ $app.FullName |
+                Stop-Process -Force
+            }
             $uninstaller = Join-Path $installDir 'uninstall.exe'
             if (Test-Path $uninstaller) { Start-Process $uninstaller -ArgumentList '/S' -Wait }
             if (-not $server.HasExited) { Stop-Process -Id $server.Id -Force }
