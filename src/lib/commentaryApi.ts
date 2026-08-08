@@ -19,7 +19,11 @@ export const commentaryApi = {
 export function commentaryExcerpt(html: string, sentenceCount = 3): string {
   const spacedHtml = html.replace(/<\/(?:p|div|h[1-6]|li|blockquote)>/gi, '$& ')
   const document = new DOMParser().parseFromString(spacedHtml, 'text/html')
-  document.querySelectorAll('h1, h2, h3, h4, h5, h6, script, style, button').forEach((element) => element.remove())
+  document.querySelectorAll([
+    'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'script', 'style', 'button',
+    '.avia-button-wrap',
+    'a[aria-label^="Audiocomentario"]',
+  ].join(', ')).forEach((element) => element.remove())
   const text = (document.body.textContent ?? '').replace(/\s+/g, ' ').trim()
   const sentences = text.match(/[^.!?…]+(?:[.!?…]+|$)/g) ?? []
   return sentences.slice(0, sentenceCount).map((sentence) => sentence.trim()).join(' ')
