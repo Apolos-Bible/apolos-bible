@@ -79,6 +79,22 @@ export async function installApiMock(
   }
   let bookmarks: Array<Record<string, unknown>> = []
   let highlights: Array<Record<string, unknown>> = []
+  let chatMessages: Array<Record<string, unknown>> = []
+  const directConversation = () => ({
+    id: 901,
+    type: 'dm',
+    name: null,
+    created_by: testUser.id,
+    last_message_at: chatMessages.at(-1)?.created_at ?? null,
+    unread_count: 0,
+    last_read_at: null,
+    archived_at: null,
+    participants: [
+      { id: testUser.id, name: currentUser.name, email: currentUser.email, avatar_url: currentUser.avatar_url ?? null, last_read_at: null },
+      { id: 21, name: 'Lucia Visible', email: 'lucia.visible@example.test', avatar_url: null, last_read_at: null },
+    ],
+    last_message: chatMessages.at(-1) ?? null,
+  })
   let sessions = [
     { id: 11, name: 'Windows · Apolos', current: true, last_used_at: '2026-08-07T20:00:00Z', created_at: '2026-08-01T10:00:00Z' },
     { id: 12, name: 'Mac · Apolos', current: false, last_used_at: '2026-08-06T20:00:00Z', created_at: '2026-08-01T10:00:00Z' },
@@ -259,7 +275,29 @@ export async function installApiMock(
       profileFriendshipStatus = 'none'
       return fulfill(route, null, 204)
     }
-    if (path === '/api/friends' || path === '/api/conversations') return fulfill(route, [])
+    if (path === '/api/conversations') {
+      if (request.method() === 'POST') return fulfill(route, directConversation(), chatMessages.length === 0 ? 201 : 200)
+      return fulfill(route, chatMessages.length > 0 ? [directConversation()] : [])
+    }
+    if (path === '/api/conversations/901/messages') {
+      if (request.method() === 'GET') return fulfill(route, chatMessages)
+      const body = request.postDataJSON?.() ?? {}
+      const message = {
+        id: 9900 + chatMessages.length,
+        conversation_id: 901,
+        user_id: testUser.id,
+        user: { id: testUser.id, name: currentUser.name, email: currentUser.email, avatar_url: currentUser.avatar_url ?? null },
+        body: body.body,
+        created_at: '2026-08-08T00:00:00Z',
+      }
+      chatMessages.push(message)
+      return fulfill(route, message, 201)
+    }
+    if (path === '/api/conversations/901/read') return fulfill(route, {
+      last_read_at: '2026-08-08T00:00:00Z', last_read_message_id: chatMessages.at(-1)?.id ?? null,
+    })
+    if (path === '/api/conversations/901/typing') return fulfill(route, { ok: true })
+    if (path === '/api/friends') return fulfill(route, [])
     if (path === '/api/highlights/batch') return fulfill(route, highlights)
     const verseNotes = path.match(/^\/api\/verses\/(\d+)\/notes$/)
     if (verseNotes) {
