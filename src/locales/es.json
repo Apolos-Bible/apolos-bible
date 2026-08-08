@@ -723,6 +723,7 @@
   "perfil.empty.allPublicStranger": "{{name}} no tiene contenido público. Agrégalo como amigo para ver más.",
   "perfil.notFound": "No encontramos este perfil.",
   "perfil.blocked": "Este perfil no está disponible.",
+  "perfil.readingActivity": "Actividad de lectura reciente",
   "perfil.error.load": "No pudimos cargar el perfil.",
   "perfil.retry": "Reintentar",
   "perfil.back": "Volver",

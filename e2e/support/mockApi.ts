@@ -58,6 +58,7 @@ interface ApiMockOptions {
   resendVerificationStatus?: number
   initialNotes?: Array<Record<string, unknown>>
   profileFriendshipStatus?: 'none' | 'pending_sent' | 'pending_received' | 'accepted' | 'blocked' | 'blocked_by_them'
+  profileLastReading?: Record<string, unknown> | null
 }
 
 export async function installApiMock(
@@ -69,6 +70,13 @@ export async function installApiMock(
   let notes: Array<Record<string, unknown>> = options.initialNotes?.map((note) => ({ ...note })) ?? []
   let nextNoteId = 7001
   let profileFriendshipStatus = options.profileFriendshipStatus ?? 'none'
+  let userSettings: Record<string, unknown> = {
+    notes_public_default: false,
+    highlights_public_default: false,
+    discoverable_by_email: true,
+    show_reading_activity: true,
+    allow_friend_requests: 'everyone',
+  }
   let bookmarks: Array<Record<string, unknown>> = []
   let highlights: Array<Record<string, unknown>> = []
   let sessions = [
@@ -100,7 +108,13 @@ export async function installApiMock(
       currentUser = { ...currentUser, ...updates }
       return fulfill(route, currentUser)
     }
-    if (path === '/api/user/settings') return fulfill(route, {})
+    if (path === '/api/user/settings') {
+      if (request.method() === 'GET') return fulfill(route, userSettings)
+      const body = request.postDataJSON?.() ?? {}
+      const { _method: _ignored, ...updates } = body
+      userSettings = { ...userSettings, ...updates }
+      return fulfill(route, userSettings)
+    }
     if (path === '/api/user/password') {
       currentUser.has_password = true
       const providers = Array.isArray(currentUser.connected_providers) ? currentUser.connected_providers : []
@@ -178,7 +192,7 @@ export async function installApiMock(
       is_self: false,
       friendship_status: profileFriendshipStatus,
       friendship_id: profileFriendshipStatus === 'pending_sent' || profileFriendshipStatus === 'pending_received' ? 501 : null,
-      last_reading: null,
+      last_reading: options.profileLastReading ?? null,
       stats: { reading_streak_days: 0, notes_count: 0, highlights_count: 0, friends_count: 0, studies_count: 0 },
       public_highlights: [],
       public_notes: [],
