@@ -33,4 +33,10 @@ test('[NOTIFY-PREF-01] saves event, quiet-hours, and reminder preferences and re
   await expect(page.getByLabel(/Quiet hours start|Inicio del horario silencioso/i)).toHaveValue('22:15')
   await expect(page.getByLabel(/Quiet hours end|Fin del horario silencioso/i)).toHaveValue('07:30')
   await expect(page.getByLabel(/Reminder time|Hora del recordatorio/i)).toHaveValue('08:45')
+
+  await page.getByRole('switch', { name: /Reading reminder|Recordatorio de lectura/i }).click()
+  await expect.poll(() => payloads).toContainEqual({ reading_reminder: false })
+  await page.reload({ waitUntil: 'domcontentloaded' })
+  await expect(page.getByRole('switch', { name: /Reading reminder|Recordatorio de lectura/i })).not.toBeChecked()
+  await expect(page.getByLabel(/Reminder time|Hora del recordatorio/i)).toBeDisabled()
 })
