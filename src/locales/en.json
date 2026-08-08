@@ -723,6 +723,7 @@
   "perfil.empty.allPublicStranger": "{{name}} has no public content. Add them as a friend to see more.",
   "perfil.notFound": "We couldn't find this profile.",
   "perfil.blocked": "This profile is unavailable.",
+  "perfil.readingActivity": "Recent reading activity",
   "perfil.error.load": "We couldn't load this profile.",
   "perfil.retry": "Retry",
   "perfil.back": "Back",
