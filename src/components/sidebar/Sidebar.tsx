@@ -8,6 +8,7 @@ import {
   Bell,
   ExternalLink,
   GraduationCap,
+  House,
   Gamepad2,
   MessagesSquare,
   NotebookPen,
@@ -256,6 +257,7 @@ export function Sidebar() {
 
       <div className={cn('min-h-0 flex-1 overflow-y-auto px-2 pb-2', compact && 'px-1')}>
         <SectionLabel compact={compact}>{t('nav.personal')}</SectionLabel>
+        <NavItem compact={compact} icon={House} label="Inicio" active={pathname.startsWith('/inicio')} onClick={() => user ? openRoute(paths.home(), 'Inicio') : openAuthModal()} onOpenNew={() => user ? openRoute(paths.home(), 'Inicio', true) : openAuthModal()} />
         <NavItem
           dataTour="bible"
           icon={BookOpen}
@@ -271,6 +273,7 @@ export function Sidebar() {
         {/* Central destinations navigate into their own workspace tabs. */}
         <NavItem compact={compact} dataTour="new-study" icon={BookPlus} label={t('nav.newStudy')} active={false} onClick={() => user ? setShowStartStudy(true) : openAuthModal()} />
         <SectionLabel compact={compact}>{t('nav.social')}</SectionLabel>
+        <NavItem compact={compact} icon={UsersRound} label="Tu círculo" active={pathname.startsWith('/circulo')} onClick={() => user ? openRoute(paths.feed(), 'Tu círculo') : openAuthModal()} onOpenNew={() => user ? openRoute(paths.feed(), 'Tu círculo', true) : openAuthModal()} />
         <NavItem compact={compact} dataTour="games" icon={Gamepad2} label={t('nav.games')} active={pathname.startsWith('/juegos')} onClick={() => user ? openRoute(paths.games(), t('nav.games')) : openAuthModal()} onOpenNew={() => user ? openRoute(paths.games(), t('nav.games'), true) : openAuthModal()} />
         {/* Marketplace opens or focuses its workspace tab. */}
         <NavItem compact={compact} dataTour="marketplace" icon={Store} label={t('nav.marketplace')} active={pathname.startsWith('/marketplace')} onClick={() => user ? openRoute(paths.marketplace(), t('nav.marketplace')) : openAuthModal()} onOpenNew={() => user ? openRoute(paths.marketplace(), t('nav.marketplace'), true) : openAuthModal()} />

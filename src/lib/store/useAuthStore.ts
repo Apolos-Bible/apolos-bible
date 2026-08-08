@@ -17,6 +17,7 @@ interface AuthUser {
   /** False for Google-only accounts that never set a local password. */
   has_password?: boolean
   connected_providers?: Array<'password' | 'google' | 'youversion'>
+  tutorial_completed?: boolean
 }
 
 interface AuthState {

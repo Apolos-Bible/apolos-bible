@@ -12,6 +12,9 @@ const GameRoomRoute = lazy(() => import('./routes/GameRoomRoute').then((module) 
 const MyPathsRoute = lazy(() => import('./routes/MyPathsRoute').then((module) => ({ default: module.MyPathsRoute })))
 const PathEditorRoute = lazy(() => import('./routes/PathEditorRoute').then((module) => ({ default: module.PathEditorRoute })))
 const ProfileRoute = lazy(() => import('./routes/ProfileRoute').then((module) => ({ default: module.ProfileRoute })))
+const HomeRoute = lazy(() => import('./routes/HomeRoute').then((module) => ({ default: module.HomeRoute })))
+const HelpRoute = lazy(() => import('./routes/HelpRoute').then((module) => ({ default: module.HelpRoute })))
+const FeedRoute = lazy(() => import('./routes/FeedRoute').then((module) => ({ default: module.FeedRoute })))
 
 function deferred(element: ReactElement) {
   return <Suspense fallback={<div role="status" className="p-6 text-sm text-text-muted">Loading…</div>}>{element}</Suspense>
@@ -22,6 +25,9 @@ function deferred(element: ReactElement) {
  * auth callbacks and collaborative StudyMode, which remain full-window flows.
  */
 export const workspaceRoutes: RouteObject[] = [
+  { path: 'inicio', element: deferred(<HomeRoute />) },
+  { path: 'ayuda', element: deferred(<HelpRoute />) },
+  { path: 'circulo', element: deferred(<FeedRoute />) },
   { path: 'bible/:book', element: <BibleRoute /> },
   { path: 'bible/:book/:chapter', element: <BibleRoute /> },
   { path: 'bible/:book/:chapter/:verse', element: <BibleRoute /> },

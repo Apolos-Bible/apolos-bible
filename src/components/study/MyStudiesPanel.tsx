@@ -27,6 +27,7 @@ export function MyStudiesPanel() {
   const acceptInvitation = useStudyStore((s) => s.acceptInvitation);
   const declineInvitation = useStudyStore((s) => s.declineInvitation);
   const closePanel     = useUIStore((s) => s.closePanel);
+  const openMobileHub  = useUIStore((s) => s.openMobileHub);
   const openAuthModal  = useUIStore((s) => s.openAuthModal);
   const user           = useAuthStore((s) => s.user);
   const [filter, setFilter] = useState<'all' | 'active' | 'ended'>('all');
@@ -68,6 +69,8 @@ export function MyStudiesPanel() {
     <div className="h-full flex flex-col bg-bg-secondary border-r border-border-subtle">
       <PanelHeader
         title={t('study.my.title')}
+        onBack={() => { closePanel(); openMobileHub('explore'); }}
+        backLabel={t('common.back')}
         onClose={closePanel}
         closeLabel={t('study.my.close')}
         actions={
