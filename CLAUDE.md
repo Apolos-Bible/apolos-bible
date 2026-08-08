@@ -31,6 +31,7 @@ Frontend (`frontend/`):
 - Use Vitest for functions, stores, adapters, components, native-plugin boundaries, and release tooling. Use Playwright for the shipped browser journey, including desktop/mobile variants when UI differs.
 - Security and persistence boundaries require full-stack E2E with Laravel and an isolated database. API-mocked browser tests do not prove those boundaries.
 - Run those journeys with `pnpm test:e2e:fullstack`; CI needs the read-only `FULLSTACK_REPO_TOKEN` secret plus `FULLSTACK_E2E_ENABLED=true` to check out the private backend. A skipped job is not evidence.
+- A manual `Release` dispatch is a non-publishing packaging gate for a selected ref. It must retain Windows/macOS/Linux and Android outputs; only a real `release` event may upload releases, deploy Firebase, or publish to Google Play.
 - Native contracts run in ordinary CI, while signed install/update/deep-link/notification/autostart behavior stays `partial` until the Windows/macOS release matrix passes.
 - Assert allowed and denied roles, invalid and malicious input, provider failures, persistence after reload, and absence of leaked data.
 - Required gate: `pnpm test:unit && pnpm test:e2e && pnpm build`. Never weaken assertions, add retries, or increase timeouts merely to turn CI green.

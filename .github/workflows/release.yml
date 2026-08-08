@@ -4,13 +4,18 @@ on:
   release:
     types: [published]
   workflow_dispatch:
+    inputs:
+      ref:
+        description: Git ref to package without publishing
+        required: true
+        default: main
+        type: string
 
 permissions:
   contents: write
 
 jobs:
   bump-version:
-    if: github.event_name == 'release'
     runs-on: ubuntu-latest
     outputs:
       sha: ${{ steps.commit.outputs.sha }}
@@ -18,7 +23,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: main
+          ref: ${{ github.event_name == 'release' && 'main' || inputs.ref }}
           token: ${{ secrets.GITHUB_TOKEN }}
           fetch-depth: 0
 
@@ -30,6 +35,12 @@ jobs:
         id: commit
         run: |
           set -e
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            VERSION=$(node -p "require('./package.json').version")
+            echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+            echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
           TAG="${{ github.event.release.tag_name }}"
           VERSION="${TAG#v}"
           CURRENT=$(node -p "require('./package.json').version")
@@ -119,6 +130,15 @@ jobs:
           releaseName: ${{ github.event.release.name || github.event.release.tag_name }}
           args: ${{ matrix.args }}
 
+      - name: Retain unpublished desktop bundles
+        if: github.event_name == 'workflow_dispatch'
+        uses: actions/upload-artifact@v4
+        with:
+          name: desktop-${{ matrix.platform }}
+          path: src-tauri/target/**/release/bundle/**/*
+          if-no-files-found: error
+          retention-days: 7
+
   android:
     needs: bump-version
     runs-on: ubuntu-latest
@@ -188,10 +208,20 @@ jobs:
           ls -la android-out
 
       - name: Upload to GitHub Release
+        if: github.event_name == 'release'
         uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ github.event.release.tag_name }}
           files: android-out/*
+
+      - name: Retain unpublished Android packages
+        if: github.event_name == 'workflow_dispatch'
+        uses: actions/upload-artifact@v4
+        with:
+          name: android-packages
+          path: android-out/*
+          if-no-files-found: error
+          retention-days: 7
 
       - name: Publish to Google Play (closed testing)
         if: github.event_name == 'release'
@@ -263,6 +293,7 @@ jobs:
         run: node scripts/generate-static-chapters.mjs
 
       - name: Deploy to Firebase Hosting
+        if: github.event_name == 'release'
         uses: FirebaseExtended/action-hosting-deploy@v0
         with:
           repoToken: ${{ secrets.GITHUB_TOKEN }}
