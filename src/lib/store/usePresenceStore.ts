@@ -1,6 +1,6 @@
 import { create } from 'zustand'
 import type { PresenceUser } from '@/types'
-import { initEcho, getEcho } from '@/lib/echo'
+import { initEcho, getEcho, onEchoReconnect } from '@/lib/echo'
 import { useActivityStore } from './useActivityStore'
 import { useUIStore } from './useUIStore'
 import { useFriendStore } from './useFriendStore'
@@ -12,6 +12,8 @@ type PresenceStore = {
 }
 
 let _channelName: string | null = null
+let _currentChapter: { bookNumber: number; chapterNumber: number; selfId: string } | null = null
+let _stopReconnectListener: (() => void) | null = null
 
 export const usePresenceStore = create<PresenceStore>((set) => ({
   others: [],
@@ -22,6 +24,15 @@ export const usePresenceStore = create<PresenceStore>((set) => ({
 
     const echo = initEcho()
     if (!echo) return
+
+    _currentChapter = { bookNumber, chapterNumber, selfId }
+    _stopReconnectListener ??= onEchoReconnect(() => {
+      const chapter = _currentChapter
+      if (!chapter) return
+      if (_channelName) echo.leave(_channelName)
+      _channelName = null
+      usePresenceStore.getState().joinChapter(chapter.bookNumber, chapter.chapterNumber, chapter.selfId)
+    })
 
     if (_channelName) {
       echo.leave(_channelName)
@@ -72,6 +83,9 @@ export const usePresenceStore = create<PresenceStore>((set) => ({
   },
 
   leaveChapter: () => {
+    _currentChapter = null
+    _stopReconnectListener?.()
+    _stopReconnectListener = null
     if (_channelName) {
       getEcho()?.leave(_channelName)
       _channelName = null
