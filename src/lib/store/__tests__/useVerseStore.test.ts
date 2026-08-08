@@ -38,6 +38,7 @@ vi.mock('@/lib/userSettingsApi', () => ({
 
 import { bibleApi } from '@/lib/bibleApi'
 import { getStoredBibleVersionId } from '@/lib/defaultBibleVersion'
+import { saveUserSettingsSilently } from '@/lib/userSettingsApi'
 import {
   getVerseStoreForTab,
   setBibleVersionForAllStores,
@@ -205,6 +206,20 @@ describe('useVerseStore', () => {
     expect(useVerseStore.getState().selectedChapter).toBe(3)
     expect(mockBibleApi.books).toHaveBeenCalledWith(2)
     expect(mockBibleApi.chapter).toHaveBeenCalledWith(2, 'john', 3)
+  })
+
+  it('[SETTINGS-BIBLE-01] persists a YouVersion provider identity instead of its client-only id', async () => {
+    mockBibleApi.books.mockResolvedValue(mockBooks)
+    mockBibleApi.chapter.mockResolvedValue(mockChapterResponse)
+
+    await useVerseStore.getState().setVersion(1_000_000_128)
+
+    expect(saveUserSettingsSilently).toHaveBeenCalledWith({
+      preferred_bible_version_id: null,
+      preferred_bible_provider: 'youversion',
+      preferred_bible_provider_id: 128,
+    })
+    expect(localStorage.getItem('bibleVersionId')).toBe('1000000128')
   })
 
   it('updates every existing Bible tab when the preferred version changes', async () => {

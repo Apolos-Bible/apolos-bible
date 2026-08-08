@@ -216,7 +216,32 @@ export async function installApiMock(
         text: 'Al tercer día se hicieron unas bodas en Caná.',
       }])
     }
-    if (path === '/api/youversion/versions') return fulfill(route, { data: [] })
+    if (path === '/api/youversion/versions') return fulfill(route, {
+      data: [{
+        id: 128,
+        abbreviation: 'NVI-YV',
+        localized_abbreviation: 'NVI-YV',
+        title: 'Nueva Versión Internacional — YouVersion',
+        localized_title: 'Nueva Versión Internacional — YouVersion',
+        language_tag: 'es',
+        publisher_url: 'https://www.biblica.com/',
+        youversion_deep_link: 'https://www.bible.com/versions/128',
+      }],
+      total_size: 1,
+      language: 'es',
+    })
+    if (path === '/api/youversion/bibles/128/index') return fulfill(route, {
+      text_direction: 'ltr',
+      books: [{
+        id: 'JHN', title: 'Juan', canon: 'new_testament',
+        chapters: Array.from({ length: 21 }, (_, index) => ({ id: index + 1, passage_id: `JHN.${index + 1}`, title: index + 1 })),
+      }],
+    })
+    if (path.startsWith('/api/youversion/bibles/128/passages/')) return fulfill(route, {
+      id: path.split('/').at(-1),
+      reference: 'Juan 1',
+      content: '<div><span class="yv-v" v="1"></span><span class="yv-vlbl">1</span> En el principio era el Verbo.</div>',
+    })
     if (path === '/api/ai/models') return fulfill(route, { models: [{
       slug: 'deepseek/v4-flash',
       provider: 'deepseek',
