@@ -129,6 +129,7 @@ The backend lives in `../backend/` of this monorepo and is served locally at `ht
 - External providers use deterministic success, rejection, malformed-response, timeout, and retry fakes. Secrets and production data never belong in fixtures or traces.
 - Pull requests must pass `pnpm test:unit && pnpm test:e2e && pnpm build`. Skips require an owner, reason, and expiration.
 - Private cross-repository CI additionally requires the read-only `FULLSTACK_REPO_TOKEN` Actions secret and `FULLSTACK_E2E_ENABLED=true` repository variable. Without both, the job is skipped rather than reported as a successful execution.
+- Manual `Release` dispatches package the selected ref on Windows, macOS, Linux, Android, and web without publishing or deploying; desktop and Android bundles are retained for seven days as acceptance-test inputs.
 
 ---
 
