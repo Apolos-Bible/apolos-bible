@@ -187,6 +187,22 @@ export async function installApiMock(
       email: 'lucia.visible@example.test',
       avatar_url: null,
     }])
+    if (path === `/api/users/${testUser.id}/profile`) return fulfill(route, {
+      user: { ...currentUser, email_verified: true, content_public_default: false },
+      is_self: true,
+      friendship_status: 'self',
+      friendship_id: null,
+      last_reading: {
+        book_name: 'Juan', book_slug: 'juan', chapter: 3, verse: 16,
+        version: 'RVR1960', timestamp: '2026-08-08T00:00:00Z',
+      },
+      stats: { reading_streak_days: 4, notes_count: 1, highlights_count: 1, friends_count: 0, studies_count: 0 },
+      public_highlights: [],
+      public_notes: [],
+      friends: [],
+      studies: [],
+      recent_likes: null,
+    })
     if (path === '/api/users/21/profile') return fulfill(route, {
       user: { id: 21, name: 'Lucia Visible', email: null, avatar_url: null, bio: 'Perfil social visible.' },
       is_self: false,
