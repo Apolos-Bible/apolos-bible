@@ -39,9 +39,7 @@ export function Logo({ symbolSize = 20, textSize = 13, className }: LogoProps) {
         className="font-reading tracking-[-0.02em] leading-none whitespace-nowrap"
         style={{ fontSize: textSize }}
       >
-        <span className="text-text-primary">apolos</span>
-        <span className="text-accent">.</span>
-        <span className="text-text-primary">bible</span>
+        <span className="text-text-primary">Apolos</span>
       </span>
     </div>
   )
@@ -61,9 +59,7 @@ export function LogoStacked({ symbolSize = 48, textSize = 22, className }: LogoS
         className="font-reading tracking-[-0.02em] leading-none whitespace-nowrap"
         style={{ fontSize: textSize }}
       >
-        <span className="text-text-primary">apolos</span>
-        <span className="text-accent">.</span>
-        <span className="text-text-primary">bible</span>
+        <span className="text-text-primary">Apolos</span>
       </span>
     </div>
   )
