@@ -1,6 +1,6 @@
 import { useEffect, type ReactNode } from 'react'
-import { useLocation, useNavigate } from 'react-router-dom'
-import { ChevronLeft, Search } from 'lucide-react'
+import { useLocation } from 'react-router-dom'
+import { Search } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { Sidebar } from '@/components/sidebar/Sidebar'
 import { FloatingChatDock } from '@/components/chat/FloatingChatDock'
@@ -35,7 +35,6 @@ interface AppPageLayoutProps {
  * scrolling, and double-mount data-fetching children.
  */
 export function AppPageLayout({ title, mobileActions, children }: AppPageLayoutProps) {
-  const navigate = useNavigate()
   const { pathname } = useLocation()
   const isMobile = useIsMobile()
   const { t } = useTranslation()
@@ -72,11 +71,6 @@ export function AppPageLayout({ title, mobileActions, children }: AppPageLayoutP
     workspacePane?.reportTitle(title)
   }, [title, workspacePane])
 
-  const goBack = () => {
-    if (window.history.length > 1) navigate(-1)
-    else navigate('/')
-  }
-
   const mobilePageVisible = !activePanel && !mobileSearchOpen && !mobileHub
 
   if (workspacePane) {
@@ -96,15 +90,7 @@ export function AppPageLayout({ title, mobileActions, children }: AppPageLayoutP
           mobilePageVisible ? 'flex' : 'hidden',
         )}
       >
-        <button
-          type="button"
-          onClick={goBack}
-          aria-label={t('common.back')}
-          className="inline-flex h-9 w-9 items-center justify-center rounded-md text-text-secondary hover:bg-bg-tertiary hover:text-text-primary transition-colors"
-        >
-          <ChevronLeft className="h-5 w-5" strokeWidth={1.8} />
-        </button>
-        <span className="flex-1 truncate text-[15px] font-semibold text-text-primary">{title}</span>
+        <span className="flex-1 truncate px-2 text-[15px] font-semibold text-text-primary">{title}</span>
         <button
           type="button"
           onClick={() => useUIStore.getState().openMobileSearch()}
