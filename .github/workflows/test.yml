@@ -44,3 +44,68 @@ jobs:
           name: playwright-report
           path: playwright-report/
           retention-days: 14
+
+  fullstack-e2e:
+    runs-on: ubuntu-latest
+    env:
+      FULLSTACK_REPO_TOKEN: ${{ secrets.FULLSTACK_REPO_TOKEN }}
+    steps:
+      - name: Full-stack credentials unavailable
+        if: env.FULLSTACK_REPO_TOKEN == ''
+        run: echo "Set FULLSTACK_REPO_TOKEN to gate private cross-repository E2E."
+
+      - uses: actions/checkout@v4
+        if: env.FULLSTACK_REPO_TOKEN != ''
+
+      - uses: actions/checkout@v4
+        if: env.FULLSTACK_REPO_TOKEN != ''
+        with:
+          repository: Apolos-Bible/apolos-backend
+          ref: main
+          token: ${{ secrets.FULLSTACK_REPO_TOKEN }}
+          path: backend
+
+      - uses: pnpm/action-setup@v4
+        if: env.FULLSTACK_REPO_TOKEN != ''
+        with:
+          version: 10.33.2
+
+      - uses: actions/setup-node@v4
+        if: env.FULLSTACK_REPO_TOKEN != ''
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - uses: shivammathur/setup-php@v2
+        if: env.FULLSTACK_REPO_TOKEN != ''
+        with:
+          php-version: '8.4'
+          extensions: mbstring, sqlite, pdo_sqlite
+          coverage: none
+
+      - name: Prepare isolated Laravel database
+        if: env.FULLSTACK_REPO_TOKEN != ''
+        working-directory: backend
+        run: |
+          composer install --no-interaction --prefer-dist
+          cp .env.example .env
+          php artisan key:generate
+          touch database/fullstack.sqlite
+          sed -i "s|^#\?DB_DATABASE=.*|DB_DATABASE=$PWD/database/fullstack.sqlite|" .env
+          printf '\nAPP_URL=http://127.0.0.1:8000\nFRONTEND_URL=http://localhost:1420\nQUEUE_CONNECTION=sync\nMAIL_MAILER=array\n' >> .env
+          php artisan migrate --force
+
+      - run: pnpm install --frozen-lockfile
+        if: env.FULLSTACK_REPO_TOKEN != ''
+      - run: pnpm exec playwright install --with-deps chromium
+        if: env.FULLSTACK_REPO_TOKEN != ''
+      - run: pnpm test:e2e:fullstack
+        if: env.FULLSTACK_REPO_TOKEN != ''
+        env:
+          APOLOS_BACKEND_DIR: ${{ github.workspace }}/backend
+      - if: failure() && env.FULLSTACK_REPO_TOKEN != ''
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report-fullstack
+          path: playwright-report-fullstack/
+          retention-days: 14
