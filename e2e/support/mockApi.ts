@@ -568,6 +568,12 @@ export async function installApiMock(
       }
     }
     if (path === '/api/studies/invitations') return fulfill(route, [])
+    if (/^\/api\/studies\/[^/]+\/files$/.test(path) && request.method() === 'POST') {
+      return fulfill(route, {
+        id: 'file-e2e', name: 'guia.txt', mime_type: 'text/plain', size: 12,
+        content_url: 'https://files.example.test/guia.txt',
+      }, 201)
+    }
     if (path === '/api/studies' && request.method() === 'GET') return fulfill(route, studies)
     if (path === '/api/studies' && request.method() === 'POST') {
       const body = request.postDataJSON?.() ?? {}
