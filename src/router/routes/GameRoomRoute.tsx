@@ -6,7 +6,7 @@ import { AppPageLayout } from '@/components/layout/AppPageLayout'
 import { UserAvatar } from '@/components/auth/UserAvatar'
 import { gameApi, type GameAnswer, type GameQuestion, type GameRoom } from '@/lib/gameApi'
 import { segmentText, type Segment } from '@/lib/bibleRefs'
-import { initEcho } from '@/lib/echo'
+import { initEcho, onEchoReconnect } from '@/lib/echo'
 import { paths } from '@/router/paths'
 import { useAuthStore } from '@/lib/store/useAuthStore'
 import { useFriendStore } from '@/lib/store/useFriendStore'
@@ -49,9 +49,11 @@ export function GameRoomRoute() {
     const echo = initEcho()
     const channel = echo?.private(`game.room.${roomId}`)
     channel?.listen('.room.updated', () => void refresh())
+    const stopReconnectListener = onEchoReconnect(() => void refresh())
     const poll = window.setInterval(() => void refresh(), 5000)
     return () => {
       window.clearInterval(poll)
+      stopReconnectListener()
       channel?.stopListening('.room.updated')
       echo?.leave(`game.room.${roomId}`)
     }

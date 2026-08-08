@@ -34,6 +34,7 @@ const mockEchoInstance = {
 vi.mock('@/lib/echo', () => ({
   initEcho: vi.fn(() => mockEchoInstance),
   getEcho: vi.fn(() => mockEchoInstance),
+  onEchoReconnect: vi.fn(() => vi.fn()),
 }))
 
 vi.mock('@/lib/i18n', () => ({
@@ -57,7 +58,7 @@ vi.mock('../useUIStore', () => ({
 }))
 
 import { chatApi } from '@/lib/chatApi'
-import { useChatStore } from '../useChatStore'
+import { mergeChatMessages, useChatStore } from '../useChatStore'
 import type { Conversation, ChatMessage } from '@/lib/chatApi'
 
 const mockChatApi = chatApi as unknown as {
@@ -306,5 +307,18 @@ describe('useChatStore', () => {
     mockEchoInstance.private.mockClear()
     await useChatStore.getState().load()
     expect(mockEchoInstance.private).toHaveBeenCalledWith('conversation.1')
+  })
+
+  it('[CHAT-REALTIME-01] reconciles missed messages by id without duplicating live ones', () => {
+    const existing = [{ ...mockMessage, id: 20, body: 'Already delivered' }]
+    const incoming = [
+      { ...mockMessage, id: 20, body: 'Already delivered' },
+      { ...mockMessage, id: 21, body: 'Missed while offline' },
+    ]
+
+    expect(mergeChatMessages(existing, incoming).map((message) => [message.id, message.body])).toEqual([
+      [20, 'Already delivered'],
+      [21, 'Missed while offline'],
+    ])
   })
 })

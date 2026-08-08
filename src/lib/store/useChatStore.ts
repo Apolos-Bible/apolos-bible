@@ -1,7 +1,7 @@
 import { create } from 'zustand'
 import { chatApi, type ChatMessage, type Conversation } from '@/lib/chatApi'
 import { aiApi, type AiContextDocument } from '@/lib/aiApi'
-import { initEcho, getEcho } from '@/lib/echo'
+import { initEcho, getEcho, onEchoReconnect } from '@/lib/echo'
 import i18n from '@/lib/i18n'
 import { useAuthStore } from './useAuthStore'
 import { useUIStore } from './useUIStore'
@@ -62,6 +62,13 @@ const subscribed = new Set<number>()
 const typingTimers: Record<number, ReturnType<typeof setTimeout>> = {}
 const typingThrottle: Record<number, number> = {}
 let privateChannelName: string | null = null
+let stopReconnectListener: (() => void) | null = null
+
+export function mergeChatMessages(existing: ChatMessage[], incoming: ChatMessage[]): ChatMessage[] {
+  const messages = new Map(existing.map((message) => [message.id, message]))
+  incoming.forEach((message) => messages.set(message.id, message))
+  return [...messages.values()].sort((a, b) => a.id - b.id)
+}
 
 function sortConversations(list: Conversation[]): Conversation[] {
   return [...list].sort((a, b) => (b.last_message_at ?? '').localeCompare(a.last_message_at ?? ''))
@@ -424,6 +431,19 @@ export const useChatStore = create<ChatState>((set, get) => ({
     if (!echo) return
 
     privateChannelName = `App.Models.User.${userId}`
+    stopReconnectListener ??= onEchoReconnect(() => {
+      void get().load()
+      subscribed.forEach((conversationId) => {
+        void chatApi.messages(conversationId).then((incoming) => {
+          set((state) => ({
+            messages: {
+              ...state.messages,
+              [conversationId]: mergeChatMessages(state.messages[conversationId] ?? [], incoming),
+            },
+          }))
+        }).catch(() => {})
+      })
+    })
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     echo.private(privateChannelName).listen('.conversation.available', (payload: any) => {
@@ -452,6 +472,8 @@ export const useChatStore = create<ChatState>((set, get) => ({
     if (!privateChannelName) return
     getEcho()?.leave(privateChannelName)
     privateChannelName = null
+    stopReconnectListener?.()
+    stopReconnectListener = null
   },
 
   startDm: async (userId) => {
@@ -495,6 +517,8 @@ export const useChatStore = create<ChatState>((set, get) => ({
     }
     subscribed.clear()
     privateChannelName = null
+    stopReconnectListener?.()
+    stopReconnectListener = null
     set({ conversations: [], selectedId: null, floatingIds: [], floatingMinimized: {}, messages: {}, typing: {}, aiThinking: {}, composerAudience: {} })
   },
 }))
