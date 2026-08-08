@@ -2,6 +2,14 @@ import Echo from 'laravel-echo'
 import Pusher from 'pusher-js'
 
 let _echo: Echo<'reverb'> | null = null
+let _hasConnected = false
+const _reconnectListeners = new Set<() => void>()
+let _onlineHandler: (() => void) | null = null
+
+export function onEchoReconnect(listener: () => void): () => void {
+  _reconnectListeners.add(listener)
+  return () => { _reconnectListeners.delete(listener) }
+}
 
 function hasEchoConfig(): boolean {
   return Boolean(
@@ -36,6 +44,17 @@ export function initEcho(): Echo<'reverb'> | null {
     Pusher,
   })
 
+  const connection = (_echo.connector as unknown as {
+    pusher: { connection: { bind: (event: string, callback: (states: { current: string }) => void) => void } }
+  }).pusher.connection
+  connection.bind('state_change', ({ current }) => {
+    if (current !== 'connected') return
+    if (_hasConnected) _reconnectListeners.forEach((listener) => listener())
+    _hasConnected = true
+  })
+  _onlineHandler ??= () => _reconnectListeners.forEach((listener) => listener())
+  window.addEventListener('online', _onlineHandler)
+
   return _echo
 }
 
@@ -46,4 +65,7 @@ export function getEcho(): Echo<'reverb'> | null {
 export function destroyEcho(): void {
   _echo?.disconnect()
   _echo = null
+  _hasConnected = false
+  if (_onlineHandler) window.removeEventListener('online', _onlineHandler)
+  _onlineHandler = null
 }
