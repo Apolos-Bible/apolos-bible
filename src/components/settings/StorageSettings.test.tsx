@@ -6,6 +6,9 @@ const mocks = vi.hoisted(() => ({
   books: vi.fn(),
   prefetchVersion: vi.fn(),
   chaptersToArray: vi.fn(),
+  chaptersWhere: vi.fn(),
+  chaptersDelete: vi.fn(),
+  booksDelete: vi.fn(),
 }))
 
 vi.mock('react-i18next', async (importOriginal) => ({
@@ -37,9 +40,9 @@ vi.mock('@/lib/db', () => ({
   db: {
     chapters: {
       toArray: mocks.chaptersToArray,
-      where: vi.fn(),
+      where: mocks.chaptersWhere,
     },
-    books: { delete: vi.fn() },
+    books: { delete: mocks.booksDelete },
   },
 }))
 
@@ -63,6 +66,9 @@ describe('StorageSettings', () => {
     cachedRows = []
     mocks.chaptersToArray.mockImplementation(async () => cachedRows)
     mocks.books.mockResolvedValue([{ slug: 'juan', chapters_count: 1 }])
+    mocks.chaptersWhere.mockReturnValue({ equals: () => ({ delete: mocks.chaptersDelete }) })
+    mocks.chaptersDelete.mockImplementation(async () => { cachedRows = [] })
+    mocks.booksDelete.mockResolvedValue(undefined)
     mocks.prefetchVersion.mockImplementation(async (versionId: number) => {
       cachedRows = [{ versionId, data: { verses: [] } }]
     })
@@ -98,5 +104,38 @@ describe('StorageSettings', () => {
     expect([...container.querySelectorAll('button')]
       .some((button) => button.textContent?.trim() === 'Descargar')).toBe(false)
     expect(container.querySelector('[role="status"]')?.textContent).toContain('Disponible sin conexión')
+  })
+
+  it('[SETTINGS-STORAGE-01][OFFLINE-DELETE-01] confirms before deleting only the selected version', async () => {
+    cachedRows = [{ versionId: 1, data: { verses: [] } }]
+    const confirm = vi.fn().mockReturnValueOnce(false).mockReturnValueOnce(true)
+    Object.defineProperty(window, 'confirm', { configurable: true, value: confirm })
+    await act(async () => {
+      root.render(<StorageSettings versions={[{
+        id: 1,
+        name: 'Reina-Valera 1960',
+        abbreviation: 'RVR60',
+        language: 'es',
+        provider: 'local',
+      }]} />)
+      await new Promise((resolve) => setTimeout(resolve, 0))
+    })
+
+    const remove = () => [...container.querySelectorAll<HTMLButtonElement>('button')]
+      .find((button) => button.getAttribute('aria-label') === 'Eliminar descarga')!
+    act(() => remove().click())
+    expect(mocks.chaptersDelete).not.toHaveBeenCalled()
+
+    await act(async () => {
+      remove().click()
+      await new Promise((resolve) => setTimeout(resolve, 0))
+    })
+
+    expect(confirm).toHaveBeenCalledTimes(2)
+    expect(mocks.chaptersWhere).toHaveBeenCalledWith('versionId')
+    expect(mocks.chaptersDelete).toHaveBeenCalledOnce()
+    expect(mocks.booksDelete).toHaveBeenCalledWith(1)
+    expect(container.querySelector('[aria-label="Eliminar descarga"]')).toBeNull()
+    delete (window as Window & { confirm?: typeof confirm }).confirm
   })
 })

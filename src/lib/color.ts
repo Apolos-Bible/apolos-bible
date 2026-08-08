@@ -2,7 +2,7 @@ export type Hsv = { h: number; s: number; v: number }
 
 export function hexToHsv(hex: string): Hsv {
   const m = /^#?([0-9a-f]{6})$/i.exec(hex.trim())
-  const clean = m ? m[1] : '6d7cea'
+  const clean = m ? m[1] : '4f5dcc'
   const r = parseInt(clean.slice(0, 2), 16) / 255
   const g = parseInt(clean.slice(2, 4), 16) / 255
   const b = parseInt(clean.slice(4, 6), 16) / 255

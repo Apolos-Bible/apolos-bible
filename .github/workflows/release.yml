@@ -4,13 +4,18 @@ on:
   release:
     types: [published]
   workflow_dispatch:
+    inputs:
+      ref:
+        description: Git ref to package without publishing
+        required: true
+        default: main
+        type: string
 
 permissions:
   contents: write
 
 jobs:
   bump-version:
-    if: github.event_name == 'release'
     runs-on: ubuntu-latest
     outputs:
       sha: ${{ steps.commit.outputs.sha }}
@@ -18,7 +23,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: main
+          ref: ${{ github.event_name == 'release' && 'main' || inputs.ref }}
           token: ${{ secrets.GITHUB_TOKEN }}
           fetch-depth: 0
 
@@ -30,6 +35,12 @@ jobs:
         id: commit
         run: |
           set -e
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            VERSION=$(node -p "require('./package.json').version")
+            echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+            echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
           TAG="${{ github.event.release.tag_name }}"
           VERSION="${TAG#v}"
           CURRENT=$(node -p "require('./package.json').version")
@@ -109,6 +120,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
           TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
+          VITE_NATIVE_ACCEPTANCE_URL: ${{ github.event_name == 'workflow_dispatch' && 'http://127.0.0.1:43119/accepted' || '' }}
           # Apple/Windows code-signing env vars are intentionally NOT exported here.
           # tauri-action and tauri-bundler trigger the signing path when these are
           # set to *any* value (including empty string), so leaving them out
@@ -118,6 +130,81 @@ jobs:
           tagName: ${{ github.event.release.tag_name }}
           releaseName: ${{ github.event.release.name || github.event.release.tag_name }}
           args: ${{ matrix.args }}
+
+      - name: Install and exercise Windows protocol handoff
+        if: github.event_name == 'workflow_dispatch' && matrix.platform == 'windows-latest'
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $installer = Get-ChildItem src-tauri\target\release\bundle\nsis -Filter '*-setup.exe' | Select-Object -First 1
+          if (-not $installer) { throw 'NSIS installer was not produced' }
+          $installDir = Join-Path $env:RUNNER_TEMP 'ApolosAcceptance'
+          $result = Join-Path $env:RUNNER_TEMP 'native-acceptance.txt'
+          $server = Start-Process node -ArgumentList @('scripts/native-acceptance-server.mjs', $result) -PassThru -WindowStyle Hidden
+          try {
+            Start-Process $installer.FullName -ArgumentList @('/S', "/D=$installDir") -Wait
+            $app = Get-ChildItem $installDir -Filter '*.exe' -Recurse |
+              Where-Object Name -NE 'uninstall.exe' |
+              Select-Object -First 1
+            if (-not $app) { throw 'Installed Apolos executable was not found' }
+            $launched = Start-Process $app.FullName -PassThru
+            $deadline = (Get-Date).AddSeconds(30)
+            while (-not (Get-Process -Id $launched.Id -ErrorAction SilentlyContinue) -and (Get-Date) -lt $deadline) { Start-Sleep -Milliseconds 250 }
+            Start-Process 'tulia://auth/finish?provider=google&token=native-acceptance-token'
+            while (-not (Test-Path $result) -and (Get-Date) -lt $deadline) { Start-Sleep -Milliseconds 250 }
+            if ((Get-Content $result -Raw).Trim() -ne '/auth/google/finish#token=<present>') { throw 'Packaged OAuth route was not observed' }
+            $instances = @(Get-Process -Name $app.BaseName -ErrorAction SilentlyContinue | Where-Object Path -EQ $app.FullName)
+            if ($instances.Count -ne 1) { throw 'Deep link opened more than one Apolos instance' }
+          } finally {
+            if ($app) {
+              Get-Process -Name $app.BaseName -ErrorAction SilentlyContinue |
+                Where-Object Path -EQ $app.FullName |
+                Stop-Process -Force
+            }
+            $uninstaller = Join-Path $installDir 'uninstall.exe'
+            if (Test-Path $uninstaller) { Start-Process $uninstaller -ArgumentList '/S' -Wait }
+            if (-not $server.HasExited) { Stop-Process -Id $server.Id -Force }
+          }
+
+      - name: Install and exercise macOS protocol handoff
+        if: github.event_name == 'workflow_dispatch' && matrix.platform == 'macos-latest'
+        shell: bash
+        run: |
+          set -euo pipefail
+          DMG=$(find src-tauri/target/universal-apple-darwin/release/bundle/dmg -name '*.dmg' -print -quit)
+          test -n "$DMG"
+          MOUNT="$RUNNER_TEMP/apolos-dmg"
+          APP="$RUNNER_TEMP/Apolos.app"
+          APP_EXECUTABLE="$APP/Contents/MacOS/app"
+          RESULT="$RUNNER_TEMP/native-acceptance.txt"
+          mkdir -p "$MOUNT"
+          hdiutil attach "$DMG" -nobrowse -mountpoint "$MOUNT"
+          cp -R "$MOUNT/Apolos.app" "$APP"
+          hdiutil detach "$MOUNT"
+          node scripts/native-acceptance-server.mjs "$RESULT" &
+          SERVER_PID=$!
+          cleanup() {
+            pkill -f "$APP_EXECUTABLE" >/dev/null 2>&1 || true
+            kill "$SERVER_PID" >/dev/null 2>&1 || true
+          }
+          trap cleanup EXIT
+          test -x "$APP_EXECUTABLE"
+          open "$APP"
+          for _ in {1..60}; do pgrep -f "$APP_EXECUTABLE" >/dev/null && break; sleep 0.5; done
+          pgrep -f "$APP_EXECUTABLE" >/dev/null
+          open 'tulia://auth/finish?provider=google&token=native-acceptance-token'
+          for _ in {1..60}; do test -f "$RESULT" && break; sleep 0.5; done
+          test "$(tr -d '\r\n' < "$RESULT")" = '/auth/google/finish#token=<present>'
+          test "$(pgrep -f "$APP_EXECUTABLE" | wc -l | tr -d ' ')" = '1'
+
+      - name: Retain unpublished desktop bundles
+        if: github.event_name == 'workflow_dispatch'
+        uses: actions/upload-artifact@v4
+        with:
+          name: desktop-${{ matrix.platform }}
+          path: src-tauri/target/**/release/bundle/**/*
+          if-no-files-found: error
+          retention-days: 7
 
   android:
     needs: bump-version
@@ -188,10 +275,20 @@ jobs:
           ls -la android-out
 
       - name: Upload to GitHub Release
+        if: github.event_name == 'release'
         uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ github.event.release.tag_name }}
           files: android-out/*
+
+      - name: Retain unpublished Android packages
+        if: github.event_name == 'workflow_dispatch'
+        uses: actions/upload-artifact@v4
+        with:
+          name: android-packages
+          path: android-out/*
+          if-no-files-found: error
+          retention-days: 7
 
       - name: Publish to Google Play (closed testing)
         if: github.event_name == 'release'
@@ -263,6 +360,7 @@ jobs:
         run: node scripts/generate-static-chapters.mjs
 
       - name: Deploy to Firebase Hosting
+        if: github.event_name == 'release'
         uses: FirebaseExtended/action-hosting-deploy@v0
         with:
           repoToken: ${{ secrets.GITHUB_TOKEN }}

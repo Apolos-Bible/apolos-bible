@@ -34,6 +34,7 @@ const mockEchoInstance = {
 vi.mock('@/lib/echo', () => ({
   initEcho: vi.fn(() => mockEchoInstance),
   getEcho: vi.fn(() => mockEchoInstance),
+  onEchoReconnect: vi.fn(() => vi.fn()),
 }))
 
 vi.mock('@/lib/i18n', () => ({
@@ -57,7 +58,7 @@ vi.mock('../useUIStore', () => ({
 }))
 
 import { chatApi } from '@/lib/chatApi'
-import { useChatStore } from '../useChatStore'
+import { mergeChatMessages, useChatStore } from '../useChatStore'
 import type { Conversation, ChatMessage } from '@/lib/chatApi'
 
 const mockChatApi = chatApi as unknown as {
@@ -101,6 +102,7 @@ const mockMessage: ChatMessage = {
 }
 
 beforeEach(() => {
+  useChatStore.getState().reset()
   vi.clearAllMocks()
   useChatStore.setState({
     conversations: [],
@@ -247,5 +249,76 @@ describe('useChatStore', () => {
     expect(state.selectedId).toBeNull()
     expect(state.messages).toEqual({})
     expect(state.typing).toEqual({})
+  })
+
+  it('[CHAT-REALTIME-01] applies and deduplicates message, typing, and read events', async () => {
+    vi.useFakeTimers()
+    mockChatApi.list.mockResolvedValueOnce([{ ...mockConversation, unread_count: 1 }])
+    await useChatStore.getState().load()
+
+    const messageListener = mockEchoListen.mock.calls.find(([event]) => event === '.message.sent')?.[1]
+    const typingListener = mockEchoListen.mock.calls.find(([event]) => event === '.user.typing')?.[1]
+    const readListener = mockEchoListen.mock.calls.find(([event]) => event === '.message.read')?.[1]
+
+    expect(messageListener).toBeTypeOf('function')
+    expect(typingListener).toBeTypeOf('function')
+    expect(readListener).toBeTypeOf('function')
+
+    const incoming = {
+      id: 22,
+      conversation_id: 1,
+      user_id: 2,
+      user_name: 'Bob',
+      user_email: 'bob@test.com',
+      body: 'Arrived live',
+      created_at: '2026-08-08T00:00:00Z',
+    }
+    messageListener(incoming)
+    messageListener(incoming)
+
+    expect(useChatStore.getState().messages[1]).toHaveLength(1)
+    expect(useChatStore.getState().conversations[0]).toMatchObject({
+      unread_count: 2,
+      last_message_at: incoming.created_at,
+    })
+
+    typingListener({ user_id: 2, user_name: 'Bob' })
+    typingListener({ user_id: 1, user_name: 'Alice' })
+    expect(useChatStore.getState().typing[1]).toHaveLength(1)
+    expect(useChatStore.getState().typing[1][0].userName).toBe('Bob')
+
+    readListener({ user_id: 2, last_read_at: '2026-08-08T00:01:00Z' })
+    expect(useChatStore.getState().conversations[0].participants[1].last_read_at)
+      .toBe('2026-08-08T00:01:00Z')
+
+    await vi.advanceTimersByTimeAsync(4101)
+    expect(useChatStore.getState().typing[1]).toEqual([])
+    vi.useRealTimers()
+  })
+
+  it('[CHAT-REALTIME-01] unsubscribes conversation channels so reconnect can subscribe again', async () => {
+    mockChatApi.list.mockResolvedValue([{ ...mockConversation }])
+    await useChatStore.getState().load()
+    expect(mockEchoInstance.private).toHaveBeenCalledWith('conversation.1')
+
+    useChatStore.getState().reset()
+    expect(mockEchoInstance.leave).toHaveBeenCalledWith('conversation.1')
+
+    mockEchoInstance.private.mockClear()
+    await useChatStore.getState().load()
+    expect(mockEchoInstance.private).toHaveBeenCalledWith('conversation.1')
+  })
+
+  it('[CHAT-REALTIME-01] reconciles missed messages by id without duplicating live ones', () => {
+    const existing = [{ ...mockMessage, id: 20, body: 'Already delivered' }]
+    const incoming = [
+      { ...mockMessage, id: 20, body: 'Already delivered' },
+      { ...mockMessage, id: 21, body: 'Missed while offline' },
+    ]
+
+    expect(mergeChatMessages(existing, incoming).map((message) => [message.id, message.body])).toEqual([
+      [20, 'Already delivered'],
+      [21, 'Missed while offline'],
+    ])
   })
 })

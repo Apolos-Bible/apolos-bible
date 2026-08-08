@@ -3,6 +3,8 @@ import type { FontSize, LineHeight, Locale, ReaderFont, ReadingMode, Theme } fro
 
 export interface UserSettings {
   preferred_bible_version_id: number | null
+  preferred_bible_provider?: 'local' | 'youversion' | null
+  preferred_bible_provider_id?: number | null
   preferred_compare_version_id?: number | null
   locale: Locale | null
   theme: Theme | null

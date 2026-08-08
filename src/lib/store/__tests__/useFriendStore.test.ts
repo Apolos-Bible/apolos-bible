@@ -10,6 +10,7 @@ vi.mock('@/lib/friendApi', () => ({
     accept: vi.fn(),
     decline: vi.fn(),
     remove: vi.fn(),
+    recommendations: vi.fn(),
   },
 }))
 
@@ -35,6 +36,7 @@ const mockFriendApi = friendApi as unknown as {
   accept: ReturnType<typeof vi.fn>
   decline: ReturnType<typeof vi.fn>
   remove: ReturnType<typeof vi.fn>
+  recommendations: ReturnType<typeof vi.fn>
 }
 
 const mockFriend: Friend = { id: 2, name: 'Bob', email: 'bob@test.com' }
@@ -124,6 +126,13 @@ describe('useFriendStore', () => {
     useFriendStore.setState({ received: [mockRequest] })
     await useFriendStore.getState().declineRequest(1)
     expect(useFriendStore.getState().received).toHaveLength(0)
+  })
+
+  it('declineRequest cancels an outgoing request', async () => {
+    mockFriendApi.decline.mockResolvedValueOnce(undefined)
+    useFriendStore.setState({ sent: [mockRequest] })
+    await useFriendStore.getState().declineRequest(1)
+    expect(useFriendStore.getState().sent).toHaveLength(0)
   })
 
   it('removeFriend removes from friends list', async () => {

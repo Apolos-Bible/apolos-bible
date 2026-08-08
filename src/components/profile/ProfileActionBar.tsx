@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
-import { MessageSquare, Pencil, Share2, UserPlus } from 'lucide-react'
+import { Ban, MessageSquare, Pencil, Share2, UserPlus } from 'lucide-react'
 import { cn } from '@/lib/cn'
 import { paths } from '@/router/paths'
 import type { FriendshipStatus, ProfileMode } from '@/types'
@@ -20,6 +20,8 @@ export interface ProfileActionBarProps {
   onDecline: () => void
   onRemove: () => void
   onMessage: () => void
+  onBlock: () => void
+  onUnblock: () => void
   onShare: () => void
 }
 
@@ -33,6 +35,8 @@ export function ProfileActionBar({
   onDecline,
   onRemove,
   onMessage,
+  onBlock,
+  onUnblock,
   onShare,
 }: ProfileActionBarProps) {
   const { t } = useTranslation()
@@ -53,6 +57,16 @@ export function ProfileActionBar({
   }
 
   let content: React.ReactNode = null
+
+  if (status === 'blocked') {
+    return (
+      <div className="workspace-profile-actions mt-4 flex flex-wrap justify-center gap-2 md:justify-start">
+        <button type="button" className={GHOST} disabled={busy} onClick={onUnblock}>
+          {t('friend.unblock')}
+        </button>
+      </div>
+    )
+  }
 
   switch (status) {
     case 'none':
@@ -108,5 +122,18 @@ export function ProfileActionBar({
 
   if (!content) return null
 
-  return <div className="workspace-profile-actions mt-4 flex flex-wrap justify-center md:justify-start gap-2">{content}</div>
+  return (
+    <div className="workspace-profile-actions mt-4 flex flex-wrap justify-center gap-2 md:justify-start">
+      {content}
+      <button
+        type="button"
+        className={cn(GHOST, 'hover:border-red-400/40 hover:text-red-400')}
+        disabled={busy}
+        onClick={onBlock}
+      >
+        <Ban size={14} strokeWidth={1.5} />
+        {t('friend.block')}
+      </button>
+    </div>
+  )
 }

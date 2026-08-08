@@ -1,7 +1,7 @@
 import { bibleApi, ApiBook } from './bibleApi'
 import { db } from './db'
 
-const inflight = new Set<number>()
+const inflight = new Map<number, Promise<void>>()
 const CONCURRENCY = 4
 
 export type OfflineAutoDownload = 'off' | 'wifi' | 'always'
@@ -25,9 +25,13 @@ export async function prefetchVersion(
   books: ApiBook[],
   onProgress?: (completed: number, total: number) => void,
 ): Promise<void> {
-  if (inflight.has(versionId)) return
-  inflight.add(versionId)
-  try {
+  const existing = inflight.get(versionId)
+  if (existing) {
+    await existing
+    return
+  }
+
+  const download = (async () => {
     const cachedKeys = new Set((await db.chapters.where('versionId').equals(versionId).primaryKeys()) as string[])
     const tasks: Array<{ slug: string; n: number }> = []
     for (const book of books) {
@@ -56,7 +60,12 @@ export async function prefetchVersion(
       }
     }
     await Promise.all(Array.from({ length: CONCURRENCY }, worker))
+  })()
+
+  inflight.set(versionId, download)
+  try {
+    await download
   } finally {
-    inflight.delete(versionId)
+    if (inflight.get(versionId) === download) inflight.delete(versionId)
   }
 }

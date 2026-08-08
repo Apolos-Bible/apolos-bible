@@ -117,6 +117,21 @@ pnpm tauri:build
 
 The backend lives in `../backend/` of this monorepo and is served locally at `https://apolos.test` via [Herd](https://herd.laravel.com/). Set `VITE_API_URL=https://apolos.test` in `.env.local` to point at it.
 
+## Testing architecture
+
+- Whenever technically possible, every feature, bug fix, refactor, or behavior change must add or update the tests that protect it. If it cannot be automated yet, document the missing evidence and keep its matrix row `partial`.
+- Vitest proves functions, stores, adapters, focused components, native-plugin contracts, and release tooling. Run `pnpm test:unit`.
+- Playwright proves shipped browser journeys in both desktop and mobile projects. Run `pnpm test:e2e`.
+- `pnpm test:e2e:fullstack` starts Laravel and Vite and proves persistence/security against a fresh SQLite database. Set `APOLOS_BACKEND_DIR` when the backend is not at `../apolos-backend-testing`. Cross-repository PRs may set `FULLSTACK_BACKEND_REF` to the paired backend branch; remove it or restore `main` after that backend PR merges.
+- `pnpm build` is a required production gate; a passing test bundle does not replace it.
+- Every atomic behavior has its own stable feature ID in `../docs/testing/feature-matrix.md`. Parent-screen coverage cannot be used as evidence for a child behavior.
+- Authorization and persistence-critical journeys require full-stack evidence against an isolated Laravel database; mocked Playwright journeys are supplemental.
+- Native behavior is covered with TypeScript/Rust contracts in ordinary CI and remains `partial` until the signed Windows/macOS release matrix proves OS installation, deep links, notifications, autostart, and updates.
+- External providers use deterministic success, rejection, malformed-response, timeout, and retry fakes. Secrets and production data never belong in fixtures or traces.
+- Pull requests must pass `pnpm test:unit && pnpm test:e2e && pnpm build`. Skips require an owner, reason, and expiration.
+- Private cross-repository CI requires a fine-grained `FULLSTACK_REPO_TOKEN` with read-only Contents access only to `apolos-backend`, plus the `FULLSTACK_E2E_ENABLED=true` repository variable. Without the enable flag, the job is skipped rather than reported as a successful execution. Organization policy disables repository deploy keys, so do not substitute a personal broad-scope token.
+- Manual `Release` dispatches package the selected ref on Windows, macOS, Linux, Android, and web without publishing or deploying; desktop and Android bundles are retained for seven days as acceptance-test inputs.
+
 ---
 
 ## Acknowledgements

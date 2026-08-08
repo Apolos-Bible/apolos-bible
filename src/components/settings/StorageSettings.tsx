@@ -59,6 +59,8 @@ export function StorageSettings({ versions }: { versions: ApiVersion[] }) {
   }
 
   async function removeVersion(versionId: number) {
+    const version = versions.find((candidate) => candidate.id === versionId)
+    if (!window.confirm(t('settings.storage.removeConfirm', { version: version?.name ?? `#${versionId}` }))) return
     setBusy(versionId)
     try {
       await db.chapters.where('versionId').equals(versionId).delete()

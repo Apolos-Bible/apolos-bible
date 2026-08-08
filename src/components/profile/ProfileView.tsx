@@ -59,6 +59,8 @@ export interface ProfileViewProps {
   onDeclineRequest: () => void
   onRemoveFriend: () => void
   onMessage: () => void
+  onBlock: () => void
+  onUnblock: () => void
   pendingAction?: boolean
 }
 
@@ -82,6 +84,8 @@ export function ProfileView({
   onDeclineRequest,
   onRemoveFriend,
   onMessage,
+  onBlock,
+  onUnblock,
   pendingAction,
 }: ProfileViewProps) {
   const { t } = useTranslation()
@@ -215,6 +219,8 @@ export function ProfileView({
               onDecline={onDeclineRequest}
               onRemove={onRemoveFriend}
               onMessage={onMessage}
+              onBlock={onBlock}
+              onUnblock={onUnblock}
               onShare={() => {
                 void shareProfile()
               }}
@@ -264,6 +270,35 @@ export function ProfileView({
                 </Link>
               </div>
             )}
+          </section>
+        )}
+
+        {!isSelf && last_reading?.book_slug && (
+          <section aria-labelledby="friend-reading-lbl" className="mt-7">
+            <SectionLabel id="friend-reading-lbl">{t('perfil.readingActivity')}</SectionLabel>
+            <Link
+              to={paths.bible({
+                lang: locale,
+                book: last_reading.book_slug,
+                chapter: last_reading.chapter,
+                verse: last_reading.verse ?? null,
+              })}
+              className="group mt-2 flex items-center gap-3 rounded-2xl border border-border-subtle bg-bg-secondary px-4 py-3.5 transition-colors hover:bg-bg-tertiary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/50"
+            >
+              <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-accent/15 text-accent">
+                <BookOpen size={18} strokeWidth={1.6} />
+              </span>
+              <div className="min-w-0 flex-1">
+                <p className="truncate text-base font-medium text-text-primary">
+                  {last_reading.book_name} {last_reading.chapter}:{last_reading.verse}
+                </p>
+                <p className="text-xs text-text-muted">
+                  {last_reading.version ? `${last_reading.version} · ` : ''}
+                  {relativeTime(last_reading.timestamp)}
+                </p>
+              </div>
+              <ChevronRight size={17} strokeWidth={1.5} className="shrink-0 text-text-muted group-hover:text-text-secondary" />
+            </Link>
           </section>
         )}
 

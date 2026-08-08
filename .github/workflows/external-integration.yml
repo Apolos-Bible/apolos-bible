@@ -1,0 +1,53 @@
+name: External integration gates
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  releases-s3:
+    name: Backblaze B2 upload/download/delete
+    runs-on: ubuntu-latest
+    environment: release-sandbox
+    env:
+      AWS_ACCESS_KEY_ID: ${{ secrets.RELEASES_S3_ACCESS_KEY_ID }}
+      AWS_SECRET_ACCESS_KEY: ${{ secrets.RELEASES_S3_SECRET_ACCESS_KEY }}
+      AWS_DEFAULT_REGION: eu-central-003
+      RELEASES_BUCKET: ${{ vars.RELEASES_S3_BUCKET }}
+      RELEASES_ENDPOINT: ${{ vars.RELEASES_S3_ENDPOINT }}
+      RELEASES_PUBLIC_URL: ${{ vars.RELEASES_PUBLIC_URL }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Require sandbox configuration
+        run: |
+          test -n "$AWS_ACCESS_KEY_ID"
+          test -n "$AWS_SECRET_ACCESS_KEY"
+          test -n "$RELEASES_BUCKET"
+          test -n "$RELEASES_ENDPOINT"
+          test -n "$RELEASES_PUBLIC_URL"
+
+      - name: Exercise authorized object lifecycle
+        run: |
+          set -euo pipefail
+          KEY="integration-tests/${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}/probe.txt"
+          cleanup() {
+            aws s3 rm "s3://$RELEASES_BUCKET/$KEY" --endpoint-url "$RELEASES_ENDPOINT" >/dev/null 2>&1 || true
+          }
+          trap cleanup EXIT
+          printf 'apolos-s3-integration-%s\n' "$GITHUB_RUN_ID" > probe.txt
+          aws s3 cp probe.txt "s3://$RELEASES_BUCKET/$KEY" --endpoint-url "$RELEASES_ENDPOINT" --content-type text/plain
+          aws s3 cp "s3://$RELEASES_BUCKET/$KEY" downloaded.txt --endpoint-url "$RELEASES_ENDPOINT"
+          cmp probe.txt downloaded.txt
+          curl --fail --silent --show-error "$RELEASES_PUBLIC_URL/$KEY" --output public.txt
+          cmp probe.txt public.txt
+          cleanup
+          if aws s3api head-object --bucket "$RELEASES_BUCKET" --key "$KEY" --endpoint-url "$RELEASES_ENDPOINT" 2>/dev/null; then
+            echo "Deleted integration object is still readable" >&2
+            exit 1
+          fi
+
+      - name: Validate published release manifests when present
+        run: node scripts/verify-public-release.mjs "$RELEASES_PUBLIC_URL"

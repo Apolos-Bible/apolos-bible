@@ -1,5 +1,6 @@
 import { copyFile, cp, mkdir, readFile, readdir, stat, writeFile } from 'node:fs/promises'
 import path from 'node:path'
+import { createHash } from 'node:crypto'
 
 const [assetsDir, outputDir, version, publicUrl] = process.argv.slice(2)
 
@@ -11,7 +12,7 @@ const baseUrl = publicUrl.replace(/\/$/, '')
 const files = await readdir(assetsDir)
 const updaterManifestName = files.find((name) => name === 'latest.json')
 
-if (!updaterManifestName) throw new Error('The GitHub release did not contain latest.json')
+if (!updaterManifestName) throw new Error('The release assets did not contain latest.json')
 
 const platforms = {
   '.dmg': files.find((name) => name.endsWith('.dmg')),
@@ -45,7 +46,10 @@ for (const [extension, file] of Object.entries(platforms)) {
   const alias = aliases[extension]
   await copyFile(path.join(assetsDir, file), path.join(latestDir, alias))
   const { size } = await stat(path.join(assetsDir, file))
-  downloads[extension] = { url: `${baseUrl}/latest/${alias}`, size }
+  const sha256 = createHash('sha256')
+    .update(await readFile(path.join(assetsDir, file)))
+    .digest('hex')
+  downloads[extension] = { url: `${baseUrl}/latest/${alias}`, size, sha256 }
 }
 
 const updaterManifest = JSON.parse(await readFile(path.join(assetsDir, updaterManifestName), 'utf8'))

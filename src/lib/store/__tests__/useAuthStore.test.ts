@@ -109,4 +109,18 @@ describe('useAuthStore', () => {
     expect(localStorage.getItem('verbum_token')).toBeNull()
     expect(localStorage.getItem('verbum_last_reading')).toBeNull()
   })
+
+  it('clears the local session before a slow server revocation finishes', async () => {
+    let finishRevocation!: () => void
+    mockApi.post.mockReturnValueOnce(new Promise<void>((resolve) => { finishRevocation = resolve }))
+    useAuthStore.setState({ user: mockUser })
+    localStorage.setItem('verbum_token', 'active-token')
+
+    const logout = useAuthStore.getState().logout()
+    expect(localStorage.getItem('verbum_token')).toBeNull()
+    expect(useAuthStore.getState().user).toBeNull()
+
+    finishRevocation()
+    await logout
+  })
 })

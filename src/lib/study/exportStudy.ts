@@ -75,13 +75,17 @@ function renderNode(node: LabeledNode): string | null {
       const name = d.name ?? '(sin nombre)';
       const mime = d.mimeType ?? 'application/octet-stream';
       const size = typeof d.size === 'number' ? ` · ${d.size} bytes` : '';
-      const url = d.contentUrl ? `\n${d.contentUrl}` : '';
+      // Signed upload URLs are bearer capabilities for private objects and
+      // must not escape through a copied export. Public link nodes are
+      // deliberate user-authored content, so their destination is retained.
+      const url = d.kind === 'link' && d.contentUrl ? `\n${d.contentUrl}` : '';
       return `${head} Archivo — ${name}\n${mime}${size}${url}`;
     }
     case 'drawing':
       return null;
     default:
-      return `${head} ${node.type}\n${JSON.stringify(d)}`;
+      // Unknown collaborative types may carry internal or private metadata.
+      return `${head} ${node.type}`;
   }
 }
 

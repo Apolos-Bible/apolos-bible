@@ -19,7 +19,7 @@ type Toast = {
 export type FontSize    = 'sm' | 'base' | 'lg'
 export type Theme       = 'dark' | 'light' | 'system'
 export type Locale      = AppLocale
-export type Panel       = 'favorites' | 'my-notes' | 'friends' | 'chat' | 'my-studies'
+export type Panel       = 'favorites' | 'my-notes' | 'friends' | 'chat' | 'my-studies' | 'notifications'
 export type MobileHub   = 'explore' | 'you'
 export type ReadingMode = 'flow' | 'verse'
 export type ReaderFont  = 'reading' | 'sans' | 'serif'
@@ -33,7 +33,7 @@ function applyTheme(t: Theme) {
   document.documentElement.setAttribute('data-theme-preference', t)
 }
 
-export const DEFAULT_ACCENT_COLOR = '#6d7cea'
+export const DEFAULT_ACCENT_COLOR = '#4f5dcc'
 
 function applyAccentColor(color: string) {
   document.documentElement.style.setProperty('--accent', color)

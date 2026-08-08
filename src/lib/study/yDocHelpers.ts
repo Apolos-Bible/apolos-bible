@@ -185,18 +185,20 @@ export function edgeFromYMap(id: string, m: Y.Map<any>) {
 }
 
 export function writeNodeToMap(nodesMap: Y.Map<Y.Map<any>>, node: { id: string; type?: string; position?: { x: number; y: number }; data?: any; width?: number; height?: number }) {
-  const nodeMap = nodesMap.get(node.id) ?? new Y.Map();
+  const existing = nodesMap.get(node.id);
+  const nodeMap = existing ?? new Y.Map();
   nodeMap.set('id', node.id);
   if (node.type) nodeMap.set('type', node.type);
   if (node.position) nodeMap.set('position', node.position);
   if (node.data) nodeMap.set('data', node.data);
   if (typeof node.width === 'number') nodeMap.set('width', node.width);
   if (typeof node.height === 'number') nodeMap.set('height', node.height);
-  nodesMap.set(node.id, nodeMap);
+  if (!existing) nodesMap.set(node.id, nodeMap);
 }
 
 export function writeEdgeToMap(edgesMap: Y.Map<Y.Map<any>>, edge: { id: string; source: string; target: string; sourceHandle?: string | null; targetHandle?: string | null; type?: string; data?: any }) {
-  const edgeMap = edgesMap.get(edge.id) ?? new Y.Map();
+  const existing = edgesMap.get(edge.id);
+  const edgeMap = existing ?? new Y.Map();
   edgeMap.set('id', edge.id);
   edgeMap.set('source', edge.source);
   edgeMap.set('target', edge.target);
@@ -204,5 +206,31 @@ export function writeEdgeToMap(edgesMap: Y.Map<Y.Map<any>>, edge: { id: string; 
   if (edge.targetHandle != null) edgeMap.set('targetHandle', edge.targetHandle);
   if (edge.type) edgeMap.set('type', edge.type);
   if (edge.data) edgeMap.set('data', edge.data);
-  edgesMap.set(edge.id, edgeMap);
+  if (!existing) edgesMap.set(edge.id, edgeMap);
+}
+
+export function resizeCanvasNode(doc: Y.Doc, id: string, width: number, height: number): boolean {
+  const node = getNodesMap(doc).get(id);
+  if (!node) return false;
+  doc.transact(() => {
+    node.set('width', Math.round(width));
+    node.set('height', Math.round(height));
+  }, 'local');
+  return true;
+}
+
+export function deleteCanvasNodes(doc: Y.Doc, ids: Iterable<string>): string[] {
+  const nodeIds = new Set(ids);
+  if (nodeIds.size === 0) return [];
+  const nodes = getNodesMap(doc);
+  const edges = getEdgesMap(doc);
+  const deletedEdgeIds: string[] = [];
+  edges.forEach((edge, edgeId) => {
+    if (nodeIds.has(edge.get('source')) || nodeIds.has(edge.get('target'))) deletedEdgeIds.push(edgeId);
+  });
+  doc.transact(() => {
+    nodeIds.forEach((id) => nodes.delete(id));
+    deletedEdgeIds.forEach((id) => edges.delete(id));
+  }, 'local');
+  return deletedEdgeIds;
 }

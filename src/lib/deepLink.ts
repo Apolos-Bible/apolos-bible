@@ -4,6 +4,18 @@ import { authDeepLinkTarget } from '@/lib/authDeepLinkUrl'
 
 type Navigate = (to: string, opts?: { replace?: boolean }) => void
 
+function reportNativeAcceptance(target: string): void {
+  const endpoint = import.meta.env.VITE_NATIVE_ACCEPTANCE_URL
+  if (!endpoint) return
+  const sanitizedTarget = target.replace(/#token=[^&]*/i, '#token=<present>')
+  void fetch(endpoint, {
+    method: 'POST',
+    mode: 'no-cors',
+    headers: { 'Content-Type': 'text/plain' },
+    body: sanitizedTarget,
+  }).catch(() => {})
+}
+
 /**
  * Forwards `tulia://auth/finish?...` deep links to the in-app
  * the matching provider finish route, where the SPA consumes `#token=`
@@ -27,26 +39,37 @@ export function registerAuthDeepLink(navigate: Navigate): () => void {
       console.warn('[deepLink] ignored unsupported URL')
       return
     }
+    reportNativeAcceptance(target)
     navigate(target, { replace: true })
   }
 
   let unlisten: (() => void) | undefined
+  let disposed = false
+  let lastHandledUrl: string | null = null
+
+  const handleOnce = (url: string) => {
+    if (disposed || url === lastHandledUrl) return
+    lastHandledUrl = url
+    handle(url)
+  }
 
   void getCurrent()
     .then((urls) => {
-      if (urls && urls.length > 0) handle(urls[0])
+      if (urls && urls.length > 0) handleOnce(urls[0])
     })
     .catch((err) => {
       console.warn('[deepLink] getCurrent failed:', err)
     })
 
   void onOpenUrl((urls) => {
-    if (urls && urls.length > 0) handle(urls[0])
+    if (urls && urls.length > 0) handleOnce(urls[0])
   }).then((fn) => {
-    unlisten = fn
+    if (disposed) fn()
+    else unlisten = fn
   })
 
   return () => {
+    disposed = true
     unlisten?.()
   }
 }

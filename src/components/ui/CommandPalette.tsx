@@ -1,10 +1,13 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
+import { useStore } from 'zustand'
 import { Command } from 'cmdk'
 import { User, Settings, LogOut } from 'lucide-react'
 import { useUIStore } from '@/lib/store/useUIStore'
-import { useVerseStore } from '@/lib/store/useVerseStore'
+import { findWorkspaceGroup, useWorkspaceStore } from '@/lib/store/useWorkspaceStore'
+import { useIsMobile } from '@/lib/useIsMobile'
+import { commandPaletteVerseStore } from '@/lib/commandPaletteVerseStore'
 import { useAuthStore } from '@/lib/store/useAuthStore'
 import { bibleApi, ApiSearchResult } from '@/lib/bibleApi'
 import { friendApi } from '@/lib/friendApi'
@@ -19,9 +22,15 @@ export function CommandPalette() {
   const { t } = useTranslation()
   const navigate = useNavigate()
   const { commandPaletteOpen, closeCommandPalette } = useUIStore()
-  const { selectBook, openVerse } = useVerseStore()
-  const books = useVerseStore((s) => s.books)
-  const versionId = useVerseStore((s) => s.versionId)
+  const isMobile = useIsMobile()
+  const workspaceLayout = useWorkspaceStore((s) => s.layout)
+  const activeGroupId = useWorkspaceStore((s) => s.activeGroupId)
+  const activeTabId = findWorkspaceGroup(workspaceLayout, activeGroupId)?.activeTabId
+  const verseStore = commandPaletteVerseStore(isMobile, activeTabId)
+  const selectBook = useStore(verseStore, (s) => s.selectBook)
+  const openVerse = useStore(verseStore, (s) => s.openVerse)
+  const books = useStore(verseStore, (s) => s.books)
+  const versionId = useStore(verseStore, (s) => s.versionId)
   const user = useAuthStore((s) => s.user)
   const logout = useAuthStore((s) => s.logout)
   const [query, setQuery] = useState('')
