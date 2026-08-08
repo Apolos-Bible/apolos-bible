@@ -21,8 +21,9 @@ async function authenticate(target: Page | BrowserContext, account: Account) {
   }, { token: account.token })
 }
 
-async function openConversation(page: Page, conversationName: string) {
+async function openConversation(page: Page, userName: string, conversationName: string) {
   await page.goto('/perfil', { waitUntil: 'domcontentloaded' })
+  await expect(page.getByRole('heading', { name: userName, exact: true })).toBeVisible()
   const chatsButton = page.getByRole('button', { name: /Chats|Mensajes/i })
   await expect(chatsButton).toBeVisible()
   await chatsButton.click()
@@ -52,8 +53,8 @@ test.describe('[CHAT-REALTIME-01][INFRA-REALTIME-01] real Reverb transport', () 
 
     try {
       await Promise.all([
-        openConversation(page, 'Realtime Room'),
-        openConversation(senderPage, 'Realtime Room'),
+        openConversation(page, recipient.user.name, 'Realtime Room'),
+        openConversation(senderPage, sender.user.name, 'Realtime Room'),
       ])
 
       const message = `Reverb delivery ${suffix}`
@@ -105,6 +106,7 @@ test.describe('[CHAT-REALTIME-01][INFRA-REALTIME-01] real Reverb transport', () 
       response.url().endsWith('/api/broadcasting/auth') && response.status() === 200,
     )
     await page.goto('/perfil', { waitUntil: 'domcontentloaded' })
+    await expect(page.getByRole('heading', { name: recipient.user.name, exact: true })).toBeVisible()
     const notificationsButton = page.getByRole('button', { name: /Notifications|Notificaciones/i })
     await expect(notificationsButton).toBeVisible()
     await channelAuthorization
