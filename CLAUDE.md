@@ -25,6 +25,15 @@ Frontend (`frontend/`):
 - `pnpm build:web` / `pnpm deploy` — web build + Firebase deploy
 - `pnpm test` — Vitest
 
+## Testing contract
+
+- The atomic source of truth is `../docs/testing/feature-matrix.md`; every new behavior needs a stable feature ID and its own evidence.
+- Use Vitest for functions, stores, adapters, components, native-plugin boundaries, and release tooling. Use Playwright for the shipped browser journey, including desktop/mobile variants when UI differs.
+- Security and persistence boundaries require full-stack E2E with Laravel and an isolated database. API-mocked browser tests do not prove those boundaries.
+- Native contracts run in ordinary CI, while signed install/update/deep-link/notification/autostart behavior stays `partial` until the Windows/macOS release matrix passes.
+- Assert allowed and denied roles, invalid and malicious input, provider failures, persistence after reload, and absence of leaked data.
+- Required gate: `pnpm test:unit && pnpm test:e2e && pnpm build`. Never weaken assertions, add retries, or increase timeouts merely to turn CI green.
+
 ## Notes for Claude
 
 - Treat `backend/` and `frontend/` as one product. Cross-cutting changes (auth, session protocol, API shape) usually need edits in both.
