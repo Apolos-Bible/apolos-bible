@@ -119,6 +119,12 @@ export async function installApiMock(
   let aiQuestionAttempts = 0
   let aiStudyTurns = 0
   let aiDocumentAttempts = 0
+  let gameRoom: Record<string, any> | null = null
+  const gameQuestion = {
+    type: 'trivia', category: 'Evangelios', difficulty: 1,
+    prompt: '¿Quién escribió el cuarto Evangelio?', options: ['Juan', 'Pedro', 'Pablo', 'Lucas'],
+    clues: [], reference: 'Juan 1:1', seconds: 60,
+  }
   let studies: Array<Record<string, unknown>> = [{
     ...studyBase, id: 'study-active', title: 'Estudio canvas', status: 'active', ended_at: null,
     participants: [...studyBase.participants, { id: 21, name: 'Lucia Visible', role: 'editor', cursor_color: '#ef4444', is_present: false }],
@@ -675,6 +681,47 @@ export async function installApiMock(
       }
     }
     if (path === '/api/studies/invitations') return fulfill(route, [])
+    if (path === '/api/games/rooms' && request.method() === 'GET') return fulfill(route, {
+      rooms: gameRoom ? [{ id: gameRoom.id, code: gameRoom.code, status: gameRoom.status, host: { id: 7, name: 'Ana Segura', avatar_url: null }, players_count: gameRoom.players.length, updated_at: '2026-08-08T12:00:00Z' }] : [],
+      invitations: [],
+    })
+    if (path === '/api/games/rooms' && request.method() === 'POST') {
+      gameRoom = {
+        id: 'game-room-1', code: 'ABC123', host_user_id: 7, status: 'lobby', phase: null,
+        round_count: 1, current_round: null, round_started_at: null, current_question: null, my_answer: null,
+        players: [{ id: 7, name: 'Ana Segura', email: 'ana@example.test', avatar_url: null, score: 0, answered: false, answer_correct: null, answer_points: null }],
+      }
+      return fulfill(route, gameRoom, 201)
+    }
+    if (path === '/api/games/rooms/join' && request.method() === 'POST') {
+      if (!gameRoom || request.postDataJSON?.()?.code !== gameRoom.code) return fulfill(route, { message: 'Invalid code.' }, 404)
+      return fulfill(route, gameRoom)
+    }
+    const gameAction = path.match(/^\/api\/games\/rooms\/([^/]+)(?:\/(accept|invite|start|answer|reveal|advance|replay))?$/)
+    if (gameAction && gameRoom?.id === gameAction[1]) {
+      const action = gameAction[2]
+      if (!action || request.method() === 'GET') return fulfill(route, gameRoom)
+      if (action === 'start') gameRoom = {
+        ...gameRoom, status: 'playing', phase: 'question', current_round: 0,
+        round_started_at: new Date().toISOString(), current_question: gameQuestion, my_answer: null,
+      }
+      if (action === 'answer') {
+        const answer = request.postDataJSON?.()?.answer
+        gameRoom = {
+          ...gameRoom, my_answer: answer,
+          players: gameRoom.players.map((player: any) => ({ ...player, answered: true, answer_correct: answer === 0, answer_points: answer === 0 ? 1000 : 0, score: answer === 0 ? 1000 : 0 })),
+        }
+      }
+      if (action === 'reveal') gameRoom = {
+        ...gameRoom, phase: 'reveal', current_question: { ...gameQuestion, correct_answer: 0, explanation: 'Juan identifica al Verbo desde el principio.' },
+      }
+      if (action === 'advance') gameRoom = { ...gameRoom, status: 'finished', phase: null, current_question: null }
+      if (action === 'replay') gameRoom = {
+        ...gameRoom, status: 'lobby', phase: null, current_round: null, current_question: null, my_answer: null,
+        players: gameRoom.players.map((player: any) => ({ ...player, score: 0, answered: false, answer_correct: null, answer_points: null })),
+      }
+      return fulfill(route, gameRoom)
+    }
     if (path === '/api/marketplace/featured') return fulfill(route, [guidedCard])
     if (path === '/api/marketplace/paths') return fulfill(route, { paths: [guidedCard], next_cursor: null })
     if (path === '/api/marketplace/paths/hope-path') return fulfill(route, {
