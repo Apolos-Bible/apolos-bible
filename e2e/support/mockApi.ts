@@ -69,6 +69,7 @@ interface ApiMockOptions {
   pushSubscriptions?: Array<Record<string, unknown>>
   studyRole?: 'host' | 'editor' | 'viewer'
   studyGuest?: boolean
+  aiScenario?: 'success' | 'quota' | 'rate-then-success' | 'error'
 }
 
 export async function installApiMock(
@@ -114,6 +115,7 @@ export async function installApiMock(
   let nextGuidedStudy = 1
   const authoredStudies = new Map<string, typeof guidedStudy>()
   let authoredPaths: Array<Record<string, any>> = []
+  let aiQuestionAttempts = 0
   let studies: Array<Record<string, unknown>> = [{
     ...studyBase, id: 'study-active', title: 'Estudio canvas', status: 'active', ended_at: null,
     participants: [...studyBase.participants, { id: 21, name: 'Lucia Visible', role: 'editor', cursor_color: '#ef4444', is_present: false }],
@@ -342,11 +344,25 @@ export async function installApiMock(
       supports_reasoning: false,
     }] })
     if (path === '/api/ai/usage') return fulfill(route, {
-      tokens_used: 250,
+      period: '2026-08', input_tokens: 200, input_cached_tokens: 0, output_tokens: 50,
+      tokens_used: options.aiScenario === 'quota' ? 1000 : 250,
       tokens_limit: 1000,
+      tokens_remaining: options.aiScenario === 'quota' ? 0 : 750,
       request_count: 3,
-      percent_used: 25,
+      percent_used: options.aiScenario === 'quota' ? 100 : 25,
     })
+    if (path === '/api/ai/verse-question' && request.method() === 'POST') {
+      aiQuestionAttempts += 1
+      if (options.aiScenario === 'error') return fulfill(route, { message: 'LLM request failed.' }, 502)
+      if (options.aiScenario === 'rate-then-success' && aiQuestionAttempts === 1) {
+        return fulfill(route, { message: 'Too many requests.' }, 429)
+      }
+      if (options.aiScenario === 'quota') return fulfill(route, { message: 'Monthly AI budget exceeded.' }, 429)
+      return fulfill(route, {
+        answer: 'Juan presenta al Verbo eterno y lo identifica con Dios.', reference: 'Juan 1:1', verse_id: 4301001,
+        usage: { period: '2026-08', input_tokens: 240, input_cached_tokens: 0, output_tokens: 60, tokens_used: 300, tokens_limit: 1000, tokens_remaining: 700, percent_used: 30, request_count: 4 },
+      })
+    }
     if (path === '/api/user/bookmarks') return fulfill(route, bookmarks)
     if (path === '/api/users/search') return fulfill(route, [{
       id: 21,
