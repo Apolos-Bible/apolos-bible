@@ -4,11 +4,12 @@ import { installApiMock } from './support/mockApi'
 
 test.beforeEach(async ({ page }) => {
   await installApiMock(page)
-  await page.goto('/bible/genesis/1', { waitUntil: 'domcontentloaded' })
-  await expect(page.getByRole('option', { name: /En el principio cre.* Dios/i }).first()).toBeVisible()
 })
 
 test('[A11Y-NAV-01] permite saltar regiones y conserva el foco dentro de diálogos', async ({ page }, testInfo) => {
+  await page.goto('/bible/genesis/1', { waitUntil: 'domcontentloaded' })
+  await expect(page.locator('[data-verse-id]').filter({ hasText: /En el principio cre.* Dios/i }).first()).toBeVisible()
+
   const skipReader = page.getByRole('button', { name: /Skip to the reader|Saltar al lector/i })
   await skipReader.focus()
   await expect(skipReader).toBeFocused()
@@ -38,6 +39,11 @@ test('[A11Y-NAV-01] permite saltar regiones y conserva el foco dentro de diálog
 for (const route of ['/bible/genesis/1', '/ajustes']) {
   test(`[A11Y-SCREEN-01] no presenta infracciones automáticas críticas en ${route}`, async ({ page }) => {
     await page.goto(route, { waitUntil: 'domcontentloaded' })
+    if (route.startsWith('/bible/')) {
+      await expect(page.locator('[data-verse-id]').filter({ hasText: /En el principio cre.* Dios/i }).first()).toBeVisible()
+    } else {
+      await expect(page.locator('main').getByRole('heading').first()).toBeVisible()
+    }
     const results = await new AxeBuilder({ page })
       .withTags(['wcag2a', 'wcag2aa'])
       .analyze()

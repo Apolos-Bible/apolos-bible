@@ -4,7 +4,7 @@ import { installApiMock } from './support/mockApi'
 test('[SEARCH-OPEN-01] abre, enfoca y cierra la búsqueda', async ({ page }, testInfo) => {
   await installApiMock(page)
   await page.goto('/bible/genesis/1', { waitUntil: 'domcontentloaded' })
-  await expect(page.getByRole('option', { name: /En el principio cre.* Dios/i }).first()).toBeVisible()
+  await expect(page.getByRole('listitem').filter({ hasText: /En el principio cre.* Dios/i }).first()).toBeVisible()
   await page.getByRole('button', { name: /Search Bible|Buscar Biblia|Search|Buscar/i }).first().click()
 
   if (testInfo.project.name === 'mobile-chromium') {
@@ -23,7 +23,7 @@ test('[SEARCH-OPEN-01] abre, enfoca y cierra la búsqueda', async ({ page }, tes
 test('[SEARCH-BOOK-01] buscar Juan abre el libro seleccionado', async ({ page }, testInfo) => {
   await installApiMock(page)
   await page.goto('/bible/genesis/1', { waitUntil: 'domcontentloaded' })
-  await expect(page.getByRole('option', { name: /En el principio cre.* Dios/i }).first()).toBeVisible()
+  await expect(page.getByRole('listitem').filter({ hasText: /En el principio cre.* Dios/i }).first()).toBeVisible()
 
   await page.getByRole('button', { name: /Search Bible|Buscar Biblia|Search|Buscar/i }).first().click()
   if (testInfo.project.name === 'mobile-chromium') {
@@ -35,7 +35,7 @@ test('[SEARCH-BOOK-01] buscar Juan abre el libro seleccionado', async ({ page },
   }
 
   await expect(page).toHaveURL(/\/bible\/juan\/1(?:\/1)?$/)
-  await expect(page.getByRole('option', { name: /En el principio era el Verbo/i }).first()).toBeVisible()
+  await expect(page.getByRole('listitem').filter({ hasText: /En el principio era el Verbo/i }).first()).toBeVisible()
 })
 
 test('[SEARCH-REF-01] una referencia exacta abre capítulo y versículo', async ({ page }, testInfo) => {
@@ -52,8 +52,8 @@ test('[SEARCH-REF-01] una referencia exacta abre capítulo y versículo', async 
   }
 
   await expect(page).toHaveURL(/\/bible\/juan\/2\/1$/)
-  await expect(page.getByRole('option').filter({ hasText: 'En el principio era el Verbo.' }).first())
-    .toHaveAttribute('aria-selected', 'true')
+  await expect(page.getByRole('listitem').filter({ hasText: 'En el principio era el Verbo.' }).first())
+    .toHaveAttribute('aria-current', 'true')
 })
 
 test('[SEARCH-TEXT-01] busca texto bíblico y abre el resultado', async ({ page }, testInfo) => {
@@ -70,7 +70,7 @@ test('[SEARCH-TEXT-01] busca texto bíblico y abre el resultado', async ({ page 
   }
 
   await expect(page).toHaveURL(/\/bible\/juan\/2\/1$/)
-  await expect(page.getByRole('option').filter({ hasText: 'En el principio era el Verbo.' }).first()).toHaveAttribute('aria-selected', 'true')
+  await expect(page.getByRole('listitem').filter({ hasText: 'En el principio era el Verbo.' }).first()).toHaveAttribute('aria-current', 'true')
 })
 
 test('[SEARCH-TEXT-01] muestra un estado vacío sin resultados', async ({ page }, testInfo) => {
@@ -95,7 +95,7 @@ test('[SEARCH-NOTE-01] busca únicamente las notas propias y abre su pasaje', as
   await page.getByRole('button', { name: /Juan 1:1.*Esperanza personal/i }).click()
 
   await expect(page).toHaveURL(/\/bible\/juan\/1\/1$/)
-  await expect(page.getByRole('option').filter({ hasText: 'En el principio era el Verbo.' }).first()).toHaveAttribute('aria-selected', 'true')
+  await expect(page.getByRole('listitem').filter({ hasText: 'En el principio era el Verbo.' }).first()).toHaveAttribute('aria-current', 'true')
 })
 
 test('[SEARCH-PEOPLE-01] respeta la privacidad de descubrimiento y permite solicitar amistad', async ({ page }, testInfo) => {

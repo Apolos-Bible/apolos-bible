@@ -64,9 +64,9 @@ test('[SETTINGS-STORAGE-01][OFFLINE-DOWNLOAD-01][OFFLINE-READ-01][OFFLINE-DELETE
     await route.abort('internetdisconnected')
   })
   await page.goto('/bible/juan/5', { waitUntil: 'domcontentloaded' })
-  await expect(page.getByRole('option', { name: /1 En el principio era el Verbo/ })).toBeVisible()
+  await expect(page.getByRole('listitem').filter({ hasText: /En el principio era el Verbo/ })).toBeVisible()
   await page.goto('/bible/juan/6', { waitUntil: 'domcontentloaded' })
-  await expect(page.getByRole('option', { name: /1 En el principio era el Verbo/ })).toBeVisible()
+  await expect(page.getByRole('listitem').filter({ hasText: /En el principio era el Verbo/ })).toBeVisible()
   expect(blockedChapterRequests).toBe(0)
 
   await page.goto('/ajustes#almacenamiento', { waitUntil: 'domcontentloaded' })

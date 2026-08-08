@@ -2,10 +2,10 @@ import { expect, test, type Page } from '@playwright/test'
 import { installApiMock } from './support/mockApi'
 
 async function selectFirstVerse(page: Page) {
-  const verse = page.getByRole('option').filter({ hasText: /En el principio cre.* Dios/i }).first()
+  const verse = page.getByRole('listitem').filter({ hasText: /En el principio cre.* Dios/i }).first()
   await expect(verse).toBeVisible()
   await verse.click()
-  await expect(verse).toHaveAttribute('aria-selected', 'true')
+  await expect(verse).toHaveAttribute('aria-current', 'true')
 }
 
 async function invokeVerseAction(page: Page, name: RegExp) {
@@ -32,8 +32,8 @@ test('[VERSE-CROSSREF-01] carga una referencia cruzada y abre su destino', async
   await page.getByRole('button', { name: /Juan 2:1.*En el principio era el Verbo/i }).click()
 
   await expect(page).toHaveURL(/\/bible\/juan\/2\/1$/)
-  await expect(page.getByRole('option').filter({ hasText: 'En el principio era el Verbo.' }).first())
-    .toHaveAttribute('aria-selected', 'true')
+  await expect(page.getByRole('listitem').filter({ hasText: 'En el principio era el Verbo.' }).first())
+    .toHaveAttribute('aria-current', 'true')
 })
 
 test('[SEARCH-SEMANTIC-01] encuentra un versículo similar y permite reintentar la navegación', async ({ page }) => {

@@ -16,7 +16,7 @@ const sharedFriendNote = {
 
 async function openNotes(page: Parameters<typeof installApiMock>[0]) {
   await page.goto('/bible/juan/1', { waitUntil: 'domcontentloaded' })
-  const verse = page.getByRole('option').filter({ hasText: 'En el principio era el Verbo.' }).first()
+  const verse = page.getByRole('listitem').filter({ hasText: 'En el principio era el Verbo.' }).first()
   await expect(verse).toBeVisible()
   await verse.click()
   await page.getByRole('button', { name: /Add Note|A.adir nota/i }).filter({ visible: true }).click()
