@@ -31,22 +31,32 @@ export function registerAuthDeepLink(navigate: Navigate): () => void {
   }
 
   let unlisten: (() => void) | undefined
+  let disposed = false
+  let lastHandledUrl: string | null = null
+
+  const handleOnce = (url: string) => {
+    if (disposed || url === lastHandledUrl) return
+    lastHandledUrl = url
+    handle(url)
+  }
 
   void getCurrent()
     .then((urls) => {
-      if (urls && urls.length > 0) handle(urls[0])
+      if (urls && urls.length > 0) handleOnce(urls[0])
     })
     .catch((err) => {
       console.warn('[deepLink] getCurrent failed:', err)
     })
 
   void onOpenUrl((urls) => {
-    if (urls && urls.length > 0) handle(urls[0])
+    if (urls && urls.length > 0) handleOnce(urls[0])
   }).then((fn) => {
-    unlisten = fn
+    if (disposed) fn()
+    else unlisten = fn
   })
 
   return () => {
+    disposed = true
     unlisten?.()
   }
 }
