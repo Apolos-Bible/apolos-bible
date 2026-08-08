@@ -11,7 +11,7 @@ const baseUrl = publicUrl.replace(/\/$/, '')
 const files = await readdir(assetsDir)
 const updaterManifestName = files.find((name) => name === 'latest.json')
 
-if (!updaterManifestName) throw new Error('The GitHub release did not contain latest.json')
+if (!updaterManifestName) throw new Error('The release assets did not contain latest.json')
 
 const platforms = {
   '.dmg': files.find((name) => name.endsWith('.dmg')),
