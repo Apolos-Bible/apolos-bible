@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { preserveRootCallbackLocation } from './RootRedirect'
+import { preserveRootCallbackLocation, selectRootTarget } from './RootRedirect'
 
 describe('preserveRootCallbackLocation', () => {
   it('[AUTH-VERIFY-01] preserves verification callback parameters', () => {
@@ -12,5 +12,12 @@ describe('preserveRootCallbackLocation', () => {
       .toBe('/bible/genesis/1?source=email#verse-2')
     expect(preserveRootCallbackLocation('/bible/genesis/1', '', ''))
       .toBe('/bible/genesis/1')
+  })
+})
+
+describe('selectRootTarget', () => {
+  it('sends authenticated users home and keeps the public reader available', () => {
+    expect(selectRootTarget(true, '/inicio', '/es/bible/genesis/1')).toBe('/inicio')
+    expect(selectRootTarget(false, '/inicio', '/es/bible/genesis/1')).toBe('/es/bible/genesis/1')
   })
 })
