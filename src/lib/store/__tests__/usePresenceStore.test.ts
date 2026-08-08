@@ -5,6 +5,9 @@ const mockJoinHere = vi.fn()
 const mockJoinJoining = vi.fn()
 const mockJoinLeaving = vi.fn()
 const mockJoinListen = vi.fn()
+const mockAddToast = vi.fn()
+const mockRecordActivity = vi.fn()
+const mockClearActivity = vi.fn()
 
 const mockJoinResult = {
   error: mockJoinError.mockReturnValue({
@@ -31,7 +34,7 @@ vi.mock('@/lib/echo', () => ({
 vi.mock('../useUIStore', () => ({
   useUIStore: {
     getState: vi.fn(() => ({
-      addToast: vi.fn(),
+      addToast: mockAddToast,
     })),
   },
 }))
@@ -47,8 +50,8 @@ vi.mock('../useFriendStore', () => ({
 vi.mock('../useActivityStore', () => ({
   useActivityStore: {
     getState: vi.fn(() => ({
-      recordActivity: vi.fn(),
-      clearAll: vi.fn(),
+      recordActivity: mockRecordActivity,
+      clearAll: mockClearActivity,
     })),
   },
 }))
@@ -94,5 +97,59 @@ describe('usePresenceStore', () => {
   it('leaveChapter does nothing when no channel', () => {
     usePresenceStore.getState().leaveChapter()
     expect(mockEcho.leave).not.toHaveBeenCalled()
+  })
+
+  it('does not subscribe guests to a private presence channel', () => {
+    localStorage.removeItem('verbum_token')
+    usePresenceStore.getState().joinChapter(43, 3, '1')
+    expect(mockEcho.join).not.toHaveBeenCalled()
+  })
+
+  it('keeps only friends other than self from the initial presence roster', () => {
+    usePresenceStore.getState().joinChapter(43, 3, '1')
+    const here = mockJoinHere.mock.calls[0][0] as (users: Array<{ id: number; name: string }>) => void
+    here([{ id: 1, name: 'Self' }, { id: 2, name: 'Bob' }, { id: 3, name: 'Stranger' }])
+    expect(usePresenceStore.getState().others).toEqual([{ id: 2, name: 'Bob' }])
+  })
+
+  it('deduplicates friend joins and removes them on leave', () => {
+    usePresenceStore.getState().joinChapter(43, 3, '1')
+    const joining = mockJoinJoining.mock.calls[0][0] as (user: { id: number; name: string }) => void
+    const leaving = mockJoinLeaving.mock.calls[0][0] as (user: { id: number; name: string }) => void
+    joining({ id: 3, name: 'Stranger' })
+    joining({ id: 2, name: 'Bob' })
+    joining({ id: 2, name: 'Bob' })
+    expect(usePresenceStore.getState().others).toEqual([{ id: 2, name: 'Bob' }])
+    leaving({ id: 2, name: 'Bob' })
+    expect(usePresenceStore.getState().others).toEqual([])
+  })
+
+  it('records remote verse activity once and ignores the current user', () => {
+    usePresenceStore.getState().joinChapter(43, 3, '1')
+    const listen = mockJoinListen.mock.calls[0][1] as (event: {
+      verse_number: number
+      user_id: number
+      user_name: string
+      action: 'noted' | 'highlighted'
+    }) => void
+    listen({ verse_number: 16, user_id: 1, user_name: 'Self', action: 'noted' })
+    listen({ verse_number: 16, user_id: 2, user_name: 'Bob', action: 'highlighted' })
+    expect(mockRecordActivity).toHaveBeenCalledTimes(1)
+    expect(mockRecordActivity).toHaveBeenCalledWith(16, expect.objectContaining({
+      userId: 2,
+      userName: 'Bob',
+      action: 'highlighted',
+    }))
+    expect(mockAddToast).toHaveBeenCalledWith('Bob highlighted a verse', 'info')
+  })
+
+  it('surfaces subscription errors and clears activity when leaving', () => {
+    usePresenceStore.getState().joinChapter(43, 3, '1')
+    const error = mockJoinError.mock.calls[0][0] as (reason: unknown) => void
+    vi.spyOn(console, 'error').mockImplementation(() => {})
+    error(new Error('denied'))
+    expect(mockAddToast).toHaveBeenCalledWith('Realtime presence subscription failed', 'error')
+    usePresenceStore.getState().leaveChapter()
+    expect(mockClearActivity).toHaveBeenCalled()
   })
 })
