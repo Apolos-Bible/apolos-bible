@@ -20,6 +20,15 @@ type NotificationStore = {
 
 let _pollInterval: ReturnType<typeof setInterval> | null = null
 let _privateChannelName: string | null = null
+const _seenPushIds = new Set<string>()
+
+function countsAsUnread(notification: AppNotification): boolean {
+  return notification.read_at === null && (
+    notification.type === 'friend_request_received'
+    || notification.type === 'friend_request_accepted'
+    || notification.type === 'guided_plan_moderation'
+  )
+}
 
 export const useNotificationStore = create<NotificationStore>((set, get) => ({
   notifications: [],
@@ -28,12 +37,7 @@ export const useNotificationStore = create<NotificationStore>((set, get) => ({
   load: async () => {
     try {
       const notifications = await friendApi.notifications()
-      const unreadCount = notifications.filter(
-        (n) => n.read_at === null &&
-          (n.type === 'friend_request_received'
-            || n.type === 'friend_request_accepted'
-            || n.type === 'guided_plan_moderation'),
-      ).length
+      const unreadCount = notifications.filter(countsAsUnread).length
       set({ notifications, unreadCount })
     } catch {
       // silently fail — user may not be logged in
@@ -52,12 +56,15 @@ export const useNotificationStore = create<NotificationStore>((set, get) => ({
 
   markRead: async (id) => {
     await friendApi.markRead(id)
-    set((s) => ({
-      notifications: s.notifications.map((n) =>
+    set((s) => {
+      const target = s.notifications.find((notification) => notification.id === id)
+      return {
+        notifications: s.notifications.map((n) =>
         n.id === id ? { ...n, read_at: new Date().toISOString() } : n,
-      ),
-      unreadCount: Math.max(0, s.unreadCount - 1),
-    }))
+        ),
+        unreadCount: target && countsAsUnread(target) ? Math.max(0, s.unreadCount - 1) : s.unreadCount,
+      }
+    })
   },
 
   markAllRead: async () => {
@@ -81,6 +88,10 @@ export const useNotificationStore = create<NotificationStore>((set, get) => ({
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     echo.private(_privateChannelName).notification((notif: any) => {
+      const notificationId = typeof notif.id === 'string' ? notif.id : null
+      if (notificationId && _seenPushIds.has(notificationId)) return
+      if (notificationId) _seenPushIds.add(notificationId)
+
       const classType: string = notif.type ?? ''
 
       if (classType === 'App\\Notifications\\FriendRequestReceived') {
@@ -101,6 +112,7 @@ export const useNotificationStore = create<NotificationStore>((set, get) => ({
     if (_privateChannelName) {
       getEcho()?.leave(_privateChannelName)
       _privateChannelName = null
+      _seenPushIds.clear()
     }
   },
 }))
