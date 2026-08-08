@@ -128,7 +128,7 @@ The backend lives in `../backend/` of this monorepo and is served locally at `ht
 - Native behavior is covered with TypeScript/Rust contracts in ordinary CI and remains `partial` until the signed Windows/macOS release matrix proves OS installation, deep links, notifications, autostart, and updates.
 - External providers use deterministic success, rejection, malformed-response, timeout, and retry fakes. Secrets and production data never belong in fixtures or traces.
 - Pull requests must pass `pnpm test:unit && pnpm test:e2e && pnpm build`. Skips require an owner, reason, and expiration.
-- Private cross-repository CI additionally requires the read-only `FULLSTACK_REPO_TOKEN` Actions secret and `FULLSTACK_E2E_ENABLED=true` repository variable. Without both, the job is skipped rather than reported as a successful execution.
+- Private cross-repository CI requires a fine-grained `FULLSTACK_REPO_TOKEN` with read-only Contents access only to `apolos-backend`, plus the `FULLSTACK_E2E_ENABLED=true` repository variable. Without the enable flag, the job is skipped rather than reported as a successful execution. Organization policy disables repository deploy keys, so do not substitute a personal broad-scope token.
 - Manual `Release` dispatches package the selected ref on Windows, macOS, Linux, Android, and web without publishing or deploying; desktop and Android bundles are retained for seven days as acceptance-test inputs.
 
 ---
