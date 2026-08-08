@@ -22,7 +22,7 @@ async function authenticate(target: Page | BrowserContext, account: Account) {
 }
 
 async function openConversation(page: Page, conversationName: string) {
-  await page.goto('/bible/genesis/1', { waitUntil: 'domcontentloaded' })
+  await page.goto('/perfil', { waitUntil: 'domcontentloaded' })
   const chatsButton = page.getByRole('button', { name: /Chats|Mensajes/i })
   await expect(chatsButton).toBeVisible()
   await chatsButton.click()
@@ -104,7 +104,7 @@ test.describe('[CHAT-REALTIME-01][INFRA-REALTIME-01] real Reverb transport', () 
     const channelAuthorization = page.waitForResponse((response) =>
       response.url().endsWith('/api/broadcasting/auth') && response.status() === 200,
     )
-    await page.goto('/bible/genesis/1', { waitUntil: 'domcontentloaded' })
+    await page.goto('/perfil', { waitUntil: 'domcontentloaded' })
     const notificationsButton = page.getByRole('button', { name: /Notifications|Notificaciones/i })
     await expect(notificationsButton).toBeVisible()
     await channelAuthorization
