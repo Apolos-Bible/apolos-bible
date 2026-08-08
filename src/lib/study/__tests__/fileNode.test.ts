@@ -53,7 +53,7 @@ describe('board file nodes', () => {
     const exported = exportStudyToText({ doc, title: 'Compartido' });
     expect(exported).toContain('Archivo — guia.pdf');
     expect(exported).toContain('application/pdf · 4096 bytes');
-    expect(exported).toContain('https://apolos.io/signed-file');
+    expect(exported).not.toContain('https://apolos.io/signed-file');
   });
 
   it('persists sandboxed web-page nodes as the same collaborative file type', () => {
