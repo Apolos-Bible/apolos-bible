@@ -28,4 +28,30 @@ describe('desktop release distribution', () => {
     expect(workflow).toContain('s3://$RELEASES_BUCKET/latest.json')
     expect(workflow).toContain('s3://$RELEASES_BUCKET/release-manifest.json')
   })
+
+  it('builds installable bundles for every supported operating system', () => {
+    const config = JSON.parse(
+      readFileSync(resolve(process.cwd(), 'src-tauri/tauri.conf.json'), 'utf8'),
+    ) as {
+      identifier: string
+      bundle: { active: boolean; targets: string; createUpdaterArtifacts: boolean }
+    }
+    const workflow = readFileSync(
+      resolve(process.cwd(), '.github/workflows/release.yml'),
+      'utf8',
+    )
+
+    expect(config.identifier).toBe('study.tulia.bible')
+    expect(config.bundle).toMatchObject({
+      active: true,
+      targets: 'all',
+      createUpdaterArtifacts: true,
+    })
+    expect(workflow).toContain('platform: macos-latest')
+    expect(workflow).toContain('platform: ubuntu-22.04')
+    expect(workflow).toContain('platform: windows-latest')
+    expect(workflow).toContain('pnpm tauri android build --apk --aab')
+    expect(workflow).toContain('TAURI_SIGNING_PRIVATE_KEY')
+    expect(workflow).toContain('ANDROID_KEYSTORE_BASE64')
+  })
 })
