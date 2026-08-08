@@ -57,7 +57,7 @@ interface ApiMockOptions {
   user?: Record<string, unknown>
   resendVerificationStatus?: number
   initialNotes?: Array<Record<string, unknown>>
-  profileFriendshipStatus?: 'none' | 'accepted' | 'blocked' | 'blocked_by_them'
+  profileFriendshipStatus?: 'none' | 'pending_sent' | 'pending_received' | 'accepted' | 'blocked' | 'blocked_by_them'
 }
 
 export async function installApiMock(
@@ -177,7 +177,7 @@ export async function installApiMock(
       user: { id: 21, name: 'Lucia Visible', email: null, avatar_url: null, bio: 'Perfil social visible.' },
       is_self: false,
       friendship_status: profileFriendshipStatus,
-      friendship_id: null,
+      friendship_id: profileFriendshipStatus === 'pending_sent' || profileFriendshipStatus === 'pending_received' ? 501 : null,
       last_reading: null,
       stats: { reading_streak_days: 0, notes_count: 0, highlights_count: 0, friends_count: 0, studies_count: 0 },
       public_highlights: [],
@@ -198,14 +198,37 @@ export async function installApiMock(
       profileFriendshipStatus = 'none'
       return fulfill(route, null, 204)
     }
-    if (path === '/api/friends/21' && request.method() === 'POST') return fulfill(route, {
-      id: 501,
-      user_id: testUser.id,
-      friend_id: 21,
-      status: 'pending',
-      user: testUser,
-      friend: { id: 21, name: 'Lucia Visible', email: 'lucia.visible@example.test', avatar_url: null },
-    }, 201)
+    if (path === '/api/friends/21'
+      && request.method() === 'POST'
+      && request.postDataJSON()?._method !== 'DELETE') {
+      profileFriendshipStatus = 'pending_sent'
+      return fulfill(route, {
+        id: 501,
+        user_id: testUser.id,
+        friend_id: 21,
+        status: 'pending',
+        user: testUser,
+        friend: { id: 21, name: 'Lucia Visible', email: 'lucia.visible@example.test', avatar_url: null },
+      }, 201)
+    }
+    if (path === '/api/friend-requests/501'
+      && request.method() === 'POST'
+      && request.postDataJSON()?._method === 'DELETE') {
+      profileFriendshipStatus = 'none'
+      return fulfill(route, null, 204)
+    }
+    if (path === '/api/friend-requests/501/accept'
+      && request.method() === 'POST'
+      && request.postDataJSON()?._method === 'PATCH') {
+      profileFriendshipStatus = 'accepted'
+      return fulfill(route, { id: 501, status: 'accepted' })
+    }
+    if (path === '/api/friends/21'
+      && request.method() === 'POST'
+      && request.postDataJSON()?._method === 'DELETE') {
+      profileFriendshipStatus = 'none'
+      return fulfill(route, null, 204)
+    }
     if (path === '/api/friends' || path === '/api/conversations') return fulfill(route, [])
     if (path === '/api/highlights/batch') return fulfill(route, highlights)
     const verseNotes = path.match(/^\/api\/verses\/(\d+)\/notes$/)
