@@ -98,9 +98,13 @@ function subscribeToConversation(id: number, set: (fn: (s: ChatState) => Partial
         created_at:      payload.created_at,
       }
 
+      // Echo can replay the same event after a transport reconnect. Treat the
+      // message as the idempotency boundary so unread counters and native
+      // notifications are not duplicated either.
+      if ((get().messages[id] ?? []).some((existing) => existing.id === message.id)) return
+
       set((s) => {
         const existing = s.messages[id] ?? []
-        if (existing.some((m) => m.id === message.id)) return s
         return { messages: { ...s.messages, [id]: [...existing, message] } }
       })
 
