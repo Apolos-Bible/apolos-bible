@@ -222,6 +222,43 @@ describe('useVerseStore', () => {
     expect(localStorage.getItem('bibleVersionId')).toBe('1000000128')
   })
 
+  it('[BIBLE-VERSION-02] rolls back a rejected provider switch without persisting it', async () => {
+    vi.mocked(getStoredBibleVersionId).mockImplementation(
+      () => Number(localStorage.getItem('bibleVersionId')) || 1,
+    )
+    const originalBooks = mockBooks.map((book) => ({
+      id: book.slug,
+      number: book.number,
+      name: book.name,
+      slug: book.slug,
+      testament: (book.number <= 39 ? 'old' : 'new') as 'old' | 'new',
+      chapters: book.chapters_count,
+    }))
+    useVerseStore.setState({
+      versionId: 1,
+      versions: [
+        { id: 1, name: 'King James Version', abbreviation: 'KJV', language: 'en' },
+        { id: 1_000_000_128, name: 'Remote', abbreviation: 'NVI-YV', language: 'es', provider: 'youversion', providerId: 128 },
+      ],
+      books: originalBooks,
+      selectedBook: 'john',
+      selectedChapter: 3,
+    })
+    localStorage.setItem('bibleVersionId', '1')
+    mockBibleApi.books.mockRejectedValueOnce(new Error('Provider timeout'))
+
+    await expect(useVerseStore.getState().setVersion(1_000_000_128)).rejects.toThrow('Unable to load')
+
+    expect(useVerseStore.getState()).toMatchObject({
+      versionId: 1,
+      books: originalBooks,
+      selectedBook: 'john',
+      selectedChapter: 3,
+    })
+    expect(localStorage.getItem('bibleVersionId')).toBe('1')
+    expect(saveUserSettingsSilently).not.toHaveBeenCalled()
+  })
+
   it('updates every existing Bible tab when the preferred version changes', async () => {
     vi.mocked(getStoredBibleVersionId).mockImplementation(
       () => Number(localStorage.getItem('bibleVersionId')) || 1,
