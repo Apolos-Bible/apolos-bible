@@ -47,7 +47,7 @@ export default defineConfig({
       VITE_API_URL: 'http://127.0.0.1:8000',
       VITE_REVERB_APP_KEY: 'apolos-fullstack-key',
       VITE_REVERB_HOST: '127.0.0.1',
-      VITE_REVERB_PORT: '8080',
+      VITE_REVERB_PORT: '8081',
       VITE_REVERB_SCHEME: 'http',
       VITE_HOCUSPOCUS_URL: 'ws://127.0.0.1:1234',
     },

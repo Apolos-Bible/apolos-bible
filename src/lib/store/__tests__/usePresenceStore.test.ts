@@ -1,10 +1,16 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest'
 
+const { mockPost } = vi.hoisted(() => ({
+  mockPost: vi.fn().mockResolvedValue({ data: [] }),
+}))
+
 const mockJoinError = vi.fn()
 const mockJoinHere = vi.fn()
 const mockJoinJoining = vi.fn()
 const mockJoinLeaving = vi.fn()
 const mockJoinListen = vi.fn()
+const mockListenChain = { listen: mockJoinListen }
+mockJoinListen.mockReturnValue(mockListenChain)
 const mockAddToast = vi.fn()
 const mockRecordActivity = vi.fn()
 const mockClearActivity = vi.fn()
@@ -14,9 +20,7 @@ const mockJoinResult = {
   error: mockJoinError.mockReturnValue({
     here: mockJoinHere.mockReturnValue({
       joining: mockJoinJoining.mockReturnValue({
-        leaving: mockJoinLeaving.mockReturnValue({
-          listen: mockJoinListen,
-        }),
+        leaving: mockJoinLeaving.mockReturnValue(mockListenChain),
       }),
     }),
   }),
@@ -35,6 +39,8 @@ vi.mock('@/lib/echo', () => ({
     return () => { reconnectListener = null }
   }),
 }))
+
+vi.mock('@/lib/api', () => ({ api: { post: mockPost } }))
 
 vi.mock('../useUIStore', () => ({
   useUIStore: {
@@ -82,7 +88,7 @@ describe('usePresenceStore', () => {
     expect(mockJoinHere).toHaveBeenCalled()
     expect(mockJoinJoining).toHaveBeenCalled()
     expect(mockJoinLeaving).toHaveBeenCalled()
-    expect(mockJoinListen).toHaveBeenCalled()
+    expect(mockJoinListen).toHaveBeenCalledWith('.verse.activity', expect.any(Function))
   })
 
   it('joinChapter leaves previous channel before joining new one', () => {
@@ -124,6 +130,19 @@ describe('usePresenceStore', () => {
     const here = mockJoinHere.mock.calls[0][0] as (users: Array<{ id: number; name: string }>) => void
     here([{ id: 1, name: 'Self' }, { id: 2, name: 'Bob' }, { id: 3, name: 'Stranger' }])
     expect(usePresenceStore.getState().others).toEqual([{ id: 2, name: 'Bob' }])
+    expect(mockPost).toHaveBeenCalledWith('/api/presence/heartbeat', {
+      book_number: 43,
+      chapter_number: 3,
+    })
+  })
+
+  it('restores friends from an authenticated heartbeat after an immediate transport reconnect', async () => {
+    mockPost.mockResolvedValueOnce({ data: [{ id: 2, name: 'Bob' }] })
+    usePresenceStore.getState().joinChapter(43, 3, '1')
+    const here = mockJoinHere.mock.calls[0][0] as (users: Array<{ id: number; name: string }>) => void
+    here([{ id: 1, name: 'Self' }])
+    await vi.waitFor(() => expect(usePresenceStore.getState().others).toEqual([{ id: 2, name: 'Bob' }]))
+    expect(usePresenceStore.getState().others).toEqual([{ id: 2, name: 'Bob' }])
   })
 
   it('deduplicates friend joins and removes them on leave', () => {
@@ -140,7 +159,7 @@ describe('usePresenceStore', () => {
 
   it('records remote verse activity once and ignores the current user', () => {
     usePresenceStore.getState().joinChapter(43, 3, '1')
-    const listen = mockJoinListen.mock.calls[0][1] as (event: {
+    const listen = mockJoinListen.mock.calls.find(([event]) => event === '.verse.activity')?.[1] as (event: {
       verse_number: number
       user_id: number
       user_name: string

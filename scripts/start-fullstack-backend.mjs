@@ -81,6 +81,13 @@ const reverb = spawn('php', ['artisan', 'reverb:start', '--host=127.0.0.1', '--p
   shell: process.platform === 'win32',
 })
 
+const reverbProxy = spawn('node', ['scripts/reverb-fault-proxy.mjs'], {
+  cwd: process.cwd(),
+  env: environment,
+  stdio: 'inherit',
+  shell: process.platform === 'win32',
+})
+
 const hocuspocus = spawn('pnpm', ['exec', 'tsx', 'src/server.ts'], {
   cwd: path.join(backendDirectory, 'hocuspocus'),
   env: {
@@ -92,7 +99,7 @@ const hocuspocus = spawn('pnpm', ['exec', 'tsx', 'src/server.ts'], {
   shell: process.platform === 'win32',
 })
 
-const children = [server, reverb, hocuspocus]
+const children = [server, reverb, reverbProxy, hocuspocus]
 let stopping = false
 
 function stop(signal = 'SIGTERM') {
