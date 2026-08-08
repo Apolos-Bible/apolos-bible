@@ -70,6 +70,7 @@ interface ApiMockOptions {
   studyRole?: 'host' | 'editor' | 'viewer'
   studyGuest?: boolean
   aiScenario?: 'success' | 'quota' | 'rate-then-success' | 'error'
+  aiDocumentScenario?: 'success' | 'error-then-success'
 }
 
 export async function installApiMock(
@@ -116,6 +117,8 @@ export async function installApiMock(
   const authoredStudies = new Map<string, typeof guidedStudy>()
   let authoredPaths: Array<Record<string, any>> = []
   let aiQuestionAttempts = 0
+  let aiStudyTurns = 0
+  let aiDocumentAttempts = 0
   let studies: Array<Record<string, unknown>> = [{
     ...studyBase, id: 'study-active', title: 'Estudio canvas', status: 'active', ended_at: null,
     participants: [...studyBase.participants, { id: 21, name: 'Lucia Visible', role: 'editor', cursor_color: '#ef4444', is_present: false }],
@@ -168,6 +171,7 @@ export async function installApiMock(
   })
   const studyConversation = () => ({
     id: 501, type: 'group', name: 'Estudio canvas', description: null, created_by: testUser.id,
+    study_session_id: 'study-active',
     created_at: '2026-08-08T00:00:00Z', last_message_at: chatMessages.at(-1)?.created_at ?? null,
     unread_count: 0, last_read_at: null, archived_at: null, members_can_invite: false,
     participants: [
@@ -361,6 +365,31 @@ export async function installApiMock(
       return fulfill(route, {
         answer: 'Juan presenta al Verbo eterno y lo identifica con Dios.', reference: 'Juan 1:1', verse_id: 4301001,
         usage: { period: '2026-08', input_tokens: 240, input_cached_tokens: 0, output_tokens: 60, tokens_used: 300, tokens_limit: 1000, tokens_remaining: 700, percent_used: 30, request_count: 4 },
+      })
+    }
+    if (path === '/api/ai/extract-document' && request.method() === 'POST') {
+      aiDocumentAttempts += 1
+      if (options.aiDocumentScenario === 'error-then-success' && aiDocumentAttempts === 1) {
+        return fulfill(route, { message: 'The PDF contains no extractable text.' }, 422)
+      }
+      return fulfill(route, {
+        name: 'contexto.pdf', text: 'El documento explica el prólogo de Juan.', truncated: false,
+      })
+    }
+    if (path === '/api/ai/study-chat' && request.method() === 'POST') {
+      aiStudyTurns += 1
+      const message = {
+        id: 9800 + aiStudyTurns, conversation_id: 501, user_id: 404,
+        body: aiStudyTurns === 1
+          ? 'El prólogo presenta a Jesús como el Verbo eterno.'
+          : 'También afirma que el Verbo participó en la creación.',
+        created_at: `2026-08-08T12:0${aiStudyTurns}:00Z`,
+        user: { id: 404, name: 'Apolos', avatar_url: null }, verse: null,
+      }
+      chatMessages.push(message)
+      return fulfill(route, {
+        message, mutations: [],
+        usage: { period: '2026-08', input_tokens: 300, input_cached_tokens: 0, output_tokens: 80, tokens_used: 380, tokens_limit: 1000, tokens_remaining: 620, percent_used: 38, request_count: 5 },
       })
     }
     if (path === '/api/user/bookmarks') return fulfill(route, bookmarks)
