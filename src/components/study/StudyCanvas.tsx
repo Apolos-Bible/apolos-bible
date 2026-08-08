@@ -32,7 +32,9 @@ import {
   getEdgesMap,
   nodeFromYMap,
   edgeFromYMap,
+  deleteCanvasNodes,
   filterVersesMissingFromCanvas,
+  resizeCanvasNode,
   writeNodeToMap,
   writeEdgeToMap,
 } from '@/lib/study/yDocHelpers';
@@ -927,13 +929,7 @@ function StudyCanvasInner({
     if (!d) return;
     const w = Math.round(width);
     const h = Math.round(height);
-    d.transact(() => {
-      const nodesMap = getNodesMap(d);
-      const existing = nodesMap.get(id);
-      if (!existing) return;
-      existing.set('width', w);
-      existing.set('height', h);
-    }, 'local');
+    if (!resizeCanvasNode(d, id, w, h)) return;
     setNodes((nds) => nds.map((n) => (n.id === id ? { ...n, width: w, height: h } : n)));
     undoManagerRef.current?.stopCapturing();
   }, [isGuest]);
@@ -946,19 +942,9 @@ function StudyCanvasInner({
     const d = docRef.current;
     if (!d) return;
     const idSet = new Set(ids);
-    const edgeIdsToDelete = edgesRef.current
-      .filter((e) => idSet.has(e.source) || idSet.has(e.target))
-      .map((e) => e.id);
+    const edgeIdsToDelete = deleteCanvasNodes(d, idSet);
     const edgeIdSet = new Set(edgeIdsToDelete);
-    d.transact(() => {
-      const nodesMap = getNodesMap(d);
-      const edgesMap = getEdgesMap(d);
-      ids.forEach((id) => {
-        pendingPositionWritesRef.current.delete(id);
-        nodesMap.delete(id);
-      });
-      edgeIdsToDelete.forEach((eid) => edgesMap.delete(eid));
-    }, 'local');
+    ids.forEach((id) => pendingPositionWritesRef.current.delete(id));
     setNodes((nds) => nds.filter((n) => !idSet.has(n.id)));
     if (edgeIdSet.size) setEdges((eds) => eds.filter((e) => !edgeIdSet.has(e.id)));
     undoManagerRef.current?.stopCapturing();

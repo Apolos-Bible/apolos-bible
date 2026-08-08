@@ -85,6 +85,8 @@ export async function installApiMock(
     pending_invitation_count: 0, host: { id: 7, name: 'Ana Segura' },
   }
   let studies: Array<Record<string, unknown>> = [{
+    ...studyBase, id: 'study-active', title: 'Estudio canvas', status: 'active', ended_at: null,
+  }, {
     ...studyBase, id: 'study-ended', title: 'Estudio terminado', status: 'ended', ended_at: '2026-08-08T11:00:00Z',
   }]
   let profileFriendshipStatus = options.profileFriendshipStatus ?? 'none'
@@ -579,6 +581,11 @@ export async function installApiMock(
       const session = { ...studyBase, id: 'study-reopened', title: `${original.title} (reopened)`, status: 'active', ended_at: null }
       studies = [session, ...studies]
       return fulfill(route, { session, ws_token: 'reopened-ws-token', participant: studyBase.participants[0] })
+    }
+    const joinStudy = path.match(/^\/api\/studies\/([^/]+)\/join$/)
+    if (joinStudy) {
+      const session = studies.find((entry) => entry.id === joinStudy[1]) ?? studies[0]
+      return fulfill(route, { session, ws_token: 'joined-ws-token', participant: studyBase.participants[0] })
     }
     const study = path.match(/^\/api\/studies\/([^/]+)$/)
     if (study) return fulfill(route, studies.find((entry) => entry.id === study[1]) ?? studies[0])
