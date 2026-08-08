@@ -7,12 +7,14 @@ interface PanelHeaderProps {
   description?: ReactNode
   actions?: ReactNode
   onClose?: () => void
+  onBack?: () => void
+  backLabel?: string
   closeLabel?: string
   className?: string
   leading?: ReactNode
 }
 
-export function PanelHeader({ title, subtitle, description, actions, onClose, closeLabel, className, leading }: PanelHeaderProps) {
+export function PanelHeader({ title, subtitle, description, actions, onClose, onBack, backLabel, closeLabel, className, leading }: PanelHeaderProps) {
   return (
     <div
       className={cn(
@@ -21,6 +23,7 @@ export function PanelHeader({ title, subtitle, description, actions, onClose, cl
       )}
     >
       <div className="flex items-center gap-2 min-w-0 flex-1">
+        {onBack && <PanelHeaderButton onClick={onBack} aria-label={backLabel} className="md:hidden"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.75" className="h-5 w-5"><path d="M10 3 5 8l5 5" strokeLinecap="round" strokeLinejoin="round" /></svg></PanelHeaderButton>}
         {leading}
         <div className="min-w-0">
           {subtitle && (
@@ -42,7 +45,7 @@ export function PanelHeader({ title, subtitle, description, actions, onClose, cl
         <div className="flex items-center gap-1 shrink-0">
           {actions}
           {onClose && (
-            <PanelHeaderButton onClick={onClose} aria-label={closeLabel}>
+            <PanelHeaderButton onClick={onClose} aria-label={closeLabel} className={onBack ? 'hidden md:inline-flex' : undefined}>
               <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.75" className="h-5 w-5 md:h-4 md:w-4">
                 <path d="M3 3l10 10M13 3L3 13" strokeLinecap="round" />
               </svg>
