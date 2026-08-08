@@ -6,7 +6,7 @@ for (const role of ['host', 'editor'] as const) {
     await installApiMock(page, undefined, { studyRole: role })
     await page.goto('/study/study-active', { waitUntil: 'domcontentloaded' })
     await page.waitForFunction(() => Boolean((window as any).__studyCanvasActions))
-    await page.keyboard.press('n')
+    await page.getByText(/Sticky Note \(N\)|Nota adhesiva \(N\)/i).locator('..').getByRole('button').click()
     await expect(page.locator('.react-flow__node-sticky')).toHaveCount(1)
     if (role === 'host') await expect(page.getByRole('button', { name: /Invite|Invitar/i })).toBeVisible()
     else await expect(page.getByRole('button', { name: /Invite|Invitar/i })).toHaveCount(0)

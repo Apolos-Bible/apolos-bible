@@ -444,7 +444,12 @@ export function VerseList() {
       // Shift takes everything back to the anchor.
       onMouseDown: (e: React.MouseEvent) => {
         // Stops the browser from painting a text selection across the range.
-        if (e.shiftKey) e.preventDefault()
+        if (e.shiftKey) {
+          e.preventDefault()
+          // Commit on mousedown as well. Some browsers lose the modifier on
+          // the synthetic click after preventing native range selection.
+          selectVerseRangeTo(verse.id)
+        }
       },
       onClick: (e: React.MouseEvent) => {
         pointerSelection.onVerseClick(e, verse.id, isSelected)

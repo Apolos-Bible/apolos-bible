@@ -55,6 +55,32 @@ function chapterResponse(path: string) {
   }
 }
 
+function bibleDownloadResponse(versionId: number) {
+  const version = versions.find((candidate) => candidate.id === versionId) ?? versions[0]
+  return {
+    version: {
+      id: version.id,
+      name: version.name,
+      abbreviation: version.abbreviation,
+      language: version.language,
+    },
+    books: books.map((book) => ({
+      id: book.id,
+      number: book.number,
+      name: book.name,
+      slug: book.slug,
+      chapters: Array.from({ length: book.chapters_count }, (_, index) => {
+        const response = chapterResponse(`/books/${book.slug}/chapters/${index + 1}`)
+        return {
+          id: response.chapter_id,
+          number: response.chapter,
+          verses: response.verses,
+        }
+      }),
+    })),
+  }
+}
+
 async function fulfill(route: Route, json: unknown, status = 200) {
   await route.fulfill({ status, contentType: 'application/json', body: JSON.stringify(json) })
 }
@@ -211,6 +237,10 @@ export async function installApiMock(
       sessionStorage.removeItem('apolos_e2e_api_initialized')
     }
     localStorage.setItem('analytics_consent', 'denied')
+    // Keep unrelated journeys deterministic. The storage suite exercises the
+    // complete manual download explicitly; every other test should not write
+    // 71 chapters to IndexedDB in the background.
+    localStorage.setItem('offlineAutoDownload', 'off')
     localStorage.setItem('tutorial_completed_v1', 'true')
     localStorage.setItem('tutorial_invite_dismissed_v1', 'true')
     localStorage.setItem('lastReading', JSON.stringify({ book: 'juan', chapter: 3, verse: 16 }))
@@ -304,6 +334,8 @@ export async function installApiMock(
     }
     if (path === '/api/versions') return fulfill(route, versions)
     if (/^\/api\/versions\/\d+\/books$/.test(path)) return fulfill(route, books)
+    const bibleDownload = path.match(/^\/api\/versions\/(\d+)\/download$/)
+    if (bibleDownload) return fulfill(route, bibleDownloadResponse(Number(bibleDownload[1])))
     if (/^\/api\/chapters\/\d+\/cross-ref-verse-ids$/.test(path)) return fulfill(route, [1001001])
     if (/^\/api\/verses\/\d+\/cross-references$/.test(path)) return fulfill(route, [{
       id: 9001,
@@ -990,6 +1022,8 @@ export async function installGuestApiMock(page: Page, options: GuestApiMockOptio
     if (path === '/api/user') return fulfill(route, testUser)
     if (path === '/api/versions') return fulfill(route, versions)
     if (path === '/api/versions/1/books') return fulfill(route, books)
+    const bibleDownload = path.match(/^\/api\/versions\/(\d+)\/download$/)
+    if (bibleDownload) return fulfill(route, bibleDownloadResponse(Number(bibleDownload[1])))
     if (path.includes('/chapters/')) return fulfill(route, chapterResponse(path))
     if (path === '/api/youversion/versions') return fulfill(route, { data: [] })
     if (path === '/api/user/bookmarks' || path === '/api/friends' || path === '/api/conversations') return fulfill(route, [])

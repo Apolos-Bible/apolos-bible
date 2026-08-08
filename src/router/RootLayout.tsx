@@ -25,6 +25,7 @@ import { WorkspaceDesktopShell } from '@/components/layout/WorkspaceDesktopShell
 import { AnalyticsConsentBanner } from '@/components/privacy/AnalyticsConsentBanner'
 import { trackAnalyticsPageView } from '@/lib/analytics'
 import { findWorkspaceGroup, useWorkspaceStore } from '@/lib/store/useWorkspaceStore'
+import { RouteIndexing } from '@/components/seo/RouteIndexing'
 
 const VISITED_STORAGE_KEY = 'verbum_has_visited'
 let hasLoggedStartupSettings = false
@@ -201,6 +202,7 @@ function RootLayoutSurface() {
 
   return (
     <>
+      <RouteIndexing />
       <RegionNav />
       {!isMobile && isWorkspaceRoute(location.pathname)
         ? <WorkspaceDesktopShell />
