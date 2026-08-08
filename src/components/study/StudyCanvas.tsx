@@ -65,6 +65,7 @@ interface StudyCanvasProps {
   setLocalSelection: (nodeIds: string[]) => void;
   setLocalDragging: (dragging: boolean) => void;
   isGuest: boolean;
+  loginRequired?: boolean;
   drawSettings: DrawSettings;
   spaceHeld: boolean;
   /**
@@ -225,6 +226,7 @@ function StudyCanvasInner({
   setLocalSelection,
   setLocalDragging,
   isGuest,
+  loginRequired = isGuest,
   drawSettings,
   spaceHeld,
   rightInset = 0,
@@ -1575,7 +1577,7 @@ useEffect(() => {
           onNodeDrag={handleNodeDrag}
           onNodeDragStop={handleNodeDragStop}
           onSelectionChange={handleSelectionChange}
-          onPaneClick={isGuest ? () => openAuthModal('login') : undefined}
+          onPaneClick={loginRequired ? () => openAuthModal('login') : undefined}
           nodeTypes={studyNodeTypes}
           edgeTypes={studyEdgeTypes}
           fitView

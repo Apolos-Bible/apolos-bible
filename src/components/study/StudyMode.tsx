@@ -17,6 +17,7 @@ import { useGuidedStore } from '@/lib/store/useGuidedStore'
 import { StudyDocContext } from '@/lib/study/StudyDocContext'
 import { KeyboardScope, useCommands, focusWhenReady } from '@/lib/keyboard'
 import type { DrawSettings } from './DrawingLayer'
+import { canEditStudy, canManageStudy } from '@/lib/study/studyAccess'
 
 export type Tool = 'select' | 'hand' | 'sticky' | 'verse' | 'draw' | 'erase'
 
@@ -37,6 +38,8 @@ function StudyModeSurface() {
   const wsToken = useStudyStore(s => s.wsToken)
   const isGuest = useStudyStore(s => s.isGuest)
   const user = useAuthStore(s => s.user)
+  const canEdit = canEditStudy(activeSession, user?.id, isGuest)
+  const canManage = canManageStudy(activeSession, user?.id, isGuest)
   const openAuthModal = useUIStore(s => s.openAuthModal)
   const [tool, setTool] = useState<Tool>('select')
   const [showInsertVerse, setShowInsertVerse] = useState(false)
@@ -121,8 +124,8 @@ function StudyModeSurface() {
   // Guests can look but not edit; every mutating shortcut becomes a login
   // prompt instead of silently doing nothing.
   const guarded = (run: () => void) => () => {
-    if (isGuest) {
-      openAuthModal('login')
+    if (!canEdit) {
+      if (isGuest) openAuthModal('login')
       return
     }
     run()
@@ -218,7 +221,7 @@ function StudyModeSurface() {
 
   return (
     <div className="safe-area-fixed fixed inset-0 z-50 flex flex-col bg-bg-primary">
-      <StudyTopBar users={users} isGuest={isGuest} doc={doc} />
+      <StudyTopBar users={users} isGuest={isGuest} canEdit={canEdit} canManage={canManage} doc={doc} />
       {isGuest && (
         <div className="min-h-9 shrink-0 border-b border-accent/20 bg-accent/10 px-3 py-1.5 flex items-center justify-center gap-2">
           <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" className="w-3.5 h-3.5 text-accent">
@@ -251,7 +254,8 @@ function StudyModeSurface() {
           onToggleChat={() => setChatOpen(v => !v)}
           guidedOpen={guidedOpen}
           onToggleGuided={guidedSlug ? () => setGuidedOpen(v => !v) : undefined}
-          isGuest={isGuest}
+          isGuest={!canEdit}
+          loginRequired={isGuest}
           drawSettings={drawSettings}
           onDrawSettingsChange={setDrawSettings}
         />
@@ -266,12 +270,13 @@ function StudyModeSurface() {
           setLocalCursor={setLocalCursor}
           setLocalSelection={setLocalSelection}
           setLocalDragging={setLocalDragging}
-          isGuest={isGuest}
+          isGuest={!canEdit}
+          loginRequired={isGuest}
           drawSettings={drawSettings}
           spaceHeld={spaceHeld}
           rightInset={guideDocked ? GUIDED_PANEL_WIDTH : 0}
         />
-        <BiblePanel open={biblePanelOpen} onClose={() => setBiblePanelOpen(false)} isGuest={isGuest} />
+        <BiblePanel open={biblePanelOpen} onClose={() => setBiblePanelOpen(false)} isGuest={!canEdit} />
         {guidedSlug && activeSession && (
           <GuidedPanel
             slug={guidedSlug}
@@ -280,7 +285,7 @@ function StudyModeSurface() {
             synced={synced}
             open={guidedOpen}
             onClose={() => setGuidedOpen(false)}
-            isGuest={isGuest}
+            isGuest={!canEdit}
           />
         )}
         {/* `|| chatOpen` keeps Cmd/Ctrl+J working when studying alone: asking
