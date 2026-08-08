@@ -67,6 +67,8 @@ interface ApiMockOptions {
   profileLastReading?: Record<string, unknown> | null
   friends?: Array<Record<string, unknown>>
   pushSubscriptions?: Array<Record<string, unknown>>
+  studyRole?: 'host' | 'editor' | 'viewer'
+  studyGuest?: boolean
 }
 
 export async function installApiMock(
@@ -77,11 +79,15 @@ export async function installApiMock(
   let currentUser: Record<string, unknown> = { ...(options.user ?? testUser) }
   let notes: Array<Record<string, unknown>> = options.initialNotes?.map((note) => ({ ...note })) ?? []
   let nextNoteId = 7001
+  const studyRole = options.studyRole ?? 'host'
   const studyBase = {
-    type: 'free', anchor_ref: null, guided_study: null, host_user_id: 7,
+    type: 'free', anchor_ref: null, guided_study: null, host_user_id: studyRole === 'host' ? 7 : 77,
     conversation_id: 501, thumbnail_url: null, last_activity_at: '2026-08-08T10:00:00Z',
     created_at: '2026-08-08T10:00:00Z', updated_at: '2026-08-08T10:00:00Z',
-    participants: [{ id: 7, name: 'Ana Segura', role: 'host', cursor_color: '#4f5dcc', is_present: false }],
+    participants: [
+      { id: 7, name: 'Ana Segura', role: studyRole, cursor_color: '#4f5dcc', is_present: false },
+      ...(studyRole === 'host' ? [] : [{ id: 77, name: 'Host Seguro', role: 'host', cursor_color: '#10b981', is_present: false }]),
+    ],
     pending_invitation_count: 0, host: { id: 7, name: 'Ana Segura' },
   }
   let studies: Array<Record<string, unknown>> = [{
@@ -148,17 +154,21 @@ export async function installApiMock(
     { id: 11, name: 'Windows · Apolos', current: true, last_used_at: '2026-08-07T20:00:00Z', created_at: '2026-08-01T10:00:00Z' },
     { id: 12, name: 'Mac · Apolos', current: false, last_used_at: '2026-08-06T20:00:00Z', created_at: '2026-08-01T10:00:00Z' },
   ]
-  await page.addInitScript(({ user }) => {
-    if (sessionStorage.getItem('apolos_e2e_api_initialized') !== 'true') {
+  await page.addInitScript(({ user, guest }) => {
+    if (!guest && sessionStorage.getItem('apolos_e2e_api_initialized') !== 'true') {
       localStorage.setItem('verbum_token', 'e2e-token')
       sessionStorage.setItem('apolos_e2e_api_initialized', 'true')
+    }
+    if (guest) {
+      localStorage.removeItem('verbum_token')
+      sessionStorage.removeItem('apolos_e2e_api_initialized')
     }
     localStorage.setItem('analytics_consent', 'denied')
     localStorage.setItem('tutorial_completed_v1', 'true')
     localStorage.setItem('tutorial_invite_dismissed_v1', 'true')
     localStorage.setItem('lastReading', JSON.stringify({ book: 'juan', chapter: 3, verse: 16 }))
     localStorage.setItem('e2e_user', JSON.stringify(user))
-  }, { user: currentUser })
+  }, { user: currentUser, guest: options.studyGuest ?? false })
 
   await page.route('**/api/**', async (route) => {
     const request = route.request()
@@ -167,6 +177,7 @@ export async function installApiMock(
     onRequest?.(path, request.method())
 
     if (path === '/api/user') {
+      if (options.studyGuest) return fulfill(route, { message: 'Unauthenticated.' }, 401)
       if (request.method() === 'GET') return fulfill(route, currentUser)
       const body = request.postDataJSON?.() ?? {}
       if (body._method === 'DELETE') return fulfill(route, { ok: true })
@@ -595,6 +606,9 @@ export async function installApiMock(
       }
     }
     if (path === '/api/studies/invitations') return fulfill(route, [])
+    if (path === '/api/studies/share/share-token') return fulfill(route, {
+      session: studies.find((entry) => entry.id === 'study-active'), guest_ws_token: 'guest-study-token',
+    })
     if (/^\/api\/studies\/[^/]+\/links\/check$/.test(path) && request.method() === 'POST') {
       const target = String(request.postDataJSON?.()?.url ?? '')
       const blocked = target.includes('blocked.example')

@@ -12,7 +12,7 @@ import { StudyParticipants } from './StudyParticipants'
 import { InviteModal } from './InviteModal'
 import type { AwarenessUser } from '@/hooks/useStudySession'
 
-export function StudyTopBar({ users, isGuest, doc }: { users: AwarenessUser[]; isGuest: boolean; doc: Y.Doc | null }) {
+export function StudyTopBar({ users, isGuest, canEdit, canManage, doc }: { users: AwarenessUser[]; isGuest: boolean; canEdit: boolean; canManage: boolean; doc: Y.Doc | null }) {
   const { t } = useTranslation();
   const navigate = useNavigate()
   const activeSession = useStudyStore(s => s.activeSession)
@@ -104,13 +104,13 @@ export function StudyTopBar({ users, isGuest, doc }: { users: AwarenessUser[]; i
       <input
         value={title}
         onChange={(e) => setTitle(e.target.value)}
-        readOnly={isGuest}
+        readOnly={!canEdit}
         className="text-sm font-medium bg-transparent border-none outline-none text-text-primary min-w-0 flex-1"
       />
 
       {!isGuest && <div className="hidden md:block"><StudyParticipants users={users} /></div>}
 
-      {!isGuest && user && (
+      {canManage && user && (
         <button
           onClick={() => setShowInvite(true)}
           className="flex h-11 w-11 shrink-0 items-center justify-center rounded-md text-text-secondary transition-colors hover:bg-bg-tertiary hover:text-text-primary md:h-7 md:w-7"
@@ -121,7 +121,7 @@ export function StudyTopBar({ users, isGuest, doc }: { users: AwarenessUser[]; i
         </button>
       )}
 
-      {user && !isGuest && (
+      {user && canManage && (
         <button
           onClick={handleShare}
           className="hidden h-7 w-7 items-center justify-center rounded-md text-text-secondary transition-colors hover:bg-bg-tertiary hover:text-text-primary md:flex"
@@ -157,13 +157,13 @@ export function StudyTopBar({ users, isGuest, doc }: { users: AwarenessUser[]; i
             <>
               <div className="fixed inset-0 z-10" onClick={() => setShowMenu(false)} />
               <div className="absolute right-0 top-full z-20 mt-1 min-w-[200px] rounded-lg border border-border bg-surface py-1 shadow-lg">
-                <button
+                {canManage && <button
                   onClick={() => { setShowMenu(false); void handleShare() }}
                   className="flex min-h-11 w-full items-center gap-2 px-3 text-left text-sm text-text-secondary transition-colors hover:bg-bg-tertiary hover:text-text-primary md:hidden"
                 >
                   <Share2 className="h-4 w-4" />
                   Copy share link
-                </button>
+                </button>}
                 <button
                   onClick={() => { setShowMenu(false); void handleExportText() }}
                   className="flex min-h-11 w-full items-center gap-2 px-3 text-left text-sm text-text-secondary transition-colors hover:bg-bg-tertiary hover:text-text-primary md:hidden"
@@ -171,12 +171,12 @@ export function StudyTopBar({ users, isGuest, doc }: { users: AwarenessUser[]; i
                   <Download className="h-4 w-4" />
                   {t('study.topBar.exportText')}
                 </button>
-                <button
+                {canManage && <button
                   onClick={handleEndSession}
                   className="min-h-11 w-full px-3 text-left text-sm text-red-400 transition-colors hover:bg-bg-tertiary"
                 >
                   {t('study.topBar.endSession')}
-                </button>
+                </button>}
               </div>
             </>
           )}
