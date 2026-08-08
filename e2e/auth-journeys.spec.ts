@@ -141,7 +141,7 @@ test.describe('Flujos completos de autenticación', () => {
     await expect(dialog.getByRole('heading', { name: /Set new password|Nueva contraseña/i })).toBeVisible()
   })
 
-  test('[AUTH-LOGOUT-01] cierra la sesión local aunque el API responda correctamente', async ({ page }) => {
+  test('[AUTH-LOGOUT-01][SETTINGS-DANGER-01] cierra la sesión local aunque el API responda correctamente', async ({ page }) => {
     let logoutCalled = false
     await installApiMock(page, (path) => {
       if (path === '/api/auth/logout') logoutCalled = true
