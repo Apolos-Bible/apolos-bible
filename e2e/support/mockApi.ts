@@ -107,6 +107,9 @@ export async function installApiMock(
     ],
   }
   let guidedInList = false
+  let guidedCurrentStep = 0
+  let guidedCompletedAt: string | null = null
+  const guidedResponses = new Map<string, Record<string, unknown>>()
   let studies: Array<Record<string, unknown>> = [{
     ...studyBase, id: 'study-active', title: 'Estudio canvas', status: 'active', ended_at: null,
     participants: [...studyBase.participants, { id: 21, name: 'Lucia Visible', role: 'editor', cursor_color: '#ef4444', is_present: false }],
@@ -636,8 +639,8 @@ export async function installApiMock(
     }])
     if (path === '/api/guided-studies/hope-study') return fulfill(route, {
       study: guidedStudy,
-      progress: { guided_study_id: 801, session_id: null, current_step: 0, started_at: '2026-08-08T00:00:00Z', completed_at: null },
-      responses: [],
+      progress: { guided_study_id: 801, session_id: 'study-new', current_step: guidedCurrentStep, started_at: '2026-08-08T00:00:00Z', completed_at: guidedCompletedAt },
+      responses: Array.from(guidedResponses.values()),
     })
     if (path === '/api/guided-plans/hope-path/list') {
       guidedInList = request.method() !== 'DELETE'
@@ -645,14 +648,18 @@ export async function installApiMock(
     }
     if (path === '/api/guided-studies/hope-study/progress') {
       const body = request.postDataJSON?.() ?? {}
+      guidedCurrentStep = body.current_step ?? guidedCurrentStep
+      if (body.completed) guidedCompletedAt = '2026-08-08T01:00:00Z'
       return fulfill(route, {
-        guided_study_id: 801, session_id: body.session_id ?? null, current_step: body.current_step ?? 0,
-        started_at: '2026-08-08T00:00:00Z', completed_at: body.completed ? '2026-08-08T01:00:00Z' : null,
+        guided_study_id: 801, session_id: body.session_id ?? 'study-new', current_step: guidedCurrentStep,
+        started_at: '2026-08-08T00:00:00Z', completed_at: guidedCompletedAt,
       })
     }
     if (/^\/api\/guided-studies\/hope-study\/steps\/\d+\/responses$/.test(path)) {
       const body = request.postDataJSON?.() ?? {}
-      return fulfill(route, { step_id: Number(path.split('/')[5]), prompt_index: body.prompt_index, answer: body.answer ?? null, revealed: body.revealed ?? false })
+      const response = { step_id: Number(path.split('/')[5]), prompt_index: body.prompt_index, answer: body.answer ?? null, revealed: body.revealed ?? false }
+      guidedResponses.set(`${response.step_id}:${response.prompt_index}`, response)
+      return fulfill(route, response)
     }
     if (path === '/api/studies/share/share-token') return fulfill(route, {
       session: studies.find((entry) => entry.id === 'study-active'), guest_ws_token: 'guest-study-token',
