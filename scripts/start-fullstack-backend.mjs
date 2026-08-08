@@ -14,6 +14,8 @@ const environment = process.env
 Object.assign(environment, {
   BROADCAST_CONNECTION: 'reverb',
   QUEUE_CONNECTION: 'sync',
+  JWT_SECRET_HOCUSPOCUS: 'testing-hocuspocus-jwt-secret-32-bytes',
+  HOCUSPOCUS_SHARED_SECRET: 'testing-hocuspocus-shared-secret',
   REVERB_APP_ID: 'apolos-fullstack',
   REVERB_APP_KEY: 'apolos-fullstack-key',
   REVERB_APP_SECRET: 'apolos-fullstack-secret',
@@ -79,7 +81,18 @@ const reverb = spawn('php', ['artisan', 'reverb:start', '--host=127.0.0.1', '--p
   shell: process.platform === 'win32',
 })
 
-const children = [server, reverb]
+const hocuspocus = spawn('pnpm', ['exec', 'tsx', 'src/server.ts'], {
+  cwd: path.join(backendDirectory, 'hocuspocus'),
+  env: {
+    ...environment,
+    HOCUSPOCUS_PORT: '1234',
+    LARAVEL_API_URL: 'http://127.0.0.1:8000/api',
+  },
+  stdio: 'inherit',
+  shell: process.platform === 'win32',
+})
+
+const children = [server, reverb, hocuspocus]
 let stopping = false
 
 function stop(signal = 'SIGTERM') {

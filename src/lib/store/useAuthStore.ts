@@ -143,12 +143,16 @@ export const useAuthStore = create<AuthState>((set) => ({
   },
 
   logout: async () => {
-    await api.post('/api/auth/logout', {}).catch(() => {})
+    // Start server-side revocation with the current bearer token, but clear the
+    // local credential immediately. A slow or unavailable API must never leave
+    // a user visibly signed in after they chose to sign out.
+    const revocation = api.post('/api/auth/logout', {}).catch(() => {})
     clearToken()
     localStorage.removeItem('verbum_last_reading')
     resetUserSession()
     useWorkspaceStore.getState().resetWorkspace()
     set({ user: null })
+    await revocation
   },
 
   deleteAccount: async (confirmation) => {
