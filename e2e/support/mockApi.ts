@@ -90,6 +90,23 @@ export async function installApiMock(
     ],
     pending_invitation_count: 0, host: { id: 7, name: 'Ana Segura' },
   }
+  const guidedCard = {
+    slug: 'hope-path', title: 'Ruta de esperanza', description: 'Esperanza para cada día.',
+    visibility: 'public', is_mine: false, author: { id: 21, name: 'Lucía' }, study_count: 1,
+    rating_avg: 4.5, rating_count: 2, list_count: 3, my_rating: null, in_my_list: false,
+    created_at: '2026-08-01T00:00:00Z',
+  }
+  const guidedStudy = {
+    slug: 'hope-study', title: 'Esperanza firme', theme: 'Confiar en medio de la dificultad.',
+    heart_goal: 'Descansar en las promesas de Dios.', memory_verse_ref: 'Juan 1:1',
+    memory_verse_text: 'En el principio era el Verbo.', leader_notes: null, position: 0, step_count: 2,
+    plan: { slug: 'hope-path', title: 'Ruta de esperanza' },
+    steps: [
+      { id: 801, position: 0, kind: 'intro', title: 'Comenzamos', reference: null, ranges: [], body: 'Abre el corazón.', prompts: [] },
+      { id: 802, position: 1, kind: 'application', title: 'Ponlo en práctica', reference: null, ranges: [], body: 'Da un paso de fe.', prompts: [{ question: '¿Qué harás hoy?', answer: null }] },
+    ],
+  }
+  let guidedInList = false
   let studies: Array<Record<string, unknown>> = [{
     ...studyBase, id: 'study-active', title: 'Estudio canvas', status: 'active', ended_at: null,
     participants: [...studyBase.participants, { id: 21, name: 'Lucia Visible', role: 'editor', cursor_color: '#ef4444', is_present: false }],
@@ -606,6 +623,37 @@ export async function installApiMock(
       }
     }
     if (path === '/api/studies/invitations') return fulfill(route, [])
+    if (path === '/api/marketplace/featured') return fulfill(route, [guidedCard])
+    if (path === '/api/marketplace/paths') return fulfill(route, { paths: [guidedCard], next_cursor: null })
+    if (path === '/api/marketplace/paths/hope-path') return fulfill(route, {
+      ...guidedCard, in_my_list: guidedInList,
+      studies: [{ slug: guidedStudy.slug, title: guidedStudy.title, theme: guidedStudy.theme, position: 0, step_count: 2, progress: null }],
+    })
+    if (path === '/api/my/study-list') return fulfill(route, guidedInList ? [{ ...guidedCard, in_my_list: true }] : [])
+    if (path === '/api/guided-plans') return fulfill(route, [{
+      slug: guidedCard.slug, title: guidedCard.title, description: guidedCard.description,
+      studies: [{ slug: guidedStudy.slug, title: guidedStudy.title, theme: guidedStudy.theme, position: 0, step_count: 2, progress: null }],
+    }])
+    if (path === '/api/guided-studies/hope-study') return fulfill(route, {
+      study: guidedStudy,
+      progress: { guided_study_id: 801, session_id: null, current_step: 0, started_at: '2026-08-08T00:00:00Z', completed_at: null },
+      responses: [],
+    })
+    if (path === '/api/guided-plans/hope-path/list') {
+      guidedInList = request.method() !== 'DELETE'
+      return fulfill(route, { in_my_list: guidedInList, list_count: guidedInList ? 4 : 3 })
+    }
+    if (path === '/api/guided-studies/hope-study/progress') {
+      const body = request.postDataJSON?.() ?? {}
+      return fulfill(route, {
+        guided_study_id: 801, session_id: body.session_id ?? null, current_step: body.current_step ?? 0,
+        started_at: '2026-08-08T00:00:00Z', completed_at: body.completed ? '2026-08-08T01:00:00Z' : null,
+      })
+    }
+    if (/^\/api\/guided-studies\/hope-study\/steps\/\d+\/responses$/.test(path)) {
+      const body = request.postDataJSON?.() ?? {}
+      return fulfill(route, { step_id: Number(path.split('/')[5]), prompt_index: body.prompt_index, answer: body.answer ?? null, revealed: body.revealed ?? false })
+    }
     if (path === '/api/studies/share/share-token') return fulfill(route, {
       session: studies.find((entry) => entry.id === 'study-active'), guest_ws_token: 'guest-study-token',
     })
@@ -623,7 +671,12 @@ export async function installApiMock(
     if (path === '/api/studies' && request.method() === 'GET') return fulfill(route, studies)
     if (path === '/api/studies' && request.method() === 'POST') {
       const body = request.postDataJSON?.() ?? {}
-      const session = { ...studyBase, id: 'study-new', title: body.title, type: body.type, anchor_ref: body.anchor_ref ?? null, status: 'active', ended_at: null }
+      const isGuided = body.guided_study_slug === guidedStudy.slug
+      const session = {
+        ...studyBase, id: 'study-new', title: body.title ?? (isGuided ? guidedStudy.title : null), type: body.type,
+        anchor_ref: body.anchor_ref ?? null, guided_study: isGuided ? { slug: guidedStudy.slug, title: guidedStudy.title, step_count: 2 } : null,
+        status: 'active', ended_at: null,
+      }
       studies = [session, ...studies]
       return fulfill(route, { session, ws_token: 'study-ws-token', participant: studyBase.participants[0] }, 201)
     }
