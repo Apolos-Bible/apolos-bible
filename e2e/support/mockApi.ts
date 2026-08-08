@@ -57,6 +57,7 @@ interface ApiMockOptions {
   user?: Record<string, unknown>
   resendVerificationStatus?: number
   initialNotes?: Array<Record<string, unknown>>
+  profileFriendshipStatus?: 'none' | 'accepted' | 'blocked' | 'blocked_by_them'
 }
 
 export async function installApiMock(
@@ -67,6 +68,7 @@ export async function installApiMock(
   let currentUser: Record<string, unknown> = { ...(options.user ?? testUser) }
   let notes: Array<Record<string, unknown>> = options.initialNotes?.map((note) => ({ ...note })) ?? []
   let nextNoteId = 7001
+  let profileFriendshipStatus = options.profileFriendshipStatus ?? 'none'
   let bookmarks: Array<Record<string, unknown>> = []
   let highlights: Array<Record<string, unknown>> = []
   let sessions = [
@@ -171,6 +173,31 @@ export async function installApiMock(
       email: 'lucia.visible@example.test',
       avatar_url: null,
     }])
+    if (path === '/api/users/21/profile') return fulfill(route, {
+      user: { id: 21, name: 'Lucia Visible', email: null, avatar_url: null, bio: 'Perfil social visible.' },
+      is_self: false,
+      friendship_status: profileFriendshipStatus,
+      friendship_id: null,
+      last_reading: null,
+      stats: { reading_streak_days: 0, notes_count: 0, highlights_count: 0, friends_count: 0, studies_count: 0 },
+      public_highlights: [],
+      public_notes: [],
+      friends: [],
+      studies: [],
+      recent_likes: null,
+    })
+    if (path === '/api/friends/21/block'
+      && request.method() === 'POST'
+      && request.postDataJSON()?._method !== 'DELETE') {
+      profileFriendshipStatus = 'blocked'
+      return fulfill(route, { status: 'blocked' })
+    }
+    if (path === '/api/friends/21/block'
+      && request.method() === 'POST'
+      && request.postDataJSON()?._method === 'DELETE') {
+      profileFriendshipStatus = 'none'
+      return fulfill(route, null, 204)
+    }
     if (path === '/api/friends/21' && request.method() === 'POST') return fulfill(route, {
       id: 501,
       user_id: testUser.id,
