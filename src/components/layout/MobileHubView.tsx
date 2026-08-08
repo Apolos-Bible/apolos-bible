@@ -72,6 +72,12 @@ export function MobileHubView() {
     },
     {
       icon: GraduationCap,
+      label: t('nav.studies'),
+      description: t('studies.mobileDescription', 'Continúa tus estudios e invitaciones.'),
+      onClick: () => showPanel('my-studies'),
+    },
+    {
+      icon: GraduationCap,
       label: t('path.title'),
       description: t('path.subtitle', 'Tus rutas y estudios bíblicos publicados.'),
       onClick: () => requireUser(() => go(paths.myPaths())),
