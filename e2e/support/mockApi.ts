@@ -73,6 +73,7 @@ interface ApiMockOptions {
   aiDocumentScenario?: 'success' | 'error-then-success'
   youVersionScenario?: 'success' | 'rejection' | 'timeout'
   gameInvitation?: boolean
+  notifications?: Array<Record<string, unknown>>
 }
 
 export async function installApiMock(
@@ -164,6 +165,7 @@ export async function installApiMock(
     reminder_timezone: null,
   }
   let pushSubscriptions = options.pushSubscriptions?.map((subscription) => ({ ...subscription })) ?? []
+  let notifications = options.notifications?.map((notification) => ({ ...notification })) ?? []
   let bookmarks: Array<Record<string, unknown>> = []
   let highlights: Array<Record<string, unknown>> = []
   let chatMessages: Array<Record<string, unknown>> = []
@@ -220,6 +222,19 @@ export async function installApiMock(
     const url = new URL(request.url())
     const path = url.pathname
     onRequest?.(path, request.method())
+
+    if (path === '/api/notifications' && request.method() === 'GET') return fulfill(route, notifications)
+    if (path === '/api/notifications/read-all' && request.method() === 'POST') {
+      notifications = notifications.map((notification) => ({ ...notification, read_at: notification.read_at ?? '2026-08-08T12:00:00Z' }))
+      return fulfill(route, { ok: true })
+    }
+    const notificationRead = path.match(/^\/api\/notifications\/([^/]+)\/read$/)
+    if (notificationRead && request.method() === 'POST' && request.postDataJSON()?._method === 'PATCH') {
+      notifications = notifications.map((notification) => notification.id === notificationRead[1]
+        ? { ...notification, read_at: '2026-08-08T12:00:00Z' }
+        : notification)
+      return fulfill(route, { ok: true })
+    }
 
     if (path === '/api/user') {
       if (options.studyGuest) return fulfill(route, { message: 'Unauthenticated.' }, 401)

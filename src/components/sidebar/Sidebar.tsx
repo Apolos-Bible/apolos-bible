@@ -5,6 +5,7 @@ import { paths } from '@/router/paths'
 import {
   BookOpen,
   BookPlus,
+  Bell,
   ExternalLink,
   GraduationCap,
   Gamepad2,
@@ -132,6 +133,7 @@ export function Sidebar() {
   const stopPolling   = useNotificationStore(s => s.stopPolling)
   const listenForPush = useNotificationStore(s => s.listenForPush)
   const stopPush      = useNotificationStore(s => s.stopPush)
+  const notificationUnread = useNotificationStore(s => s.unreadCount)
   const chatUnread    = useChatStore(s => s.conversations.reduce((acc, c) => acc + (c.unread_count || 0), 0))
   const pendingInvitations = useStudyStore(s => s.pendingInvitations.length)
   const loadInvitations = useStudyStore(s => s.loadInvitations)
@@ -272,6 +274,7 @@ export function Sidebar() {
         <NavItem compact={compact} dataTour="games" icon={Gamepad2} label={t('nav.games')} active={pathname.startsWith('/juegos')} onClick={() => user ? openRoute(paths.games(), t('nav.games')) : openAuthModal()} onOpenNew={() => user ? openRoute(paths.games(), t('nav.games'), true) : openAuthModal()} />
         {/* Marketplace opens or focuses its workspace tab. */}
         <NavItem compact={compact} dataTour="marketplace" icon={Store} label={t('nav.marketplace')} active={pathname.startsWith('/marketplace')} onClick={() => user ? openRoute(paths.marketplace(), t('nav.marketplace')) : openAuthModal()} onOpenNew={() => user ? openRoute(paths.marketplace(), t('nav.marketplace'), true) : openAuthModal()} />
+        <NavItem compact={compact} icon={Bell} label={t('notifications.title')} active={activePanel === 'notifications'} badge={notificationUnread} onClick={() => user ? toggleSidebarPanel('notifications') : openAuthModal()} />
         <NavItem compact={compact} dataTour="friends" icon={UsersRound} label={t('nav.friends')} active={activePanel === 'friends'} onClick={() => user ? toggleSidebarPanel('friends') : openAuthModal()} />
         <NavItem compact={compact} dataTour="chats" icon={MessagesSquare} label={t('nav.chats')} active={activePanel === 'chat'} badge={chatUnread} onClick={() => user ? toggleSidebarPanel('chat') : openAuthModal()} />
       </div>

@@ -1,10 +1,11 @@
 import { useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
-import { MessagesSquare, UserRoundPlus } from 'lucide-react'
+import { Bell, MessagesSquare, UserRoundPlus } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import { paths } from '@/router/paths'
 import { UserAvatar } from '@/components/auth/UserAvatar'
 import { useFriendStore } from '@/lib/store/useFriendStore'
+import { useNotificationStore } from '@/lib/store/useNotificationStore'
 import { useUIStore } from '@/lib/store/useUIStore'
 import { PanelHeader, PanelHeaderButton } from '@/components/layout/PanelHeader'
 import { FriendSearch } from './FriendSearch'
@@ -25,6 +26,7 @@ export function FriendsHubPanel() {
   const declineRequest = useFriendStore((s) => s.declineRequest)
   const removeFriend = useFriendStore((s) => s.removeFriend)
   const sendRequest = useFriendStore((s) => s.sendRequest)
+  const unreadNotifications = useNotificationStore((s) => s.unreadCount)
 
   useEffect(() => { void load() }, [load])
 
@@ -53,9 +55,17 @@ export function FriendsHubPanel() {
         onClose={closePanel}
         closeLabel={t('friends.closePanel')}
         actions={
-          <PanelHeaderButton className="md:hidden" onClick={() => openPanel('chat')} aria-label={t('nav.chats')} title={t('nav.chats')}>
-            <MessagesSquare className="h-5 w-5 md:h-4 md:w-4" strokeWidth={1.75} />
-          </PanelHeaderButton>
+          <>
+            <PanelHeaderButton onClick={() => openPanel('notifications')} aria-label={t('notifications.open')} title={t('notifications.open')}>
+              <span className="relative">
+                <Bell className="h-5 w-5 md:h-4 md:w-4" strokeWidth={1.75} />
+                {unreadNotifications > 0 && <span className="absolute -right-2 -top-2 min-w-4 rounded-full bg-accent px-1 text-center text-[9px] leading-4 text-bg-primary">{unreadNotifications > 9 ? '9+' : unreadNotifications}</span>}
+              </span>
+            </PanelHeaderButton>
+            <PanelHeaderButton className="md:hidden" onClick={() => openPanel('chat')} aria-label={t('nav.chats')} title={t('nav.chats')}>
+              <MessagesSquare className="h-5 w-5 md:h-4 md:w-4" strokeWidth={1.75} />
+            </PanelHeaderButton>
+          </>
         }
       />
       <div className="min-h-0 flex-1 overflow-y-auto">
