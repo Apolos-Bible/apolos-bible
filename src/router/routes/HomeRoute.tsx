@@ -11,6 +11,7 @@ import { paths } from '@/router/paths'
 export function HomeRoute() {
   const navigate = useNavigate()
   const user = useAuthStore((state) => state.user)
+  const authLoading = useAuthStore((state) => state.loading)
   const openAuth = useUIStore((state) => state.openAuthModal)
   const [data, setData] = useState<HomePayload | null>(null)
   const [error, setError] = useState(false)
@@ -19,11 +20,13 @@ export function HomeRoute() {
   const [goalTarget, setGoalTarget] = useState(1)
   const [calendar, setCalendar] = useState<Array<{ date: string; completed: boolean }>>([])
 
-  useEffect(() => { if (!user) { openAuth(); return } productApi.home().then(setData).catch(() => setError(true)) }, [user, openAuth])
+  useEffect(() => { if (authLoading) return; if (!user) { openAuth(); return } productApi.home().then(setData).catch(() => setError(true)) }, [user, authLoading, openAuth])
+  useEffect(() => { if (user?.tutorial_completed === false) setShowOnboarding(true) }, [user])
   useEffect(() => { if (data) setGoalTarget(data.daily_goal.target) }, [data])
   useEffect(() => { if (!user) return; const month = new Date().toISOString().slice(0, 7); productApi.calendar(month).then((value) => setCalendar(value.days)).catch(() => setCalendar([])) }, [user])
   const openGoal = () => setShowGoal(true)
   const saveGoal = async () => { if (!data) return; const updated = await productApi.goal({ kind: 'chapters', target: goalTarget, active_days: [0,1,2,3,4,5,6], timezone: Intl.DateTimeFormat().resolvedOptions().timeZone, share_completions: data.daily_goal.share_completions }); setData({ ...data, daily_goal: updated }); setShowGoal(false) }
+  if (authLoading) return <AppPageLayout title="Inicio"><div role="status" className="p-6 text-sm text-text-muted">Cargando tu inicio…</div></AppPageLayout>
   if (!user) return <AppPageLayout title="Inicio"><div className="p-6 text-sm text-text-muted">Inicia sesión para ver tu inicio personal.</div></AppPageLayout>
 
   const reading = data?.last_reading
