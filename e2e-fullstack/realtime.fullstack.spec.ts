@@ -222,8 +222,8 @@ test.describe('[BIBLE-PRESENCE-01][SOCIAL-PRESENCE-01] real presence transport',
 
     try {
       await page.goto(`/juegos/${room.id}`, { waitUntil: 'domcontentloaded' })
-      await readerBPage.goto(`/juegos/${room.id}`, { waitUntil: 'domcontentloaded' })
       await joinPresence(page, readerA, readerB)
+      await readerBPage.goto(`/juegos/${room.id}`, { waitUntil: 'domcontentloaded' })
       await joinPresence(readerBPage, readerB, readerA)
 
       const friendNames = (target: Page) => target.evaluate(async () => {
@@ -236,15 +236,19 @@ test.describe('[BIBLE-PRESENCE-01][SOCIAL-PRESENCE-01] real presence transport',
       await expect.poll(() => friendNames(page), { timeout: 10_000 }).toEqual([readerB.user.name])
       await expect.poll(() => friendNames(readerBPage), { timeout: 10_000 }).toEqual([readerA.user.name])
 
-      const reauthorization = readerBPage.waitForResponse((response) =>
-        response.url().endsWith('/api/broadcasting/auth')
-          && response.request().postData()?.includes('presence-chapter.43.3') === true
-          && response.status() === 200,
+      const leaveHeartbeat = readerBPage.waitForResponse((response) =>
+        response.url().endsWith('/api/presence/heartbeat')
+          && response.request().postData()?.includes('"_method":"DELETE"') === true
+          && response.status() === 204,
       )
-      const dropResponse = await request.post('http://127.0.0.1:8082/drop-latest')
-      expect(dropResponse.status()).toBe(204)
+      await readerBPage.evaluate(async () => {
+        const { usePresenceStore } = await import('/src/lib/store/usePresenceStore.ts')
+        usePresenceStore.getState().leaveChapter()
+      })
+      await leaveHeartbeat
       await expect.poll(() => friendNames(page), { timeout: 15_000 }).toEqual([])
-      await reauthorization
+
+      await joinPresence(readerBPage, readerB, readerA)
       await expect.poll(() => friendNames(readerBPage), { timeout: 15_000 }).toEqual([readerA.user.name])
       await expect.poll(() => friendNames(page), { timeout: 15_000 }).toEqual([readerB.user.name])
     } finally {

@@ -1,7 +1,8 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest'
 
-const { mockPost } = vi.hoisted(() => ({
+const { mockPost, mockDelete } = vi.hoisted(() => ({
   mockPost: vi.fn().mockResolvedValue({ data: [] }),
+  mockDelete: vi.fn().mockResolvedValue(undefined),
 }))
 
 const mockJoinError = vi.fn()
@@ -40,7 +41,7 @@ vi.mock('@/lib/echo', () => ({
   }),
 }))
 
-vi.mock('@/lib/api', () => ({ api: { post: mockPost } }))
+vi.mock('@/lib/api', () => ({ api: { post: mockPost, delete: mockDelete } }))
 
 vi.mock('../useUIStore', () => ({
   useUIStore: {
@@ -102,6 +103,10 @@ describe('usePresenceStore', () => {
     usePresenceStore.getState().joinChapter(43, 3, 'user-1')
     usePresenceStore.getState().leaveChapter()
     expect(mockEcho.leave).toHaveBeenCalledWith('chapter.43.3')
+    expect(mockDelete).toHaveBeenCalledWith('/api/presence/heartbeat', {
+      book_number: 43,
+      chapter_number: 3,
+    })
     expect(usePresenceStore.getState().others).toEqual([])
   })
 
