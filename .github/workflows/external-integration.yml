@@ -33,25 +33,21 @@ jobs:
         run: |
           set -euo pipefail
           KEY="integration-tests/${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}/probe.txt"
+          cleanup() {
+            aws s3 rm "s3://$RELEASES_BUCKET/$KEY" --endpoint-url "$RELEASES_ENDPOINT" >/dev/null 2>&1 || true
+          }
+          trap cleanup EXIT
           printf 'apolos-s3-integration-%s\n' "$GITHUB_RUN_ID" > probe.txt
           aws s3 cp probe.txt "s3://$RELEASES_BUCKET/$KEY" --endpoint-url "$RELEASES_ENDPOINT" --content-type text/plain
           aws s3 cp "s3://$RELEASES_BUCKET/$KEY" downloaded.txt --endpoint-url "$RELEASES_ENDPOINT"
           cmp probe.txt downloaded.txt
           curl --fail --silent --show-error "$RELEASES_PUBLIC_URL/$KEY" --output public.txt
           cmp probe.txt public.txt
-          aws s3 rm "s3://$RELEASES_BUCKET/$KEY" --endpoint-url "$RELEASES_ENDPOINT"
+          cleanup
           if aws s3api head-object --bucket "$RELEASES_BUCKET" --key "$KEY" --endpoint-url "$RELEASES_ENDPOINT" 2>/dev/null; then
             echo "Deleted integration object is still readable" >&2
             exit 1
           fi
 
       - name: Validate published release manifests when present
-        run: |
-          set -euo pipefail
-          STATUS=$(curl --silent --output latest.json --write-out '%{http_code}' "$RELEASES_PUBLIC_URL/latest.json")
-          if [ "$STATUS" = "404" ]; then
-            echo "No published latest.json yet; object lifecycle gate passed."
-            exit 0
-          fi
-          test "$STATUS" = "200"
-          node -e "const f=require('fs');const x=JSON.parse(f.readFileSync('latest.json'));if(!x.version||!x.platforms)throw new Error('Invalid latest manifest')"
+        run: node scripts/verify-public-release.mjs "$RELEASES_PUBLIC_URL"
