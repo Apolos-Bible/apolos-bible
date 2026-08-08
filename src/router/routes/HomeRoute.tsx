@@ -14,7 +14,7 @@ export function HomeRoute() {
   const openAuth = useUIStore((state) => state.openAuthModal)
   const [data, setData] = useState<HomePayload | null>(null)
   const [error, setError] = useState(false)
-  const [showOnboarding, setShowOnboarding] = useState(() => !!user && !user.tutorial_completed)
+  const [showOnboarding, setShowOnboarding] = useState(() => user?.tutorial_completed === false)
   const [showGoal, setShowGoal] = useState(false)
   const [goalTarget, setGoalTarget] = useState(1)
   const [calendar, setCalendar] = useState<Array<{ date: string; completed: boolean }>>([])
