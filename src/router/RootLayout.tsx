@@ -26,7 +26,6 @@ import { AnalyticsConsentBanner } from '@/components/privacy/AnalyticsConsentBan
 import { trackAnalyticsPageView } from '@/lib/analytics'
 import { findWorkspaceGroup, useWorkspaceStore } from '@/lib/store/useWorkspaceStore'
 import { RouteIndexing } from '@/components/seo/RouteIndexing'
-import { SyncIndicator } from '@/components/sync/SyncIndicator'
 
 const VISITED_STORAGE_KEY = 'verbum_has_visited'
 let hasLoggedStartupSettings = false
@@ -204,7 +203,6 @@ function RootLayoutSurface() {
   return (
     <>
       <RouteIndexing />
-      <SyncIndicator />
       <RegionNav />
       {!isMobile && isWorkspaceRoute(location.pathname)
         ? <WorkspaceDesktopShell />
