@@ -4,6 +4,18 @@ import { authDeepLinkTarget } from '@/lib/authDeepLinkUrl'
 
 type Navigate = (to: string, opts?: { replace?: boolean }) => void
 
+function reportNativeAcceptance(target: string): void {
+  const endpoint = import.meta.env.VITE_NATIVE_ACCEPTANCE_URL
+  if (!endpoint) return
+  const sanitizedTarget = target.replace(/#token=[^&]*/i, '#token=<present>')
+  void fetch(endpoint, {
+    method: 'POST',
+    mode: 'no-cors',
+    headers: { 'Content-Type': 'text/plain' },
+    body: sanitizedTarget,
+  }).catch(() => {})
+}
+
 /**
  * Forwards `tulia://auth/finish?...` deep links to the in-app
  * the matching provider finish route, where the SPA consumes `#token=`
@@ -27,6 +39,7 @@ export function registerAuthDeepLink(navigate: Navigate): () => void {
       console.warn('[deepLink] ignored unsupported URL')
       return
     }
+    reportNativeAcceptance(target)
     navigate(target, { replace: true })
   }
 
