@@ -18,6 +18,9 @@ export type BibleParams = {
 
 export const paths = {
   root: () => '/',
+  home: () => '/inicio',
+  help: () => '/ayuda',
+  feed: () => '/circulo',
 
   bible({ lang, book, chapter, verse, endVerse }: BibleParams): string {
     const langPrefix = lang === 'en' ? '' : `/${lang}`
@@ -82,6 +85,9 @@ export const paths = {
 export function isPageRoute(pathname: string): boolean {
   return (
     pathname.startsWith('/perfil') ||
+    pathname.startsWith('/inicio') ||
+    pathname.startsWith('/ayuda') ||
+    pathname.startsWith('/circulo') ||
     pathname.startsWith('/ajustes') ||
     pathname.startsWith('/marketplace') ||
     pathname.startsWith('/juegos') ||

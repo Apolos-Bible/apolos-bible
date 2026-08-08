@@ -14,6 +14,7 @@ import { useAuthStore } from '@/lib/store/useAuthStore'
 import { useChatStore } from '@/lib/store/useChatStore'
 import { useNotificationStore } from '@/lib/store/useNotificationStore'
 import { useStudyStore } from '@/lib/store/useStudyStore'
+import { useVerseStore } from '@/lib/store/useVerseStore'
 import { cn } from '@/lib/cn'
 
 interface NavButtonProps {
@@ -107,6 +108,9 @@ export function MobileBottomNav() {
   const friendsUnread = useNotificationStore((s) => s.unreadCount)
   const pendingInvitations = useStudyStore((s) => s.pendingInvitations.length)
   const collapsed = useUIStore((s) => s.mobileChromeCollapsed)
+  const selectedBook = useVerseStore((s) => s.selectedBook)
+  const selectedChapter = useVerseStore((s) => s.selectedChapter)
+  const locale = useUIStore((s) => s.locale)
 
   const onPage = isPageRoute(pathname)
 
@@ -142,7 +146,7 @@ export function MobileBottomNav() {
 
   const goToBible = () => {
     clearOthers()
-    if (onPage) navigate(paths.root())
+    if (onPage) navigate(paths.bible({ lang: locale, book: selectedBook || 'genesis', chapter: selectedChapter || 1 }))
   }
 
   const isReader = !onPage && !mobileSearchOpen && mobileHub === null && activePanel === null
