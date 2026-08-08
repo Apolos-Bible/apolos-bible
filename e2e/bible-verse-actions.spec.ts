@@ -101,6 +101,26 @@ test.describe('Lector bíblico y acciones de versículo', () => {
     await expect(third).toHaveAttribute('aria-selected', 'true')
   })
 
+  test('[BIBLE-SELECT-01] extiende una selección contigua con Shift y puntero', async ({ page }, testInfo) => {
+    test.skip(testInfo.project.name === 'mobile-chromium', 'Shift+puntero es una interacción de escritorio')
+    await installApiMock(page)
+    await page.goto('/bible/juan/1', { waitUntil: 'domcontentloaded' })
+
+    const verses = page.getByRole('option')
+    const first = verses.filter({ hasText: 'En el principio era el Verbo.' }).first()
+    const second = verses.filter({ hasText: 'Él estaba con Dios.' }).first()
+    const third = verses.filter({ hasText: 'Todas las cosas por él fueron hechas.' }).first()
+    await first.click()
+    await expect(first).toHaveAttribute('aria-selected', 'true')
+    await page.keyboard.down('Shift')
+    await third.click()
+    await page.keyboard.up('Shift')
+
+    await expect(first).toHaveAttribute('aria-selected', 'true')
+    await expect(second).toHaveAttribute('aria-selected', 'true')
+    await expect(third).toHaveAttribute('aria-selected', 'true')
+  })
+
   test('[VERSE-FAVORITE-01] añade y quita el favorito con postcondición de API', async ({ page }) => {
     const mutations: Array<Record<string, unknown>> = []
     await installApiMock(page)
