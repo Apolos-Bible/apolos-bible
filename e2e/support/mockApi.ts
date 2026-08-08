@@ -78,6 +78,21 @@ export async function installApiMock(
     show_reading_activity: true,
     allow_friend_requests: 'everyone',
   }
+  let pushPreferences: Record<string, unknown> = {
+    chat_message: true,
+    note_reply: true,
+    note_like: true,
+    friend_request: true,
+    friend_accepted: true,
+    activity_in_chapter: true,
+    study_invitation: true,
+    reading_reminder: false,
+    quiet_hours_start: null,
+    quiet_hours_end: null,
+    timezone: null,
+    reminder_time: null,
+    reminder_timezone: null,
+  }
   let bookmarks: Array<Record<string, unknown>> = []
   let highlights: Array<Record<string, unknown>> = []
   let chatMessages: Array<Record<string, unknown>> = []
@@ -447,7 +462,14 @@ export async function installApiMock(
       highlights = highlights.filter((entry) => Number(entry.id) !== Number(highlightMutation[1]))
       return fulfill(route, { ok: true })
     }
-    if (path === '/api/push/preferences') return fulfill(route, {})
+    if (path === '/api/push/preferences') {
+      const body = request.postDataJSON?.() ?? {}
+      if (request.method() === 'PATCH' || body._method === 'PATCH') {
+        const { _method, ...changes } = body
+        pushPreferences = { ...pushPreferences, ...changes }
+      }
+      return fulfill(route, pushPreferences)
+    }
     if (path === '/api/push/subscriptions') return fulfill(route, [])
 
     return fulfill(route, [])
