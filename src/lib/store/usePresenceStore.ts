@@ -17,6 +17,13 @@ let _currentChapter: { bookNumber: number; chapterNumber: number; selfId: string
 let _stopReconnectListener: (() => void) | null = null
 let _heartbeatTimer: ReturnType<typeof setInterval> | null = null
 
+function clearHeartbeat(chapter: { bookNumber: number; chapterNumber: number }): void {
+  void api.delete('/api/presence/heartbeat', {
+    book_number: chapter.bookNumber,
+    chapter_number: chapter.chapterNumber,
+  }).catch((error) => console.error('[presence] leave heartbeat failed', error))
+}
+
 async function reconcilePresence(bookNumber: number, chapterNumber: number): Promise<void> {
   try {
     const response = await api.post<{ data: PresenceUser[] }>('/api/presence/heartbeat', {
@@ -41,6 +48,10 @@ export const usePresenceStore = create<PresenceStore>((set) => ({
     const echo = initEcho()
     if (!echo) return
 
+    if (_currentChapter
+      && (_currentChapter.bookNumber !== bookNumber || _currentChapter.chapterNumber !== chapterNumber)) {
+      clearHeartbeat(_currentChapter)
+    }
     _currentChapter = { bookNumber, chapterNumber, selfId }
     _stopReconnectListener ??= onEchoReconnect(() => {
       const chapter = _currentChapter
@@ -105,6 +116,7 @@ export const usePresenceStore = create<PresenceStore>((set) => ({
   },
 
   leaveChapter: () => {
+    if (_currentChapter) clearHeartbeat(_currentChapter)
     _currentChapter = null
     _stopReconnectListener?.()
     _stopReconnectListener = null
