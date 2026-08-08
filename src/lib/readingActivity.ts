@@ -8,8 +8,29 @@ export interface ReadingActivityPayload {
   version: string
 }
 
-let timer: ReturnType<typeof setTimeout> | null = null
-let pending: ReadingActivityPayload | null = null
+const POSITION_DELAY_MS = 2500
+const READ_DELAY_MS = 20_000
+
+let positionTimer: ReturnType<typeof setTimeout> | null = null
+let pendingPosition: ReadingActivityPayload | null = null
+let readTimer: ReturnType<typeof setTimeout> | null = null
+let pendingChapter: ReadingActivityPayload | null = null
+let pendingChapterKey: string | null = null
+
+function localDate(): string {
+  const date = new Date()
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`
+}
+
+function publish(payload: ReadingActivityPayload, countAsRead: boolean): void {
+  void api.post('/api/user/reading-activity', {
+    ...payload,
+    local_date: localDate(),
+    count_as_read: countAsRead,
+  }).catch(() => {
+    /* best-effort telemetry — never surface to the user */
+  })
+}
 
 /**
  * Records the user's current reading position on the server. Powers the
@@ -23,21 +44,27 @@ export function pingReadingActivity(payload: ReadingActivityPayload): void {
   if (!localStorage.getItem('verbum_token')) return
   if (!payload.book_slug || !payload.book_name) return
 
-  pending = payload
-  if (timer) return
+  pendingPosition = payload
+  if (!positionTimer) {
+    positionTimer = setTimeout(() => {
+      positionTimer = null
+      const next = pendingPosition
+      pendingPosition = null
+      if (next) publish(next, false)
+    }, POSITION_DELAY_MS)
+  }
 
-  timer = setTimeout(() => {
-    timer = null
-    const next = pending
-    pending = null
-    if (next) {
-      // Local calendar date — keeps the reading streak aligned with the
-      // user's midnight instead of UTC's.
-      const d = new Date()
-      const localDate = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
-      void api.post('/api/user/reading-activity', { ...next, local_date: localDate }).catch(() => {
-        /* best-effort telemetry — never surface to the user */
-      })
+  const chapterKey = `${payload.version}|${payload.book_slug}|${payload.chapter}`
+  pendingChapter = payload
+  if (chapterKey === pendingChapterKey) return
+
+  if (readTimer) clearTimeout(readTimer)
+  pendingChapterKey = chapterKey
+  readTimer = setTimeout(() => {
+    readTimer = null
+    const chapter = pendingChapter
+    if (chapter && `${chapter.version}|${chapter.book_slug}|${chapter.chapter}` === chapterKey) {
+      publish(chapter, true)
     }
-  }, 2500)
+  }, READ_DELAY_MS)
 }
