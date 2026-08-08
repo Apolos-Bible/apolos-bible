@@ -144,8 +144,17 @@ export function createVerseStore() {
 
     localStorage.setItem(BIBLE_VERSION_STORAGE_KEY, String(id))
     set({ versionId: id, books: [], verses: [], selectedVerseId: null, selectedVerseIds: [], cursorVerseId: null, selectionAnchorId: null, studyVerseId: null })
-    if (options?.sync !== false && fromYouVersionClientId(id) === null) {
-      saveUserSettingsSilently({ preferred_bible_version_id: id })
+    if (options?.sync !== false) {
+      const youVersionId = fromYouVersionClientId(id)
+      saveUserSettingsSilently(youVersionId === null ? {
+        preferred_bible_version_id: id,
+        preferred_bible_provider: 'local',
+        preferred_bible_provider_id: id,
+      } : {
+        preferred_bible_version_id: null,
+        preferred_bible_provider: 'youversion',
+        preferred_bible_provider_id: youVersionId,
+      })
     }
     await get().loadBooks(currentRoute)
   },

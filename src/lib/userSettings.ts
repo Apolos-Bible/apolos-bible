@@ -1,6 +1,7 @@
 import i18n from '@/lib/i18n'
 import { BIBLE_VERSION_STORAGE_KEY } from '@/lib/defaultBibleVersion'
 import { APP_LOCALE_STORAGE_KEY } from '@/lib/defaultAppLocale'
+import { fromYouVersionClientId, toYouVersionClientId } from '@/lib/youVersion'
 import { useUIStore } from '@/lib/store/useUIStore'
 import {
   setBibleVersionForAllStores,
@@ -14,8 +15,11 @@ export function collectClientSettings(): UserSettings {
   const ui = useUIStore.getState()
   const verse = useVerseStore.getState()
 
+  const youVersionId = fromYouVersionClientId(verse.versionId)
   return {
-    preferred_bible_version_id: verse.versionId,
+    preferred_bible_version_id: youVersionId === null ? verse.versionId : null,
+    preferred_bible_provider: youVersionId === null ? 'local' : 'youversion',
+    preferred_bible_provider_id: youVersionId ?? verse.versionId,
     locale: ui.locale,
     theme: ui.theme,
     accent_color: ui.accentColor,
@@ -83,9 +87,13 @@ export async function applyUserSettings(settings: UserSettings): Promise<void> {
     }
   }
 
-  if (settings.preferred_bible_version_id && settings.preferred_bible_version_id !== verse.versionId) {
-    localStorage.setItem(BIBLE_VERSION_STORAGE_KEY, String(settings.preferred_bible_version_id))
-    await setBibleVersionForAllStores(settings.preferred_bible_version_id, { sync: false })
+  const preferredVersionId = settings.preferred_bible_provider === 'youversion'
+    && settings.preferred_bible_provider_id
+    ? toYouVersionClientId(settings.preferred_bible_provider_id)
+    : settings.preferred_bible_provider_id ?? settings.preferred_bible_version_id
+  if (preferredVersionId && preferredVersionId !== verse.versionId) {
+    localStorage.setItem(BIBLE_VERSION_STORAGE_KEY, String(preferredVersionId))
+    await setBibleVersionForAllStores(preferredVersionId, { sync: false })
   }
 
   useUIStore.setState({
