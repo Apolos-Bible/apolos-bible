@@ -34,5 +34,6 @@ public/sitemap.xml
 # tests
 coverage/
 playwright-report/
+playwright-report-fullstack/
 test-results/
 playwright/.auth/
