@@ -36,6 +36,11 @@ vi.mock('@/lib/userSettingsApi', () => ({
   saveUserSettingsSilently: vi.fn(),
 }))
 
+vi.mock('@/lib/prefetchBible', () => ({
+  prefetchVersion: vi.fn(),
+  shouldAutoPrefetch: vi.fn(() => true),
+}))
+
 import { bibleApi } from '@/lib/bibleApi'
 import { getStoredBibleVersionId } from '@/lib/defaultBibleVersion'
 import { saveUserSettingsSilently } from '@/lib/userSettingsApi'
