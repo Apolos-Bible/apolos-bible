@@ -422,7 +422,7 @@ export function VerseList() {
   }
 
   /**
-   * Shared props that make a verse a real, focusable listbox option.
+   * Shared props that make a verse a real, focusable list item.
    *
    * The list is a single tab stop (roving tabindex): exactly one row is
    * tabbable and j/k move between them. The controls *inside* a row are
@@ -436,8 +436,8 @@ export function VerseList() {
       'data-verse-id': verse.id,
       'data-reader-verse': verse.verse,
       'data-selectable-verse-id': verse.id,
-      role: 'option',
-      'aria-selected': isSelected,
+      role: 'listitem',
+      'aria-current': isSelected ? 'true' : undefined,
       tabIndex: verse.id === tabbableVerseId ? 0 : -1,
       // Standard list semantics: plain click replaces the selection, Cmd/Ctrl
       // adds or removes one verse, Shift takes everything back to the anchor.
@@ -638,8 +638,7 @@ export function VerseList() {
             {/* ── Flow mode ── */}
             {readingMode === 'flow' && (
               <p
-                role="listbox"
-                aria-multiselectable="true"
+                role="list"
                 aria-label={t('a11y.verseList', { book: bookName, chapter: selectedChapter })}
                 className={cn('font-reading leading-[1.78] md:leading-[1.85] tracking-[0.003em] text-text-primary select-none md:select-text', flowTextSizeClass)}
               >
@@ -698,8 +697,7 @@ export function VerseList() {
             {/* ── Verse mode ── */}
             {readingMode === 'verse' && (
               <div
-                role="listbox"
-                aria-multiselectable="true"
+                role="list"
                 aria-label={t('a11y.verseList', { book: bookName, chapter: selectedChapter })}
                 className="space-y-4"
               >

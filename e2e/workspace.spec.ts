@@ -67,13 +67,13 @@ test('[WORKSPACE-DND-01] reordena pestañas mediante arrastre y persiste el resu
 
 test('[WORKSPACE-RESP-01] conserva ruta y contenido al cambiar entre escritorio y móvil', async ({ page }) => {
   await page.goto('/bible/juan/2/1', { waitUntil: 'domcontentloaded' })
-  await expect(page.getByRole('option').filter({ hasText: 'En el principio era el Verbo.' }).first()).toBeVisible()
+  await expect(page.getByRole('listitem').filter({ hasText: 'En el principio era el Verbo.' }).first()).toBeVisible()
 
   await page.setViewportSize({ width: 412, height: 915 })
   await expect(page).toHaveURL(/\/bible\/juan\/2\/1$/)
-  await expect(page.getByRole('option').filter({ hasText: 'En el principio era el Verbo.' }).first()).toBeVisible()
+  await expect(page.getByRole('listitem').filter({ hasText: 'En el principio era el Verbo.' }).first()).toBeVisible()
 
   await page.setViewportSize({ width: 1440, height: 900 })
   await expect(page).toHaveURL(/\/bible\/juan\/2\/1$/)
-  await expect(page.getByRole('option').filter({ hasText: 'En el principio era el Verbo.' }).first()).toBeVisible()
+  await expect(page.getByRole('listitem').filter({ hasText: 'En el principio era el Verbo.' }).first()).toBeVisible()
 })

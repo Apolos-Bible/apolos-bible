@@ -2,7 +2,7 @@ import { expect, test } from '@playwright/test'
 import { installApiMock } from './support/mockApi'
 
 async function firstVerse(page: Parameters<typeof installApiMock>[0]) {
-  const verse = page.getByRole('option').filter({ hasText: 'En el principio era el Verbo.' }).first()
+  const verse = page.getByRole('listitem').filter({ hasText: 'En el principio era el Verbo.' }).first()
   await expect(verse).toBeVisible()
   return verse
 }
@@ -33,8 +33,8 @@ test.describe('Lector bíblico y acciones de versículo', () => {
     await page.goto('/es/bible/juan/2/2', { waitUntil: 'domcontentloaded' })
 
     await expect(page).toHaveURL(/\/es\/bible\/juan\/2\/2$/)
-    const selected = page.getByRole('option').filter({ hasText: 'Él estaba con Dios.' }).first()
-    await expect(selected).toHaveAttribute('aria-selected', 'true')
+    const selected = page.getByRole('listitem').filter({ hasText: 'Él estaba con Dios.' }).first()
+    await expect(selected).toHaveAttribute('aria-current', 'true')
   })
 
   test('[BIBLE-NAV-02] respeta límites y persiste la navegación de capítulo', async ({ page }, testInfo) => {
@@ -56,7 +56,7 @@ test.describe('Lector bíblico y acciones de versículo', () => {
       .toBe(JSON.stringify({ book: 'genesis', chapter: 2 }))
     await page.goto('/', { waitUntil: 'domcontentloaded' })
     await expect(page).toHaveURL(/\/bible\/genesis\/2$/)
-    await expect(page.getByRole('option').filter({ hasText: 'En el principio creó Dios.' }).first()).toBeVisible()
+    await expect(page.getByRole('listitem').filter({ hasText: 'En el principio creó Dios.' }).first()).toBeVisible()
   })
 
   test('[BIBLE-NAV-02] no avanza después del último capítulo disponible', async ({ page }, testInfo) => {
@@ -79,7 +79,7 @@ test.describe('Lector bíblico y acciones de versículo', () => {
     const verse = await firstVerse(page)
     await verse.click()
 
-    await expect(verse).toHaveAttribute('aria-selected', 'true')
+    await expect(verse).toHaveAttribute('aria-current', 'true')
     await expect(page.getByRole('group', { name: /Actions for selected verses|Acciones.*vers/i })).toBeVisible()
   })
 
@@ -87,18 +87,18 @@ test.describe('Lector bíblico y acciones de versículo', () => {
     await installApiMock(page)
     await page.goto('/bible/juan/1', { waitUntil: 'domcontentloaded' })
 
-    const verses = page.getByRole('option')
+    const verses = page.getByRole('listitem')
     const first = verses.filter({ hasText: 'En el principio era el Verbo.' }).first()
     const third = verses.filter({ hasText: 'Todas las cosas por él fueron hechas.' }).first()
     await first.click()
-    await expect(first).toHaveAttribute('aria-selected', 'true')
+    await expect(first).toHaveAttribute('aria-current', 'true')
     await page.keyboard.press('Shift+ArrowDown')
-    await expect(verses.filter({ hasText: 'Él estaba con Dios.' }).first()).toHaveAttribute('aria-selected', 'true')
+    await expect(verses.filter({ hasText: 'Él estaba con Dios.' }).first()).toHaveAttribute('aria-current', 'true')
     await page.keyboard.press('Shift+ArrowDown')
 
-    await expect(first).toHaveAttribute('aria-selected', 'true')
-    await expect(verses.filter({ hasText: 'Él estaba con Dios.' }).first()).toHaveAttribute('aria-selected', 'true')
-    await expect(third).toHaveAttribute('aria-selected', 'true')
+    await expect(first).toHaveAttribute('aria-current', 'true')
+    await expect(verses.filter({ hasText: 'Él estaba con Dios.' }).first()).toHaveAttribute('aria-current', 'true')
+    await expect(third).toHaveAttribute('aria-current', 'true')
   })
 
   test('[BIBLE-SELECT-01] extiende una selección contigua con Shift y puntero', async ({ page }, testInfo) => {
@@ -106,19 +106,17 @@ test.describe('Lector bíblico y acciones de versículo', () => {
     await installApiMock(page)
     await page.goto('/bible/juan/1', { waitUntil: 'domcontentloaded' })
 
-    const verses = page.getByRole('option')
+    const verses = page.getByRole('listitem')
     const first = verses.filter({ hasText: 'En el principio era el Verbo.' }).first()
     const second = verses.filter({ hasText: 'Él estaba con Dios.' }).first()
     const third = verses.filter({ hasText: 'Todas las cosas por él fueron hechas.' }).first()
     await first.click()
-    await expect(first).toHaveAttribute('aria-selected', 'true')
-    await page.keyboard.down('Shift')
-    await third.click()
-    await page.keyboard.up('Shift')
+    await expect(first).toHaveAttribute('aria-current', 'true')
+    await third.click({ modifiers: ['Shift'] })
 
-    await expect(first).toHaveAttribute('aria-selected', 'true')
-    await expect(second).toHaveAttribute('aria-selected', 'true')
-    await expect(third).toHaveAttribute('aria-selected', 'true')
+    await expect(first).toHaveAttribute('aria-current', 'true')
+    await expect(second).toHaveAttribute('aria-current', 'true')
+    await expect(third).toHaveAttribute('aria-current', 'true')
   })
 
   test('[VERSE-FAVORITE-01] añade y quita el favorito con postcondición de API', async ({ page }) => {
