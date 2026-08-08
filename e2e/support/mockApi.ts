@@ -123,7 +123,8 @@ export async function installApiMock(
       sessionStorage.setItem('apolos_e2e_api_initialized', 'true')
     }
     localStorage.setItem('analytics_consent', 'denied')
-    localStorage.setItem('verbum_tutorial_completed', 'true')
+    localStorage.setItem('tutorial_completed_v1', 'true')
+    localStorage.setItem('tutorial_invite_dismissed_v1', 'true')
     localStorage.setItem('lastReading', JSON.stringify({ book: 'juan', chapter: 3, verse: 16 }))
     localStorage.setItem('e2e_user', JSON.stringify(user))
   }, { user: currentUser })
@@ -494,7 +495,8 @@ export async function installGuestApiMock(page: Page, options: GuestApiMockOptio
   await page.addInitScript(() => {
     localStorage.removeItem('verbum_token')
     localStorage.setItem('analytics_consent', 'denied')
-    localStorage.setItem('verbum_tutorial_completed', 'true')
+    localStorage.setItem('tutorial_completed_v1', 'true')
+    localStorage.setItem('tutorial_invite_dismissed_v1', 'true')
   })
 
   await page.route('**/api/**', async (route) => {
