@@ -62,8 +62,8 @@ test.describe('Lector bíblico y acciones de versículo', () => {
     await expect.poll(() => page.evaluate(() => localStorage.getItem('verbum_last_reading')))
       .toBe(JSON.stringify({ book: 'genesis', chapter: 2 }))
     await page.goto('/', { waitUntil: 'domcontentloaded' })
-    await expect(page).toHaveURL(/\/bible\/genesis\/2$/)
-    await expect(page.getByRole('listitem').filter({ hasText: 'En el principio creó Dios.' }).first()).toBeVisible()
+    await expect(page).toHaveURL(/\/inicio$/)
+    await expect(page.getByRole('heading', { name: /Génesis 2:1/i })).toBeVisible()
   })
 
   test('[BIBLE-NAV-02] no avanza después del último capítulo disponible', async ({ page }, testInfo) => {
