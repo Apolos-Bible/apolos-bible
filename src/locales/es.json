@@ -907,6 +907,7 @@
   "settings.storage.empty": "Todavía no hay Biblias completas descargadas.",
   "settings.storage.chapters": "capítulos",
   "settings.storage.remove": "Eliminar descarga",
+  "settings.storage.removeConfirm": "¿Eliminar la Biblia {{version}} descargada de este dispositivo?",
   "settings.security.title": "Seguridad y datos",
   "settings.security.subtitle": "Revisa tus métodos de acceso, sesiones activas y datos personales.",
   "settings.security.providers": "Métodos de acceso",

@@ -98,7 +98,10 @@ async function cacheFirst<T>(
     if (fallback !== undefined && isValid(fallback)) return fallback
     throw e
   })
-  if (isValid(fresh)) write(fresh).catch(() => {})
+  // Callers such as the offline downloader treat this promise as the durable
+  // completion boundary. Do not report success while IndexedDB writes are
+  // still racing in the background.
+  if (isValid(fresh)) await write(fresh).catch(() => undefined)
   return fresh
 }
 
