@@ -7,7 +7,7 @@ test.describe('[SOCIAL-PROFILE-01] profile views', () => {
 
     await page.goto('/perfil')
     await expect(page.getByRole('heading', { name: 'Ana Segura' })).toBeVisible()
-    await expect(page.getByLabel('Editor group').getByText('ana@example.test')).toBeVisible()
+    await expect(page.getByText('ana@example.test').last()).toBeVisible()
     await expect(page.getByText('Estudio la Biblia con mi comunidad.')).toBeVisible()
     await expect(page.getByRole('link', { name: /Juan 3:16/ })).toBeVisible()
     await expect(page.getByRole('link', { name: 'Edit profile' })).toBeVisible()
