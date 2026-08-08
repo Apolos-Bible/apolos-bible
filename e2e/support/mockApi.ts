@@ -23,6 +23,12 @@ const versions = [{
   abbreviation: 'NVI',
   language: 'es',
   provider: 'local',
+}, {
+  id: 3,
+  name: 'Nueva Traduccion Viviente',
+  abbreviation: 'NTV',
+  language: 'es',
+  provider: 'local',
 }]
 
 const books = [
@@ -204,6 +210,28 @@ export async function installApiMock(
     }
     if (path === '/api/versions') return fulfill(route, versions)
     if (/^\/api\/versions\/\d+\/books$/.test(path)) return fulfill(route, books)
+    if (/^\/api\/chapters\/\d+\/cross-ref-verse-ids$/.test(path)) return fulfill(route, [1001001])
+    if (/^\/api\/verses\/\d+\/cross-references$/.test(path)) return fulfill(route, [{
+      id: 9001,
+      book: 'Juan',
+      slug: 'juan',
+      chapter: 2,
+      verse: 1,
+      text: 'En el principio era el Verbo.',
+    }])
+    if (/^\/api\/verses\/\d+\/similar$/.test(path)) return fulfill(route, {
+      seed_verse_id: 1001001,
+      model: 'test-semantic-v1',
+      results: [{
+        verse_id: 43002001,
+        book: 'Juan',
+        book_slug: 'juan',
+        chapter: 2,
+        verse: 1,
+        text: 'En el principio era el Verbo.',
+        score: 0.94,
+      }],
+    })
     if (path.includes('/chapters/')) return fulfill(route, chapterResponse(path))
     if (/^\/api\/versions\/\d+\/search$/.test(path)) {
       if (url.searchParams.get('q')?.includes('inexistente')) return fulfill(route, [])
