@@ -17,7 +17,7 @@ export function HomeRoute() {
   const closeAuth = useUIStore((state) => state.closeAuthModal)
   const [data, setData] = useState<HomePayload | null>(null)
   const [error, setError] = useState(false)
-  const [showOnboarding, setShowOnboarding] = useState(() => user?.tutorial_completed === false)
+  const [showOnboarding, setShowOnboarding] = useState(() => user?.tutorial_completed === false && localStorage.getItem('tutorial_completed_v1') !== 'true')
   const [showGoal, setShowGoal] = useState(false)
   const [goalTarget, setGoalTarget] = useState(1)
   const [calendar, setCalendar] = useState<Array<{ date: string; completed: boolean }>>([])
@@ -33,7 +33,9 @@ export function HomeRoute() {
     }).catch(() => setError(true))
   }, [user, authLoading, openAuth])
   useEffect(() => { if (user) closeAuth() }, [user, closeAuth])
-  useEffect(() => { if (user?.tutorial_completed === false) setShowOnboarding(true) }, [user])
+  useEffect(() => {
+    if (user?.tutorial_completed === false && localStorage.getItem('tutorial_completed_v1') !== 'true') setShowOnboarding(true)
+  }, [user])
   useEffect(() => { if (data) setGoalTarget(data.daily_goal.target) }, [data])
   useEffect(() => {
     const reading = data?.last_reading

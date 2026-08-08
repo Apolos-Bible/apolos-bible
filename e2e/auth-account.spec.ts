@@ -23,7 +23,7 @@ test.describe('Autenticación, cuenta y sesiones', () => {
     const macSession = page.getByRole('listitem').filter({ hasText: 'Mac · Apolos' })
     await macSession.getByRole('button', { name: /Close|Revocar/i }).click()
 
-    expect(revoked).toBe(true)
+    await expect.poll(() => revoked).toBe(true)
     await expect(page.getByText('Windows · Apolos')).toBeVisible()
   })
 
