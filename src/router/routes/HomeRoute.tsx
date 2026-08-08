@@ -22,6 +22,7 @@ export function HomeRoute() {
   const [goalTarget, setGoalTarget] = useState(1)
   const [calendar, setCalendar] = useState<Array<{ date: string; completed: boolean }>>([])
   const [commentaryPreview, setCommentaryPreview] = useState('')
+  const [commentaryLoading, setCommentaryLoading] = useState(false)
 
   useEffect(() => { if (authLoading) return; if (!user) { openAuth(); return } productApi.home().then(setData).catch(() => setError(true)) }, [user, authLoading, openAuth])
   useEffect(() => { if (user) closeAuth() }, [user, closeAuth])
@@ -29,11 +30,13 @@ export function HomeRoute() {
   useEffect(() => { if (data) setGoalTarget(data.daily_goal.target) }, [data])
   useEffect(() => {
     const reading = data?.last_reading
-    if (!reading?.book_slug) { setCommentaryPreview(''); return }
+    if (!reading?.book_slug) { setCommentaryPreview(''); setCommentaryLoading(false); return }
     let active = true
+    setCommentaryLoading(true)
     commentaryApi.get(reading.book_slug, reading.chapter, 'es')
       .then((commentary) => { if (active) setCommentaryPreview(commentaryExcerpt(commentary.content)) })
       .catch(() => { if (active) setCommentaryPreview('') })
+      .finally(() => { if (active) setCommentaryLoading(false) })
     return () => { active = false }
   }, [data?.last_reading])
   useEffect(() => { if (!user) return; const month = new Date().toISOString().slice(0, 7); productApi.calendar(month).then((value) => setCalendar(value.days)).catch(() => setCalendar([])) }, [user])
@@ -53,13 +56,13 @@ export function HomeRoute() {
     <main className="mx-auto w-full max-w-5xl px-4 py-6 md:px-8">
       <header className="flex items-end justify-between gap-4"><div><p className="text-2xs font-semibold uppercase tracking-[0.16em] text-accent">Tu espacio diario</p><h1 className="mt-2 text-2xl font-semibold tracking-[-0.02em] text-text-primary md:text-3xl">Hola, {user.name.split(' ')[0]}</h1><p className="mt-1 text-sm text-text-muted">Un momento para leer, pensar y compartir.</p></div><div className="hidden items-center gap-2 rounded-full border border-border-subtle bg-bg-secondary px-3 py-2 text-xs text-text-muted sm:flex"><Flame className="h-4 w-4 text-accent"/><strong className="text-text-primary">{data?.daily_goal.streak ?? 0}</strong> días</div></header>
       {error && <div role="alert" className="mt-5 rounded-lg border border-border-subtle bg-bg-secondary p-4 text-sm text-text-muted">No pudimos actualizar el inicio. Comprueba tu conexión e inténtalo de nuevo.</div>}
-      {!data && !error ? <div role="status" className="mt-8 text-sm text-text-muted">Preparando tu día…</div> : data && <>
+      {!data && !error ? <HomeSkeleton /> : data && <>
         <section className="relative mt-6 overflow-hidden rounded-2xl border border-border-subtle bg-bg-secondary">
           <div className="pointer-events-none absolute -right-24 -top-24 h-64 w-64 rounded-full bg-accent/[0.09] blur-3xl" />
           <div className="relative grid md:min-h-[260px] md:grid-cols-[minmax(0,1fr)_240px]">
             <div className={`flex min-w-0 flex-col items-start justify-between p-5 text-left sm:p-6 md:p-8 ${!reading ? 'opacity-60' : ''}`}>
               <span className="inline-flex items-center gap-2 rounded-full bg-accent/10 px-3 py-1.5 text-xs font-medium text-accent"><Sparkles className="h-3.5 w-3.5"/> Continúa donde lo dejaste</span>
-              <div className="my-6 min-w-0 sm:my-8"><p className="text-sm text-text-muted">Tu lectura</p><h2 className="mt-2 break-words font-reading text-3xl leading-tight text-text-primary md:text-4xl">{reading ? `${reading.book_name ?? reading.book_slug} ${reading.chapter}:${reading.verse}` : 'Empieza hoy por Génesis'}</h2>{reading?.version && <p className="mt-2 text-xs uppercase tracking-wider text-text-muted">{reading.version}</p>}{commentaryPreview && <><p className="mt-5 text-2xs font-medium uppercase tracking-wider text-text-muted">Comentario bíblico</p><p className="mt-2 line-clamp-3 max-w-2xl font-reading text-sm leading-6 text-text-secondary sm:line-clamp-4">{commentaryPreview}</p></>}</div>
+              <div className="my-6 min-w-0 sm:my-8"><p className="text-sm text-text-muted">Tu lectura</p><h2 className="mt-2 break-words font-reading text-3xl leading-tight text-text-primary md:text-4xl">{reading ? `${reading.book_name ?? reading.book_slug} ${reading.chapter}:${reading.verse}` : 'Empieza hoy por Génesis'}</h2>{reading?.version && <p className="mt-2 text-xs uppercase tracking-wider text-text-muted">{reading.version}</p>}{commentaryLoading ? <div role="status" aria-label="Cargando comentario" className="mt-5 space-y-2 motion-safe:animate-pulse"><Skeleton className="h-2.5 w-28"/><Skeleton className="h-3.5 w-full"/><Skeleton className="h-3.5 w-5/6"/><Skeleton className="h-3.5 w-2/3"/></div> : commentaryPreview && <><p className="mt-5 text-2xs font-medium uppercase tracking-wider text-text-muted">Comentario bíblico</p><p className="mt-2 line-clamp-3 max-w-2xl font-reading text-sm leading-6 text-text-secondary sm:line-clamp-4">{commentaryPreview}</p></>}</div>
               <div className="flex w-full flex-col gap-2.5 sm:flex-row sm:flex-wrap sm:gap-3">
                 <button type="button" onClick={() => openReading()} disabled={!reading} className="inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-lg bg-accent px-4 py-2.5 text-sm font-semibold text-bg-primary transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50 sm:w-auto"><BookOpen className="h-4 w-4" />Continuar lectura</button>
                 <button type="button" onClick={() => openReading(true)} disabled={!reading} className="group inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-lg border border-border-subtle bg-bg-primary/60 px-4 py-2.5 text-sm font-semibold text-text-primary transition-colors hover:border-accent/50 hover:text-accent disabled:cursor-not-allowed disabled:opacity-50 sm:w-auto"><MessageCircle className="h-4 w-4" />Leer con comentario <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" /></button>
@@ -87,4 +90,23 @@ export function HomeRoute() {
       {showGoal && <div className="fixed inset-0 z-[65] flex items-center justify-center bg-bg-primary/80 p-4" onMouseDown={(event) => { if (event.target === event.currentTarget) setShowGoal(false) }}><section role="dialog" aria-modal="true" aria-label="Configurar meta diaria" className="w-full max-w-md rounded-xl border border-border-subtle bg-bg-secondary p-5"><h2 className="text-lg font-semibold text-text-primary">Meta diaria</h2><p className="mt-1 text-xs text-text-muted">Elige un objetivo sostenible. El progreso se actualiza al avanzar por capítulos distintos.</p><label className="mt-5 block text-xs text-text-muted">Capítulos al día<input type="number" min={1} max={20} value={goalTarget} onChange={(event) => setGoalTarget(Number(event.target.value))} className="mt-1 block w-full rounded-md border border-border-subtle bg-bg-primary p-2 text-sm text-text-primary" /></label><div className="mt-5 flex justify-end gap-2"><button onClick={() => setShowGoal(false)} className="px-3 py-2 text-sm text-text-muted">Cancelar</button><button onClick={() => void saveGoal()} className="rounded-md bg-accent px-3 py-2 text-sm font-semibold text-bg-primary">Guardar</button></div></section></div>}
     </main>
   </AppPageLayout>
+}
+
+function Skeleton({ className }: { className: string }) {
+  return <span aria-hidden="true" className={`block rounded-md bg-bg-tertiary ${className}`} />
+}
+
+function HomeSkeleton() {
+  return <div role="status" aria-label="Cargando inicio" className="motion-safe:animate-pulse">
+    <section className="mt-6 overflow-hidden rounded-2xl border border-border-subtle bg-bg-secondary">
+      <div className="grid md:min-h-[260px] md:grid-cols-[minmax(0,1fr)_240px]">
+        <div className="p-5 sm:p-6 md:p-8"><Skeleton className="h-7 w-44 rounded-full"/><div className="my-7 space-y-3"><Skeleton className="h-3 w-20"/><Skeleton className="h-10 w-52"/><Skeleton className="h-3 w-16"/><div className="space-y-2 pt-3"><Skeleton className="h-3 w-full"/><Skeleton className="h-3 w-5/6"/><Skeleton className="h-3 w-2/3"/></div></div><div className="flex flex-col gap-2.5 sm:flex-row"><Skeleton className="h-11 w-full sm:w-40"/><Skeleton className="h-11 w-full sm:w-52"/></div></div>
+        <div className="flex items-center justify-center border-t border-border-subtle bg-bg-primary/30 p-6 md:border-l md:border-t-0"><Skeleton className="h-28 w-28 rounded-full"/></div>
+      </div>
+    </section>
+    <section className="mt-4 rounded-xl border border-border-subtle bg-bg-secondary p-5"><div className="flex items-center justify-between"><div className="flex items-center gap-3"><Skeleton className="h-9 w-9"/><div className="space-y-2"><Skeleton className="h-3.5 w-24"/><Skeleton className="h-2.5 w-32"/></div></div><Skeleton className="h-3 w-24"/></div><div className="mt-5 grid grid-cols-7 gap-1.5">{Array.from({ length: 35 }, (_, index) => <Skeleton key={index} className="h-8 w-full"/>)}</div></section>
+    <section className="mt-4 grid gap-4 md:grid-cols-[0.9fr_1.1fr]">{Array.from({ length: 2 }, (_, index) => <div key={index} className="rounded-xl border border-border-subtle bg-bg-secondary p-5"><div className="flex items-center gap-3"><Skeleton className="h-8 w-8"/><div className="space-y-2"><Skeleton className="h-3.5 w-24"/><Skeleton className="h-2.5 w-40"/></div></div><Skeleton className="mt-5 h-16 w-full"/></div>)}</section>
+    <section className="mt-3 grid grid-cols-2 gap-3 md:grid-cols-4">{Array.from({ length: 4 }, (_, index) => <Skeleton key={index} className="h-11 w-full"/>)}</section>
+    <span className="sr-only">Preparando tu día…</span>
+  </div>
 }
