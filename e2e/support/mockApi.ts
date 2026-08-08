@@ -81,6 +81,15 @@ function bibleDownloadResponse(versionId: number) {
   }
 }
 
+function homeResponse() {
+  return {
+    last_reading: { book_name: 'Génesis', book_slug: 'genesis', chapter: 2, verse: 1, version: 'RVR1960' },
+    daily_goal: { kind: 'chapters', target: 1, active_days: [0, 1, 2, 3, 4, 5, 6], timezone: 'Europe/Madrid', share_completions: false, progress: 0, completed: false, streak: 0 },
+    active_plan: null,
+    social_activity: [],
+  }
+}
+
 async function fulfill(route: Route, json: unknown, status = 200) {
   await route.fulfill({ status, contentType: 'application/json', body: JSON.stringify(json) })
 }
@@ -254,6 +263,8 @@ export async function installApiMock(
     onRequest?.(path, request.method())
 
     if (path === '/api/notifications' && request.method() === 'GET') return fulfill(route, notifications)
+    if (path === '/api/home') return fulfill(route, homeResponse())
+    if (path === '/api/daily-goal/calendar') return fulfill(route, { month: '2026-08', days: [], streak: 0 })
     if (path === '/api/notifications/read-all' && request.method() === 'POST') {
       notifications = notifications.map((notification) => ({ ...notification, read_at: notification.read_at ?? '2026-08-08T12:00:00Z' }))
       return fulfill(route, { ok: true })
@@ -1018,6 +1029,8 @@ export async function installGuestApiMock(page: Page, options: GuestApiMockOptio
       return fulfill(route, { message: 'Password reset successfully.' })
     }
     if (path === '/api/auth/logout') return fulfill(route, { ok: true })
+    if (path === '/api/home') return fulfill(route, homeResponse())
+    if (path === '/api/daily-goal/calendar') return fulfill(route, { month: '2026-08', days: [], streak: 0 })
     if (path === '/api/user/settings') return fulfill(route, {})
     if (path === '/api/user') return fulfill(route, testUser)
     if (path === '/api/versions') return fulfill(route, versions)
