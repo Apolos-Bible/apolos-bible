@@ -54,7 +54,7 @@ jobs:
       - uses: actions/checkout@v4
         with:
           repository: Apolos-Bible/apolos-backend
-          ref: main
+          ref: ${{ vars.FULLSTACK_BACKEND_REF || 'main' }}
           token: ${{ secrets.FULLSTACK_REPO_TOKEN }}
           path: backend
 
