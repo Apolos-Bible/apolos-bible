@@ -10,17 +10,18 @@ test('[WORKSPACE-TAB-01][WORKSPACE-SHORTCUT-01] abre, selecciona, reordena y cie
   test.skip(testInfo.project.name === 'mobile-chromium', 'Las pestañas editoras son una interfaz de escritorio')
 
   await page.locator('[data-tour="bible"]').click({ modifiers: ['Control'] })
-  const tabs = page.getByRole('tablist', { name: /Workspace tabs|Pestañas del espacio/i }).getByRole('tab')
+  const tabbar = page.getByRole('toolbar', { name: /Workspace tabs|Pestañas del espacio/i })
+  const tabs = tabbar.locator('[data-workspace-tab]')
   await expect(tabs).toHaveCount(2)
-  await expect(tabs.last()).toHaveAttribute('aria-selected', 'true')
+  await expect(tabs.last()).toHaveAttribute('aria-pressed', 'true')
 
   const bibleTab = tabs.first()
   await bibleTab.click()
   await expect(page).toHaveURL(/\/bible\/genesis\/1$/)
   await bibleTab.press('Alt+Shift+ArrowRight')
-  await expect(tabs.nth(1)).toHaveAttribute('aria-selected', 'true')
+  await expect(tabs.nth(1)).toHaveAttribute('aria-pressed', 'true')
 
-  await page.getByRole('tablist', { name: /Workspace tabs|Pestañas del espacio/i }).getByRole('button', { name: /Close|Cerrar/i }).first().click()
+  await tabbar.getByRole('button', { name: /Close|Cerrar/i }).first().click()
   await expect(tabs).toHaveCount(1)
 
   await page.keyboard.press('?')
@@ -51,8 +52,8 @@ test('[WORKSPACE-DND-01] reordena pestañas mediante arrastre y persiste el resu
   test.skip(testInfo.project.name === 'mobile-chromium', 'El arrastre de pestañas pertenece a la interfaz de escritorio')
 
   await page.locator('[data-tour="bible"]').click({ modifiers: ['Control'] })
-  const tablist = page.getByRole('tablist', { name: /Workspace tabs|Pestañas del espacio/i })
-  const tabs = tablist.getByRole('tab')
+  const tablist = page.getByRole('toolbar', { name: /Workspace tabs|Pestañas del espacio/i })
+  const tabs = tablist.locator('[data-workspace-tab]')
   await expect(tabs).toHaveCount(2)
   const storedOrder = () => page.evaluate(() => {
     const workspace = JSON.parse(localStorage.getItem('apolos_workspace_layout_v2') ?? '{}')
