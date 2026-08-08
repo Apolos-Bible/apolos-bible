@@ -1,6 +1,6 @@
 import { useEffect, type ReactNode } from 'react'
-import { useLocation } from 'react-router-dom'
-import { Search } from 'lucide-react'
+import { useLocation, useNavigate } from 'react-router-dom'
+import { ChevronLeft, Search } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { Sidebar } from '@/components/sidebar/Sidebar'
 import { FloatingChatDock } from '@/components/chat/FloatingChatDock'
@@ -8,6 +8,7 @@ import { cn } from '@/lib/cn'
 import { useUIStore } from '@/lib/store/useUIStore'
 import { useVerseStore } from '@/lib/store/useVerseStore'
 import { useIsMobile } from '@/lib/useIsMobile'
+import { paths } from '@/router/paths'
 import { MobileBottomNav } from './MobileBottomNav'
 import { MobileSearchView } from './MobileSearchView'
 import { MobileHubView } from './MobileHubView'
@@ -35,6 +36,7 @@ interface AppPageLayoutProps {
  * scrolling, and double-mount data-fetching children.
  */
 export function AppPageLayout({ title, mobileActions, children }: AppPageLayoutProps) {
+  const navigate = useNavigate()
   const { pathname } = useLocation()
   const isMobile = useIsMobile()
   const { t } = useTranslation()
@@ -46,6 +48,7 @@ export function AppPageLayout({ title, mobileActions, children }: AppPageLayoutP
   const closeMobileSidebar = useUIStore((state) => state.closeMobileSidebar)
   const closeMobileBookPicker = useUIStore((state) => state.closeMobileBookPicker)
   const closeMobileHub = useUIStore((state) => state.closeMobileHub)
+  const openMobileHub = useUIStore((state) => state.openMobileHub)
   const workspacePane = useWorkspacePane()
 
   // Panels belong to the reader/workspace route. Clear any reader chrome when
@@ -72,6 +75,20 @@ export function AppPageLayout({ title, mobileActions, children }: AppPageLayoutP
   }, [title, workspacePane])
 
   const mobilePageVisible = !activePanel && !mobileSearchOpen && !mobileHub
+  const mobileSection = pathname.startsWith('/marketplace') || pathname.startsWith('/juegos') || pathname.startsWith('/mis-rutas')
+    ? 'explore'
+    : pathname.startsWith('/perfil') || pathname.startsWith('/ajustes') || pathname.startsWith('/ayuda') || pathname.startsWith('/u/')
+      ? 'you'
+      : null
+  const showMobileBack = pathname !== paths.home()
+  const goBack = () => {
+    if (mobileSection) {
+      openMobileHub(mobileSection)
+      return
+    }
+    if (window.history.length > 1) navigate(-1)
+    else navigate(paths.home())
+  }
 
   if (workspacePane) {
     return (
@@ -90,6 +107,7 @@ export function AppPageLayout({ title, mobileActions, children }: AppPageLayoutP
           mobilePageVisible ? 'flex' : 'hidden',
         )}
       >
+        {showMobileBack && <button type="button" onClick={goBack} aria-label={t('common.back')} className="inline-flex h-9 w-9 items-center justify-center rounded-md text-text-secondary transition-colors hover:bg-bg-tertiary hover:text-text-primary"><ChevronLeft className="h-5 w-5" strokeWidth={1.8} /></button>}
         <span className="flex-1 truncate px-2 text-[15px] font-semibold text-text-primary">{title}</span>
         <button
           type="button"
