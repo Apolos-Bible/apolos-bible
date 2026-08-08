@@ -568,6 +568,11 @@ export async function installApiMock(
       }
     }
     if (path === '/api/studies/invitations') return fulfill(route, [])
+    if (/^\/api\/studies\/[^/]+\/links\/check$/.test(path) && request.method() === 'POST') {
+      const target = String(request.postDataJSON?.()?.url ?? '')
+      const blocked = target.includes('blocked.example')
+      return fulfill(route, { embeddable: !blocked, final_url: target, reason: blocked ? 'x-frame-options' : null })
+    }
     if (/^\/api\/studies\/[^/]+\/files$/.test(path) && request.method() === 'POST') {
       return fulfill(route, {
         id: 'file-e2e', name: 'guia.txt', mime_type: 'text/plain', size: 12,
