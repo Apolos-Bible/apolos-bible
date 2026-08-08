@@ -90,6 +90,9 @@ importers:
         specifier: ^5.0.0
         version: 5.0.12(@types/react@18.3.28)(react@18.3.1)(use-sync-external-store@1.6.0(react@18.3.1))
     devDependencies:
+      '@axe-core/playwright':
+        specifier: ^4.12.1
+        version: 4.12.1(playwright-core@1.62.1)
       '@playwright/test':
         specifier: ^1.62.1
         version: 1.62.1
@@ -141,6 +144,11 @@ packages:
   '@alloc/quick-lru@5.2.0':
     resolution: {integrity: sha512-UrcABB+4bUrFABwbluTIBErXwvbsU/V7TZWfmbgJfbkwiBuziS9gxdODUyuiecfdGQ85jglMW6juS3+z5TsKLw==}
     engines: {node: '>=10'}
+
+  '@axe-core/playwright@4.12.1':
+    resolution: {integrity: sha512-rMd7xriptqKpP+w5265i4Hdkv2X5kbu6uiBi/B2I7uf3hieRBM3qDCfaKPtxfiYb2mKXfF+yLODJwIx+Jv1GDw==}
+    peerDependencies:
+      playwright-core: '>= 1.0.0'
 
   '@babel/helper-string-parser@7.29.7':
     resolution: {integrity: sha512-Pb5ijPrZ89GDH8223L4UP8i6QApWxs04RbPQJTeWDV0/keR2E36MeKnyr6LYmUUvqRRI+Iv87SuF1W6ErINzYw==}
@@ -1053,6 +1061,10 @@ packages:
     hasBin: true
     peerDependencies:
       postcss: ^8.1.0
+
+  axe-core@4.12.1:
+    resolution: {integrity: sha512-s7iGf5GaVMxEG0ENN9x+xTr7GFZCb1ZP/1uATUpCEK2X78nDB3RwbtFCo9pGAf9ru+VwoQ464DkaLEeRM08wJA==}
+    engines: {node: '>=4'}
 
   bail@2.0.2:
     resolution: {integrity: sha512-0xO6mYd7JB2YesxDKplafRpsiOzPt9V02ddPCLbY1xYGPOX24NTyN50qnUxgCPcSoYMhKpAuBTjQoRZCAkUDRw==}
@@ -2364,6 +2376,11 @@ snapshots:
 
   '@alloc/quick-lru@5.2.0': {}
 
+  '@axe-core/playwright@4.12.1(playwright-core@1.62.1)':
+    dependencies:
+      axe-core: 4.12.1
+      playwright-core: 1.62.1
+
   '@babel/helper-string-parser@7.29.7': {}
 
   '@babel/helper-validator-identifier@7.29.7': {}
@@ -3307,6 +3324,8 @@ snapshots:
       picocolors: 1.1.1
       postcss: 8.5.10
       postcss-value-parser: 4.2.0
+
+  axe-core@4.12.1: {}
 
   bail@2.0.2: {}
 

@@ -33,7 +33,7 @@ function applyTheme(t: Theme) {
   document.documentElement.setAttribute('data-theme-preference', t)
 }
 
-export const DEFAULT_ACCENT_COLOR = '#6d7cea'
+export const DEFAULT_ACCENT_COLOR = '#4f5dcc'
 
 function applyAccentColor(color: string) {
   document.documentElement.style.setProperty('--accent', color)
