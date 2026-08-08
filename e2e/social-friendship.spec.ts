@@ -27,7 +27,7 @@ test.describe('[SOCIAL-FRIEND-01] friendship lifecycle', () => {
     await page.getByRole('button', { name: 'Accept' }).click()
 
     await expect.poll(() => requests).toContain('POST /api/friend-requests/501/accept')
-    await expect(page.getByText('Friends', { exact: true })).toBeVisible()
+    await expect(page.locator('.workspace-profile-identity').getByText('Friends', { exact: true })).toBeVisible()
     await expect(page.getByRole('button', { name: 'Message' })).toBeVisible()
 
     await page.getByRole('button', { name: 'Remove friend' }).click()
