@@ -58,6 +58,14 @@ export function verseSelectionIntent(modifiers: {
   return 'replace'
 }
 
+export function verseSelectionAction(
+  modifiers: Parameters<typeof verseSelectionIntent>[0],
+  isSelected: boolean,
+): VerseSelectionIntent {
+  const intent = verseSelectionIntent(modifiers)
+  return intent === 'replace' && isSelected ? 'toggle' : intent
+}
+
 /**
  * Desktop-style selection shared by the reader and comparison panel.
  *
@@ -267,9 +275,13 @@ export function useVersePointerSelection({
     return true
   }, [])
 
-  const onVerseClick = useCallback((event: ReactMouseEvent, verseId: string) => {
+  const onVerseClick = useCallback((
+    event: ReactMouseEvent,
+    verseId: string,
+    isSelected = false,
+  ) => {
     if (consumeSuppressedClick()) return
-    const intent = verseSelectionIntent(event)
+    const intent = verseSelectionAction(event, isSelected)
     if (intent === 'range') {
       selectVerseRangeTo(verseId)
       return

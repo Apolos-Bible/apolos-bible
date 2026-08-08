@@ -299,7 +299,7 @@ export function CompareVersionPanel() {
                     data-selectable-verse-id={mainVerse?.id}
                     aria-pressed={selected}
                     onClick={(event) => {
-                      if (mainVerse) pointerSelection.onVerseClick(event, mainVerse.id)
+                      if (mainVerse) pointerSelection.onVerseClick(event, mainVerse.id, selected)
                     }}
                     onMouseEnter={() => setHoveredVerse(verse.number)}
                     onMouseLeave={() => setHoveredVerse(null)}

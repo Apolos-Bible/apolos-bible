@@ -105,6 +105,21 @@ async function cacheFirst<T>(
   return fresh
 }
 
+export interface ApiBibleDownload {
+  version: Pick<ApiVersion, 'id' | 'name' | 'abbreviation' | 'language'>
+  books: Array<{
+    id: number
+    number: number
+    name: string
+    slug: string
+    chapters: Array<{
+      id: number
+      number: number
+      verses: ApiVerse[]
+    }>
+  }>
+}
+
 const isArray = <T>(v: unknown): v is T[] => Array.isArray(v)
 
 const chapterKey = (versionId: number, slug: string, n: number) => `${versionId}:${slug}:${n}`
@@ -167,6 +182,12 @@ export const bibleApi = {
       (data) => db.books.put({ versionId, data }),
       isArray,
     )
+  },
+  downloadVersion: (versionId: number) => {
+    if (fromYouVersionClientId(versionId) !== null) {
+      return Promise.reject(new Error('YouVersion Bibles cannot be downloaded for offline use'))
+    }
+    return api.get<ApiBibleDownload>(`/api/versions/${versionId}/download`)
   },
   chapter: async (versionId: number, slug: string, n: number) => {
     const youVersionId = fromYouVersionClientId(versionId)

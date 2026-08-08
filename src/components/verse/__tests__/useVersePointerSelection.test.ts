@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { verseSelectionIntent } from '../useVersePointerSelection'
+import { verseSelectionAction, verseSelectionIntent } from '../useVersePointerSelection'
 
 describe('verseSelectionIntent', () => {
   it('replaces the selection on a plain click', () => {
@@ -35,5 +35,21 @@ describe('verseSelectionIntent', () => {
       metaKey: true,
       ctrlKey: true,
     })).toBe('range')
+  })
+})
+
+describe('verseSelectionAction', () => {
+  const plainClick = {
+    shiftKey: false,
+    metaKey: false,
+    ctrlKey: false,
+  }
+
+  it('selects an unselected verse on a plain click', () => {
+    expect(verseSelectionAction(plainClick, false)).toBe('replace')
+  })
+
+  it('deselects an already selected verse on a second plain click', () => {
+    expect(verseSelectionAction(plainClick, true)).toBe('toggle')
   })
 })
