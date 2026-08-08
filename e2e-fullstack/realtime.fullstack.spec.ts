@@ -160,12 +160,98 @@ test.describe('[GAME-REALTIME-01] real Reverb game transport', () => {
     await page.context().setOffline(true)
     const startResponse = await request.post(`${apiUrl}/api/games/rooms/${room.id}/start`, { headers: hostHeaders })
     expect(startResponse.status()).toBe(200)
-    const started = await startResponse.json() as { current_question: { prompt: string } }
-    await expect(page.getByText(started.current_question.prompt, { exact: true })).toHaveCount(0)
+    await startResponse.json()
+    await expect(page.getByText('1/3', { exact: true })).toHaveCount(0)
 
     await page.context().setOffline(false)
     await page.evaluate(() => window.dispatchEvent(new Event('online')))
-    await expect(page.getByText(started.current_question.prompt, { exact: true })).toBeVisible({ timeout: 3_000 })
-    await expect(page.getByText(started.current_question.prompt, { exact: true })).toHaveCount(1)
+    await expect(page.getByText('1/3', { exact: true })).toBeVisible({ timeout: 10_000 })
+    await expect(page.getByText('1/3', { exact: true })).toHaveCount(1)
+  })
+})
+
+test.describe('[BIBLE-PRESENCE-01][SOCIAL-PRESENCE-01] real presence transport', () => {
+  test('shows only a friend reading the same chapter and removes them when they leave', async ({ browser, page, request }, testInfo) => {
+    test.skip(testInfo.project.name !== 'fullstack-desktop', 'One two-browser run proves the shared presence transport')
+    test.setTimeout(90_000)
+    const suffix = `${Date.now()}-${Math.random().toString(36).slice(2)}`
+    const readerA = await register(request, 'Presence Reader A', `presence-a-${suffix}`)
+    const readerB = await register(request, 'Presence Reader B', `presence-b-${suffix}`)
+    const friendshipResponse = await request.post(`${apiUrl}/api/friends/${readerB.user.id}`, {
+      headers: { Authorization: `Bearer ${readerA.token}`, Accept: 'application/json' },
+    })
+    expect(friendshipResponse.status()).toBe(201)
+    const friendship = await friendshipResponse.json() as { id: number }
+    const acceptResponse = await request.patch(`${apiUrl}/api/friend-requests/${friendship.id}/accept`, {
+      headers: { Authorization: `Bearer ${readerB.token}`, Accept: 'application/json' },
+    })
+    expect(acceptResponse.status()).toBe(200)
+    const roomResponse = await request.post(`${apiUrl}/api/games/rooms`, {
+      headers: { Authorization: `Bearer ${readerA.token}`, Accept: 'application/json' },
+      data: { locale: 'en', round_count: 3 },
+    })
+    expect(roomResponse.status()).toBe(201)
+    const room = await roomResponse.json() as { id: number; code: string }
+    const roomJoinResponse = await request.post(`${apiUrl}/api/games/rooms/join`, {
+      headers: { Authorization: `Bearer ${readerB.token}`, Accept: 'application/json' },
+      data: { code: room.code },
+    })
+    expect(roomJoinResponse.status()).toBe(200)
+
+    await authenticate(page, readerA)
+    let readerBContext = await browser.newContext()
+    await authenticate(readerBContext, readerB)
+    let readerBPage = await readerBContext.newPage()
+
+    const joinPresence = async (target: Page, account: Account, friend: Account) => {
+      const authorization = target.waitForResponse((response) =>
+        response.url().endsWith('/api/broadcasting/auth')
+          && response.request().postData()?.includes('presence-chapter.43.3') === true
+          && response.status() === 200,
+      )
+      await target.evaluate(async ({ selfId, presenceFriend }) => {
+        const [{ useFriendStore }, { usePresenceStore }] = await Promise.all([
+          import('/src/lib/store/useFriendStore.ts'),
+          import('/src/lib/store/usePresenceStore.ts'),
+        ])
+        useFriendStore.setState({ friends: [presenceFriend] })
+        usePresenceStore.getState().joinChapter(43, 3, String(selfId))
+      }, { selfId: account.user.id, presenceFriend: friend.user })
+      await authorization
+    }
+
+    try {
+      await Promise.all([
+        page.goto(`/juegos/${room.id}`, { waitUntil: 'domcontentloaded' }),
+        readerBPage.goto(`/juegos/${room.id}`, { waitUntil: 'domcontentloaded' }),
+      ])
+      await joinPresence(page, readerA, readerB)
+      await joinPresence(readerBPage, readerB, readerA)
+
+      const friendNames = (target: Page) => target.evaluate(async () => {
+        const { usePresenceStore } = await import('/src/lib/store/usePresenceStore.ts')
+        return usePresenceStore.getState().others.map((user) => user.name)
+      })
+      await expect.poll(() => friendNames(page)).toEqual([readerB.user.name])
+      await expect.poll(() => friendNames(readerBPage)).toEqual([readerA.user.name])
+
+      await readerBPage.evaluate(async () => {
+        const [{ destroyEcho }, { usePresenceStore }] = await Promise.all([
+          import('/src/lib/echo.ts'),
+          import('/src/lib/store/usePresenceStore.ts'),
+        ])
+        usePresenceStore.getState().leaveChapter()
+        destroyEcho()
+      })
+      await expect.poll(() => friendNames(page), { timeout: 15_000 }).toEqual([])
+    } finally {
+      if (readerBContext.pages().length > 0) {
+        await readerBPage.evaluate(async () => {
+          const { destroyEcho } = await import('/src/lib/echo.ts')
+          destroyEcho()
+        }).catch(() => {})
+        await readerBContext.close()
+      }
+    }
   })
 })

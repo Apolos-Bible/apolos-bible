@@ -36,6 +36,29 @@ if (migration.status !== 0) {
   process.exit(migration.status ?? 1)
 }
 
+// Keep the fixture deliberately tiny: it enables the real chapter presence
+// authorization path and prevents unrelated reader boot requests from failing.
+const seedPath = path.join(temporaryDatabaseDirectory, 'seed.php')
+writeFileSync(seedPath, `<?php
+require $argv[1].'/vendor/autoload.php';
+$app = require $argv[1].'/bootstrap/app.php';
+$app->make(Illuminate\\Contracts\\Console\\Kernel::class)->bootstrap();
+Illuminate\\Support\\Facades\\DB::table('bible_versions')->insert(['id' => 1, 'name' => 'Full-stack Test Bible', 'abbreviation' => 'FST', 'language' => 'en', 'is_public_domain' => true, 'is_published' => true, 'created_at' => now(), 'updated_at' => now()]);
+Illuminate\\Support\\Facades\\DB::table('books')->insert(['id' => 1, 'bible_version_id' => 1, 'number' => 43, 'name' => 'John', 'slug' => 'john']);
+Illuminate\\Support\\Facades\\DB::table('chapters')->insert(['id' => 1, 'book_id' => 1, 'number' => 3]);
+`)
+const seed = spawnSync('php', [seedPath, backendDirectory], {
+  cwd: backendDirectory,
+  env: environment,
+  stdio: 'inherit',
+  shell: process.platform === 'win32',
+})
+if (seed.status !== 0) {
+  console.error('Unable to seed the full-stack database.', seed.error ?? `exit ${seed.status}`)
+  rmSync(temporaryDatabaseDirectory, { recursive: true, force: true })
+  process.exit(seed.status ?? 1)
+}
+
 const server = spawn('php', [
   '-S',
   '127.0.0.1:8000',
