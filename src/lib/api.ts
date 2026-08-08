@@ -13,6 +13,8 @@ export function clearToken(): void {
 }
 
 async function request<T>(path: string, init: RequestInit = {}): Promise<T> {
+  const mutating = !!init.method && init.method !== 'GET'
+  if (mutating) (await import('@/lib/store/useSyncStore')).useSyncStore.getState().begin()
   const token = getToken()
   const headers: Record<string, string> = {
     'Content-Type': 'application/json',
@@ -29,8 +31,10 @@ async function request<T>(path: string, init: RequestInit = {}): Promise<T> {
       : null
     const error = new Error(validationMessage || err.message || res.statusText) as Error & { status: number }
     error.status = res.status
+    if (mutating) (await import('@/lib/store/useSyncStore')).useSyncStore.getState().fail(error.message)
     throw error
   }
+  if (mutating) (await import('@/lib/store/useSyncStore')).useSyncStore.getState().succeed()
   if (res.status === 204) return undefined as T
   return res.json()
 }

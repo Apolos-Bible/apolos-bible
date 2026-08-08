@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import {
   BookMarked,
   ChevronRight,
+  CircleHelp,
   Gamepad2,
   GraduationCap,
   NotebookPen,
@@ -71,6 +72,12 @@ export function MobileHubView() {
     },
     {
       icon: GraduationCap,
+      label: t('nav.studies'),
+      description: t('studies.mobileDescription', 'Continúa tus estudios e invitaciones.'),
+      onClick: () => showPanel('my-studies'),
+    },
+    {
+      icon: GraduationCap,
       label: t('path.title'),
       description: t('path.subtitle', 'Tus rutas y estudios bíblicos publicados.'),
       onClick: () => requireUser(() => go(paths.myPaths())),
@@ -102,6 +109,12 @@ export function MobileHubView() {
       label: t('settings.title'),
       description: t('settings.mobileDescription', 'Apariencia, Biblia, privacidad y cuenta.'),
       onClick: () => requireUser(() => go(paths.settings())),
+    },
+    {
+      icon: CircleHelp,
+      label: 'Ayuda y feedback',
+      description: 'Resuelve dudas o cuéntanos un problema.',
+      onClick: () => requireUser(() => go(paths.help())),
     },
   ]
 

@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next'
 import {
   BookOpen,
   Compass,
-  GraduationCap,
+  House,
   UserRound,
   UsersRound,
   type LucideIcon,
@@ -14,6 +14,7 @@ import { useAuthStore } from '@/lib/store/useAuthStore'
 import { useChatStore } from '@/lib/store/useChatStore'
 import { useNotificationStore } from '@/lib/store/useNotificationStore'
 import { useStudyStore } from '@/lib/store/useStudyStore'
+import { useVerseStore } from '@/lib/store/useVerseStore'
 import { cn } from '@/lib/cn'
 
 interface NavButtonProps {
@@ -107,6 +108,9 @@ export function MobileBottomNav() {
   const friendsUnread = useNotificationStore((s) => s.unreadCount)
   const pendingInvitations = useStudyStore((s) => s.pendingInvitations.length)
   const collapsed = useUIStore((s) => s.mobileChromeCollapsed)
+  const selectedBook = useVerseStore((s) => s.selectedBook)
+  const selectedChapter = useVerseStore((s) => s.selectedChapter)
+  const locale = useUIStore((s) => s.locale)
 
   const onPage = isPageRoute(pathname)
 
@@ -142,11 +146,21 @@ export function MobileBottomNav() {
 
   const goToBible = () => {
     clearOthers()
-    if (onPage) navigate(paths.root())
+    if (onPage) navigate(paths.bible({ lang: locale, book: selectedBook || 'genesis', chapter: selectedChapter || 1 }))
   }
 
+  const goToHome = () => {
+    clearOthers()
+    if (!user) {
+      openAuthModal()
+      return
+    }
+    navigate(paths.home())
+  }
+
+  const isHome = pathname.startsWith('/inicio') && !mobileSearchOpen && mobileHub === null && activePanel === null
   const isReader = !onPage && !mobileSearchOpen && mobileHub === null && activePanel === null
-  const isExplore = mobileHub === 'explore' || (
+  const isExplore = activePanel === 'my-studies' || mobileHub === 'explore' || (
     mobileHub === null
     && activePanel === null
     && (pathname.startsWith('/marketplace') || pathname.startsWith('/juegos') || pathname.startsWith('/mis-rutas'))
@@ -178,6 +192,13 @@ export function MobileBottomNav() {
       // keeps its buttons out of the tab order.
       inert={hidden ? '' : undefined}
     >
+      <NavButton
+        icon={House}
+        label={t('nav.home', 'Inicio')}
+        active={isHome}
+        onClick={goToHome}
+        dataTour="home"
+      />
       <BibleButton
         label={t('nav.bible')}
         active={isReader}
@@ -188,16 +209,9 @@ export function MobileBottomNav() {
         icon={Compass}
         label={t('nav.explore', 'Explorar')}
         active={isExplore}
+        badge={pendingInvitations}
         onClick={goToHub('explore')}
         dataTour="explore"
-      />
-      <NavButton
-        icon={GraduationCap}
-        label={t('nav.studies')}
-        active={activePanel === 'my-studies'}
-        badge={pendingInvitations}
-        onClick={goToPanel('my-studies')}
-        dataTour="my-studies"
       />
       <NavButton
         icon={UsersRound}

@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
-import { Ban, MessageSquare, Pencil, Share2, UserPlus } from 'lucide-react'
+import { Ban, Flag, MessageSquare, Pencil, Share2, UserPlus } from 'lucide-react'
 import { cn } from '@/lib/cn'
 import { paths } from '@/router/paths'
 import type { FriendshipStatus, ProfileMode } from '@/types'
@@ -23,6 +23,7 @@ export interface ProfileActionBarProps {
   onBlock: () => void
   onUnblock: () => void
   onShare: () => void
+  onReport?: () => void
 }
 
 export function ProfileActionBar({
@@ -38,6 +39,7 @@ export function ProfileActionBar({
   onBlock,
   onUnblock,
   onShare,
+  onReport,
 }: ProfileActionBarProps) {
   const { t } = useTranslation()
 
@@ -134,6 +136,11 @@ export function ProfileActionBar({
         <Ban size={14} strokeWidth={1.5} />
         {t('friend.block')}
       </button>
+      {onReport && (
+        <button type="button" className={cn(GHOST, 'hover:border-red-400/40 hover:text-red-400')} onClick={onReport}>
+          <Flag size={14} strokeWidth={1.5} /> Reportar
+        </button>
+      )}
     </div>
   )
 }
