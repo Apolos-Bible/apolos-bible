@@ -7,7 +7,7 @@ export type OfflineAutoDownload = 'off' | 'wifi' | 'always'
 
 export function offlineAutoDownload(): OfflineAutoDownload {
   const value = localStorage.getItem('offlineAutoDownload')
-  return value === 'off' || value === 'always' ? value : 'wifi'
+  return value === 'wifi' || value === 'always' ? value : 'off'
 }
 
 export function shouldAutoPrefetch(): boolean {
@@ -36,6 +36,9 @@ export async function prefetchVersion(
     if (expectedChapters > 0 && cachedChapters === expectedChapters) return
 
     const payload = await bibleApi.downloadVersion(versionId)
+    if (!payload || !Array.isArray(payload.books)) {
+      throw new Error('The downloaded Bible has an invalid format')
+    }
     const rows = payload.books.flatMap((book) => book.chapters.map((chapter) => ({
       key: `${versionId}:${book.slug}:${chapter.number}`,
       versionId,

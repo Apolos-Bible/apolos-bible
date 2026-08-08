@@ -8,6 +8,7 @@ async function seedLegacyOfflineDatabase(page: import('@playwright/test').Page) 
   }))
   await page.goto('/__offline-seed')
   await page.evaluate(async () => {
+    localStorage.setItem('offlineAutoDownload', 'off')
     await new Promise<void>((resolve, reject) => {
       const deletion = indexedDB.deleteDatabase('verbum-bible')
       deletion.onsuccess = () => resolve()
@@ -43,9 +44,9 @@ async function seedLegacyOfflineDatabase(page: import('@playwright/test').Page) 
 }
 
 test('[SETTINGS-STORAGE-01][OFFLINE-DOWNLOAD-01][OFFLINE-READ-01][OFFLINE-DELETE-01] downloads, reads offline, and safely removes one Bible', async ({ page }) => {
-  const chapterRequests: string[] = []
+  const downloadRequests: string[] = []
   await installApiMock(page, (path) => {
-    if (path.includes('/chapters/')) chapterRequests.push(path)
+    if (/\/versions\/\d+\/download$/.test(path)) downloadRequests.push(path)
   })
   await page.goto('/ajustes#almacenamiento', { waitUntil: 'domcontentloaded' })
 
@@ -54,7 +55,7 @@ test('[SETTINGS-STORAGE-01][OFFLINE-DOWNLOAD-01][OFFLINE-READ-01][OFFLINE-DELETE
   await page.getByRole('button', { name: /^Download$|^Descargar$/i }).click()
 
   await expect(page.getByRole('status')).toContainText(/Available offline|Disponible sin conexi.n/i, { timeout: 30_000 })
-  expect(new Set(chapterRequests).size).toBe(71)
+  expect(downloadRequests).toEqual(['/api/versions/1/download'])
   await expect(page.getByText('Reina Valera 1960', { exact: true })).toBeVisible()
   await expect(page.getByText(/71 chapters|71 cap.tulos/i)).toBeVisible()
 

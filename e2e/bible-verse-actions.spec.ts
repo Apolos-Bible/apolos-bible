@@ -7,6 +7,13 @@ async function firstVerse(page: Parameters<typeof installApiMock>[0]) {
   return verse
 }
 
+async function ensureFirstVerseSelected(page: Parameters<typeof installApiMock>[0]) {
+  const verse = await firstVerse(page)
+  if (await verse.getAttribute('aria-current') !== 'true') await verse.click()
+  await expect(verse).toHaveAttribute('aria-current', 'true')
+  return verse
+}
+
 async function chooseMoreAction(
   page: Parameters<typeof installApiMock>[0],
   name: RegExp,
@@ -128,13 +135,13 @@ test.describe('Lector bíblico y acciones de versículo', () => {
       }
     })
     await page.goto('/bible/juan/1', { waitUntil: 'domcontentloaded' })
-    await (await firstVerse(page)).click()
+    await ensureFirstVerseSelected(page)
 
     await chooseMoreAction(page, /Add to favorites|A.adir a favoritos/i)
     await expect.poll(() => mutations.length).toBe(1)
     expect(mutations[0]).toEqual({})
     await page.reload({ waitUntil: 'domcontentloaded' })
-    await (await firstVerse(page)).click()
+    await ensureFirstVerseSelected(page)
     await chooseMoreAction(page, /Remove from favorites|Quitar de favoritos/i)
     await expect.poll(() => mutations.length).toBe(2)
     expect(mutations[1]).toEqual({ _method: 'DELETE' })
@@ -152,14 +159,14 @@ test.describe('Lector bíblico y acciones de versículo', () => {
       }
     })
     await page.goto('/bible/juan/1', { waitUntil: 'domcontentloaded' })
-    await (await firstVerse(page)).click()
+    await ensureFirstVerseSelected(page)
 
     const toggle = page.getByRole('button', { name: /Highlight verse|Resaltar vers/i })
     await toggle.click()
     await expect.poll(() => paths.some((path) => /\/api\/verses\/\d+\/highlights/.test(path))).toBe(true)
     await expect.poll(() => mutations).toContainEqual({ start_index: 0, end_index: 29, color: 'yellow' })
     await page.reload({ waitUntil: 'domcontentloaded' })
-    await (await firstVerse(page)).click()
+    await ensureFirstVerseSelected(page)
     await page.getByRole('button', { name: /Highlight verse|Resaltar vers/i }).click()
     await expect.poll(() => paths).toContain('/api/highlights/8001')
   })
@@ -174,7 +181,7 @@ test.describe('Lector bíblico y acciones de versículo', () => {
     })
     await installApiMock(page)
     await page.goto('/es/bible/juan/1/1', { waitUntil: 'domcontentloaded' })
-    await (await firstVerse(page)).click()
+    await ensureFirstVerseSelected(page)
 
     await chooseMoreAction(page, /Copy verse text|Copiar vers.culo/i)
     await expect.poll(() => page.evaluate(() => (window as unknown as { __copied?: string }).__copied)).toBe('En el principio era el Verbo.')
@@ -198,7 +205,7 @@ test.describe('Lector bíblico y acciones de versículo', () => {
     await page.getByRole('option', { name: /NVI-YV.*YouVersion/i }).click()
     await page.goto('/bible/juan/1', { waitUntil: 'domcontentloaded' })
 
-    await (await firstVerse(page)).click()
+    await ensureFirstVerseSelected(page)
     await chooseMoreAction(page, /Copy verse text|Copiar vers.culo/i)
     await expect.poll(() => page.evaluate(() => (window as unknown as { __copied?: string }).__copied)).toContain('En el principio era el Verbo.')
     await expect.poll(() => page.evaluate(() => (window as unknown as { __copied?: string }).__copied)).toContain('(NVI-YV)')
