@@ -110,6 +110,10 @@ export async function installApiMock(
   let guidedCurrentStep = 0
   let guidedCompletedAt: string | null = null
   const guidedResponses = new Map<string, Record<string, unknown>>()
+  let nextGuidedPath = 1
+  let nextGuidedStudy = 1
+  const authoredStudies = new Map<string, typeof guidedStudy>()
+  let authoredPaths: Array<Record<string, any>> = []
   let studies: Array<Record<string, unknown>> = [{
     ...studyBase, id: 'study-active', title: 'Estudio canvas', status: 'active', ended_at: null,
     participants: [...studyBase.participants, { id: 21, name: 'Lucia Visible', role: 'editor', cursor_color: '#ef4444', is_present: false }],
@@ -633,6 +637,104 @@ export async function installApiMock(
       studies: [{ slug: guidedStudy.slug, title: guidedStudy.title, theme: guidedStudy.theme, position: 0, step_count: 2, progress: null }],
     })
     if (path === '/api/my/study-list') return fulfill(route, guidedInList ? [{ ...guidedCard, in_my_list: true }] : [])
+    if (path === '/api/my/guided-plans') return fulfill(route, authoredPaths)
+    if (path === '/api/guided-plans' && request.method() === 'POST') {
+      const body = request.postDataJSON?.() ?? {}
+      const slug = `authored-path-${nextGuidedPath++}`
+      const created = {
+        slug, title: body.title, description: body.description ?? null, source: 'user',
+        visibility: body.visibility ?? 'private', is_published: false, moderation_status: 'draft',
+        moderation_source: null, moderation_reason: null, moderation_requested_at: null,
+        moderation_reviewed_at: null, is_mine: true, author: { id: 7, name: 'Ana Segura' },
+        rating_avg: 0, rating_count: 0, list_count: 0, studies: [],
+      }
+      authoredPaths = [created, ...authoredPaths]
+      return fulfill(route, created, 201)
+    }
+    const authoredPath = path.match(/^\/api\/guided-plans\/([^/]+)$/)
+    if (authoredPath && authoredPaths.some((entry) => entry.slug === authoredPath[1])) {
+      const slug = authoredPath[1]
+      const body = request.postDataJSON?.() ?? {}
+      if (request.method() === 'DELETE' || body._method === 'DELETE') {
+        authoredPaths = authoredPaths.filter((entry) => entry.slug !== slug)
+        return fulfill(route, { deleted: true })
+      }
+      const { _method, ...changes } = body
+      let updated: Record<string, any> = {}
+      authoredPaths = authoredPaths.map((entry) => {
+        if (entry.slug !== slug) return entry
+        updated = { ...entry, ...changes }
+        return updated
+      })
+      return fulfill(route, updated)
+    }
+    const authoredStudyCollection = path.match(/^\/api\/guided-plans\/([^/]+)\/studies$/)
+    if (authoredStudyCollection && request.method() === 'POST') {
+      const pathSlug = authoredStudyCollection[1]
+      const body = request.postDataJSON?.() ?? {}
+      const studySlug = `authored-study-${nextGuidedStudy++}`
+      const created = {
+        ...guidedStudy, slug: studySlug, title: body.title, theme: body.theme ?? null,
+        heart_goal: body.heart_goal ?? null, memory_verse_ref: body.memory_verse_ref ?? null,
+        memory_verse_text: null, leader_notes: body.leader_notes ?? null, step_count: 0,
+        plan: { slug: pathSlug, title: authoredPaths.find((entry) => entry.slug === pathSlug)?.title ?? '' },
+        steps: [],
+      }
+      authoredStudies.set(studySlug, created)
+      authoredPaths = authoredPaths.map((entry) => entry.slug === pathSlug ? {
+        ...entry,
+        studies: [...entry.studies, { slug: studySlug, title: created.title, theme: null, position: entry.studies.length, step_count: 0, progress: null }],
+      } : entry)
+      return fulfill(route, created, 201)
+    }
+    const authoredStudyMutation = path.match(/^\/api\/guided-plans\/([^/]+)\/studies\/([^/]+)$/)
+    if (authoredStudyMutation) {
+      const [, pathSlug, studySlug] = authoredStudyMutation
+      const body = request.postDataJSON?.() ?? {}
+      if (request.method() === 'DELETE' || body._method === 'DELETE') {
+        authoredStudies.delete(studySlug)
+        authoredPaths = authoredPaths.map((entry) => entry.slug === pathSlug
+          ? { ...entry, studies: entry.studies.filter((study: any) => study.slug !== studySlug) }
+          : entry)
+        return fulfill(route, { deleted: true })
+      }
+      const current = authoredStudies.get(studySlug)!
+      const { _method, ...changes } = body
+      const updated = { ...current, ...changes }
+      authoredStudies.set(studySlug, updated)
+      authoredPaths = authoredPaths.map((entry) => entry.slug === pathSlug ? {
+        ...entry,
+        studies: entry.studies.map((study: any) => study.slug === studySlug ? { ...study, title: updated.title, theme: updated.theme } : study),
+      } : entry)
+      return fulfill(route, updated)
+    }
+    const authoredSteps = path.match(/^\/api\/guided-plans\/([^/]+)\/studies\/([^/]+)\/steps$/)
+    if (authoredSteps && (request.method() === 'PUT' || request.postDataJSON?.()?._method === 'PUT')) {
+      const [, pathSlug, studySlug] = authoredSteps
+      const current = authoredStudies.get(studySlug)!
+      const body = request.postDataJSON?.() ?? {}
+      const steps = (body.steps ?? []).map((step: any, index: number) => ({
+        ...step, id: 9000 + index, position: index, ranges: [],
+        prompts: step.prompts.filter((prompt: any) => prompt.question.trim() !== ''),
+      }))
+      const updated = { ...current, steps, step_count: steps.length }
+      authoredStudies.set(studySlug, updated)
+      authoredPaths = authoredPaths.map((entry) => entry.slug === pathSlug ? {
+        ...entry,
+        studies: entry.studies.map((study: any) => study.slug === studySlug ? { ...study, step_count: steps.length } : study),
+      } : entry)
+      return fulfill(route, updated)
+    }
+    const publication = path.match(/^\/api\/guided-plans\/([^/]+)\/request-publication$/)
+    if (publication && request.method() === 'POST') {
+      let updated: Record<string, any> = {}
+      authoredPaths = authoredPaths.map((entry) => {
+        if (entry.slug !== publication[1]) return entry
+        updated = { ...entry, moderation_status: 'pending_review', moderation_requested_at: '2026-08-08T12:00:00Z' }
+        return updated
+      })
+      return fulfill(route, updated)
+    }
     if (path === '/api/guided-plans') return fulfill(route, [{
       slug: guidedCard.slug, title: guidedCard.title, description: guidedCard.description,
       studies: [{ slug: guidedStudy.slug, title: guidedStudy.title, theme: guidedStudy.theme, position: 0, step_count: 2, progress: null }],
@@ -641,6 +743,10 @@ export async function installApiMock(
       study: guidedStudy,
       progress: { guided_study_id: 801, session_id: 'study-new', current_step: guidedCurrentStep, started_at: '2026-08-08T00:00:00Z', completed_at: guidedCompletedAt },
       responses: Array.from(guidedResponses.values()),
+    })
+    const authoredStudyDetail = path.match(/^\/api\/guided-studies\/([^/]+)$/)
+    if (authoredStudyDetail && authoredStudies.has(authoredStudyDetail[1])) return fulfill(route, {
+      study: authoredStudies.get(authoredStudyDetail[1]), progress: null, responses: [],
     })
     if (path === '/api/guided-plans/hope-path/list') {
       guidedInList = request.method() !== 'DELETE'
