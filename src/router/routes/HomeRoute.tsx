@@ -13,6 +13,7 @@ export function HomeRoute() {
   const user = useAuthStore((state) => state.user)
   const authLoading = useAuthStore((state) => state.loading)
   const openAuth = useUIStore((state) => state.openAuthModal)
+  const closeAuth = useUIStore((state) => state.closeAuthModal)
   const [data, setData] = useState<HomePayload | null>(null)
   const [error, setError] = useState(false)
   const [showOnboarding, setShowOnboarding] = useState(() => user?.tutorial_completed === false)
@@ -21,6 +22,7 @@ export function HomeRoute() {
   const [calendar, setCalendar] = useState<Array<{ date: string; completed: boolean }>>([])
 
   useEffect(() => { if (authLoading) return; if (!user) { openAuth(); return } productApi.home().then(setData).catch(() => setError(true)) }, [user, authLoading, openAuth])
+  useEffect(() => { if (user) closeAuth() }, [user, closeAuth])
   useEffect(() => { if (user?.tutorial_completed === false) setShowOnboarding(true) }, [user])
   useEffect(() => { if (data) setGoalTarget(data.daily_goal.target) }, [data])
   useEffect(() => { if (!user) return; const month = new Date().toISOString().slice(0, 7); productApi.calendar(month).then((value) => setCalendar(value.days)).catch(() => setCalendar([])) }, [user])
