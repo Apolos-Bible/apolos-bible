@@ -59,6 +59,7 @@ interface ApiMockOptions {
   initialNotes?: Array<Record<string, unknown>>
   profileFriendshipStatus?: 'none' | 'pending_sent' | 'pending_received' | 'accepted' | 'blocked' | 'blocked_by_them'
   profileLastReading?: Record<string, unknown> | null
+  friends?: Array<Record<string, unknown>>
 }
 
 export async function installApiMock(
@@ -80,6 +81,8 @@ export async function installApiMock(
   let bookmarks: Array<Record<string, unknown>> = []
   let highlights: Array<Record<string, unknown>> = []
   let chatMessages: Array<Record<string, unknown>> = []
+  let groupConversation: Record<string, unknown> | null = null
+  const groupPayload = () => groupConversation
   const directConversation = () => ({
     id: 901,
     type: 'dm',
@@ -276,9 +279,68 @@ export async function installApiMock(
       return fulfill(route, null, 204)
     }
     if (path === '/api/conversations') {
-      if (request.method() === 'POST') return fulfill(route, directConversation(), chatMessages.length === 0 ? 201 : 200)
-      return fulfill(route, chatMessages.length > 0 ? [directConversation()] : [])
+      if (request.method() === 'POST') {
+        const body = request.postDataJSON?.() ?? {}
+        if (body.type === 'group') {
+          const friendById = new Map((options.friends ?? []).map((friend) => [Number(friend.id), friend]))
+          groupConversation = {
+            id: 902,
+            type: 'group',
+            name: body.name,
+            description: body.description ?? null,
+            created_by: testUser.id,
+            created_at: '2026-08-08T00:00:00Z',
+            last_message_at: null,
+            unread_count: 0,
+            last_read_at: null,
+            archived_at: null,
+            members_can_invite: true,
+            participants: [
+              { id: testUser.id, name: currentUser.name, email: currentUser.email, avatar_url: null, last_read_at: null, role: 'admin' },
+              ...(body.user_ids ?? []).map((id: number) => ({ ...friendById.get(Number(id)), last_read_at: null, role: 'member' })),
+            ],
+            last_message: null,
+          }
+          return fulfill(route, groupPayload(), 201)
+        }
+        return fulfill(route, directConversation(), chatMessages.length === 0 ? 201 : 200)
+      }
+      return fulfill(route, [
+        ...(chatMessages.length > 0 ? [directConversation()] : []),
+        ...(groupConversation ? [groupPayload()] : []),
+      ])
     }
+    if (path === '/api/conversations/902' && request.method() === 'GET') return fulfill(route, groupPayload() ?? {}, groupConversation ? 200 : 404)
+    if (path === '/api/conversations/902/settings'
+      && request.method() === 'POST'
+      && request.postDataJSON()?._method === 'PATCH') {
+      const { _method: _ignored, ...updates } = request.postDataJSON()
+      groupConversation = { ...(groupConversation ?? {}), ...updates }
+      return fulfill(route, groupPayload())
+    }
+    const groupRole = path.match(/^\/api\/conversations\/902\/members\/(\d+)\/(promote|demote)$/)
+    if (groupRole && groupConversation) {
+      const participantId = Number(groupRole[1])
+      const role = groupRole[2] === 'promote' ? 'admin' : 'member'
+      groupConversation = {
+        ...groupConversation,
+        participants: (groupConversation.participants as Array<Record<string, unknown>>)
+          .map((participant) => Number(participant.id) === participantId ? { ...participant, role } : participant),
+      }
+      return fulfill(route, groupPayload())
+    }
+    const groupKick = path.match(/^\/api\/conversations\/902\/members\/(\d+)$/)
+    if (groupKick && request.postDataJSON()?._method === 'DELETE' && groupConversation) {
+      const participantId = Number(groupKick[1])
+      groupConversation = {
+        ...groupConversation,
+        participants: (groupConversation.participants as Array<Record<string, unknown>>)
+          .filter((participant) => Number(participant.id) !== participantId),
+      }
+      return fulfill(route, groupPayload())
+    }
+    if (path === '/api/conversations/902/messages') return fulfill(route, [])
+    if (path === '/api/conversations/902/read') return fulfill(route, { last_read_at: '2026-08-08T00:00:00Z', last_read_message_id: null })
     if (path === '/api/conversations/901/messages') {
       if (request.method() === 'GET') return fulfill(route, chatMessages)
       const body = request.postDataJSON?.() ?? {}
@@ -297,7 +359,7 @@ export async function installApiMock(
       last_read_at: '2026-08-08T00:00:00Z', last_read_message_id: chatMessages.at(-1)?.id ?? null,
     })
     if (path === '/api/conversations/901/typing') return fulfill(route, { ok: true })
-    if (path === '/api/friends') return fulfill(route, [])
+    if (path === '/api/friends') return fulfill(route, options.friends ?? [])
     if (path === '/api/highlights/batch') return fulfill(route, highlights)
     const verseNotes = path.match(/^\/api\/verses\/(\d+)\/notes$/)
     if (verseNotes) {
