@@ -1,9 +1,9 @@
 import { useEffect, useState } from 'react'
-import { isTauri } from '@tauri-apps/api/core'
 import { getVersion } from '@tauri-apps/api/app'
 import { RefreshCw } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
-import { checkForAppUpdates } from '@/lib/updater'
+import { isDesktopApp } from '@/lib/updater'
+import { useAppUpdateStore } from '@/lib/store/useAppUpdateStore'
 import { useUIStore } from '@/lib/store/useUIStore'
 import { SectionLabel } from '@/components/ui/SectionLabel'
 import { Switch } from '@/components/ui/Switch'
@@ -14,10 +14,11 @@ export function ApplicationSettings() {
   const { t } = useTranslation()
   const supportEmail = t('settings.application.supportEmail')
   const addToast = useUIStore((state) => state.addToast)
-  const desktop = isTauri()
+  const desktop = isDesktopApp()
   const [version, setVersion] = useState('web')
   const [autoUpdate, setAutoUpdate] = useState(localStorage.getItem('autoUpdate') !== 'false')
   const [checking, setChecking] = useState(false)
+  const checkForUpdates = useAppUpdateStore((state) => state.check)
 
   useEffect(() => {
     if (desktop) void getVersion().then(setVersion)
@@ -26,12 +27,11 @@ export function ApplicationSettings() {
   async function checkNow() {
     setChecking(true)
     try {
-      await checkForAppUpdates(addToast, {
-        installing: (next) => t('updater.installing', { version: next }),
-        installed: t('updater.installed'),
-        failed: t('updater.failed'),
-        noUpdate: t('settings.application.upToDate'),
-      }, { force: true })
+      const update = await checkForUpdates({ force: true })
+      if (!update) addToast(t('settings.application.upToDate'), 'success')
+    } catch (error) {
+      console.warn('Update check failed', error)
+      addToast(t('updater.checkFailed'), 'error', { duration: 8_000 })
     } finally {
       setChecking(false)
     }

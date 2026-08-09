@@ -17,7 +17,8 @@ import { useAuthStore } from '@/lib/store/useAuthStore'
 import { useBookmarkStore } from '@/lib/store/useBookmarkStore'
 import { useFriendStore } from '@/lib/store/useFriendStore'
 import { useChatStore } from '@/lib/store/useChatStore'
-import { checkForAppUpdates } from '@/lib/updater'
+import { useAppUpdateStore } from '@/lib/store/useAppUpdateStore'
+import { UpdateDialog } from '@/components/updates/UpdateDialog'
 import { registerAuthDeepLink } from '@/lib/deepLink'
 import { useIsMobile } from '@/lib/useIsMobile'
 import { isWorkspaceRoute } from './paths'
@@ -64,6 +65,7 @@ function RootLayoutSurface() {
   const listenForChatUpdates = useChatStore(s => s.listenForUpdates)
   const stopChatUpdates    = useChatStore(s => s.stopListeningForUpdates)
   const addToast           = useUIStore(s => s.addToast)
+  const checkForUpdates    = useAppUpdateStore(s => s.check)
 
   useEffect(() => {
     trackAnalyticsPageView(location.pathname)
@@ -132,12 +134,8 @@ function RootLayoutSurface() {
 
   useEffect(() => {
     if (localStorage.getItem('autoUpdate') === 'false') return
-    void checkForAppUpdates(addToast, {
-      installing: (version) => t('updater.installing', { version }),
-      installed: t('updater.installed'),
-      failed: t('updater.failed'),
-    })
-  }, [addToast, t])
+    void checkForUpdates().catch((error) => console.warn('Update check failed', error))
+  }, [checkForUpdates])
 
   useEffect(() => {
     if (!keepScreenAwake || !('wakeLock' in navigator)) return
@@ -215,6 +213,7 @@ function RootLayoutSurface() {
       <TutorialInvite />
       <TutorialOverlay />
       <AnalyticsConsentBanner />
+      <UpdateDialog />
     </>
   )
 }

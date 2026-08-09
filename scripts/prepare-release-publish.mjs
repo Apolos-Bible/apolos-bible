@@ -2,10 +2,10 @@ import { copyFile, cp, mkdir, readFile, readdir, stat, writeFile } from 'node:fs
 import path from 'node:path'
 import { createHash } from 'node:crypto'
 
-const [assetsDir, outputDir, version, publicUrl] = process.argv.slice(2)
+const [assetsDir, outputDir, version, publicUrl, releaseNotesPath] = process.argv.slice(2)
 
 if (!assetsDir || !outputDir || !version || !publicUrl) {
-  throw new Error('Usage: node prepare-release-publish.mjs <assets> <output> <version> <public-url>')
+  throw new Error('Usage: node prepare-release-publish.mjs <assets> <output> <version> <public-url> [release-notes-file]')
 }
 
 const baseUrl = publicUrl.replace(/\/$/, '')
@@ -53,6 +53,9 @@ for (const [extension, file] of Object.entries(platforms)) {
 }
 
 const updaterManifest = JSON.parse(await readFile(path.join(assetsDir, updaterManifestName), 'utf8'))
+if (releaseNotesPath) {
+  updaterManifest.notes = await readFile(releaseNotesPath, 'utf8')
+}
 for (const platform of Object.values(updaterManifest.platforms ?? {})) {
   const assetName = decodeURIComponent(new URL(platform.url).pathname.split('/').pop())
   if (!files.includes(assetName)) throw new Error(`Updater asset not found: ${assetName}`)

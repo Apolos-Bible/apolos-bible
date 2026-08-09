@@ -25,7 +25,9 @@ describe('S3 release publisher', () => {
     temporaryDirectories.push(root)
     const assets = join(root, 'assets')
     const output = join(root, 'publish')
+    const releaseNotes = join(root, 'release-notes.md')
     mkdirSync(assets)
+    writeFileSync(releaseNotes, '## What\'s new\n\n- Faster startup\n- Fixed update checks\n')
 
     const installers = {
       'Apolos_1.6.0_universal.dmg': 'mac installer',
@@ -55,6 +57,7 @@ describe('S3 release publisher', () => {
       output,
       '1.6.0',
       'https://releases.apolos.io/',
+      releaseNotes,
     ])
 
     const manifest = JSON.parse(
@@ -74,8 +77,10 @@ describe('S3 release publisher', () => {
       .toBe('signed update archive')
 
     const updater = JSON.parse(readFileSync(join(output, 'latest.json'), 'utf8')) as {
+      notes: string
       platforms: Record<string, { url: string; signature: string }>
     }
+    expect(updater.notes).toBe('## What\'s new\n\n- Faster startup\n- Fixed update checks\n')
     expect(updater.platforms['windows-x86_64']).toEqual({
       url: `https://releases.apolos.io/releases/1.6.0/${updaterArchive}`,
       signature: 'minisign-signature',
