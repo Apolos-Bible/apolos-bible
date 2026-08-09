@@ -319,10 +319,12 @@ jobs:
       - name: Download signed release assets
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: gh release download "${{ github.event.release.tag_name }}" --dir release-assets
+        run: |
+          gh release download "${{ github.event.release.tag_name }}" --dir release-assets
+          gh api "repos/${{ github.repository }}/releases/${{ github.event.release.id }}" --jq '.body // ""' > release-notes.md
 
       - name: Prepare public manifests and aliases
-        run: node scripts/prepare-release-publish.mjs release-assets publish "${{ needs.bump-version.outputs.version }}" "$RELEASES_PUBLIC_URL"
+        run: node scripts/prepare-release-publish.mjs release-assets publish "${{ needs.bump-version.outputs.version }}" "$RELEASES_PUBLIC_URL" release-notes.md
 
       - name: Upload immutable versioned artifacts
         run: aws s3 sync "publish/releases/${{ needs.bump-version.outputs.version }}" "s3://$RELEASES_BUCKET/releases/${{ needs.bump-version.outputs.version }}/" --endpoint-url "$RELEASES_ENDPOINT" --cache-control "public, max-age=31536000, immutable"

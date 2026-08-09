@@ -8,68 +8,61 @@ vi.mock('@tauri-apps/api/core', () => ({ isTauri }))
 vi.mock('@tauri-apps/plugin-updater', () => ({ check }))
 vi.mock('@tauri-apps/plugin-process', () => ({ relaunch }))
 
-const messages = {
-  installing: (version: string) => `Installing ${version}`,
-  installed: 'Installed',
-  failed: 'Failed',
-  noUpdate: 'Current',
-}
-
 describe('signed desktop updater', () => {
-  beforeEach(() => {
+  beforeEach(async () => {
     vi.clearAllMocks()
-    vi.resetModules()
     isTauri.mockReturnValue(true)
+    Object.defineProperty(navigator, 'userAgent', { value: 'Desktop test', configurable: true })
+    const { resetUpdateCheckForTests } = await import('./updater')
+    resetUpdateCheckForTests()
   })
 
-  it('downloads, installs and relaunches after a signed update is found', async () => {
-    const downloadAndInstall = vi.fn().mockResolvedValue(undefined)
-    check.mockResolvedValue({ version: '1.6.0', downloadAndInstall })
-    const notify = vi.fn()
+  it('detects an update without downloading or installing it', async () => {
+    const downloadAndInstall = vi.fn()
+    check.mockResolvedValue({
+      version: '1.6.0',
+      currentVersion: '1.5.2',
+      body: 'Release notes',
+      downloadAndInstall,
+    })
     const { checkForAppUpdates } = await import('./updater')
 
-    await checkForAppUpdates(notify, messages)
+    const update = await checkForAppUpdates()
 
     expect(check).toHaveBeenCalledWith({ timeout: 30_000 })
-    expect(downloadAndInstall).toHaveBeenCalledOnce()
-    expect(notify).toHaveBeenNthCalledWith(1, 'Installing 1.6.0', 'info', { duration: 10_000 })
-    expect(notify).toHaveBeenNthCalledWith(2, 'Installed', 'success', { duration: 3_000 })
+    expect(update).toMatchObject({ version: '1.6.0', currentVersion: '1.5.2', notes: 'Release notes' })
+    expect(downloadAndInstall).not.toHaveBeenCalled()
+  })
+
+  it('installs only after an explicit call and reports download progress', async () => {
+    const downloadAndInstall = vi.fn(async (onEvent) => {
+      onEvent({ event: 'Started', data: { contentLength: 100 } })
+      onEvent({ event: 'Progress', data: { chunkLength: 40 } })
+      onEvent({ event: 'Progress', data: { chunkLength: 60 } })
+      onEvent({ event: 'Finished' })
+    })
+    const native = { version: '1.6.0', currentVersion: '1.5.2', downloadAndInstall }
+    const progress = vi.fn()
+    const { installAppUpdate } = await import('./updater')
+
+    await installAppUpdate({ version: '1.6.0', currentVersion: '1.5.2', native: native as never }, progress)
+
+    expect(progress.mock.calls.map(([value]) => value)).toEqual([0, 40, 100, 100])
     expect(relaunch).toHaveBeenCalledOnce()
   })
 
-  it('reports that the installed version is current', async () => {
-    check.mockResolvedValue(null)
-    const notify = vi.fn()
-    const { checkForAppUpdates } = await import('./updater')
-
-    await checkForAppUpdates(notify, messages)
-
-    expect(notify).toHaveBeenCalledWith('Current', 'success')
-    expect(relaunch).not.toHaveBeenCalled()
-  })
-
-  it('reports installation failures without relaunching', async () => {
-    const downloadAndInstall = vi.fn().mockRejectedValue(new Error('bad signature'))
-    check.mockResolvedValue({ version: '1.6.0', downloadAndInstall })
-    const notify = vi.fn()
-    const { checkForAppUpdates } = await import('./updater')
-
-    await checkForAppUpdates(notify, messages)
-
-    expect(notify).toHaveBeenLastCalledWith('Failed', 'error', { duration: 8_000 })
-    expect(relaunch).not.toHaveBeenCalled()
-  })
-
-  it('checks once automatically, supports a forced retry, and skips web', async () => {
+  it('checks once automatically, supports a forced retry, and skips web and mobile', async () => {
     check.mockResolvedValue(null)
     const { checkForAppUpdates } = await import('./updater')
-    const notify = vi.fn()
 
-    await checkForAppUpdates(notify, messages)
-    await checkForAppUpdates(notify, messages)
-    await checkForAppUpdates(notify, messages, { force: true })
+    await checkForAppUpdates()
+    await checkForAppUpdates()
+    await checkForAppUpdates({ force: true })
+    Object.defineProperty(navigator, 'userAgent', { value: 'Android', configurable: true })
+    await checkForAppUpdates({ force: true })
     isTauri.mockReturnValue(false)
-    await checkForAppUpdates(notify, messages, { force: true })
+    Object.defineProperty(navigator, 'userAgent', { value: 'Desktop test', configurable: true })
+    await checkForAppUpdates({ force: true })
 
     expect(check).toHaveBeenCalledTimes(2)
   })
