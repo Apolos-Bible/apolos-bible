@@ -222,7 +222,11 @@ function RootLayoutSurface() {
     <>
       <RouteIndexing />
       <ImpersonationBanner />
-      <div className={user?.impersonation?.active ? 'pt-10' : undefined}>
+      <div
+        className={user?.impersonation?.active
+          ? 'h-full min-h-0 overflow-hidden pt-10'
+          : 'h-full min-h-0 overflow-hidden'}
+      >
         <RegionNav />
         {!isMobile && isWorkspaceRoute(location.pathname)
           ? <WorkspaceDesktopShell />
