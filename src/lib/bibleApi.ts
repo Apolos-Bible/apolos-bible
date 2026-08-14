@@ -82,6 +82,7 @@ export interface ApiSemanticResult {
 export interface ApiSemanticResponse {
   seed_verse_id: number
   model: string
+  dataset?: string
   results: ApiSemanticResult[]
 }
 
@@ -123,6 +124,53 @@ export interface ApiBibleDownload {
 const isArray = <T>(v: unknown): v is T[] => Array.isArray(v)
 
 const chapterKey = (versionId: number, slug: string, n: number) => `${versionId}:${slug}:${n}`
+const semanticKey = (verseId: number, limit: number, versionId?: number) =>
+  `${verseId}:${versionId ?? 'canonical'}:${limit}`
+const SEMANTIC_CACHE_TTL_MS = 24 * 60 * 60 * 1000
+const SEMANTIC_CACHE_RETENTION_MS = 30 * 24 * 60 * 60 * 1000
+const semanticRequests = new Map<string, Promise<ApiSemanticResponse>>()
+
+async function semanticSimilar(verseId: number, limit = 30, versionId?: number): Promise<ApiSemanticResponse> {
+  const key = semanticKey(verseId, limit, versionId)
+  const inFlight = semanticRequests.get(key)
+  if (inFlight) return inFlight
+
+  const request = (async () => {
+    const cached = await db.similarities.get(key).catch(() => undefined)
+    if (cached && Date.now() - cached.cachedAt < SEMANTIC_CACHE_TTL_MS) {
+      return cached.data
+    }
+
+    const qs = new URLSearchParams({ limit: String(limit) })
+    if (versionId != null) qs.set('version_id', String(versionId))
+
+    try {
+      const fresh = await api.get<ApiSemanticResponse>(`/api/verses/${verseId}/similar?${qs.toString()}`)
+      await db.similarities.put({
+        key,
+        cachedAt: Date.now(),
+        dataset: fresh.dataset ?? 'legacy-live',
+        data: fresh,
+      }).catch(() => undefined)
+      void db.similarities
+        .where('cachedAt')
+        .below(Date.now() - SEMANTIC_CACHE_RETENTION_MS)
+        .delete()
+        .catch(() => undefined)
+      return fresh
+    } catch (error) {
+      // A stale semantic result remains useful when the user is offline or the
+      // API is temporarily unavailable. It will be refreshed on the next success.
+      if (cached) return cached.data
+      throw error
+    }
+  })().finally(() => {
+    semanticRequests.delete(key)
+  })
+
+  semanticRequests.set(key, request)
+  return request
+}
 
 export const bibleApi = {
   versions: async () => {
@@ -249,11 +297,7 @@ export const bibleApi = {
       version_id: number
       reference: string
     }>(`/api/verses/${verseId}/in/${versionId}`),
-  semanticSimilar: (verseId: number, limit = 30, versionId?: number) => {
-    const qs = new URLSearchParams({ limit: String(limit) })
-    if (versionId != null) qs.set('version_id', String(versionId))
-    return api.get<ApiSemanticResponse>(`/api/verses/${verseId}/similar?${qs.toString()}`)
-  },
+  semanticSimilar,
   crossRefVerseIds: (chapterId: number) => cacheFirst<number[]>(
     async () => (await db.crossRefIds.get(chapterId))?.data,
     () => api.get<number[]>(`/api/chapters/${chapterId}/cross-ref-verse-ids`),
