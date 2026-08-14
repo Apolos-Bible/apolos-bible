@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { gameInviteUrl, normalizeGameCode } from './gameInvite'
+import { gameInvitePath, gameInviteUrl, normalizeGameCode } from './gameInvite'
 
 describe('game lobby invitations', () => {
   it('normalizes valid room codes and rejects malformed ones', () => {
@@ -9,6 +9,7 @@ describe('game lobby invitations', () => {
   })
 
   it('creates a public join URL without exposing the room id', () => {
+    expect(gameInvitePath('ab12cd')).toBe('/juegos?join=AB12CD')
     expect(gameInviteUrl('ab12cd', 'https://example.test/app/')).toBe(
       'https://example.test/juegos?join=AB12CD',
     )

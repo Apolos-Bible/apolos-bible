@@ -7,6 +7,7 @@ import { paths } from '@/router/paths'
 import { useNotificationStore } from '@/lib/store/useNotificationStore'
 import { useUIStore } from '@/lib/store/useUIStore'
 import { PanelHeader, PanelHeaderButton } from '@/components/layout/PanelHeader'
+import { gameInvitePath, normalizeGameCode } from '@/lib/gameInvite'
 import { notificationPresentation } from './notificationPresentation'
 
 export function NotificationsPanel() {
@@ -34,6 +35,12 @@ export function NotificationsPanel() {
     if (notification.type === 'friend_request_accepted') {
       const userId = number('acceptor_id')
       if (userId) { closePanel(); navigate(paths.userProfile(userId)) }
+      return
+    }
+    if (notification.type === 'game_invitation') {
+      const roomCode = normalizeGameCode(string('room_code'))
+      closePanel()
+      navigate(roomCode ? gameInvitePath(roomCode) : paths.games())
       return
     }
     if (notification.type === 'guided_plan_moderation') {

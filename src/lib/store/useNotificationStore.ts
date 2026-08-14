@@ -26,6 +26,7 @@ function countsAsUnread(notification: AppNotification): boolean {
   return notification.read_at === null && (
     notification.type === 'friend_request_received'
     || notification.type === 'friend_request_accepted'
+    || notification.type === 'game_invitation'
     || notification.type === 'guided_plan_moderation'
   )
 }
@@ -101,6 +102,10 @@ export const useNotificationStore = create<NotificationStore>((set, get) => ({
       } else if (classType === 'App\\Notifications\\FriendRequestAccepted') {
         const name: string = notif.acceptor_name ?? i18n.t('notification.someone')
         useUIStore.getState().addToast(i18n.t('notification.friendAccepted', { name }), 'success')
+        set((s) => ({ unreadCount: s.unreadCount + 1 }))
+      } else if (classType === 'App\\Notifications\\GameInvitationReceived') {
+        const name: string = notif.inviter_name ?? i18n.t('notification.someone')
+        useUIStore.getState().addToast(i18n.t('notification.gameInvitation', { name }), 'info')
         set((s) => ({ unreadCount: s.unreadCount + 1 }))
       }
 
