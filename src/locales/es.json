@@ -1339,5 +1339,11 @@
   "games.finished": "Partida terminada",
   "games.winner": "¡{{name}} gana!",
   "games.backToGames": "Volver a juegos",
-  "games.playAgain": "Jugar otra vez"
+  "games.playAgain": "Jugar otra vez",
+  "route.notFoundTitle": "Página no encontrada",
+  "route.notFoundMessage": "No encontramos lo que estabas buscando.",
+  "route.errorTitle": "Algo salió mal",
+  "route.errorMessage": "La aplicación encontró un error inesperado. Recarga la página para continuar.",
+  "route.reload": "Recargar",
+  "route.backToReading": "Volver a la lectura"
 }

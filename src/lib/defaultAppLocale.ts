@@ -16,6 +16,19 @@ export function selectDefaultAppLocale(browserLocale: string): AppLocale {
   return browserLocale.toLowerCase().startsWith('es') ? 'es' : 'en'
 }
 
+/** Resolve the document language before/while routing. Bible URLs own their
+ * locale; locale-neutral application URLs follow the person's app setting. */
+export function selectDocumentLocale(
+  pathname: string,
+  storedLocale: string | null,
+  browserLocale: string,
+): AppLocale {
+  const firstSegment = pathname.split('/').filter(Boolean)[0]
+  if (firstSegment === 'es') return 'es'
+  if (firstSegment === 'bible') return 'en'
+  return isAppLocale(storedLocale) ? storedLocale : selectDefaultAppLocale(browserLocale)
+}
+
 /** The locale currently used by the frontend, including its persisted setting. */
 export function getFrontendLocale(): AppLocale {
   return getStoredAppLocale() ?? selectDefaultAppLocale(getBrowserLocale())

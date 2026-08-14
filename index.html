@@ -1,8 +1,23 @@
 <!doctype html>
-<html lang="en" data-theme="light">
+<html lang="en" data-theme="light" translate="no" class="notranslate">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <meta name="google" content="notranslate" />
+    <script>
+      (() => {
+        const firstSegment = location.pathname.split('/').filter(Boolean)[0]
+        let locale = firstSegment === 'es' ? 'es' : firstSegment === 'bible' ? 'en' : null
+        if (!locale) {
+          let stored = null
+          try { stored = localStorage.getItem('locale') } catch {}
+          locale = stored === 'es' || stored === 'en'
+            ? stored
+            : navigator.language.toLowerCase().startsWith('es') ? 'es' : 'en'
+        }
+        document.documentElement.lang = locale
+      })()
+    </script>
     <title>Apolos Bible — Collaborative Bible Study</title>
     <meta name="description" content="Read, study, and discuss the Bible collaboratively. Cross-references, highlights, notes, and real-time study sessions with friends." />
     <meta name="keywords" content="Bible, Bible study, collaborative Bible, Scripture, Christian, study app, Apolos" />
@@ -60,7 +75,7 @@
     </script>
   </head>
   <body>
-    <div id="root"></div>
+    <div id="root" translate="no" class="notranslate"></div>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>

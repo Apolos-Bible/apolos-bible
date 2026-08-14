@@ -1,3 +1,5 @@
+import { readFileSync } from 'node:fs'
+import { resolve } from 'node:path'
 import { describe, expect, it } from 'vitest'
 import {
   extractAppAssetTags,
@@ -35,5 +37,14 @@ describe('static Bible application shell', () => {
     expect(STATIC_SEO_FALLBACK_STYLES).toContain('background: #0f1115')
     expect(STATIC_SEO_FALLBACK_STYLES).toContain('visibility: hidden')
     expect(STATIC_SEO_FALLBACK_STYLES).toContain('color: transparent !important')
+  })
+
+  it('protects the initial application document from DOM translators', () => {
+    const indexHtml = readFileSync(resolve(process.cwd(), 'index.html'), 'utf8')
+
+    expect(indexHtml).toContain('<html lang="en" data-theme="light" translate="no" class="notranslate">')
+    expect(indexHtml).toContain('<meta name="google" content="notranslate" />')
+    expect(indexHtml).toContain('document.documentElement.lang = locale')
+    expect(indexHtml).toContain('<div id="root" translate="no" class="notranslate"></div>')
   })
 })

@@ -1339,5 +1339,11 @@
   "games.finished": "Game over",
   "games.winner": "{{name}} wins!",
   "games.backToGames": "Back to games",
-  "games.playAgain": "Play again"
+  "games.playAgain": "Play again",
+  "route.notFoundTitle": "Page not found",
+  "route.notFoundMessage": "We couldn't find what you were looking for.",
+  "route.errorTitle": "Something went wrong",
+  "route.errorMessage": "The application hit an unexpected error. Reload the page to continue.",
+  "route.reload": "Reload",
+  "route.backToReading": "Back to reading"
 }

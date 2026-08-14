@@ -72,10 +72,11 @@ function seoHead(bookName, slug, chapter, firstVerseText, lang, alternates) {
   })
 
   return `<!doctype html>
-<html lang="${locale.htmlLang}" data-theme="light">
+<html lang="${locale.htmlLang}" data-theme="light" translate="no" class="notranslate">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="google" content="notranslate" />
 ${STATIC_THEME_BOOTSTRAP}
     <title>${title}</title>
     <meta name="description" content="${escapeHtml(description)}" />
@@ -120,7 +121,7 @@ ${STATIC_SEO_FALLBACK_STYLES}
     </style>
   </head>
   <body>
-    <div id="root">
+    <div id="root" translate="no" class="notranslate">
       <main id="seo-static">
         <div class="seo-content">
     <h1>${escapeHtml(bookName)}</h1>
@@ -207,10 +208,11 @@ function generateBookHtml(book, lang, alternates) {
   })
 
   return `<!doctype html>
-<html lang="${locale.htmlLang}" data-theme="light">
+<html lang="${locale.htmlLang}" data-theme="light" translate="no" class="notranslate">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="google" content="notranslate" />
 ${STATIC_THEME_BOOTSTRAP}
     <title>${escapeHtml(title)}</title>
     <meta name="description" content="${escapeHtml(description)}" />
@@ -248,7 +250,7 @@ ${STATIC_SEO_FALLBACK_STYLES}
     </style>
   </head>
   <body>
-    <div id="root">
+    <div id="root" translate="no" class="notranslate">
       <main id="seo-static">
         <div class="seo-content">
     <h1>${escapeHtml(book.name)}</h1>

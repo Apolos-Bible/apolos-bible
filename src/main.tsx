@@ -34,6 +34,10 @@ const rootElement = document.getElementById('root')!
 
 // Static Bible pages include crawlable chapter text inside #root. Once the
 // application bundle loads, replace that fallback with the interactive app.
+// Translation extensions mutate React-owned text nodes and can invalidate the
+// DOM references React uses while reconciling conditional UI.
+rootElement.setAttribute('translate', 'no')
+rootElement.classList.add('notranslate')
 rootElement.replaceChildren()
 
 ReactDOM.createRoot(rootElement).render(
