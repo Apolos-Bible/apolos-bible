@@ -232,7 +232,7 @@ function Round({ room, userId, isHost, busy, onAnswer, onReveal, onAdvance }: { 
           {question.type === 'who_am_i' && <div className="game-float mx-auto mb-5 flex h-20 w-20 items-center justify-center rounded-3xl border border-accent/25 bg-gradient-to-br from-accent/20 to-violet-500/10 text-accent shadow-lg shadow-accent/10"><UsersRound className="h-9 w-9" /></div>}
           {question.type === 'timeline' && <div className="game-float mx-auto mb-5 flex h-20 w-20 items-center justify-center rounded-3xl border border-cyan-400/25 bg-gradient-to-br from-cyan-400/20 to-blue-500/10 text-cyan-300 shadow-lg shadow-cyan-500/10"><ListOrdered className="h-9 w-9" /></div>}
           {question.type === 'matching' && <div className="game-float mx-auto mb-5 flex h-20 w-20 items-center justify-center rounded-3xl border border-violet-400/25 bg-gradient-to-br from-violet-400/20 to-fuchsia-500/10 text-violet-300 shadow-lg shadow-violet-500/10"><Link2 className="h-9 w-9" /></div>}
-          {question.type === 'memory' && <div className="game-float mx-auto mb-5 flex h-20 w-20 items-center justify-center rounded-3xl border border-violet-400/25 bg-gradient-to-br from-violet-400/20 to-indigo-500/10 text-violet-300 shadow-lg shadow-violet-500/10"><Grid2X2 className="h-9 w-9" /></div>}
+          {question.type === 'memory' && <div className="mx-auto mb-5 flex h-20 w-20 items-center justify-center rounded-2xl border border-border-subtle bg-bg-secondary text-accent shadow-sm"><Grid2X2 className="h-9 w-9" /></div>}
           {question.type === 'map' && <div className="game-float mx-auto mb-5 flex h-20 w-20 items-center justify-center rounded-3xl border border-emerald-400/25 bg-gradient-to-br from-emerald-400/20 to-cyan-500/10 text-emerald-300 shadow-lg shadow-emerald-500/10"><MapPinned className="h-9 w-9" /></div>}
           {question.type === 'fill_blank' && <div className="game-float mx-auto mb-5 flex h-20 w-20 items-center justify-center rounded-3xl border border-amber-300/25 bg-gradient-to-br from-amber-300/20 to-orange-500/10 text-amber-300 shadow-lg shadow-amber-500/10"><Quote className="h-9 w-9" /></div>}
           <QuestionPrompt question={question} reveal={room.phase === 'reveal'} />
@@ -421,10 +421,10 @@ function MatchingAnswer({ question, value, onChange, disabled, reveal }: { quest
 }
 
 const MEMORY_TONES = [
-  'border-cyan-300/50 bg-cyan-300/15 text-cyan-100',
-  'border-violet-300/50 bg-violet-300/15 text-violet-100',
-  'border-amber-300/50 bg-amber-300/15 text-amber-100',
-  'border-emerald-300/50 bg-emerald-300/15 text-emerald-100',
+  'border-cyan-500/40 bg-cyan-500/10',
+  'border-violet-500/40 bg-violet-500/10',
+  'border-amber-500/40 bg-amber-500/10',
+  'border-emerald-500/40 bg-emerald-500/10',
 ]
 
 function MemoryAnswer({ question, value, onChange, disabled, reveal }: { question: GameQuestion; value: GameAnswer | null; onChange: (answer: GameAnswer) => void; disabled: boolean; reveal: boolean }) {
@@ -467,19 +467,18 @@ function MemoryAnswer({ question, value, onChange, disabled, reveal }: { questio
   return <div className="mx-auto mt-6 max-w-2xl">
     <div className="mb-3 flex items-center justify-between gap-3 text-xs text-text-muted">
       <span>{t('games.memory.hint')}</span>
-      <strong className="rounded-full border border-violet-400/20 bg-violet-400/10 px-3 py-1 font-mono text-violet-200">{matchedPairs.length}/{pairCount}</strong>
+      <strong className="rounded-full border border-border-subtle bg-bg-secondary px-3 py-1 font-mono text-text-primary">{matchedPairs.length}/{pairCount}</strong>
     </div>
     <div className="grid grid-cols-2 gap-2 sm:grid-cols-4 sm:gap-3">
       {cards.map((card, index) => {
         const matched = completed || matchedPairs.includes(card.pair_id)
         const flipped = reveal || matched || openIds.includes(card.id)
-        return <button key={card.id} type="button" onClick={() => flip(card.id)} disabled={disabled || resolving || matched} aria-label={flipped ? card.label : t('games.memory.flipCard', { position: index + 1 })} className={cn('game-memory-card relative aspect-[4/3] min-h-20 rounded-2xl outline-none focus-visible:ring-2 focus-visible:ring-violet-300', flipped && 'is-flipped', matched && 'game-memory-match')}>
+        return <button key={card.id} type="button" onClick={() => flip(card.id)} disabled={disabled || resolving || matched} aria-label={flipped ? card.label : t('games.memory.flipCard', { position: index + 1 })} className={cn('game-memory-card relative aspect-[4/3] min-h-20 rounded-xl outline-none focus-visible:ring-2 focus-visible:ring-accent', flipped && 'is-flipped', matched && 'game-memory-match')}>
           <span className="game-memory-card-inner absolute inset-0 block">
-            <span className="game-memory-card-face absolute inset-0 flex items-center justify-center overflow-hidden rounded-2xl border border-violet-400/30 bg-gradient-to-br from-violet-500/25 via-bg-primary to-indigo-500/15 text-violet-200 shadow-lg shadow-violet-500/10">
-              <span className="absolute -right-4 -top-5 h-16 w-16 rounded-full bg-violet-400/15 blur-xl" />
-              <CircleHelp className="relative h-7 w-7" />
+            <span className="game-memory-card-face absolute inset-0 flex items-center justify-center rounded-xl border border-border-strong bg-bg-secondary text-accent shadow-sm">
+              <CircleHelp className="h-7 w-7" />
             </span>
-            <span className={cn('game-memory-card-face game-memory-card-back absolute inset-0 flex items-center justify-center rounded-2xl border px-2 text-center text-xs font-black shadow-lg sm:text-sm', MEMORY_TONES[card.pair_id % MEMORY_TONES.length])}>{card.label}</span>
+            <span className={cn('game-memory-card-face game-memory-card-back absolute inset-0 flex items-center justify-center rounded-xl border px-3 text-center text-xs font-semibold text-text-primary shadow-sm sm:text-sm', MEMORY_TONES[card.pair_id % MEMORY_TONES.length])}>{card.label}</span>
           </span>
         </button>
       })}

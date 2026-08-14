@@ -86,6 +86,14 @@ describe('useNotificationStore', () => {
     expect(useNotificationStore.getState().unreadCount).toBe(0)
   })
 
+  it('counts game invitations as unread', async () => {
+    mockFriendApi.notifications.mockResolvedValueOnce([
+      { ...mockNotification, type: 'game_invitation', data: { inviter_name: 'Daniel', room_code: 'AB12CD' } },
+    ])
+    await useNotificationStore.getState().load()
+    expect(useNotificationStore.getState().unreadCount).toBe(1)
+  })
+
   it('load handles errors silently', async () => {
     mockFriendApi.notifications.mockRejectedValueOnce(new Error('Fail'))
     await useNotificationStore.getState().load()
@@ -149,6 +157,21 @@ describe('useNotificationStore', () => {
     }
     listener(notification)
     listener(notification)
+
+    expect(useNotificationStore.getState().unreadCount).toBe(1)
+  })
+
+  it('counts game invitation pushes as unread', () => {
+    mockFriendApi.notifications.mockResolvedValue([])
+    useNotificationStore.getState().listenForPush('user-1')
+    const listener = mockEchoOnNotification.mock.calls[0][0]
+
+    listener({
+      id: 'game-push-1',
+      type: 'App\\Notifications\\GameInvitationReceived',
+      inviter_name: 'Daniel',
+      room_code: 'AB12CD',
+    })
 
     expect(useNotificationStore.getState().unreadCount).toBe(1)
   })

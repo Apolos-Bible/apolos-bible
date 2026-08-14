@@ -17,6 +17,14 @@ describe('[NOTIFY-INBOX-01] notification presentation', () => {
       .toBe('Mateo accepted your friend request')
   })
 
+  it('describes game invitations with the host name', () => {
+    expect(notificationPresentation(notification('game_invitation', { inviter_name: 'Daniel' }), i18n.t))
+      .toEqual({
+        title: 'Daniel invited you to a Bible game',
+        detail: 'Open the invitation to enter the room and play.',
+      })
+  })
+
   it('describes moderation updates and preserves their reason', () => {
     const result = notificationPresentation(notification('guided_plan_moderation', {
       event: 'rejected', plan_title: 'Hope', reason: 'Add a source.',

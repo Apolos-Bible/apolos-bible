@@ -15,6 +15,10 @@ export function notificationPresentation(notification: AppNotification, t: TFunc
     const name = text(data, 'acceptor_name') ?? t('notification.someone')
     return { title: t('notification.friendAccepted', { name }), detail: t('notifications.friendAcceptedDetail') }
   }
+  if (type === 'game_invitation') {
+    const name = text(data, 'inviter_name') ?? t('notification.someone')
+    return { title: t('notification.gameInvitation', { name }), detail: t('notifications.gameInvitationDetail') }
+  }
   if (type === 'guided_plan_moderation') {
     const title = text(data, 'plan_title') ?? t('notifications.untitledPath')
     const event = text(data, 'event') ?? text(data, 'moderation_status') ?? 'updated'
