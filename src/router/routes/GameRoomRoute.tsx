@@ -233,7 +233,7 @@ function Round({ room, userId, isHost, busy, onAnswer, onReveal, onAdvance }: { 
           {question.type === 'timeline' && <div className="game-float mx-auto mb-5 flex h-20 w-20 items-center justify-center rounded-3xl border border-cyan-400/25 bg-gradient-to-br from-cyan-400/20 to-blue-500/10 text-cyan-300 shadow-lg shadow-cyan-500/10"><ListOrdered className="h-9 w-9" /></div>}
           {question.type === 'matching' && <div className="game-float mx-auto mb-5 flex h-20 w-20 items-center justify-center rounded-3xl border border-violet-400/25 bg-gradient-to-br from-violet-400/20 to-fuchsia-500/10 text-violet-300 shadow-lg shadow-violet-500/10"><Link2 className="h-9 w-9" /></div>}
           {question.type === 'memory' && <div className="mx-auto mb-5 flex h-20 w-20 items-center justify-center rounded-2xl border border-border-subtle bg-bg-secondary text-accent shadow-sm"><Grid2X2 className="h-9 w-9" /></div>}
-          {question.type === 'map' && <div className="game-float mx-auto mb-5 flex h-20 w-20 items-center justify-center rounded-3xl border border-emerald-400/25 bg-gradient-to-br from-emerald-400/20 to-cyan-500/10 text-emerald-300 shadow-lg shadow-emerald-500/10"><MapPinned className="h-9 w-9" /></div>}
+          {question.type === 'map' && <div className="mx-auto mb-5 flex h-20 w-20 items-center justify-center rounded-2xl border border-border-subtle bg-bg-secondary text-accent shadow-sm"><MapPinned className="h-9 w-9" /></div>}
           {question.type === 'fill_blank' && <div className="game-float mx-auto mb-5 flex h-20 w-20 items-center justify-center rounded-3xl border border-amber-300/25 bg-gradient-to-br from-amber-300/20 to-orange-500/10 text-amber-300 shadow-lg shadow-amber-500/10"><Quote className="h-9 w-9" /></div>}
           <QuestionPrompt question={question} reveal={room.phase === 'reveal'} />
           {question.clues.length > 0 && <div className="mx-auto mt-5 max-w-xl space-y-2">{question.clues.slice(0, clueCount).map((clue, index) => <p key={clue} className="game-clue-enter rounded-2xl border border-border-subtle bg-bg-tertiary/60 px-4 py-3 text-sm text-text-secondary shadow-sm" style={{ animationDelay: `${index * 90}ms` }}><span className="mr-2 inline-flex h-5 w-5 items-center justify-center rounded-full bg-accent/10 font-mono text-2xs font-bold text-accent">{index + 1}</span>{clue}</p>)}</div>}
@@ -494,21 +494,21 @@ function MapAnswer({ question, value, onChange, disabled, reveal }: { question: 
 
   return <div className="mx-auto mt-6 max-w-xl">
     <p className="mb-3 text-xs text-text-muted">{t('games.map.hint')}</p>
-    <div className="relative aspect-[5/4] overflow-hidden rounded-[2rem] border border-emerald-400/20 bg-gradient-to-br from-sky-400/10 via-cyan-400/[0.04] to-emerald-400/10 shadow-xl shadow-emerald-500/5">
-      <div className="absolute inset-0 opacity-30" style={{ backgroundImage: 'linear-gradient(rgba(110,231,183,.13) 1px, transparent 1px), linear-gradient(90deg, rgba(110,231,183,.13) 1px, transparent 1px)', backgroundSize: '28px 28px' }} />
-      <svg viewBox="0 0 100 100" className="absolute inset-0 h-full w-full text-emerald-300/15" aria-hidden="true">
-        <path d="M39 8 C52 10 65 15 67 25 C70 35 61 39 66 48 C73 59 66 73 58 88 C53 96 41 94 36 83 C31 72 37 62 33 52 C28 40 31 26 39 8Z" fill="currentColor" stroke="rgba(110,231,183,.32)" strokeWidth="1.2" />
-        <path d="M61 16 C66 20 68 27 66 35 C63 39 58 38 55 34 C54 27 56 21 61 16Z" fill="rgba(56,189,248,.15)" stroke="rgba(125,211,252,.35)" strokeWidth=".8" />
-        <path d="M62 48 C68 51 71 59 68 68 C65 72 61 68 60 62 C58 57 59 52 62 48Z" fill="rgba(56,189,248,.12)" />
+    <div className="relative aspect-[5/4] overflow-hidden rounded-2xl border border-border-subtle bg-bg-secondary shadow-sm">
+      <div className="absolute inset-0 bg-[linear-gradient(to_right,currentColor_1px,transparent_1px),linear-gradient(to_bottom,currentColor_1px,transparent_1px)] bg-[size:28px_28px] text-border-subtle opacity-40" />
+      <svg viewBox="0 0 100 100" className="absolute inset-0 h-full w-full" aria-hidden="true">
+        <path d="M39 8 C52 10 65 15 67 25 C70 35 61 39 66 48 C73 59 66 73 58 88 C53 96 41 94 36 83 C31 72 37 62 33 52 C28 40 31 26 39 8Z" className="text-accent" fill="currentColor" fillOpacity=".08" stroke="currentColor" strokeOpacity=".35" strokeWidth="1.2" />
+        <path d="M61 16 C66 20 68 27 66 35 C63 39 58 38 55 34 C54 27 56 21 61 16Z" className="text-sky-500" fill="currentColor" fillOpacity=".12" stroke="currentColor" strokeOpacity=".35" strokeWidth=".8" />
+        <path d="M62 48 C68 51 71 59 68 68 C65 72 61 68 60 62 C58 57 59 52 62 48Z" className="text-sky-500" fill="currentColor" fillOpacity=".08" />
       </svg>
-      <span className="absolute left-4 top-4 rounded-full border border-emerald-300/20 bg-bg-primary/70 px-3 py-1 text-2xs font-bold uppercase tracking-[0.14em] text-emerald-200 backdrop-blur">{t('games.map.region')}</span>
+      <span className="absolute left-4 top-4 rounded-full border border-border-strong bg-bg-primary px-3 py-1 text-2xs font-semibold uppercase tracking-[0.14em] text-text-primary shadow-sm">{t('games.map.region')}</span>
       {points.map((point) => {
         const isSelected = selected === point.id
         const isCorrect = reveal && question.correct_answer === point.id
         const isWrong = reveal && isSelected && !isCorrect
-        return <button key={point.id} type="button" onClick={() => !disabled && onChange(point.id)} disabled={disabled} aria-label={point.label} style={{ left: `${point.x}%`, top: `${point.y}%` }} className={cn('game-map-pin group absolute z-10 flex -translate-x-1/2 -translate-y-1/2 flex-col items-center transition-transform hover:z-20 hover:scale-110 focus-visible:z-20 focus-visible:outline-none', isSelected && 'z-20 scale-110')}>
-          <span className={cn('flex h-9 w-9 items-center justify-center rounded-full border-2 shadow-lg backdrop-blur transition-colors', isCorrect ? 'border-emerald-200 bg-emerald-400 text-emerald-950 shadow-emerald-400/30' : isWrong ? 'border-red-200 bg-red-400 text-red-950 shadow-red-400/30' : isSelected ? 'border-amber-200 bg-amber-300 text-amber-950 shadow-amber-300/30' : 'border-emerald-300/40 bg-bg-primary/85 text-emerald-200 shadow-black/20 group-hover:border-emerald-200')}><MapPin className="h-4 w-4 fill-current" /></span>
-          <span className={cn('mt-1 whitespace-nowrap rounded-md border bg-bg-primary/85 px-1.5 py-0.5 text-[9px] font-bold shadow-sm backdrop-blur sm:text-2xs', isCorrect ? 'border-emerald-300/40 text-emerald-200' : isWrong ? 'border-red-300/40 text-red-200' : isSelected ? 'border-amber-300/40 text-amber-200' : 'border-border-subtle text-text-secondary')}>{point.label}</span>
+        return <button key={point.id} type="button" onClick={() => !disabled && onChange(point.id)} disabled={disabled} aria-label={point.label} style={{ left: `${point.x}%`, top: `${point.y}%` }} className={cn('game-map-pin group absolute z-10 flex -translate-x-1/2 -translate-y-1/2 flex-col items-center opacity-100 transition-transform hover:z-20 hover:scale-110 focus-visible:z-20 focus-visible:outline-none disabled:cursor-default disabled:opacity-100', isSelected && 'z-20 scale-110')}>
+          <span className={cn('flex h-9 w-9 items-center justify-center rounded-full border-2 shadow-sm transition-colors', isCorrect ? 'border-emerald-700 bg-emerald-600 text-white' : isWrong ? 'border-red-700 bg-red-600 text-white' : isSelected ? 'border-accent bg-accent text-white' : 'border-border-strong bg-bg-primary text-accent group-hover:border-accent')}><MapPin className="h-4 w-4 fill-current" /></span>
+          <span className={cn('mt-1 whitespace-nowrap rounded-md border bg-bg-primary px-1.5 py-0.5 text-[9px] font-semibold text-text-primary shadow-sm sm:text-2xs', isCorrect ? 'border-emerald-600' : isWrong ? 'border-red-600' : isSelected ? 'border-accent' : 'border-border-strong')}>{point.label}</span>
         </button>
       })}
     </div>
