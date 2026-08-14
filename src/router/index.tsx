@@ -27,6 +27,7 @@ export const router = createBrowserRouter([
       // Desktop/mobile OAuth bridge: https page that hands the token back
       // to the installed Tauri app via a user-initiated `tulia://` link.
       { path: 'auth/bridge', lazy: async () => ({ Component: (await import('./routes/AuthBridgeRoute')).AuthBridgeRoute }) },
+      { path: 'auth/impersonate', lazy: async () => ({ Component: (await import('./routes/ImpersonationFinishRoute')).ImpersonationFinishRoute }) },
 
       // Catch-all
       { path: '*', element: <NotFound /> },

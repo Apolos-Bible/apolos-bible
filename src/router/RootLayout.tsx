@@ -27,6 +27,8 @@ import { AnalyticsConsentBanner } from '@/components/privacy/AnalyticsConsentBan
 import { trackAnalyticsPageView } from '@/lib/analytics'
 import { findWorkspaceGroup, useWorkspaceStore } from '@/lib/store/useWorkspaceStore'
 import { RouteIndexing } from '@/components/seo/RouteIndexing'
+import { ImpersonationBanner } from '@/components/support/ImpersonationBanner'
+import type { ApiError } from '@/lib/api'
 
 const VISITED_STORAGE_KEY = 'verbum_has_visited'
 let hasLoggedStartupSettings = false
@@ -70,6 +72,24 @@ function RootLayoutSurface() {
   useEffect(() => {
     trackAnalyticsPageView(location.pathname)
   }, [location.pathname])
+
+  useEffect(() => {
+    const showDebugError = (event: Event) => {
+      const error = (event as CustomEvent<ApiError>).detail
+      const debug = error.debug
+      if (!debug) return
+
+      const exception = debug.exception.split('\\').pop() ?? debug.exception
+      addToast(
+        `[${exception}] ${error.message} — ${debug.file}:${debug.line}`,
+        'error',
+        { duration: 15000 },
+      )
+    }
+
+    window.addEventListener('apolos:impersonation-error', showDebugError)
+    return () => window.removeEventListener('apolos:impersonation-error', showDebugError)
+  }, [addToast])
 
   useEffect(() => {
     void authInit()
@@ -201,10 +221,13 @@ function RootLayoutSurface() {
   return (
     <>
       <RouteIndexing />
-      <RegionNav />
-      {!isMobile && isWorkspaceRoute(location.pathname)
-        ? <WorkspaceDesktopShell />
-        : <Outlet />}
+      <ImpersonationBanner />
+      <div className={user?.impersonation?.active ? 'pt-10' : undefined}>
+        <RegionNav />
+        {!isMobile && isWorkspaceRoute(location.pathname)
+          ? <WorkspaceDesktopShell />
+          : <Outlet />}
+      </div>
       <CommandPalette />
       <Toast />
       <KeyboardShortcutsPanel />
