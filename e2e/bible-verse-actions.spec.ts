@@ -44,6 +44,22 @@ test.describe('Lector bíblico y acciones de versículo', () => {
     await expect(selected).toHaveAttribute('aria-current', 'true')
   })
 
+  test('[BIBLE-VERSION-03] conserva el rango seleccionado al cambiar de versión', async ({ page }, testInfo) => {
+    test.skip(testInfo.project.name === 'mobile-chromium', 'El selector de versión está dentro del panel móvil cerrado')
+    await installApiMock(page)
+    await page.goto('/es/bible/juan/1/1?endVerse=3', { waitUntil: 'domcontentloaded' })
+
+    const selectedVerses = page.locator('[role="listitem"][aria-current="true"]')
+    await expect(selectedVerses).toHaveCount(3)
+
+    const version = page.getByRole('combobox', { name: /Change Bible version|Cambiar versi.n de la Biblia/i })
+    await version.click()
+    await page.getByRole('option', { name: /^NVI\s/ }).click()
+
+    await expect(page).toHaveURL(/\/es\/bible\/juan\/1\/1\?endVerse=3$/)
+    await expect(selectedVerses).toHaveCount(3)
+  })
+
   test('[BIBLE-NAV-02] respeta límites y persiste la navegación de capítulo', async ({ page }, testInfo) => {
     await installApiMock(page)
     await page.goto('/bible/genesis/1', { waitUntil: 'domcontentloaded' })
