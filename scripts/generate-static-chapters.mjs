@@ -2,7 +2,11 @@ import { writeFileSync, mkdirSync, readFileSync, rmSync } from 'node:fs'
 import { resolve, dirname } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { LOCALE_CONFIG, SITE_LOCALES, localizedBiblePath, pickSeoVersion } from './seo-config.mjs'
-import { extractAppAssetTags } from './static-app-shell.mjs'
+import {
+  extractAppAssetTags,
+  STATIC_SEO_FALLBACK_STYLES,
+  STATIC_THEME_BOOTSTRAP,
+} from './static-app-shell.mjs'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
 const ROOT = resolve(__dirname, '..')
@@ -72,6 +76,7 @@ function seoHead(bookName, slug, chapter, firstVerseText, lang, alternates) {
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+${STATIC_THEME_BOOTSTRAP}
     <title>${title}</title>
     <meta name="description" content="${escapeHtml(description)}" />
     <meta name="robots" content="index, follow" />
@@ -97,7 +102,8 @@ ${alternateLinks(alternates)}
 ${APP_ASSET_TAGS}
 
     <style>
-      #seo-static { --seo-bg: #1a1a2e; --seo-text: #e0e0e0; --seo-muted: #9090a0; --seo-accent: #c8a96a; --seo-accent-soft: #c8a96a22; min-height: 100vh; background: var(--seo-bg); color: var(--seo-text); font-family: Georgia, 'Times New Roman', serif; line-height: 1.8; padding: 2rem 1rem; }
+${STATIC_SEO_FALLBACK_STYLES}
+      #seo-static { --seo-text: #e0e0e0; --seo-muted: #9090a0; --seo-accent: #c8a96a; --seo-accent-soft: #c8a96a22; min-height: 100vh; color: var(--seo-text); font-family: Georgia, 'Times New Roman', serif; line-height: 1.8; padding: 2rem 1rem; }
       #seo-static * { box-sizing: border-box; margin: 0; padding: 0; }
       #seo-static .seo-content { max-width: 720px; margin: 0 auto; }
       #seo-static h1 { font-size: 1.6rem; font-weight: 400; text-align: center; margin-bottom: 0.3rem; color: var(--seo-accent); }
@@ -205,6 +211,7 @@ function generateBookHtml(book, lang, alternates) {
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+${STATIC_THEME_BOOTSTRAP}
     <title>${escapeHtml(title)}</title>
     <meta name="description" content="${escapeHtml(description)}" />
     <meta name="robots" content="index, follow" />
@@ -226,7 +233,8 @@ ${alternateLinks(alternates)}
     <script type="application/ld+json">${jsonLd}</script>
 ${APP_ASSET_TAGS}
     <style>
-      #seo-static { --seo-bg: #1a1a2e; --seo-card: #222240; --seo-text: #e0e0e0; --seo-muted: #9090a0; --seo-accent: #c8a96a; --seo-accent-soft: #c8a96a22; min-height: 100vh; background: var(--seo-bg); color: var(--seo-text); font-family: Georgia, 'Times New Roman', serif; line-height: 1.8; padding: 2rem 1rem; }
+${STATIC_SEO_FALLBACK_STYLES}
+      #seo-static { --seo-card: #222240; --seo-text: #e0e0e0; --seo-muted: #9090a0; --seo-accent: #c8a96a; --seo-accent-soft: #c8a96a22; min-height: 100vh; color: var(--seo-text); font-family: Georgia, 'Times New Roman', serif; line-height: 1.8; padding: 2rem 1rem; }
       #seo-static * { box-sizing: border-box; margin: 0; padding: 0; }
       #seo-static .seo-content { max-width: 720px; margin: 0 auto; }
       #seo-static h1 { font-size: 1.6rem; font-weight: 400; text-align: center; color: var(--seo-accent); margin-bottom: 0.5rem; }
