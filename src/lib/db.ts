@@ -4,6 +4,7 @@ import type {
   ApiBook,
   ApiChapterResponse,
   ApiCrossRef,
+  ApiSemanticResponse,
 } from './bibleApi'
 
 interface VersionsRow {
@@ -34,12 +35,20 @@ interface CrossRefIdsRow {
   data: number[]
 }
 
+interface SimilarityRow {
+  key: string // `${verseId}:${versionId ?? 'canonical'}:${limit}`
+  cachedAt: number
+  dataset: string
+  data: ApiSemanticResponse
+}
+
 class BibleDb extends Dexie {
   versions!: Table<VersionsRow, string>
   books!: Table<BooksRow, number>
   chapters!: Table<ChapterRow, string>
   crossRefs!: Table<CrossRefRow, number>
   crossRefIds!: Table<CrossRefIdsRow, number>
+  similarities!: Table<SimilarityRow, string>
 
   constructor() {
     super('verbum-bible')
@@ -58,6 +67,16 @@ class BibleDb extends Dexie {
       chapters: 'key, versionId, slug, chapter, [versionId+slug+chapter]',
       crossRefs: 'verseId',
       crossRefIds: 'chapterId',
+    })
+    // v3 keeps semantic results locally. They are bounded by a TTL in bibleApi;
+    // the backend dataset token records which materialized generation produced them.
+    this.version(3).stores({
+      versions: 'key',
+      books: 'versionId',
+      chapters: 'key, versionId, slug, chapter, [versionId+slug+chapter]',
+      crossRefs: 'verseId',
+      crossRefIds: 'chapterId',
+      similarities: 'key, cachedAt, dataset',
     })
   }
 }

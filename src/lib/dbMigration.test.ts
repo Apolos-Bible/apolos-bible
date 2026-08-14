@@ -34,7 +34,7 @@ describe('Bible IndexedDB migrations', () => {
     const { db } = await import('./db')
     await db.open()
 
-    expect(db.verno).toBe(2)
+    expect(db.verno).toBe(3)
     expect(await db.versions.get('published:v1')).toMatchObject({ data: [{ id: 1, name: 'RVR1960' }] })
     expect(await db.books.get(1)).toMatchObject({ data: [{ slug: 'juan', chapters_count: 21 }] })
     expect(await db.chapters.get('1:juan:3')).toMatchObject({
@@ -44,6 +44,7 @@ describe('Bible IndexedDB migrations', () => {
       data: { verses: [{ number: 16, text: 'Porque de tal manera amó Dios.' }] },
     })
     expect(await db.chapters.where('[versionId+slug+chapter]').equals([1, 'juan', 3]).count()).toBe(1)
+    expect(await db.similarities.count()).toBe(0)
     db.close()
   })
 })
