@@ -12,7 +12,7 @@ import { useUIStore } from '@/lib/store/useUIStore'
 import { StarRating } from '@/components/study/guided/marketplace/StarRating'
 import { MarketplaceStudyModal } from '@/components/study/guided/marketplace/MarketplaceStudyModal'
 import type { PathStudySummary } from '@/lib/study/guidedEditorApi'
-import { hueOf } from '@/components/study/guided/marketplace/hue'
+import { PathCoverBackground } from '@/components/study/guided/marketplace/PathCover'
 import { paths } from '@/router/paths'
 import { cn } from '@/lib/cn'
 
@@ -61,7 +61,6 @@ export function MarketplacePathRoute() {
   const selectedStudyEntry: PathStudySummary | null = showing && selectedStudy
     ? showing.studies.find((entry) => entry.slug === selectedStudy.studySlug) ?? null
     : null
-  const hue = hueOf(slug ?? '')
   const VisibilityIcon = showing ? VISIBILITY_ICON[showing.visibility] : Globe
 
   return (
@@ -89,8 +88,8 @@ export function MarketplacePathRoute() {
         <>
           <div
             className="relative"
-            style={{ background: `linear-gradient(135deg, hsl(${hue} 62% 32%), hsl(${(hue + 48) % 360} 58% 18%))` }}
           >
+            <PathCoverBackground imageUrl={showing.cover_image_url} color={showing.cover_color} slug={showing.slug} eager />
             <div aria-hidden className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/25 to-transparent" />
 
             <div className="workspace-page-frame relative mx-auto w-full max-w-5xl px-4 pb-7 pt-5 md:px-8 md:pb-9 md:pt-7">

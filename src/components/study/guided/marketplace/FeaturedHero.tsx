@@ -7,15 +7,14 @@ import type { StudyPathCard } from '@/lib/study/marketplaceApi'
 import { paths } from '@/router/paths'
 import { cn } from '@/lib/cn'
 import { StarRating } from './StarRating'
-import { hueOf } from './hue'
+import { PathCoverBackground } from './PathCover'
 
 /**
  * The front page's first impression: one path shown large, the next four beside
  * it, clicking any of them promotes it into the big slot.
  *
- * Paths have no cover art, so the "art" is generated from the slug — a stable
- * gradient plus the title set large. It reads as designed rather than as a
- * missing image.
+ * Every path may bring its own cover. Its chosen color remains underneath as a
+ * stable placeholder and as the final fallback when no image exists.
  */
 export function FeaturedHero({ items }: { items: StudyPathCard[] }) {
   const { t } = useTranslation()
@@ -34,7 +33,6 @@ export function FeaturedHero({ items }: { items: StudyPathCard[] }) {
   if (!hero) return null
 
   const rest = items.filter((p) => p.slug !== hero.slug).slice(0, 4)
-  const hue = hueOf(hero.slug)
 
   return (
     <section
@@ -42,13 +40,7 @@ export function FeaturedHero({ items }: { items: StudyPathCard[] }) {
       className="workspace-featured-hero grid gap-3 lg:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]"
     >
       <article className="relative overflow-hidden rounded-2xl border border-border-subtle">
-        <div
-          aria-hidden
-          className="absolute inset-0"
-          style={{
-            background: `linear-gradient(135deg, hsl(${hue} 62% 32%), hsl(${(hue + 48) % 360} 58% 18%))`,
-          }}
-        />
+        <PathCoverBackground imageUrl={hero.cover_image_url} color={hero.cover_color} slug={hero.slug} eager />
         <div aria-hidden className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent" />
 
         <div className="workspace-featured-content relative flex h-full min-h-[19rem] flex-col justify-end gap-3 p-6 md:p-8">
@@ -116,7 +108,6 @@ export function FeaturedHero({ items }: { items: StudyPathCard[] }) {
       {rest.length > 0 && (
         <div className="workspace-featured-list flex flex-col gap-2">
           {rest.map((item) => {
-            const h = hueOf(item.slug)
             return (
               <button
                 key={item.slug}
@@ -124,11 +115,9 @@ export function FeaturedHero({ items }: { items: StudyPathCard[] }) {
                 onClick={() => setActiveSlug(item.slug)}
                 className="workspace-featured-item group flex flex-1 items-center gap-3 rounded-xl border border-border-subtle bg-bg-primary p-2.5 text-left transition-colors hover:border-accent/50 hover:bg-bg-tertiary"
               >
-                <span
-                  aria-hidden
-                  className="h-11 w-11 shrink-0 rounded-lg"
-                  style={{ background: `linear-gradient(135deg, hsl(${h} 62% 42%), hsl(${(h + 48) % 360} 58% 26%))` }}
-                />
+                <span aria-hidden className="relative h-11 w-11 shrink-0 overflow-hidden rounded-lg">
+                  <PathCoverBackground imageUrl={item.cover_image_url} color={item.cover_color} slug={item.slug} />
+                </span>
                 <span className="min-w-0 flex-1">
                   <span className="block truncate text-xs font-medium text-text-primary transition-colors group-hover:text-accent">
                     {item.title}

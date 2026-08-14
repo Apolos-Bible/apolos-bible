@@ -7,7 +7,7 @@ import { useGuidedEditorStore } from '@/lib/store/useGuidedEditorStore'
 import { useAuthStore } from '@/lib/store/useAuthStore'
 import { useUIStore } from '@/lib/store/useUIStore'
 import { CreatePathModal } from '@/components/study/guided/marketplace/CreatePathModal'
-import { hueOf } from '@/components/study/guided/marketplace/hue'
+import { PathCoverBackground } from '@/components/study/guided/marketplace/PathCover'
 import { paths } from '@/router/paths'
 import { cn } from '@/lib/cn'
 
@@ -125,7 +125,6 @@ export function MyPathsRoute() {
 
         <div className="workspace-card-grid grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
           {mine.map((item) => {
-            const hue = hueOf(item.slug)
             const VisibilityIcon = VISIBILITY_ICON[item.visibility]
             const moderationStatus = item.moderation_status ?? 'not_required'
 
@@ -138,8 +137,8 @@ export function MyPathsRoute() {
                   type="button"
                   onClick={() => navigate(paths.pathEditor(item.slug))}
                   className="relative h-20 w-full shrink-0 text-left"
-                  style={{ background: `linear-gradient(135deg, hsl(${hue} 62% 40%), hsl(${(hue + 48) % 360} 58% 24%))` }}
                 >
+                  <PathCoverBackground imageUrl={item.cover_image_url} color={item.cover_color} slug={item.slug} />
                   <span aria-hidden className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent" />
                   <span className="absolute bottom-2 left-3 right-3 block truncate text-sm font-semibold text-white">
                     {item.title}

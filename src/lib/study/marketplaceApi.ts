@@ -9,6 +9,8 @@ export interface StudyPathCard {
   slug: string
   title: string
   description: string | null
+  cover_image_url: string | null
+  cover_color: string | null
   visibility: PathVisibility
   is_mine: boolean
   author: { id: number; name: string | null } | null

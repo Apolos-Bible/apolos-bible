@@ -57,10 +57,13 @@ type GuidedEditorStore = {
   dirty: boolean
 
   loadPaths: () => Promise<void>
-  createPath: (title: string, description?: string) => Promise<StudyPath | null>
+  createPath: (title: string, description?: string, coverColor?: string, cover?: File) => Promise<StudyPath | null>
   requestPublication: (slug: string) => Promise<StudyPath | null>
   setVisibility: (slug: string, visibility: PathVisibility) => Promise<void>
   renamePath: (slug: string, title: string, description?: string | null) => Promise<void>
+  setCoverColor: (slug: string, color: string) => Promise<boolean>
+  uploadCover: (slug: string, cover: File) => Promise<boolean>
+  removeCover: (slug: string) => Promise<boolean>
   deletePath: (slug: string) => Promise<void>
 
   addStudy: (pathSlug: string, meta: StudyMetadata) => Promise<GuidedStudy | null>
@@ -109,9 +112,9 @@ export const useGuidedEditorStore = create<GuidedEditorStore>((set, get) => ({
     }
   },
 
-  createPath: async (title, description) => {
+  createPath: async (title, description, coverColor, cover) => {
     try {
-      const created = await guidedEditorApi.createPath({ title, description })
+      const created = await guidedEditorApi.createPath({ title, description, cover_color: coverColor }, cover)
       set((s) => ({ paths: [created, ...s.paths], error: null }))
       return created
     } catch (e: any) {
@@ -149,6 +152,39 @@ export const useGuidedEditorStore = create<GuidedEditorStore>((set, get) => ({
       set((s) => ({ paths: s.paths.map((p) => (p.slug === slug ? updated : p)), error: null }))
     } catch (e: any) {
       set({ error: e?.message ?? 'save failed' })
+    }
+  },
+
+  setCoverColor: async (slug, color) => {
+    try {
+      const updated = await guidedEditorApi.updatePath(slug, { cover_color: color })
+      set((s) => ({ paths: s.paths.map((p) => (p.slug === slug ? updated : p)), error: null }))
+      return true
+    } catch (e: any) {
+      set({ error: e?.message ?? 'cover color save failed' })
+      return false
+    }
+  },
+
+  uploadCover: async (slug, cover) => {
+    try {
+      const updated = await guidedEditorApi.uploadCover(slug, cover)
+      set((s) => ({ paths: s.paths.map((p) => (p.slug === slug ? updated : p)), error: null }))
+      return true
+    } catch (e: any) {
+      set({ error: e?.message ?? 'cover upload failed' })
+      return false
+    }
+  },
+
+  removeCover: async (slug) => {
+    try {
+      const updated = await guidedEditorApi.removeCover(slug)
+      set((s) => ({ paths: s.paths.map((p) => (p.slug === slug ? updated : p)), error: null }))
+      return true
+    } catch (e: any) {
+      set({ error: e?.message ?? 'cover removal failed' })
+      return false
     }
   },
 
