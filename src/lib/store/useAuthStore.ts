@@ -18,6 +18,13 @@ interface AuthUser {
   has_password?: boolean
   connected_providers?: Array<'password' | 'google' | 'youversion'>
   tutorial_completed?: boolean
+  impersonation?: {
+    active: true
+    impersonator: { id: number; name: string; email: string }
+    started_at: string | null
+    expires_at: string | null
+    return_url: string
+  } | null
 }
 
 interface AuthState {
@@ -37,6 +44,7 @@ interface AuthState {
   logout: () => Promise<void>
   deleteAccount: (confirmation: { password?: string; email_confirmation?: string }) => Promise<void>
   init: () => Promise<void>
+  startImpersonation: (token: string) => Promise<void>
 }
 
 export const useAuthStore = create<AuthState>((set) => ({
@@ -62,6 +70,31 @@ export const useAuthStore = create<AuthState>((set) => ({
         clearToken()
       }
       set({ loading: false })
+    }
+  },
+
+  startImpersonation: async (token) => {
+    set({ user: null, loading: true })
+    resetUserSession()
+    setToken(token)
+
+    try {
+      const user = await api.get<AuthUser>('/api/user')
+      if (!user.impersonation?.active) {
+        throw new Error('El backend no reconoció la sesión de impersonación.')
+      }
+      try {
+        const settings = await fetchUserSettings()
+        await applyUserSettings(settings)
+      } catch {
+        // The user session is still valid when optional settings fail.
+      }
+      set({ user, loading: false })
+      void hydrateUserSession()
+    } catch (error) {
+      clearToken()
+      set({ user: null, loading: false })
+      throw error
     }
   },
 
