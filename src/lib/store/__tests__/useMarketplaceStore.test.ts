@@ -31,6 +31,8 @@ const card = (over: Partial<StudyPathCard> = {}): StudyPathCard => ({
   slug: 'ansiedad',
   title: 'Ansiedad',
   description: null,
+  cover_image_url: null,
+  cover_color: '#3b2a76',
   visibility: 'public',
   is_mine: false,
   author: { id: 2, name: 'Otro' },

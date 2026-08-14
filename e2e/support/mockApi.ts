@@ -132,6 +132,7 @@ export async function installApiMock(
   }
   const guidedCard = {
     slug: 'hope-path', title: 'Ruta de esperanza', description: 'Esperanza para cada día.',
+    cover_image_url: null, cover_color: '#27648a',
     visibility: 'public', is_mine: false, author: { id: 21, name: 'Lucía' }, study_count: 1,
     rating_avg: 4.5, rating_count: 2, list_count: 3, my_rating: null, in_my_list: false,
     created_at: '2026-08-01T00:00:00Z',
@@ -810,6 +811,7 @@ export async function installApiMock(
       const slug = `authored-path-${nextGuidedPath++}`
       const created = {
         slug, title: body.title, description: body.description ?? null, source: 'user',
+        cover_image_url: null, cover_color: body.cover_color ?? '#3b2a76',
         visibility: body.visibility ?? 'private', is_published: false, moderation_status: 'draft',
         moderation_source: null, moderation_reason: null, moderation_requested_at: null,
         moderation_reviewed_at: null, is_mine: true, author: { id: 7, name: 'Ana Segura' },
@@ -817,6 +819,23 @@ export async function installApiMock(
       }
       authoredPaths = [created, ...authoredPaths]
       return fulfill(route, created, 201)
+    }
+    const authoredCover = path.match(/^\/api\/guided-plans\/([^/]+)\/cover$/)
+    if (authoredCover && authoredPaths.some((entry) => entry.slug === authoredCover[1])) {
+      const slug = authoredCover[1]
+      const multipart = request.headers()['content-type']?.startsWith('multipart/form-data')
+      const body = multipart ? {} : (request.postDataJSON?.() ?? {})
+      const removing = request.method() === 'DELETE' || (body as Record<string, unknown>)._method === 'DELETE'
+      let updated: Record<string, any> = {}
+      authoredPaths = authoredPaths.map((entry) => {
+        if (entry.slug !== slug) return entry
+        updated = {
+          ...entry,
+          cover_image_url: removing ? null : 'https://media.example.test/guided-plan-covers/mock-cover.jpg',
+        }
+        return updated
+      })
+      return fulfill(route, updated)
     }
     const authoredPath = path.match(/^\/api\/guided-plans\/([^/]+)$/)
     if (authoredPath && authoredPaths.some((entry) => entry.slug === authoredPath[1])) {

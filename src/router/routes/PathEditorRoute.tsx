@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useNavigate, useParams } from 'react-router-dom'
 import {
-  ArrowLeft, Plus, Save, Trash2, ChevronUp, ChevronDown, Globe, Lock, Users, Store, FileText,
+  ArrowLeft, Plus, Save, Trash2, ChevronUp, ChevronDown, Globe, Lock, Users, Store, FileText, Image,
 } from 'lucide-react'
 import { AppPageLayout } from '@/components/layout/AppPageLayout'
 import { useGuidedEditorStore } from '@/lib/store/useGuidedEditorStore'
@@ -16,6 +16,8 @@ import { stepKind } from '@/lib/study/guidedStepKinds'
 import { modKey, shiftKey } from '@/lib/platform'
 import { paths } from '@/router/paths'
 import { cn } from '@/lib/cn'
+import { EditPathCoverModal } from '@/components/study/guided/marketplace/EditPathCoverModal'
+import { PathCoverBackground } from '@/components/study/guided/marketplace/PathCover'
 
 const VISIBILITY: { value: PathVisibility; Icon: typeof Globe }[] = [
   { value: 'private', Icon: Lock },
@@ -65,6 +67,7 @@ export function PathEditorRoute() {
 
   const [tab, setTab] = useState<'step' | 'study'>('step')
   const [confirmDeleteStudy, setConfirmDeleteStudy] = useState(false)
+  const [editingCover, setEditingCover] = useState(false)
 
   const current = useMemo(() => pathsMine.find((p) => p.slug === slug) ?? null, [pathsMine, slug])
   const moderationStatus = current?.moderation_status ?? 'not_required'
@@ -190,6 +193,18 @@ export function PathEditorRoute() {
               aria-label={t('path.renamePath')}
               className="min-w-0 flex-1 rounded-md border border-transparent bg-transparent px-1.5 py-1 text-base font-semibold text-text-primary outline-none transition-colors hover:border-border-subtle focus:border-accent"
             />
+
+            <button
+              type="button"
+              onClick={() => setEditingCover(true)}
+              title={t('path.coverEdit')}
+              aria-label={t('path.coverEdit')}
+              className="relative h-7 w-9 overflow-hidden rounded-md border border-border-subtle text-white transition-colors hover:border-accent"
+            >
+              <PathCoverBackground imageUrl={current.cover_image_url} color={current.cover_color} slug={current.slug} />
+              <span aria-hidden className="absolute inset-0 bg-black/20" />
+              <Image className="absolute left-1/2 top-1/2 h-3.5 w-3.5 -translate-x-1/2 -translate-y-1/2" />
+            </button>
 
             <div className="flex gap-1" role="group" aria-label={t('path.visibility')}>
               {VISIBILITY.map(({ value, Icon }) => (
@@ -477,6 +492,8 @@ export function PathEditorRoute() {
           </aside>
         </div>
       </div>
+
+      <EditPathCoverModal open={editingCover} path={current} onClose={() => setEditingCover(false)} />
     </AppPageLayout>
   )
 }

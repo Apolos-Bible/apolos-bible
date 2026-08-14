@@ -7,6 +7,8 @@ import { useGuidedEditorStore } from '@/lib/store/useGuidedEditorStore'
 import type { PathVisibility } from '@/lib/study/guidedEditorApi'
 import { paths } from '@/router/paths'
 import { cn } from '@/lib/cn'
+import { DEFAULT_PATH_COVER_COLOR } from './PathCover'
+import { PathCoverPicker, type PathCoverMode } from './PathCoverPicker'
 
 const VISIBILITY = [
   { value: 'public' as const, Icon: Globe },
@@ -30,16 +32,24 @@ export function CreatePathModal({ open, onClose }: { open: boolean; onClose: () 
   // Public by default here: someone arriving from the marketplace CTA means to
   // publish. Creating from the editor's own flow still defaults to private.
   const [visibility, setVisibility_] = useState<PathVisibility>('public')
+  const [coverMode, setCoverMode] = useState<PathCoverMode>('color')
+  const [coverColor, setCoverColor] = useState(DEFAULT_PATH_COVER_COLOR)
+  const [coverFile, setCoverFile] = useState<File | null>(null)
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
   const submit = async () => {
     const name = title.trim()
-    if (!name || busy) return
+    if (!name || busy || (coverMode === 'image' && !coverFile)) return
     setBusy(true)
     setError(null)
 
-    const created = await createPath(name, description.trim() || undefined)
+    const created = await createPath(
+      name,
+      description.trim() || undefined,
+      coverColor,
+      coverMode === 'image' ? coverFile ?? undefined : undefined,
+    )
     if (!created) {
       setError(useGuidedEditorStore.getState().error ?? t('market.createFailed'))
       setBusy(false)
@@ -55,6 +65,9 @@ export function CreatePathModal({ open, onClose }: { open: boolean; onClose: () 
     setBusy(false)
     setTitle('')
     setDescription('')
+    setCoverMode('color')
+    setCoverColor(DEFAULT_PATH_COVER_COLOR)
+    setCoverFile(null)
     onClose()
     navigate(paths.pathEditor(created.slug, study?.slug))
   }
@@ -113,6 +126,18 @@ export function CreatePathModal({ open, onClose }: { open: boolean; onClose: () 
         className="mb-4 w-full resize-y rounded-lg border border-border bg-bg-primary px-2.5 py-2 text-sm text-text-primary outline-none transition-colors focus:border-accent"
       />
 
+      <span className="mb-1.5 block text-xs font-medium text-text-secondary">{t('path.cover')}</span>
+      <div className="mb-4">
+        <PathCoverPicker
+          mode={coverMode}
+          onModeChange={setCoverMode}
+          color={coverColor}
+          onColorChange={setCoverColor}
+          file={coverFile}
+          onFileChange={setCoverFile}
+        />
+      </div>
+
       <span className="mb-1.5 block text-xs font-medium text-text-secondary">{t('path.visibility')}</span>
       <div className="mb-5 grid grid-cols-3 gap-1.5">
         {VISIBILITY.map(({ value, Icon }) => (
@@ -147,7 +172,7 @@ export function CreatePathModal({ open, onClose }: { open: boolean; onClose: () 
         <button
           type="button"
           onClick={() => void submit()}
-          disabled={!title.trim() || busy}
+          disabled={!title.trim() || busy || (coverMode === 'image' && !coverFile)}
           className="rounded-lg border border-accent bg-accent/10 px-3 py-2 text-xs font-semibold text-accent transition-colors hover:bg-accent/20 disabled:cursor-not-allowed disabled:opacity-40"
         >
           {busy ? t('common.saving') : t('market.createSubmit')}

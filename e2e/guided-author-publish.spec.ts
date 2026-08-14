@@ -10,9 +10,18 @@ test('[GUIDED-AUTHOR-01][GUIDED-PUBLISH-01] crea, edita, persiste y envía una r
   const dialog = page.getByRole('dialog', { name: /^New path$|^Nueva ruta$/i })
   await dialog.getByRole('textbox', { name: /^Name$|^Nombre$/i }).fill('Camino de gracia')
   await dialog.getByLabel(/Description|Descripción/i).fill('Una ruta creada de principio a fin.')
+  await dialog.getByRole('button', { name: /#668f32/i }).click()
   await dialog.getByRole('button', { name: /Create and edit|Crear y editar/i }).click()
 
   await expect(page).toHaveURL(/\/mis-rutas\/authored-path-1\/authored-study-1$/)
+  await page.getByRole('button', { name: /Edit cover|Editar portada/i }).click()
+  const coverDialog = page.getByRole('dialog', { name: /Edit cover|Editar portada/i })
+  await coverDialog.getByRole('button', { name: /^Photo$|^Foto$/i }).click()
+  await coverDialog.getByLabel(/Choose a photo|Elegir una foto/i).setInputFiles('public/logo.png')
+  await coverDialog.getByRole('button', { name: /^Save$|^Guardar$/i }).click()
+  await expect(coverDialog).toBeHidden()
+  await expect.poll(() => requests).toContain('POST /api/guided-plans/authored-path-1/cover')
+
   await page.getByRole('button', { name: /^Add step$|^Añadir paso$/i }).click()
   await page.getByRole('menuitem', { name: /Before we begin|Antes de empezar/i }).click()
   await page.getByLabel(/Step title|Título del paso/i).fill('La gracia nos alcanza')

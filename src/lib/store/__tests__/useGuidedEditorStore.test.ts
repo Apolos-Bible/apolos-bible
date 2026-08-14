@@ -6,6 +6,8 @@ vi.mock('@/lib/study/guidedEditorApi', () => ({
     createPath: vi.fn(),
     requestPublication: vi.fn(),
     updatePath: vi.fn(),
+    uploadCover: vi.fn(),
+    removeCover: vi.fn(),
     deletePath: vi.fn(),
     createStudy: vi.fn(),
     updateStudy: vi.fn(),
@@ -16,6 +18,7 @@ vi.mock('@/lib/study/guidedEditorApi', () => ({
 }))
 
 import { guidedEditorApi } from '@/lib/study/guidedEditorApi'
+import type { StudyPath } from '@/lib/study/guidedEditorApi'
 import { blankStep, useGuidedEditorStore } from '../useGuidedEditorStore'
 
 const mockApi = guidedEditorApi as unknown as Record<string, ReturnType<typeof vi.fn>>
@@ -213,6 +216,8 @@ describe('visibility', () => {
         slug: 'mi-ruta',
         title: 'Mi ruta',
         description: null,
+        cover_image_url: null,
+        cover_color: '#3b2a76',
         source: 'user',
         visibility: 'private',
         is_mine: true,
@@ -235,11 +240,12 @@ describe('visibility', () => {
   })
 
   it('replaces a draft with the moderation state returned by publication', async () => {
-    const draft = {
+    const draft: StudyPath = {
       slug: 'mi-ruta', title: 'Mi ruta', description: null, source: 'user', visibility: 'public',
+      cover_image_url: null, cover_color: '#3b2a76',
       is_mine: true, author: { id: 1, name: 'Yo' }, rating_avg: 0, rating_count: 0,
       list_count: 0, studies: [], moderation_status: 'draft',
-    } as const
+    }
     useGuidedEditorStore.setState({ paths: [draft] })
     mockApi.requestPublication.mockResolvedValue({ ...draft, moderation_status: 'pending_review' })
 

@@ -6,7 +6,7 @@ import type { StudyPathCard } from '@/lib/study/marketplaceApi'
 import { paths } from '@/router/paths'
 import { cn } from '@/lib/cn'
 import { StarRating } from './StarRating'
-import { hueOf } from './hue'
+import { PathCoverBackground } from './PathCover'
 
 interface Props {
   item: StudyPathCard
@@ -19,7 +19,6 @@ export function PathTile({ item, compact = false }: Props) {
   const navigate = useNavigate()
   const toggleList = useMarketplaceStore((s) => s.toggleList)
   const rate = useMarketplaceStore((s) => s.rate)
-  const hue = hueOf(item.slug)
 
   return (
     <article
@@ -33,8 +32,8 @@ export function PathTile({ item, compact = false }: Props) {
         onClick={() => navigate(paths.marketplacePath(item.slug))}
         aria-label={item.title}
         className="relative h-24 w-full shrink-0"
-        style={{ background: `linear-gradient(135deg, hsl(${hue} 62% 40%), hsl(${(hue + 48) % 360} 58% 24%))` }}
       >
+        <PathCoverBackground imageUrl={item.cover_image_url} color={item.cover_color} slug={item.slug} />
         <span aria-hidden className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent" />
         <span className="absolute bottom-2 left-2.5 right-2.5 block truncate text-left text-sm font-semibold text-white">
           {item.title}

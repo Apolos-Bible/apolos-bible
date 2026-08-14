@@ -32,6 +32,8 @@ export interface StudyPath {
   slug: string
   title: string
   description: string | null
+  cover_image_url: string | null
+  cover_color: string | null
   source: PathSource
   visibility: PathVisibility
   is_published?: boolean
@@ -76,13 +78,34 @@ export interface ReferencePreview {
 export const guidedEditorApi = {
   myPaths: () => api.get<StudyPath[]>(withFrontendLocale('/api/my/guided-plans')),
 
-  createPath: (body: { title: string; description?: string; visibility?: PathVisibility }) =>
-    api.post<StudyPath>(withFrontendLocale('/api/guided-plans'), body),
+  createPath: (
+    body: { title: string; description?: string; visibility?: PathVisibility; cover_color?: string },
+    cover?: File,
+  ) => {
+    if (!cover) return api.post<StudyPath>(withFrontendLocale('/api/guided-plans'), body)
+
+    const form = new FormData()
+    form.append('title', body.title)
+    if (body.description) form.append('description', body.description)
+    if (body.visibility) form.append('visibility', body.visibility)
+    if (body.cover_color) form.append('cover_color', body.cover_color)
+    form.append('cover', cover)
+    return api.upload<StudyPath>(withFrontendLocale('/api/guided-plans'), form)
+  },
 
   updatePath: (
     slug: string,
-    body: { title?: string; description?: string | null; visibility?: PathVisibility },
+    body: { title?: string; description?: string | null; visibility?: PathVisibility; cover_color?: string },
   ) => api.patch<StudyPath>(withFrontendLocale(`/api/guided-plans/${slug}`), body),
+
+  uploadCover: (slug: string, cover: File) => {
+    const form = new FormData()
+    form.append('cover', cover)
+    return api.upload<StudyPath>(withFrontendLocale(`/api/guided-plans/${slug}/cover`), form)
+  },
+
+  removeCover: (slug: string) =>
+    api.delete<StudyPath>(withFrontendLocale(`/api/guided-plans/${slug}/cover`)),
 
   requestPublication: (slug: string) =>
     api.post<StudyPath>(withFrontendLocale(`/api/guided-plans/${slug}/request-publication`), {}),
