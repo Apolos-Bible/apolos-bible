@@ -187,7 +187,7 @@ describe('useVerseStore', () => {
     expect(state.cursorVerseId).toBe('john-3-16')
   })
 
-  it('keeps the current reading location when the version changes', async () => {
+  it('keeps the current reading location and selected range when the version changes', async () => {
     vi.mocked(getStoredBibleVersionId).mockImplementation(
       () => Number(localStorage.getItem('bibleVersionId')) || 1,
     )
@@ -200,10 +200,16 @@ describe('useVerseStore', () => {
     useVerseStore.setState({
       selectedBook: 'john',
       selectedChapter: 3,
-      selectedVerseId: 'john-3-17',
-      verses: [
-        { id: 'john-3-17', apiId: 101, book: 'John', chapter: 3, verse: 17, text: 'old text' },
-      ],
+      selectedVerseId: 'john-3-16',
+      selectedVerseIds: ['john-3-16', 'john-3-17', 'john-3-18'],
+      verses: mockChapterResponse.verses.map((verse) => ({
+        id: `john-3-${verse.number}`,
+        apiId: verse.id,
+        book: 'John',
+        chapter: 3,
+        verse: verse.number,
+        text: `old ${verse.text}`,
+      })),
     })
 
     await useVerseStore.getState().setVersion(2)
@@ -213,6 +219,14 @@ describe('useVerseStore', () => {
     expect(useVerseStore.getState().selectedChapter).toBe(3)
     expect(mockBibleApi.books).toHaveBeenCalledWith(2)
     expect(mockBibleApi.chapter).toHaveBeenCalledWith(2, 'john', 3)
+    await vi.waitFor(() => {
+      expect(useVerseStore.getState().selectedVerseId).toBe('john-3-16')
+      expect(useVerseStore.getState().selectedVerseIds).toEqual([
+        'john-3-16',
+        'john-3-17',
+        'john-3-18',
+      ])
+    })
   })
 
   it('[SETTINGS-BIBLE-01] persists a YouVersion provider identity instead of its client-only id', async () => {

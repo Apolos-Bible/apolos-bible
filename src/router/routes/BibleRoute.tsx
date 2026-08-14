@@ -138,8 +138,8 @@ function BibleView({ lang, book, chapter, verse, endVerse, openCommentary }: Bib
         verse: verseNum ?? null,
         endVerse: endVerseNum,
       })
-      if (window.location.pathname === target) return
-      lastSyncedKey.current = `${selectedBook}/${selectedChapter}/${verseNum ?? ''}`
+      if (`${window.location.pathname}${window.location.search}` === target) return
+      lastSyncedKey.current = `${selectedBook}/${selectedChapter}/${verseNum ?? ''}/${endVerseNum ?? ''}`
       navigate(target, { replace: true })
     }
 
@@ -169,7 +169,7 @@ function BibleView({ lang, book, chapter, verse, endVerse, openCommentary }: Bib
       verse: verseNum ?? null,
       endVerse: endVerseNum,
     })
-    if (window.location.pathname === target) return
+    if (`${window.location.pathname}${window.location.search}` === target) return
     navigate(target, { replace: true })
   }, [locale, navigate])
 

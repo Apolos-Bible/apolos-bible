@@ -134,14 +134,24 @@ export function createVerseStore() {
       selectedBook,
       selectedChapter,
       selectedVerseId,
+      selectedVerseIds,
       verses,
     } = previous
     const selectedVerse = verses.find((verse) => verse.id === selectedVerseId)?.verse
+    const selectedVerseNumbers = selectedVerseIds
+      .map((id) => verses.find((verse) => verse.id === id)?.verse)
+      .filter((verse): verse is number => typeof verse === 'number')
+      .sort((a, b) => a - b)
+    const firstSelectedVerse = selectedVerseNumbers[0] ?? selectedVerse
+    const lastSelectedVerse = selectedVerseNumbers.length > 1
+      ? selectedVerseNumbers[selectedVerseNumbers.length - 1]
+      : undefined
     const currentRoute = selectedBook
       ? {
           book: selectedBook,
           chapter: selectedChapter,
-          ...(selectedVerse ? { verse: selectedVerse } : {}),
+          ...(firstSelectedVerse ? { verse: firstSelectedVerse } : {}),
+          ...(lastSelectedVerse ? { endVerse: lastSelectedVerse } : {}),
         }
       : undefined
 
