@@ -11,14 +11,14 @@ import { cn } from '@/lib/cn'
 import { normalizeGameCode } from '@/lib/gameInvite'
 
 const GAME_CARDS = [
-  { type: 'trivia', icon: Brain, label: 'games.type.trivia', hint: 'games.type.triviaHint', tone: 'from-cyan-400/15 to-blue-500/5 text-cyan-300 border-cyan-400/20' },
-  { type: 'who', icon: UsersRound, label: 'games.type.who', hint: 'games.type.whoHint', tone: 'from-violet-400/15 to-fuchsia-500/5 text-violet-300 border-violet-400/20' },
-  { type: 'myth', icon: CircleHelp, label: 'games.type.myth', hint: 'games.type.mythHint', tone: 'from-amber-300/15 to-orange-500/5 text-amber-300 border-amber-300/20' },
-  { type: 'fill', icon: Quote, label: 'games.type.fill', hint: 'games.type.fillHint', tone: 'from-emerald-400/15 to-teal-500/5 text-emerald-300 border-emerald-400/20' },
-  { type: 'timeline', icon: ListOrdered, label: 'games.type.timeline', hint: 'games.type.timelineHint', tone: 'from-sky-400/15 to-cyan-500/5 text-sky-300 border-sky-400/20' },
-  { type: 'matching', icon: Link2, label: 'games.type.matching', hint: 'games.type.matchingHint', tone: 'from-pink-400/15 to-rose-500/5 text-pink-300 border-pink-400/20' },
-  { type: 'memory', icon: Grid2X2, label: 'games.type.memory', hint: 'games.type.memoryHint', tone: 'from-violet-400/15 to-indigo-500/5 text-violet-300 border-violet-400/20' },
-  { type: 'map', icon: MapPinned, label: 'games.type.map', hint: 'games.type.mapHint', tone: 'from-emerald-400/15 to-cyan-500/5 text-emerald-300 border-emerald-400/20' },
+  { type: 'trivia', icon: Brain, label: 'games.type.trivia', hint: 'games.type.triviaHint' },
+  { type: 'who', icon: UsersRound, label: 'games.type.who', hint: 'games.type.whoHint' },
+  { type: 'myth', icon: CircleHelp, label: 'games.type.myth', hint: 'games.type.mythHint' },
+  { type: 'fill', icon: Quote, label: 'games.type.fill', hint: 'games.type.fillHint' },
+  { type: 'timeline', icon: ListOrdered, label: 'games.type.timeline', hint: 'games.type.timelineHint' },
+  { type: 'matching', icon: Link2, label: 'games.type.matching', hint: 'games.type.matchingHint' },
+  { type: 'memory', icon: Grid2X2, label: 'games.type.memory', hint: 'games.type.memoryHint' },
+  { type: 'map', icon: MapPinned, label: 'games.type.map', hint: 'games.type.mapHint' },
 ] as const
 
 export function GamesRoute() {
@@ -113,26 +113,24 @@ export function GamesRoute() {
   return (
     <AppPageLayout title={t('games.title')}>
       <div className="mx-auto w-full max-w-5xl px-4 py-6 md:px-8 md:py-10">
-        <header className="game-round-enter relative overflow-hidden rounded-3xl border border-accent/25 bg-gradient-to-br from-accent/[0.13] via-bg-secondary to-violet-500/[0.08] px-5 py-8 shadow-2xl shadow-accent/5 md:px-9 md:py-11">
-          <div className="pointer-events-none absolute -right-10 -top-16 h-56 w-56 rounded-full bg-accent/20 blur-3xl" />
-          <div className="game-float pointer-events-none absolute right-12 top-8 hidden h-24 w-24 rotate-6 rounded-3xl border border-accent/20 bg-bg-primary/50 shadow-2xl backdrop-blur md:flex md:items-center md:justify-center"><Gamepad2 className="h-11 w-11 text-accent" /></div>
-          <div className="relative max-w-2xl">
-            <span className="inline-flex items-center gap-1.5 rounded-full bg-accent/10 px-2.5 py-1 text-2xs font-semibold uppercase tracking-[0.14em] text-accent">
+        <header className="game-round-enter rounded-2xl border border-border-subtle bg-bg-secondary px-5 py-8 md:px-9 md:py-10">
+          <div className="max-w-3xl">
+            <span className="inline-flex items-center gap-1.5 text-2xs font-semibold uppercase tracking-[0.14em] text-accent">
               <Gamepad2 className="h-3.5 w-3.5" /> {t('games.eyebrow')}
             </span>
-            <h1 className="mt-4 text-3xl font-black tracking-[-0.035em] text-text-primary md:text-5xl">{t('games.hero')}</h1>
-            <p className="mt-2 max-w-xl text-sm leading-relaxed text-text-secondary md:text-base">{t('games.subtitle')}</p>
-            <button type="button" onClick={() => void createRoom()} disabled={busy} className="game-cta-shine mt-6 inline-flex h-12 items-center gap-2 rounded-2xl bg-gradient-to-r from-accent to-amber-300 px-6 text-sm font-bold text-bg-primary shadow-xl shadow-accent/20 transition-transform hover:-translate-y-0.5 disabled:opacity-50">
+            <h1 className="mt-4 max-w-2xl text-3xl font-semibold leading-[1.08] tracking-[-0.03em] text-text-primary md:text-4xl">{t('games.hero')}</h1>
+            <p className="mt-3 max-w-2xl text-sm leading-relaxed text-text-secondary md:text-base">{t('games.subtitle')}</p>
+            <button type="button" onClick={() => void createRoom()} disabled={busy} className="mt-6 inline-flex h-11 items-center gap-2 rounded-lg bg-accent px-5 text-sm font-semibold text-white transition-opacity hover:opacity-90 disabled:opacity-50">
               <Gamepad2 className="h-4 w-4" /> {t('games.create')}
             </button>
           </div>
         </header>
 
         <section className="mt-6 grid gap-3 md:grid-cols-3">
-          {GAME_CARDS.map(({ type, icon: Icon, label, hint, tone }, index) => (
-            <article key={type} className={cn('game-podium-card group rounded-2xl border bg-gradient-to-br p-5 shadow-md transition-all hover:-translate-y-1 hover:shadow-xl', tone)} style={{ animationDelay: `${index * 90}ms` }}>
+          {GAME_CARDS.map(({ type, icon: Icon, label, hint }, index) => (
+            <article key={type} className="game-podium-card group rounded-xl border border-border-subtle bg-bg-secondary p-5 transition-[border-color,box-shadow] hover:border-border-strong hover:shadow-sm" style={{ animationDelay: `${index * 70}ms` }}>
               <div className="flex items-start justify-between">
-                <span className="flex h-11 w-11 items-center justify-center rounded-2xl border border-current/15 bg-current/10 transition-transform duration-200 group-hover:-translate-y-1 group-hover:rotate-3"><Icon className="h-5 w-5" /></span>
+                <span className="flex h-10 w-10 items-center justify-center rounded-lg border border-border-subtle bg-bg-primary text-accent"><Icon className="h-5 w-5" strokeWidth={1.8} /></span>
                 <span className="text-2xs font-semibold tabular-nums text-text-muted">0{index + 1}</span>
               </div>
               <h2 className="mt-4 text-base font-semibold text-text-primary">{t(label)}</h2>
@@ -142,16 +140,16 @@ export function GamesRoute() {
         </section>
 
         <div className="mt-6 grid gap-4 lg:grid-cols-2">
-          <section className="rounded-2xl border border-border-subtle bg-bg-secondary p-4 md:p-5">
+          <section className="rounded-xl border border-border-subtle bg-bg-secondary p-4 md:p-5">
             <h2 className="text-sm font-semibold text-text-primary">{t('games.join')}</h2>
             <p className="mt-1 text-xs text-text-muted">{t('games.joinHint')}</p>
             <div className="mt-4 flex gap-2">
               <input value={code} onChange={(event) => setCode(event.target.value.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 6))} onKeyDown={(event) => { if (event.key === 'Enter') void joinRoom() }} placeholder="ABC123" aria-label={t('games.code')} className="h-11 min-w-0 flex-1 rounded-xl border border-border-subtle bg-bg-primary px-4 text-center font-mono text-lg font-semibold uppercase tracking-[0.25em] text-text-primary outline-none focus:border-accent" />
-              <button type="button" onClick={() => void joinRoom()} disabled={busy || code.length !== 6} className="rounded-xl border border-accent bg-accent/10 px-4 text-sm font-semibold text-accent disabled:opacity-40">{t('games.enter')}</button>
+              <button type="button" onClick={() => void joinRoom()} disabled={busy || code.length !== 6} className="rounded-xl border border-border-strong bg-bg-primary px-4 text-sm font-semibold text-text-primary transition-colors hover:border-accent hover:text-accent disabled:opacity-40">{t('games.enter')}</button>
             </div>
           </section>
 
-          <section className="rounded-2xl border border-border-subtle bg-bg-secondary p-4 md:p-5">
+          <section className="rounded-xl border border-border-subtle bg-bg-secondary p-4 md:p-5">
             <h2 className="text-sm font-semibold text-text-primary">{t('games.invitations')}</h2>
             <div className="mt-3 space-y-2">
               {invitations.length === 0 && <p className="py-3 text-xs text-text-muted">{t('games.noInvitations')}</p>}
