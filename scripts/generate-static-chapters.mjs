@@ -2,6 +2,7 @@ import { writeFileSync, mkdirSync, readFileSync, rmSync } from 'node:fs'
 import { resolve, dirname } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { LOCALE_CONFIG, SITE_LOCALES, localizedBiblePath, pickSeoVersion } from './seo-config.mjs'
+import { extractAppAssetTags } from './static-app-shell.mjs'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
 const ROOT = resolve(__dirname, '..')
@@ -26,6 +27,7 @@ const SITE_BASE = process.env.VITE_SITE_URL || process.env.VITE_API_URL
 const CONCURRENCY = 8
 
 const OUT_DIR = resolve(ROOT, 'out')
+const APP_ASSET_TAGS = extractAppAssetTags(readFileSync(resolve(OUT_DIR, 'index.html'), 'utf8'))
 
 function chapterUrl(slug, n, lang) {
   return `${SITE_BASE}${localizedBiblePath(lang, slug, n)}`
@@ -44,7 +46,7 @@ function alternateLinks(alternates) {
 
 function seoHead(bookName, slug, chapter, firstVerseText, lang, alternates) {
   const locale = LOCALE_CONFIG[lang]
-  const title = `${bookName} ${chapter} â€” Apolos Bible`
+  const title = `${bookName} ${chapter} — Apolos Bible`
   const description = firstVerseText
     ? `${firstVerseText.slice(0, 155).trim()}`
     : `Read ${bookName} chapter ${chapter} in Apolos Bible, the collaborative Bible study app.`
@@ -92,25 +94,29 @@ ${alternateLinks(alternates)}
     <meta name="twitter:image" content="${SITE_BASE}/logo.png" />
 
     <script type="application/ld+json">${jsonLd}</script>
+${APP_ASSET_TAGS}
 
     <style>
-      :root { --bg: #1a1a2e; --bg-card: #222240; --text: #e0e0e0; --text-muted: #9090a0; --accent: #c8a96a; --accent-soft: #c8a96a22; }
-      * { box-sizing: border-box; margin: 0; padding: 0; }
-      body { background: var(--bg); color: var(--text); font-family: Georgia, 'Times New Roman', serif; line-height: 1.8; padding: 2rem 1rem; max-width: 720px; margin: 0 auto; }
-      h1 { font-size: 1.6rem; font-weight: 400; text-align: center; margin-bottom: 0.3rem; color: var(--accent); }
-      .chapter-label { text-align: center; font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.2em; color: var(--accent); opacity: 0.7; margin-bottom: 2rem; }
-      .verse { margin-bottom: 1.2rem; padding: 0.5rem 0; border-bottom: 1px solid var(--accent-soft); }
-      .verse-num { font-size: 0.65rem; font-weight: 700; color: var(--accent); opacity: 0.6; margin-right: 0.5rem; vertical-align: super; font-family: system-ui, sans-serif; }
-      .verse-text { font-size: 1.05rem; }
-      .nav { display: flex; justify-content: space-between; margin: 2rem 0; padding: 1rem 0; border-top: 1px solid var(--accent-soft); }
-      .nav a { color: var(--accent); text-decoration: none; font-family: system-ui, sans-serif; font-size: 0.85rem; }
-      .nav a:hover { text-decoration: underline; }
-      .footer { text-align: center; margin-top: 2rem; padding-top: 1.5rem; border-top: 1px solid var(--accent-soft); }
-      .footer p { color: var(--text-muted); font-family: system-ui, sans-serif; font-size: 0.75rem; }
-      .footer a { color: var(--accent); text-decoration: none; }
+      #seo-static { --seo-bg: #1a1a2e; --seo-text: #e0e0e0; --seo-muted: #9090a0; --seo-accent: #c8a96a; --seo-accent-soft: #c8a96a22; min-height: 100vh; background: var(--seo-bg); color: var(--seo-text); font-family: Georgia, 'Times New Roman', serif; line-height: 1.8; padding: 2rem 1rem; }
+      #seo-static * { box-sizing: border-box; margin: 0; padding: 0; }
+      #seo-static .seo-content { max-width: 720px; margin: 0 auto; }
+      #seo-static h1 { font-size: 1.6rem; font-weight: 400; text-align: center; margin-bottom: 0.3rem; color: var(--seo-accent); }
+      #seo-static .chapter-label { text-align: center; font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.2em; color: var(--seo-accent); opacity: 0.7; margin-bottom: 2rem; }
+      #seo-static .verse { margin-bottom: 1.2rem; padding: 0.5rem 0; border-bottom: 1px solid var(--seo-accent-soft); }
+      #seo-static .verse-num { font-size: 0.65rem; font-weight: 700; color: var(--seo-accent); opacity: 0.6; margin-right: 0.5rem; vertical-align: super; font-family: system-ui, sans-serif; }
+      #seo-static .verse-text { font-size: 1.05rem; }
+      #seo-static .nav { display: flex; justify-content: space-between; margin: 2rem 0; padding: 1rem 0; border-top: 1px solid var(--seo-accent-soft); }
+      #seo-static .nav a { color: var(--seo-accent); text-decoration: none; font-family: system-ui, sans-serif; font-size: 0.85rem; }
+      #seo-static .nav a:hover { text-decoration: underline; }
+      #seo-static .footer { text-align: center; margin-top: 2rem; padding-top: 1.5rem; border-top: 1px solid var(--seo-accent-soft); }
+      #seo-static .footer p { color: var(--seo-muted); font-family: system-ui, sans-serif; font-size: 0.75rem; }
+      #seo-static .footer a { color: var(--seo-accent); text-decoration: none; }
     </style>
   </head>
   <body>
+    <div id="root">
+      <main id="seo-static">
+        <div class="seo-content">
     <h1>${escapeHtml(bookName)}</h1>
     <p class="chapter-label">${locale.chapter} ${chapter}</p>`
 }
@@ -166,17 +172,17 @@ function generateChapterHtml(data, lang, alternates) {
 
   html += `  <nav class="nav">\n    <span></span>\n    <span></span>\n  </nav>\n`
   html += `  <div class="footer">
-    <p>Read <a href="${chapterUrl(book.slug, chapter, lang)}">${escapeHtml(book.name)} ${chapter}</a> interactively on <a href="${SITE_BASE}">Apolos Bible</a> â€” with highlights, notes, cross-references, and collaborative study.</p>
+    <p>Read <a href="${chapterUrl(book.slug, chapter, lang)}">${escapeHtml(book.name)} ${chapter}</a> interactively on <a href="${SITE_BASE}">Apolos Bible</a> — with highlights, notes, cross-references, and collaborative study.</p>
   </div>\n`
-  html += `</body>\n</html>\n`
+  html += `        </div>\n      </main>\n    </div>\n</body>\n</html>\n`
   return html
 }
 
 function generateBookHtml(book, lang, alternates) {
   const locale = LOCALE_CONFIG[lang]
-  const title = `${book.name} â€” Apolos Bible`
+  const title = `${book.name} — Apolos Bible`
   const description = lang === 'es'
-    ? `Lee el libro de ${book.name} (${book.chapters_count} capÃ­tulos) en Apolos.`
+    ? `Lee el libro de ${book.name} (${book.chapters_count} capítulos) en Apolos.`
     : `Read the book of ${book.name} (${book.chapters_count} chapters) in Apolos.`
   const canonical = bookUrl(book.slug, lang)
 
@@ -218,27 +224,34 @@ ${alternateLinks(alternates)}
     <meta name="twitter:description" content="${escapeHtml(description)}" />
     <meta name="twitter:image" content="${SITE_BASE}/logo.png" />
     <script type="application/ld+json">${jsonLd}</script>
+${APP_ASSET_TAGS}
     <style>
-      :root { --bg: #1a1a2e; --bg-card: #222240; --text: #e0e0e0; --text-muted: #9090a0; --accent: #c8a96a; --accent-soft: #c8a96a22; }
-      * { box-sizing: border-box; margin: 0; padding: 0; }
-      body { background: var(--bg); color: var(--text); font-family: Georgia, 'Times New Roman', serif; line-height: 1.8; padding: 2rem 1rem; max-width: 720px; margin: 0 auto; }
-      h1 { font-size: 1.6rem; font-weight: 400; text-align: center; color: var(--accent); margin-bottom: 0.5rem; }
-      .testament { text-align: center; font-size: 0.65rem; text-transform: uppercase; letter-spacing: 0.15em; color: var(--text-muted); margin-bottom: 2rem; }
-      .chapters { display: grid; grid-template-columns: repeat(auto-fill, minmax(90px, 1fr)); gap: 0.4rem; list-style: none; padding: 0; }
-      .chapters a { display: block; padding: 0.5rem; text-align: center; background: var(--bg-card); border-radius: 4px; color: var(--text); text-decoration: none; font-family: system-ui, sans-serif; font-size: 0.85rem; transition: background 0.15s; }
-      .chapters a:hover { background: var(--accent-soft); color: var(--accent); }
-      .footer { text-align: center; margin-top: 2rem; padding-top: 1.5rem; border-top: 1px solid var(--accent-soft); }
-      .footer p { color: var(--text-muted); font-family: system-ui, sans-serif; font-size: 0.75rem; }
-      .footer a { color: var(--accent); text-decoration: none; }
+      #seo-static { --seo-bg: #1a1a2e; --seo-card: #222240; --seo-text: #e0e0e0; --seo-muted: #9090a0; --seo-accent: #c8a96a; --seo-accent-soft: #c8a96a22; min-height: 100vh; background: var(--seo-bg); color: var(--seo-text); font-family: Georgia, 'Times New Roman', serif; line-height: 1.8; padding: 2rem 1rem; }
+      #seo-static * { box-sizing: border-box; margin: 0; padding: 0; }
+      #seo-static .seo-content { max-width: 720px; margin: 0 auto; }
+      #seo-static h1 { font-size: 1.6rem; font-weight: 400; text-align: center; color: var(--seo-accent); margin-bottom: 0.5rem; }
+      #seo-static .testament { text-align: center; font-size: 0.65rem; text-transform: uppercase; letter-spacing: 0.15em; color: var(--seo-muted); margin-bottom: 2rem; }
+      #seo-static .chapters { display: grid; grid-template-columns: repeat(auto-fill, minmax(90px, 1fr)); gap: 0.4rem; list-style: none; padding: 0; }
+      #seo-static .chapters a { display: block; padding: 0.5rem; text-align: center; background: var(--seo-card); border-radius: 4px; color: var(--seo-text); text-decoration: none; font-family: system-ui, sans-serif; font-size: 0.85rem; transition: background 0.15s; }
+      #seo-static .chapters a:hover { background: var(--seo-accent-soft); color: var(--seo-accent); }
+      #seo-static .footer { text-align: center; margin-top: 2rem; padding-top: 1.5rem; border-top: 1px solid var(--seo-accent-soft); }
+      #seo-static .footer p { color: var(--seo-muted); font-family: system-ui, sans-serif; font-size: 0.75rem; }
+      #seo-static .footer a { color: var(--seo-accent); text-decoration: none; }
     </style>
   </head>
   <body>
+    <div id="root">
+      <main id="seo-static">
+        <div class="seo-content">
     <h1>${escapeHtml(book.name)}</h1>
-    <p class="testament">${book.number <= 39 ? locale.oldTestament : locale.newTestament} Â· ${book.chapters_count} ${locale.chapters}</p>
+    <p class="testament">${book.number <= 39 ? locale.oldTestament : locale.newTestament} · ${book.chapters_count} ${locale.chapters}</p>
     <ul class="chapters">
 ${chapterLinks}    </ul>
     <div class="footer">
       <p>Read <a href="${bookUrl(book.slug, lang)}">${escapeHtml(book.name)}</a> interactively on <a href="${SITE_BASE}">Apolos Bible</a>.</p>
+    </div>
+        </div>
+      </main>
     </div>
   </body>
 </html>

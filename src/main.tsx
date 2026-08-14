@@ -30,7 +30,13 @@ if (typeof window !== 'undefined') {
   })
 }
 
-ReactDOM.createRoot(document.getElementById('root')!).render(
+const rootElement = document.getElementById('root')!
+
+// Static Bible pages include crawlable chapter text inside #root. Once the
+// application bundle loads, replace that fallback with the interactive app.
+rootElement.replaceChildren()
+
+ReactDOM.createRoot(rootElement).render(
   <React.StrictMode>
     <HelmetProvider>
       <RouterProvider router={router} />
