@@ -96,7 +96,7 @@ test('[OFFLINE-MIGRATE-01] upgrades a v1 offline database without losing its cha
   await expect(page.getByText('Reina Valera 1960', { exact: true })).toBeVisible()
   await expect(page.getByText(/1 chapter|1 cap.tulo/i)).toBeVisible()
 
-  const migrated = await page.evaluate(async () => new Promise<{ version: number; indexed: boolean; text: string }>((resolve, reject) => {
+  const migrated = await page.evaluate(async () => new Promise<{ version: number; indexed: boolean; similarities: boolean; text: string }>((resolve, reject) => {
     const request = indexedDB.open('verbum-bible')
     request.onerror = () => reject(request.error)
     request.onsuccess = () => {
@@ -108,6 +108,7 @@ test('[OFFLINE-MIGRATE-01] upgrades a v1 offline database without losing its cha
         resolve({
           version: database.version,
           indexed: store.indexNames.contains('[versionId+slug+chapter]'),
+          similarities: database.objectStoreNames.contains('similarities'),
           text: get.result.data.verses[0].text,
         })
         database.close()
@@ -117,8 +118,9 @@ test('[OFFLINE-MIGRATE-01] upgrades a v1 offline database without losing its cha
   }))
 
   expect(migrated).toEqual({
-    version: 20,
+    version: 30,
     indexed: true,
+    similarities: true,
     text: 'Porque de tal manera amó Dios.',
   })
 })
