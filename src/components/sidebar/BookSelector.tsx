@@ -205,7 +205,7 @@ export function BookSelector() {
 
   return (
     <div ref={scrollRef} className="flex-1 overflow-y-auto pb-1">
-      <div className="sticky top-0 z-20 border-b border-border-subtle bg-bg-secondary px-3 pb-2">
+      <div className="sticky top-0 z-20 border-b border-border-subtle bg-bg-secondary px-3 py-2">
         <Select
           value={versionId}
           onChange={setVersion}

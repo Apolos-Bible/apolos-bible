@@ -8,7 +8,7 @@ import { useFriendStore } from '@/lib/store/useFriendStore'
 import { bibleApi, ApiSearchResult } from '@/lib/bibleApi'
 import { normalizeText } from '@/lib/normalizeText'
 import { parseReferenceQuery, findBookMatches } from '@/lib/verseSearch'
-import { BOOK_ALIASES } from '@/lib/bibleRefs'
+import { resolveReferenceBook } from '@/lib/bibleRefs'
 import type { Book } from '@/lib/store/useVerseStore'
 import { api } from '@/lib/api'
 import { cn } from '@/lib/cn'
@@ -34,6 +34,7 @@ export function MobileSearchView() {
   const addToast = useUIStore((s) => s.addToast)
   const versionId = useVerseStore((s) => s.versionId)
   const openVerse = useVerseStore((s) => s.openVerse)
+  const ensureBooks = useVerseStore((s) => s.ensureBooks)
   const books = useVerseStore((s) => s.books)
   const user = useAuthStore((s) => s.user)
   const searchUsers = useFriendStore((s) => s.searchUsers)
@@ -105,11 +106,7 @@ export function MobileSearchView() {
     const ref = parseReferenceQuery(query.trim())
     if (!ref) return null
 
-    const book =
-      books.find((b) => b.slug === ref.slug) ??
-      books.find(
-        (b) => BOOK_ALIASES[normalizeText(b.name).trim()] === ref.slug,
-      )
+    const book = resolveReferenceBook(books, ref.slug)
     if (ref.chapter < 1) return null
     if (book && ref.chapter > book.chapters) return null
     if (ref.verse !== null && (ref.verse < 1 || ref.verse > 176)) return null
@@ -130,13 +127,7 @@ export function MobileSearchView() {
   // alias if slug doesn't match directly.
   const parsedRefBook = useMemo<Book | null>(() => {
     if (!parsedRef) return null
-    const direct = books.find((b) => b.slug === parsedRef.slug)
-    if (direct) return direct
-    return (
-      books.find(
-        (b) => BOOK_ALIASES[normalizeText(b.name).trim()] === parsedRef.slug,
-      ) ?? null
-    )
+    return resolveReferenceBook(books, parsedRef.slug) ?? null
   }, [parsedRef, books])
 
   const noteResults = useMemo(() => {
@@ -161,10 +152,12 @@ export function MobileSearchView() {
     closeMobileSearch()
   }
 
-  const handleParsedRefClick = () => {
+  const handleParsedRefClick = async () => {
     if (!parsedRef) return
-    void openVerse(parsedRef.slug, parsedRef.chapter, parsedRef.verse ?? 1)
     closeMobileSearch()
+    await ensureBooks()
+    const localizedBook = resolveReferenceBook(useVerseStore.getState().books, parsedRef.slug)
+    await openVerse(localizedBook?.slug ?? parsedRef.slug, parsedRef.chapter, parsedRef.verse ?? 1)
   }
 
   const handleNoteClick = (n: UserNote) => {
@@ -269,7 +262,7 @@ export function MobileSearchView() {
               <li>
                 <button
                   type="button"
-                  onClick={handleParsedRefClick}
+                  onClick={() => void handleParsedRefClick()}
                   className="w-full px-4 py-3 text-left hover:bg-bg-tertiary transition-colors flex items-center gap-3"
                 >
                   <span className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-accent/10 text-accent">
