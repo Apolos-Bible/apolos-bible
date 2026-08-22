@@ -36,6 +36,28 @@ test('[A11Y-NAV-01] permite saltar regiones y conserva el foco dentro de diálog
   await expect(search).toBeFocused()
 })
 
+test('[A11Y-MOBILE-01] evita el autozoom al enfocar controles editables', async ({ page }, testInfo) => {
+  test.skip(testInfo.project.name !== 'mobile-chromium', 'Only applies to touch devices')
+
+  await page.goto('/', { waitUntil: 'domcontentloaded' })
+  const fontSizes = await page.evaluate(() => {
+    const controls = [
+      document.createElement('input'),
+      document.createElement('textarea'),
+      document.createElement('select'),
+    ]
+
+    controls.forEach((control) => {
+      control.style.fontSize = '12px'
+      document.body.append(control)
+    })
+
+    return controls.map((control) => Number.parseFloat(getComputedStyle(control).fontSize))
+  })
+
+  expect(fontSizes).toEqual([16, 16, 16])
+})
+
 for (const route of ['/bible/genesis/1', '/ajustes']) {
   test(`[A11Y-SCREEN-01] no presenta infracciones automáticas críticas en ${route}`, async ({ page }) => {
     await page.goto(route, { waitUntil: 'domcontentloaded' })
