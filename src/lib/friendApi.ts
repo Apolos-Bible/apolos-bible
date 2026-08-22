@@ -4,6 +4,7 @@ import type { Friend, FriendRequest, AppNotification } from '@/types'
 export const friendApi = {
   friends:     ()                     => api.get<Friend[]>('/api/friends'),
   recommendations: ()                => api.get<Friend[]>('/api/friends/recommendations'),
+  dismissRecommendation: (userId: number) => api.delete<void>(`/api/friends/recommendations/${userId}`),
   received:    ()                     => api.get<FriendRequest[]>('/api/friend-requests/received'),
   sent:        ()                     => api.get<FriendRequest[]>('/api/friend-requests/sent'),
   search:      (q: string)            => api.get<Friend[]>(`/api/users/search?q=${encodeURIComponent(q)}`),

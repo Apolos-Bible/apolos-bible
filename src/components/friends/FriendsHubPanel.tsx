@@ -1,9 +1,6 @@
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Bell, MessagesSquare, UserRoundPlus } from 'lucide-react'
-import { Link } from 'react-router-dom'
-import { paths } from '@/router/paths'
-import { UserAvatar } from '@/components/auth/UserAvatar'
 import { useFriendStore } from '@/lib/store/useFriendStore'
 import { useNotificationStore } from '@/lib/store/useNotificationStore'
 import { useUIStore } from '@/lib/store/useUIStore'
@@ -11,6 +8,9 @@ import { PanelHeader, PanelHeaderButton } from '@/components/layout/PanelHeader'
 import { FriendSearch } from './FriendSearch'
 import { FriendRequestCard } from './FriendRequestCard'
 import { FriendCard } from './FriendCard'
+import { FriendRecommendationCard } from './FriendRecommendationCard'
+
+const VISIBLE_RECOMMENDATIONS = 4
 
 export function FriendsHubPanel() {
   const { t } = useTranslation()
@@ -26,7 +26,9 @@ export function FriendsHubPanel() {
   const declineRequest = useFriendStore((s) => s.declineRequest)
   const removeFriend = useFriendStore((s) => s.removeFriend)
   const sendRequest = useFriendStore((s) => s.sendRequest)
+  const dismissRecommendation = useFriendStore((s) => s.dismissRecommendation)
   const unreadNotifications = useNotificationStore((s) => s.unreadCount)
+  const [pendingRecommendationIds, setPendingRecommendationIds] = useState<number[]>([])
 
   useEffect(() => { void load() }, [load])
 
@@ -43,8 +45,16 @@ export function FriendsHubPanel() {
     catch { addToast(t('friends.removeFailed'), 'error') }
   }
   const invite = async (id: number, name: string) => {
+    setPendingRecommendationIds((ids) => [...ids, id])
     try { await sendRequest(id); addToast(t('friends.requestSentTo', { name }), 'success') }
     catch { addToast(t('friends.requestFailed'), 'error') }
+    finally { setPendingRecommendationIds((ids) => ids.filter((pendingId) => pendingId !== id)) }
+  }
+  const dismiss = async (id: number) => {
+    setPendingRecommendationIds((ids) => [...ids, id])
+    try { await dismissRecommendation(id) }
+    catch { addToast(t('friends.dismissFailed'), 'error') }
+    finally { setPendingRecommendationIds((ids) => ids.filter((pendingId) => pendingId !== id)) }
   }
 
   return (
@@ -89,17 +99,15 @@ export function FriendsHubPanel() {
             <h2 className="mb-2 flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-text-muted">
               <UserRoundPlus className="h-3.5 w-3.5" />{t('friends.recommended')}
             </h2>
-            <div className="flex flex-col gap-1">
-              {recommendations.map((friend) => (
-                <div key={friend.id} className="flex items-center gap-2.5 rounded px-2 py-1.5 hover:bg-bg-tertiary">
-                  <Link to={paths.userProfile(friend.id)} className="flex min-w-0 flex-1 items-center gap-2.5">
-                    <UserAvatar name={friend.name} email={friend.email} src={friend.avatar_url} size="sm" />
-                    <span className="min-w-0 truncate text-xs text-text-primary">{friend.name}</span>
-                  </Link>
-                  <button type="button" onClick={() => void invite(friend.id, friend.name)} className="shrink-0 rounded border border-border-subtle px-2 py-1 text-2xs text-text-secondary hover:border-accent hover:text-accent">
-                    {t('friends.add')}
-                  </button>
-                </div>
+            <div className="grid grid-cols-2 gap-2">
+              {recommendations.slice(0, VISIBLE_RECOMMENDATIONS).map((friend) => (
+                <FriendRecommendationCard
+                  key={friend.id}
+                  friend={friend}
+                  pending={pendingRecommendationIds.includes(friend.id)}
+                  onAdd={() => void invite(friend.id, friend.name)}
+                  onDismiss={() => void dismiss(friend.id)}
+                />
               ))}
             </div>
           </section>
