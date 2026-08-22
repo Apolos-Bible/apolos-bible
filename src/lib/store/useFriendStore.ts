@@ -15,6 +15,7 @@ type FriendStore = {
   searchUsers: (q: string) => Promise<void>
   clearSearch: () => void
   sendRequest: (userId: number) => Promise<void>
+  dismissRecommendation: (userId: number) => Promise<void>
   acceptRequest: (friendshipId: number) => Promise<void>
   declineRequest: (friendshipId: number) => Promise<void>
   removeFriend: (userId: number) => Promise<void>
@@ -73,6 +74,17 @@ export const useFriendStore = create<FriendStore>((set) => ({
       sent: [...s.sent, req],
       recommendations: s.recommendations.filter((friend) => friend.id !== userId),
     }))
+    const recommendations = await friendApi.recommendations().catch(() => null)
+    if (recommendations) set({ recommendations })
+  },
+
+  dismissRecommendation: async (userId) => {
+    await friendApi.dismissRecommendation(userId)
+    set((s) => ({
+      recommendations: s.recommendations.filter((friend) => friend.id !== userId),
+    }))
+    const recommendations = await friendApi.recommendations().catch(() => null)
+    if (recommendations) set({ recommendations })
   },
 
   acceptRequest: async (friendshipId) => {

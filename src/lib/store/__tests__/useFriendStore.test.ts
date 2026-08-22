@@ -11,6 +11,7 @@ vi.mock('@/lib/friendApi', () => ({
     decline: vi.fn(),
     remove: vi.fn(),
     recommendations: vi.fn(),
+    dismissRecommendation: vi.fn(),
   },
 }))
 
@@ -37,6 +38,7 @@ const mockFriendApi = friendApi as unknown as {
   decline: ReturnType<typeof vi.fn>
   remove: ReturnType<typeof vi.fn>
   recommendations: ReturnType<typeof vi.fn>
+  dismissRecommendation: ReturnType<typeof vi.fn>
 }
 
 const mockFriend: Friend = { id: 2, name: 'Bob', email: 'bob@test.com' }
@@ -51,6 +53,7 @@ const mockRequest: FriendRequest = {
 
 beforeEach(() => {
   vi.clearAllMocks()
+  mockFriendApi.recommendations.mockResolvedValue([])
   useFriendStore.setState({
     friends: [],
     received: [],
@@ -111,6 +114,18 @@ describe('useFriendStore', () => {
     mockFriendApi.send.mockResolvedValueOnce(mockRequest)
     await useFriendStore.getState().sendRequest(3)
     expect(useFriendStore.getState().sent).toContainEqual(mockRequest)
+  })
+
+  it('dismissRecommendation removes the suggestion and replenishes recommendations', async () => {
+    const nextFriend: Friend = { id: 4, name: 'Dana', email: 'dana@test.com' }
+    mockFriendApi.dismissRecommendation.mockResolvedValueOnce(undefined)
+    mockFriendApi.recommendations.mockResolvedValueOnce([nextFriend])
+    useFriendStore.setState({ recommendations: [mockFriend] })
+
+    await useFriendStore.getState().dismissRecommendation(mockFriend.id)
+
+    expect(mockFriendApi.dismissRecommendation).toHaveBeenCalledWith(mockFriend.id)
+    expect(useFriendStore.getState().recommendations).toEqual([nextFriend])
   })
 
   it('acceptRequest moves from received to friends', async () => {
