@@ -30,4 +30,12 @@ test('[GUIDED-MARKET-01][GUIDED-CONSUME-01] descubre, añade, inicia y reabre un
   await page.reload({ waitUntil: 'domcontentloaded' })
   await expect(page).toHaveURL(/\/study\/study-new$/)
   await expect(page.getByText('Abre el corazón.').first()).toBeVisible()
+
+  await page.goto('/marketplace/hope-path', { waitUntil: 'domcontentloaded' })
+  await page.getByRole('button', { name: /Esperanza firme/i }).click()
+  const resumeDialog = page.getByRole('dialog', { name: 'Esperanza firme' })
+  await expect(resumeDialog.getByRole('button', { name: /Continue study|Continuar con el estudio/i })).toBeVisible()
+  await expect(resumeDialog.getByRole('button', { name: /Start a new one|Empezar uno nuevo/i })).toBeVisible()
+  await resumeDialog.getByRole('button', { name: /Continue study|Continuar con el estudio/i }).click()
+  await expect(page).toHaveURL(/\/study\/study-new$/)
 })

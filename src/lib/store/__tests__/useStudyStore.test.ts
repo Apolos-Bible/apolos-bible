@@ -88,6 +88,7 @@ describe('useStudyStore', () => {
     await useStudyStore.getState().start({ type: 'verse', anchor_ref: 'john-3-16', title: 'Test' })
     expect(useStudyStore.getState().activeSession).toEqual(mockSession)
     expect(useStudyStore.getState().wsToken).toBe('ws-token-123')
+    expect(useStudyStore.getState().myStudies).toEqual([mockSession])
   })
 
   it('join sets active session and token', async () => {

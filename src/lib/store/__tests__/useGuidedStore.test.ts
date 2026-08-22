@@ -75,15 +75,17 @@ describe('useGuidedStore', () => {
     expect(state.revealed[promptKey(10, 0)]).toBeUndefined()
   })
 
-  it('records the session the study is being walked through in', async () => {
-    mockApi.study.mockResolvedValue(detail)
+  it('loads the progress that belongs to the requested session', async () => {
+    mockApi.study.mockResolvedValue({
+      ...detail,
+      progress: { ...detail.progress, session_id: 'session-1' },
+    })
 
     await useGuidedStore.getState().open(study.slug, 'session-1')
 
-    expect(mockApi.setProgress).toHaveBeenCalledWith(study.slug, {
-      current_step: 0,
-      session_id: 'session-1',
-    })
+    expect(mockApi.study).toHaveBeenCalledWith(study.slug, 'session-1')
+    expect(useGuidedStore.getState().progress?.session_id).toBe('session-1')
+    expect(mockApi.setProgress).not.toHaveBeenCalled()
   })
 
   it('does not reload a study that is already open', async () => {
@@ -93,6 +95,55 @@ describe('useGuidedStore', () => {
     await useGuidedStore.getState().open(study.slug)
 
     expect(mockApi.study).toHaveBeenCalledTimes(1)
+  })
+
+  it('reloads the same guided content when the session changes', async () => {
+    mockApi.study
+      .mockResolvedValueOnce({ ...detail, progress: { ...detail.progress, session_id: 'session-1', current_step: 1 } })
+      .mockResolvedValueOnce({ ...detail, progress: { ...detail.progress, session_id: 'session-2', current_step: 0 }, responses: [] })
+
+    await useGuidedStore.getState().open(study.slug, 'session-1')
+    await useGuidedStore.getState().open(study.slug, 'session-2')
+
+    expect(mockApi.study).toHaveBeenNthCalledWith(1, study.slug, 'session-1')
+    expect(mockApi.study).toHaveBeenNthCalledWith(2, study.slug, 'session-2')
+    expect(useGuidedStore.getState().progress?.current_step).toBe(0)
+    expect(useGuidedStore.getState().answers).toEqual({})
+  })
+
+  it('ignores a slower response from the session that was just left', async () => {
+    let resolveFirst!: (value: GuidedStudyDetail) => void
+    let resolveSecond!: (value: GuidedStudyDetail) => void
+    mockApi.study
+      .mockReturnValueOnce(new Promise((resolve) => { resolveFirst = resolve }))
+      .mockReturnValueOnce(new Promise((resolve) => { resolveSecond = resolve }))
+
+    const first = useGuidedStore.getState().open(study.slug, 'session-1')
+    const second = useGuidedStore.getState().open(study.slug, 'session-2')
+
+    resolveSecond({ ...detail, progress: { ...detail.progress, session_id: 'session-2', current_step: 0 }, responses: [] })
+    await second
+    resolveFirst({ ...detail, progress: { ...detail.progress, session_id: 'session-1', current_step: 1 } })
+    await first
+
+    expect(useGuidedStore.getState().progress?.session_id).toBe('session-2')
+    expect(useGuidedStore.getState().progress?.current_step).toBe(0)
+  })
+
+  it('sends the session id when bookmarking progress', async () => {
+    mockApi.study.mockResolvedValue({
+      ...detail,
+      progress: { ...detail.progress, session_id: 'session-1' },
+    })
+    await useGuidedStore.getState().open(study.slug, 'session-1')
+    mockApi.setProgress.mockResolvedValue({ ...detail.progress, session_id: 'session-1', current_step: 1 })
+
+    useGuidedStore.getState().goToStep(1)
+
+    expect(mockApi.setProgress).toHaveBeenCalledWith(study.slug, {
+      current_step: 1,
+      session_id: 'session-1',
+    })
   })
 
   it('moves the step locally and bookmarks it on the server', async () => {
