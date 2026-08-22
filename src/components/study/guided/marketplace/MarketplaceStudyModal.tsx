@@ -10,6 +10,7 @@ import {
   Loader2,
   Palette,
   Play,
+  Plus,
   X,
 } from 'lucide-react'
 import { Dialog } from '@/components/ui/Dialog'
@@ -20,6 +21,7 @@ import type { GuidedStudyDetail } from '@/lib/study/guidedApi'
 import type { PathStudySummary } from '@/lib/study/guidedEditorApi'
 import type { StudyPathDetail } from '@/lib/study/marketplaceApi'
 import { stepKind } from '@/lib/study/guidedStepKinds'
+import { findActiveGuidedSession } from '@/lib/study/guidedSessions'
 import { paths } from '@/router/paths'
 import { cn } from '@/lib/cn'
 
@@ -35,12 +37,15 @@ export function MarketplaceStudyModal({ open, onClose, plan, study }: Marketplac
   const { t } = useTranslation()
   const navigate = useNavigate()
   const start = useStudyStore((s) => s.start)
+  const myStudies = useStudyStore((s) => s.myStudies)
+  const loadMyStudies = useStudyStore((s) => s.loadMyStudies)
   const toggleList = useMarketplaceStore((s) => s.toggleList)
   const inMyList = useMarketplaceStore((s) => s.detail?.slug === plan.slug ? s.detail.in_my_list : plan.in_my_list)
 
   const [detail, setDetail] = useState<GuidedStudyDetail | null>(null)
   const [loading, setLoading] = useState(false)
   const [starting, setStarting] = useState(false)
+  const [checkingExisting, setCheckingExisting] = useState(false)
   const [updatingList, setUpdatingList] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
@@ -68,6 +73,22 @@ export function MarketplaceStudyModal({ open, onClose, plan, study }: Marketplac
     }
   }, [open, study.slug, t])
 
+  useEffect(() => {
+    if (!open) return
+    let cancelled = false
+    setCheckingExisting(true)
+    void loadMyStudies()
+      .catch(() => {})
+      .finally(() => {
+        if (!cancelled) setCheckingExisting(false)
+      })
+    return () => {
+      cancelled = true
+    }
+  }, [open, loadMyStudies])
+
+  const activeStudy = findActiveGuidedSession(myStudies, study.slug)
+
   const handleStart = async () => {
     setStarting(true)
     setError(null)
@@ -91,6 +112,12 @@ export function MarketplaceStudyModal({ open, onClose, plan, study }: Marketplac
     } finally {
       setUpdatingList(false)
     }
+  }
+
+  const handleContinue = () => {
+    if (!activeStudy) return
+    onClose()
+    navigate(paths.study({ sessionId: activeStudy.id }))
   }
 
   const studyData = detail?.study
@@ -229,31 +256,57 @@ export function MarketplaceStudyModal({ open, onClose, plan, study }: Marketplac
         {error && studyData && <p className="mt-4 text-xs text-red-400">{error}</p>}
       </div>
 
-      <div className="flex shrink-0 flex-col-reverse gap-2 border-t border-border-subtle px-5 py-4 sm:flex-row sm:items-center sm:justify-between">
-        <button
-          type="button"
-          onClick={() => void handleToggleList()}
-          disabled={updatingList}
-          className={cn(
-            'inline-flex items-center justify-center gap-1.5 rounded-lg border px-3 py-2.5 text-xs font-semibold transition-colors disabled:opacity-50',
-            inMyList
-              ? 'border-accent bg-accent/10 text-accent hover:bg-accent/20'
-              : 'border-border-subtle text-text-secondary hover:bg-bg-tertiary hover:text-text-primary',
-          )}
-        >
-          {updatingList ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : inMyList ? <BookmarkCheck className="h-3.5 w-3.5" /> : <BookmarkPlus className="h-3.5 w-3.5" />}
-          {inMyList ? t('market.inMyList') : t('market.addPathToList')}
-        </button>
+      <div className="shrink-0 space-y-3 border-t border-border-subtle px-5 py-4">
+        {activeStudy && (
+          <p className="text-xs leading-relaxed text-text-secondary">
+            {t('market.studyAlreadyStarted')}
+          </p>
+        )}
+        <div className="flex flex-col-reverse gap-2 sm:flex-row sm:items-center sm:justify-between">
+          <button
+            type="button"
+            onClick={() => void handleToggleList()}
+            disabled={updatingList}
+            className={cn(
+              'inline-flex items-center justify-center gap-1.5 rounded-lg border px-3 py-2.5 text-xs font-semibold transition-colors disabled:opacity-50',
+              inMyList
+                ? 'border-accent bg-accent/10 text-accent hover:bg-accent/20'
+                : 'border-border-subtle text-text-secondary hover:bg-bg-tertiary hover:text-text-primary',
+            )}
+          >
+            {updatingList ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : inMyList ? <BookmarkCheck className="h-3.5 w-3.5" /> : <BookmarkPlus className="h-3.5 w-3.5" />}
+            {inMyList ? t('market.inMyList') : t('market.addPathToList')}
+          </button>
 
-        <button
-          type="button"
-          onClick={() => void handleStart()}
-          disabled={starting}
-          className="inline-flex items-center justify-center gap-1.5 rounded-lg bg-accent px-4 py-2.5 text-xs font-semibold text-white transition-opacity hover:opacity-90 disabled:opacity-50"
-        >
-          {starting ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Play className="h-3.5 w-3.5" />}
-          {starting ? t('study.start.starting') : t('market.startThisStudy')}
-        </button>
+          <div className="flex flex-col gap-2 sm:flex-row">
+            {activeStudy && (
+              <button
+                type="button"
+                onClick={() => void handleStart()}
+                disabled={starting || checkingExisting}
+                className="inline-flex items-center justify-center gap-1.5 rounded-lg border border-border px-4 py-2.5 text-xs font-semibold text-text-secondary transition-colors hover:bg-bg-tertiary hover:text-text-primary disabled:opacity-50"
+              >
+                {starting ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Plus className="h-3.5 w-3.5" />}
+                {starting ? t('study.start.starting') : t('market.startNewStudy')}
+              </button>
+            )}
+            <button
+              type="button"
+              onClick={activeStudy ? handleContinue : () => void handleStart()}
+              disabled={starting || checkingExisting}
+              className="inline-flex items-center justify-center gap-1.5 rounded-lg bg-accent px-4 py-2.5 text-xs font-semibold text-white transition-opacity hover:opacity-90 disabled:opacity-50"
+            >
+              {starting || checkingExisting ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Play className="h-3.5 w-3.5" />}
+              {checkingExisting
+                ? t('market.checkingProgress')
+                : activeStudy
+                  ? t('market.continueStudy')
+                  : starting
+                    ? t('study.start.starting')
+                    : t('market.startThisStudy')}
+            </button>
+          </div>
+        </div>
       </div>
     </Dialog>
   )

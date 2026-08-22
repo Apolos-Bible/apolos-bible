@@ -97,7 +97,9 @@ export interface GuidedStudyDetail {
 export const guidedApi = {
   plans: () => api.get<GuidedPlanSummary[]>(withFrontendLocale('/api/guided-plans')),
 
-  study: (slug: string) => api.get<GuidedStudyDetail>(withFrontendLocale(`/api/guided-studies/${slug}`)),
+  study: (slug: string, sessionId?: string) => api.get<GuidedStudyDetail>(withFrontendLocale(
+    `/api/guided-studies/${slug}${sessionId ? `?session_id=${encodeURIComponent(sessionId)}` : ''}`,
+  )),
 
   setProgress: (slug: string, body: { current_step: number; session_id?: string; completed?: boolean }) =>
     api.post<GuidedProgress>(`/api/guided-studies/${slug}/progress`, body),
@@ -105,6 +107,6 @@ export const guidedApi = {
   saveResponse: (
     slug: string,
     stepId: number,
-    body: { prompt_index: number; answer?: string; revealed?: boolean },
+    body: { prompt_index: number; answer?: string; revealed?: boolean; session_id?: string },
   ) => api.post<GuidedResponse>(`/api/guided-studies/${slug}/steps/${stepId}/responses`, body),
 }

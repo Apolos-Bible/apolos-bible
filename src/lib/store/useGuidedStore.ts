@@ -10,6 +10,9 @@ import type {
 /** key for the per-prompt maps: one step can hold several prompts */
 const promptKey = (stepId: number, promptIndex: number) => `${stepId}:${promptIndex}`
 
+/** Prevent a slower request for the previous session from replacing the current one. */
+let openRequestId = 0
+
 type GuidedStore = {
   plans: GuidedPlanSummary[]
   plansLoading: boolean
@@ -58,10 +61,13 @@ export const useGuidedStore = create<GuidedStore>((set, get) => ({
   },
 
   open: async (slug, sessionId) => {
-    if (get().study?.slug === slug || get().loading) return
+    const current = get()
+    if (current.study?.slug === slug && (!sessionId || current.progress?.session_id === sessionId)) return
+    const requestId = ++openRequestId
     set({ loading: true, error: null })
     try {
-      const detail = await guidedApi.study(slug)
+      const detail = await guidedApi.study(slug, sessionId)
+      if (requestId !== openRequestId) return
       const answers: Record<string, string> = {}
       const revealed: Record<string, boolean> = {}
       detail.responses.forEach((r: GuidedResponse) => {
@@ -70,23 +76,17 @@ export const useGuidedStore = create<GuidedStore>((set, get) => ({
         if (r.revealed) revealed[key] = true
       })
       set({ study: detail.study, progress: detail.progress, answers, revealed })
-
-      // Remember which session this study is being walked through in, so
-      // "continue" can bring the person back to the right canvas.
-      if (sessionId && detail.progress.session_id !== sessionId) {
-        guidedApi
-          .setProgress(slug, { current_step: detail.progress.current_step, session_id: sessionId })
-          .then((progress) => set({ progress }))
-          .catch(() => {})
-      }
     } catch (e: any) {
-      set({ error: e?.message ?? 'load failed' })
+      if (requestId === openRequestId) set({ error: e?.message ?? 'load failed' })
     } finally {
-      set({ loading: false })
+      if (requestId === openRequestId) set({ loading: false })
     }
   },
 
-  clear: () => set({ study: null, progress: null, answers: {}, revealed: {}, error: null }),
+  clear: () => {
+    openRequestId++
+    set({ study: null, progress: null, answers: {}, revealed: {}, loading: false, error: null })
+  },
 
   goToStep: (index) => {
     const { study, progress } = get()
@@ -97,7 +97,10 @@ export const useGuidedStore = create<GuidedStore>((set, get) => ({
     // Move the UI now; the server is only a bookmark.
     set({ progress: progress ? { ...progress, current_step: next } : progress })
     guidedApi
-      .setProgress(study.slug, { current_step: next })
+      .setProgress(study.slug, {
+        current_step: next,
+        ...(progress?.session_id ? { session_id: progress.session_id } : {}),
+      })
       .then((fresh) => set({ progress: fresh }))
       .catch(() => {})
   },
@@ -106,11 +109,15 @@ export const useGuidedStore = create<GuidedStore>((set, get) => ({
     set((s) => ({ answers: { ...s.answers, [promptKey(stepId, promptIndex)]: answer } })),
 
   flushAnswer: async (stepId, promptIndex) => {
-    const { study, answers } = get()
+    const { study, progress, answers } = get()
     if (!study) return
     const answer = answers[promptKey(stepId, promptIndex)] ?? ''
     try {
-      await guidedApi.saveResponse(study.slug, stepId, { prompt_index: promptIndex, answer })
+      await guidedApi.saveResponse(study.slug, stepId, {
+        prompt_index: promptIndex,
+        answer,
+        ...(progress?.session_id ? { session_id: progress.session_id } : {}),
+      })
     } catch {
       // Losing a keystroke sync is not worth interrupting a study over; the
       // text stays on screen and the next flush retries.
@@ -118,7 +125,7 @@ export const useGuidedStore = create<GuidedStore>((set, get) => ({
   },
 
   reveal: async (stepId, promptIndex) => {
-    const { study, answers } = get()
+    const { study, progress, answers } = get()
     if (!study) return
     const key = promptKey(stepId, promptIndex)
     set((s) => ({ revealed: { ...s.revealed, [key]: true } }))
@@ -127,6 +134,7 @@ export const useGuidedStore = create<GuidedStore>((set, get) => ({
         prompt_index: promptIndex,
         answer: answers[key] ?? '',
         revealed: true,
+        ...(progress?.session_id ? { session_id: progress.session_id } : {}),
       })
     } catch {
       // Keep it revealed locally even if the write failed.
@@ -140,6 +148,7 @@ export const useGuidedStore = create<GuidedStore>((set, get) => ({
       const fresh = await guidedApi.setProgress(study.slug, {
         current_step: progress?.current_step ?? study.steps.length - 1,
         completed: true,
+        ...(progress?.session_id ? { session_id: progress.session_id } : {}),
       })
       set({ progress: fresh })
       // Reflect it in the picker without another round trip.

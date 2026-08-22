@@ -34,10 +34,11 @@ export const useStudyStore = create<StudyStore>((set, get) => ({
 
   start: async (input) => {
     const res = await studyApi.create(input)
-    set({
+    set((state) => ({
       activeSession: res.session,
       wsToken: res.ws_token,
-    })
+      myStudies: [res.session, ...state.myStudies.filter((session) => session.id !== res.session.id)],
+    }))
   },
 
   join: async (sessionId) => {
