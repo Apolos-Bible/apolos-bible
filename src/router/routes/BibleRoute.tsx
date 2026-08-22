@@ -56,6 +56,23 @@ type BibleViewProps = {
   openCommentary: boolean
 }
 
+function selectedVerseRange(
+  selectedVerseId: string | null,
+  selectedVerseIds: string[],
+) {
+  if (selectedVerseIds.length > 1) {
+    return {
+      verse: verseIdToNumber(selectedVerseIds[0]),
+      endVerse: verseIdToNumber(selectedVerseIds[selectedVerseIds.length - 1]),
+    }
+  }
+
+  return {
+    verse: verseIdToNumber(selectedVerseId),
+    endVerse: null,
+  }
+}
+
 function BibleView({ lang, book, chapter, verse, endVerse, openCommentary }: BibleViewProps) {
   const navigate = useNavigate()
   const locale = useUIStore(s => s.locale)
@@ -106,9 +123,11 @@ function BibleView({ lang, book, chapter, verse, endVerse, openCommentary }: Bib
     const targetVerseId = verse ? `${matched.slug}-${safeChapter}-${verse}` : null
 
     const sameLocation = state.selectedBook === matched.slug && state.selectedChapter === safeChapter
+    const selectedStart = verseIdToNumber(state.selectedVerseIds[0])
     const selectedEnd = verseIdToNumber(state.selectedVerseIds[state.selectedVerseIds.length - 1])
-    const sameVerse = (state.selectedVerseId ?? null) === targetVerseId
-      && (endVerse ? selectedEnd === endVerse : state.selectedVerseIds.length <= 1)
+    const sameVerse = endVerse
+      ? selectedStart === verse && selectedEnd === endVerse
+      : (state.selectedVerseId ?? null) === targetVerseId && state.selectedVerseIds.length <= 1
 
     if (sameLocation && sameVerse) return
 
@@ -127,10 +146,10 @@ function BibleView({ lang, book, chapter, verse, endVerse, openCommentary }: Bib
       const state = verseStore.getState()
       const { selectedBook, selectedChapter, selectedVerseId, selectedVerseIds } = state
       if (!selectedBook) return
-      const verseNum = verseIdToNumber(selectedVerseId)
-      const endVerseNum = selectedVerseIds.length > 1
-        ? verseIdToNumber(selectedVerseIds[selectedVerseIds.length - 1])
-        : null
+      const { verse: verseNum, endVerse: endVerseNum } = selectedVerseRange(
+        selectedVerseId,
+        selectedVerseIds,
+      )
       const target = paths.bible({
         lang: useUIStore.getState().locale,
         book: selectedBook,
@@ -158,10 +177,10 @@ function BibleView({ lang, book, chapter, verse, endVerse, openCommentary }: Bib
   useEffect(() => {
     const state = verseStore.getState()
     if (!state.selectedBook) return
-    const verseNum = verseIdToNumber(state.selectedVerseId)
-    const endVerseNum = state.selectedVerseIds.length > 1
-      ? verseIdToNumber(state.selectedVerseIds[state.selectedVerseIds.length - 1])
-      : null
+    const { verse: verseNum, endVerse: endVerseNum } = selectedVerseRange(
+      state.selectedVerseId,
+      state.selectedVerseIds,
+    )
     const target = paths.bible({
       lang: locale,
       book: state.selectedBook,

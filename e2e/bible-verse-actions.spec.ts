@@ -117,11 +117,13 @@ test.describe('Lector bíblico y acciones de versículo', () => {
     await expect(first).toHaveAttribute('aria-current', 'true')
     await page.keyboard.press('Shift+ArrowDown')
     await expect(verses.filter({ hasText: 'Él estaba con Dios.' }).first()).toHaveAttribute('aria-current', 'true')
+    await expect(page).toHaveURL(/\/bible\/juan\/1\/1\?endVerse=2$/)
     await page.keyboard.press('Shift+ArrowDown')
 
     await expect(first).toHaveAttribute('aria-current', 'true')
     await expect(verses.filter({ hasText: 'Él estaba con Dios.' }).first()).toHaveAttribute('aria-current', 'true')
     await expect(third).toHaveAttribute('aria-current', 'true')
+    await expect(page).toHaveURL(/\/bible\/juan\/1\/1\?endVerse=3$/)
   })
 
   test('[BIBLE-SELECT-01] extiende una selección contigua con Shift y puntero', async ({ page }, testInfo) => {
