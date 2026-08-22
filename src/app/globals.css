@@ -176,6 +176,30 @@ body {
   -webkit-font-smoothing: antialiased;
 }
 
+/* Mobile Safari automatically zooms the page when an editable control has a
+   font size below 16px. Keep touch controls at that threshold so focusing a
+   field opens the keyboard without changing the viewport scale. This avoids
+   disabling user-initiated pinch zoom in the viewport meta tag. */
+@media (hover: none) and (pointer: coarse) {
+  input:not([type]),
+  input[type='date'],
+  input[type='datetime-local'],
+  input[type='email'],
+  input[type='month'],
+  input[type='number'],
+  input[type='password'],
+  input[type='search'],
+  input[type='tel'],
+  input[type='text'],
+  input[type='time'],
+  input[type='url'],
+  input[type='week'],
+  select,
+  textarea {
+    font-size: 16px !important;
+  }
+}
+
 /* ── Commentary panel HTML styles ─────────────────────────────────────────── */
 .commentary-content h1 { font-size: 1.1rem; font-weight: 600; margin: 0 0 1rem; color: var(--text-primary); }
 .commentary-content h2 { font-size: 1rem; font-weight: 600; margin: 1.4rem 0 0.5rem; color: var(--text-primary); }
