@@ -21,10 +21,29 @@
     <title>Apolos Bible — Collaborative Bible Study</title>
     <meta name="description" content="Read, study, and discuss the Bible collaboratively. Cross-references, highlights, notes, and real-time study sessions with friends." />
     <meta name="keywords" content="Bible, Bible study, collaborative Bible, Scripture, Christian, study app, Apolos" />
-    <meta name="theme-color" content="#1a1a2e" />
+    <meta name="theme-color" content="#ffffff" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
     <meta name="apple-mobile-web-app-title" content="Apolos" />
+    <script>
+      (() => {
+        let preference = 'light'
+        try {
+          const stored = localStorage.getItem('theme')
+          if (stored === 'dark' || stored === 'light' || stored === 'system') preference = stored
+        } catch {}
+        const resolved = preference === 'system'
+          ? (matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light')
+          : preference
+        const dark = resolved === 'dark'
+        document.documentElement.setAttribute('data-theme', resolved)
+        document.documentElement.setAttribute('data-theme-preference', preference)
+        document.querySelector('meta[name="theme-color"]')
+          .setAttribute('content', dark ? '#151922' : '#ffffff')
+        document.querySelector('meta[name="apple-mobile-web-app-status-bar-style"]')
+          .setAttribute('content', dark ? 'black-translucent' : 'default')
+      })()
+    </script>
     <link rel="manifest" href="/manifest.webmanifest" />
 
     <!-- Canonical URL -->

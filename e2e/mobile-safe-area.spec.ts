@@ -37,3 +37,24 @@ test('[PWA-SAFE-AREA-01] integra la zona segura inferior en la navegación móvi
   expect(bounds).not.toBeNull()
   expect(Math.round(bounds!.y + bounds!.height)).toBe(testInfo.project.use.viewport?.height)
 })
+
+test('[PWA-SYSTEM-BAR-01] aplica la superficie e iconos adecuados al tema inicial', async ({ page }, testInfo) => {
+  test.skip(testInfo.project.name !== 'mobile-chromium', 'La barra de estado se valida en el viewport móvil')
+
+  await installApiMock(page)
+  await page.goto('/bible/juan/1', { waitUntil: 'domcontentloaded' })
+
+  await page.evaluate(() => localStorage.setItem('theme', 'dark'))
+  await page.reload({ waitUntil: 'domcontentloaded' })
+  await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark')
+  await expect(page.locator('meta[name="theme-color"]')).toHaveAttribute('content', '#151922')
+  await expect(page.locator('meta[name="apple-mobile-web-app-status-bar-style"]')).toHaveAttribute('content', 'black-translucent')
+  await expect(page.locator('#root')).toHaveCSS('background-color', 'rgb(21, 25, 34)')
+
+  await page.evaluate(() => localStorage.setItem('theme', 'light'))
+  await page.reload({ waitUntil: 'domcontentloaded' })
+  await expect(page.locator('html')).toHaveAttribute('data-theme', 'light')
+  await expect(page.locator('meta[name="theme-color"]')).toHaveAttribute('content', '#ffffff')
+  await expect(page.locator('meta[name="apple-mobile-web-app-status-bar-style"]')).toHaveAttribute('content', 'default')
+  await expect(page.locator('#root')).toHaveCSS('background-color', 'rgb(255, 255, 255)')
+})

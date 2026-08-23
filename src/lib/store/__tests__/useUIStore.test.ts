@@ -51,6 +51,10 @@ beforeEach(() => {
     readingMode: 'verse',
   })
   document.documentElement.setAttribute('data-theme', 'light')
+  document.head.innerHTML = `
+    <meta name="theme-color" content="#ffffff">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  `
 })
 
 describe('useUIStore — modals & panels', () => {
@@ -242,11 +246,17 @@ describe('useUIStore — theme, locale, font, reading mode', () => {
     expect(localStorage.getItem('fontSize')).toBe('lg')
   })
 
-  it('setTheme applies data-theme attribute on document element', () => {
+  it('setTheme applies the theme to the document and system bars', () => {
     useUIStore.getState().setTheme('dark')
     expect(useUIStore.getState().theme).toBe('dark')
     expect(localStorage.getItem('theme')).toBe('dark')
     expect(document.documentElement.getAttribute('data-theme')).toBe('dark')
+    expect(document.querySelector('meta[name="theme-color"]')?.getAttribute('content')).toBe('#151922')
+    expect(document.querySelector('meta[name="apple-mobile-web-app-status-bar-style"]')?.getAttribute('content')).toBe('black-translucent')
+
+    useUIStore.getState().setTheme('light')
+    expect(document.querySelector('meta[name="theme-color"]')?.getAttribute('content')).toBe('#ffffff')
+    expect(document.querySelector('meta[name="apple-mobile-web-app-status-bar-style"]')?.getAttribute('content')).toBe('default')
   })
 
   it('setLocale persists to localStorage', () => {
