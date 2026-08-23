@@ -144,6 +144,10 @@ body {
   height: 0;
 }
 
+.mobile-bottom-nav-collapsed > button {
+  visibility: hidden;
+}
+
 @media (max-width: 767px) {
   #root {
     padding-bottom: 0;
