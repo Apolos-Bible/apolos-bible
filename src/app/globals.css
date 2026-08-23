@@ -113,6 +113,10 @@ body {
    and iOS uses black-translucent + viewport-fit=cover — both require us
    to pad the app shell ourselves. env() returns 0 on desktop. */
 #root {
+  --app-safe-area-bottom: max(
+    env(safe-area-inset-bottom, 0px),
+    var(--android-safe-area-inset-bottom, 0px)
+  );
   position: relative;
   width: 100%;
   height: 100%;
@@ -121,9 +125,36 @@ body {
      not, so MainActivity.kt injects --android-safe-area-inset-* from the
      native WindowInsets listener. max() picks whichever is non-zero. */
   padding-top: max(env(safe-area-inset-top, 0px), var(--android-safe-area-inset-top, 0px));
-  padding-bottom: max(env(safe-area-inset-bottom, 0px), var(--android-safe-area-inset-bottom, 0px));
+  padding-bottom: var(--app-safe-area-bottom);
   padding-left: max(env(safe-area-inset-left, 0px), var(--android-safe-area-inset-left, 0px));
   padding-right: max(env(safe-area-inset-right, 0px), var(--android-safe-area-inset-right, 0px));
+}
+
+/* On mobile the bottom navigation owns the lower safe area. Keeping that
+   inset inside the navigation extends its surface to the screen edge instead
+   of leaving a separate strip beneath it. */
+.mobile-bottom-nav-expanded {
+  height: 68px;
+}
+
+.mobile-bottom-nav-collapsed {
+  height: 0;
+}
+
+@media (max-width: 767px) {
+  #root {
+    padding-bottom: 0;
+  }
+
+  .mobile-bottom-nav-expanded {
+    height: calc(68px + var(--app-safe-area-bottom));
+    padding-bottom: var(--app-safe-area-bottom);
+  }
+
+  .mobile-bottom-nav-collapsed {
+    height: var(--app-safe-area-bottom);
+    padding-bottom: var(--app-safe-area-bottom);
+  }
 }
 
 @supports (height: 100svh) {
