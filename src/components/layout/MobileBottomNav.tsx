@@ -184,7 +184,7 @@ export function MobileBottomNav() {
     <nav
       className={cn(
         'flex shrink-0 items-stretch border-t border-border-subtle bg-bg-secondary overflow-hidden transition-[height,border-width] duration-300 ease-out',
-        hidden ? 'h-0 border-t-0' : 'h-[68px]',
+        hidden ? 'mobile-bottom-nav-collapsed border-t-0' : 'mobile-bottom-nav-expanded',
       )}
       aria-label={t('layout.library')}
       aria-hidden={hidden}

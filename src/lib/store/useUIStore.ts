@@ -8,6 +8,7 @@ import {
   type AppLocale,
 } from '@/lib/defaultAppLocale'
 import { saveUserSettingsSilently } from '@/lib/userSettingsApi'
+import { applySystemBarTheme } from '@/lib/systemBars'
 
 type Toast = {
   id: string
@@ -31,6 +32,7 @@ function applyTheme(t: Theme) {
     : t
   document.documentElement.setAttribute('data-theme', resolved)
   document.documentElement.setAttribute('data-theme-preference', t)
+  applySystemBarTheme(resolved)
 }
 
 export const DEFAULT_ACCENT_COLOR = '#4f5dcc'
