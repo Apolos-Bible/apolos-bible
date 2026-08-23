@@ -36,6 +36,13 @@ test('[PWA-SAFE-AREA-01] integra la zona segura inferior en la navegación móvi
   const bounds = await navigation.boundingBox()
   expect(bounds).not.toBeNull()
   expect(Math.round(bounds!.y + bounds!.height)).toBe(testInfo.project.use.viewport?.height)
+
+  await navigation.evaluate((element) => {
+    element.classList.remove('mobile-bottom-nav-expanded')
+    element.classList.add('mobile-bottom-nav-collapsed', 'border-t-0')
+  })
+  await expect(navigation).toHaveCSS('height', '24px')
+  await expect(navigation.locator('button').first()).toHaveCSS('visibility', 'hidden')
 })
 
 test('[PWA-SYSTEM-BAR-01] aplica la superficie e iconos adecuados al tema inicial', async ({ page }, testInfo) => {
