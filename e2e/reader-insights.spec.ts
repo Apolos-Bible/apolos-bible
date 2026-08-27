@@ -84,6 +84,12 @@ test('[VERSE-COMPARE-01] abre otra versión, cambia la comparación y la cierra'
   await expect(page.locator('[data-compare-verse="1"]')).toContainText(/En el principio cre.* Dios/i)
 
   await selector.click()
+  await page.getByRole('option', { name: /NVI-YV.*YouVersion/i }).click()
+  await expect(selector).toContainText(/NVI-YV/)
+  await expect(page.locator('[data-compare-verse="1"]')).toContainText(/En el principio era el Verbo/i)
+  await expect(page.getByText(/Not available in this version|No disponible en esta versi.n/i)).toHaveCount(0)
+
+  await selector.click()
   await page.getByRole('option', { name: /NTV/ }).click()
   await expect(selector).toContainText(/NTV/)
   await page.getByRole('heading', { name: /Compare versions|Comparar versiones/i })

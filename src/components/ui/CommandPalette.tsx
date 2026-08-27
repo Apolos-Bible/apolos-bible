@@ -17,6 +17,7 @@ import { Dialog } from '@/components/ui/Dialog'
 import { normalizeText } from '@/lib/normalizeText'
 import { cn } from '@/lib/cn'
 import type { Friend } from '@/types'
+import { bibleTextSearchVersionId } from '@/lib/bibleVersionOptions'
 
 export function CommandPalette() {
   const { t } = useTranslation()
@@ -31,11 +32,13 @@ export function CommandPalette() {
   const openVerse = useStore(verseStore, (s) => s.openVerse)
   const books = useStore(verseStore, (s) => s.books)
   const versionId = useStore(verseStore, (s) => s.versionId)
+  const versions = useStore(verseStore, (s) => s.versions)
   const user = useAuthStore((s) => s.user)
   const logout = useAuthStore((s) => s.logout)
   const [query, setQuery] = useState('')
   const [verseResults, setVerseResults] = useState<ApiSearchResult[]>([])
   const [people, setPeople] = useState<Friend[]>([])
+  const textSearchVersionId = bibleTextSearchVersionId(versions, versionId)
 
   useEffect(() => {
     if (!commandPaletteOpen) {
@@ -46,20 +49,20 @@ export function CommandPalette() {
   }, [commandPaletteOpen])
 
   useEffect(() => {
-    if (query.length < 2) {
+    if (textSearchVersionId === null || query.length < 2) {
       setVerseResults([])
       return
     }
     const timer = setTimeout(async () => {
       try {
-        const results = await bibleApi.search(versionId, normalizeText(query))
+        const results = await bibleApi.search(textSearchVersionId, normalizeText(query))
         setVerseResults(results.slice(0, 8))
       } catch {
         setVerseResults([])
       }
     }, 300)
     return () => clearTimeout(timer)
-  }, [query, versionId])
+  }, [query, textSearchVersionId])
 
   useEffect(() => {
     if (!user || query.trim().length < 2) {

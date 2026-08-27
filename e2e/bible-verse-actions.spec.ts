@@ -18,6 +18,11 @@ async function chooseMoreAction(
   page: Parameters<typeof installApiMock>[0],
   name: RegExp,
 ) {
+  const direct = page.getByRole('button', { name }).filter({ visible: true })
+  if (await direct.count()) {
+    await direct.first().click()
+    return
+  }
   await page.getByRole('button', { name: /More actions|M.s acciones/i }).filter({ visible: true }).click()
   await page.getByRole('menuitem', { name }).click()
 }
@@ -106,6 +111,25 @@ test.describe('Lector bíblico y acciones de versículo', () => {
     await expect(page.getByRole('group', { name: /Actions for selected verses|Acciones.*vers/i })).toBeVisible()
   })
 
+  test('[BIBLE-SELECT-01] mantiene visibles las acciones del versículo en iPad', async ({ page }, testInfo) => {
+    test.skip(testInfo.project.name === 'mobile-chromium', 'El viewport iPad se valida una sola vez')
+    await page.setViewportSize({ width: 768, height: 1024 })
+    await installApiMock(page)
+    const crossRefIndex = page.waitForResponse((response) => response.url().includes('cross-ref-verse-ids'))
+    await page.goto('/bible/genesis/1', { waitUntil: 'domcontentloaded' })
+    await crossRefIndex
+
+    const verse = page.getByRole('listitem').filter({ hasText: /En el principio cre.* Dios/i }).first()
+    await verse.click()
+
+    const actions = page.getByRole('group', { name: /Actions for selected verses|Acciones.*vers/i })
+    await expect(actions.getByRole('button', { name: /Copy reference|Copiar referencia/i })).toBeVisible()
+    await expect(actions.getByRole('button', { name: /Highlight verse|Resaltar vers/i })).toBeVisible()
+    await expect(actions.getByRole('button', { name: /Cross-references|Referencias cruzadas/i })).toBeVisible()
+    await expect(actions.getByRole('button', { name: /Similar verses|Vers.culos similares/i })).toBeVisible()
+    await expect(actions.getByRole('button', { name: /More actions|M.s acciones/i })).toBeHidden()
+  })
+
   test('[BIBLE-SELECT-01] extiende una selección contigua con teclado', async ({ page }) => {
     await installApiMock(page)
     await page.goto('/bible/juan/1', { waitUntil: 'domcontentloaded' })
@@ -164,6 +188,36 @@ test.describe('Lector bíblico y acciones de versículo', () => {
     await chooseMoreAction(page, /Remove from favorites|Quitar de favoritos/i)
     await expect.poll(() => mutations.length).toBe(2)
     expect(mutations[1]).toEqual({ _method: 'DELETE' })
+  })
+
+  test('[VERSE-FAVORITE-01][NOTES-CRUD-01] abre guardados locales con YouVersion activa', async ({ page }, testInfo) => {
+    test.skip(testInfo.project.name === 'mobile-chromium', 'El recorrido de panel lateral se valida una sola vez')
+    const passages: string[] = []
+    await installApiMock(page)
+    page.on('request', (request) => {
+      if (request.url().includes('/api/youversion/bibles/128/passages/')) passages.push(request.url())
+    })
+    await page.goto('/bible/juan/1', { waitUntil: 'domcontentloaded' })
+    await ensureFirstVerseSelected(page)
+    await chooseMoreAction(page, /Add to favorites|A.adir a favoritos/i)
+
+    await page.goto('/ajustes#biblia', { waitUntil: 'domcontentloaded' })
+    const version = page.getByRole('combobox', { name: /^Version$|^Versi.n$/i }).first()
+    await version.click()
+    await page.getByRole('option', { name: /NVI-YV.*YouVersion/i }).click()
+    await page.goto('/bible/juan/2', { waitUntil: 'domcontentloaded' })
+
+    await page.getByRole('button', { name: /^Favorites$|^Favoritos$/i }).first().click()
+    await page.getByRole('button', { name: /Juan 1:1.*En el principio era el Verbo/i }).click()
+    await expect(page).toHaveURL(/\/bible\/john\/1\/1$/)
+    await expect(page.getByRole('listitem').filter({ hasText: /En el principio era el Verbo/i }).first())
+      .toHaveAttribute('aria-current', 'true')
+
+    await page.goto('/bible/juan/2', { waitUntil: 'domcontentloaded' })
+    await page.getByRole('button', { name: /^My Notes$|^Mis notas$/i }).first().click()
+    await page.getByRole('button', { name: /Open passage|Abrir pasaje/i }).click()
+    await expect(page).toHaveURL(/\/bible\/john\/1\/1$/)
+    expect(passages.some((url) => url.includes('/JHN.1'))).toBe(true)
   })
 
   test('[VERSE-HIGHLIGHT-01] crea y elimina un resaltado completo', async ({ page }) => {

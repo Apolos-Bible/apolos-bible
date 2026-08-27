@@ -179,10 +179,19 @@ export const BOOK_ALIASES: Record<string, string> = {
 
 export function resolveReferenceBook<B extends { name: string; slug: string }>(
   books: readonly B[],
-  canonicalSlug: string,
+  requestedSlug: string,
 ): B | undefined {
-  return books.find((book) => book.slug === canonicalSlug)
-    ?? books.find((book) => BOOK_ALIASES[normalizeText(book.name).trim()] === canonicalSlug)
+  const canonicalize = (value: string) => {
+    const normalized = normalizeText(value).trim()
+    return BOOK_ALIASES[normalized]
+      ?? BOOK_ALIASES[normalized.replace(/-/g, ' ')]
+      ?? normalized
+  }
+  const canonicalSlug = canonicalize(requestedSlug)
+
+  return books.find((book) => book.slug === requestedSlug)
+    ?? books.find((book) => canonicalize(book.slug) === canonicalSlug)
+    ?? books.find((book) => canonicalize(book.name) === canonicalSlug)
 }
 
 // Version prefix is detected separately (strict uppercase) to avoid matching
