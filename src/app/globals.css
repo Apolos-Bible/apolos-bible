@@ -848,7 +848,10 @@ html[data-theme='light'] .note-document-page {
   display: none !important;
 }
 
-@container reader-toolbar (max-width: 900px) {
+/* A tablet reader still has ample room for the complete verse toolbar. Keep
+   the actions visible until the pane itself is genuinely narrow (for example,
+   a split workspace), instead of collapsing every iPad-sized reader. */
+@container reader-toolbar (max-width: 420px) {
   .reader-action-secondary {
     display: none !important;
   }
@@ -864,13 +867,13 @@ html[data-theme='light'] .note-document-page {
   }
 }
 
-@container reader-toolbar (max-width: 460px) {
+@container reader-toolbar (max-width: 340px) {
   .reader-action-compact {
     display: none !important;
   }
 }
 
-@container reader-toolbar (max-width: 320px) {
+@container reader-toolbar (max-width: 260px) {
   .reader-action-primary {
     display: none !important;
   }

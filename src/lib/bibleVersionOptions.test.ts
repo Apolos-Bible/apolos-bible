@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import {
   bibleVersionsInSameLanguage,
+  bibleTextSearchVersionId,
   comparableBibleVersions,
   preferredComparisonVersion,
 } from './bibleVersionOptions'
@@ -37,5 +38,17 @@ describe('Bible version selector options', () => {
 
   it('does not expose mixed-language fallbacks for an unknown reference', () => {
     expect(bibleVersionsInSameLanguage(versions, 99)).toEqual([])
+  })
+
+  it('uses a local same-language Bible to search text while YouVersion is active', () => {
+    const remote: ApiVersion = {
+      id: 1_000_128,
+      abbreviation: 'NVI-YV',
+      name: 'NVI YouVersion',
+      language: 'es-ES',
+      provider: 'youversion',
+    }
+    expect(bibleTextSearchVersionId([...versions, remote], remote.id)).toBe(3)
+    expect(bibleTextSearchVersionId(versions, 1)).toBe(1)
   })
 })

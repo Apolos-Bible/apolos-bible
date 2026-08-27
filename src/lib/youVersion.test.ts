@@ -78,6 +78,11 @@ describe('YouVersion adapter', () => {
     expect(usfmForBookSlug('john')).toEqual({ number: 43, usfm: 'JHN' })
   })
 
+  it('resolves localized reader slugs when loading a YouVersion comparison', () => {
+    expect(usfmForBookSlug('juan')).toEqual({ number: 43, usfm: 'JHN' })
+    expect(usfmForBookSlug('apocalipsis')).toEqual({ number: 66, usfm: 'REV' })
+  })
+
   it('extracts numbered verses from YouVersion chapter HTML', () => {
     const html = `
       <div class="p">
