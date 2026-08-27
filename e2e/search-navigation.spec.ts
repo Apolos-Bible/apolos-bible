@@ -73,6 +73,32 @@ test('[SEARCH-TEXT-01] busca texto bíblico y abre el resultado', async ({ page 
   await expect(page.getByRole('listitem').filter({ hasText: 'En el principio era el Verbo.' }).first()).toHaveAttribute('aria-current', 'true')
 })
 
+test('[SEARCH-TEXT-01] conserva coincidencias de texto con YouVersion activa', async ({ page }, testInfo) => {
+  const searchRequests: string[] = []
+  await installApiMock(page)
+  page.on('request', (request) => {
+    if (/\/api\/versions\/\d+\/search/.test(request.url())) searchRequests.push(request.url())
+  })
+  await page.goto('/ajustes#biblia', { waitUntil: 'domcontentloaded' })
+  const version = page.getByRole('combobox', { name: /^Version$|^Versi.n$/i }).first()
+  await version.click()
+  await page.getByRole('option', { name: /NVI-YV.*YouVersion/i }).click()
+  await page.goto('/bible/juan/1', { waitUntil: 'domcontentloaded' })
+
+  await page.getByRole('button', { name: /Search Bible|Buscar Biblia|Search|Buscar/i }).first().click()
+  if (testInfo.project.name === 'mobile-chromium') {
+    await page.locator('input[type="search"]').fill('bodas')
+    await page.getByRole('button', { name: /bodas en Can/i }).click()
+  } else {
+    await page.locator('[cmdk-input]').fill('bodas')
+    await page.getByRole('option', { name: /bodas en Can/i }).click()
+  }
+
+  expect(searchRequests.some((url) => /\/api\/versions\/1\/search/.test(url))).toBe(true)
+  expect(searchRequests.some((url) => /\/api\/versions\/1000000128\/search/.test(url))).toBe(false)
+  await expect(page).toHaveURL(/\/bible\/juan\/2\/1$/)
+})
+
 test('[SEARCH-TEXT-01] muestra un estado vacío sin resultados', async ({ page }, testInfo) => {
   await installApiMock(page)
   await page.goto('/bible/genesis/1', { waitUntil: 'domcontentloaded' })

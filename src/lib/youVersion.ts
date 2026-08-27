@@ -1,4 +1,6 @@
 import type { ApiBook, ApiVersion } from './bibleApi'
+import { BOOK_ALIASES } from './bibleRefs'
+import { normalizeText } from './normalizeText'
 
 export const YOUVERSION_CLIENT_ID_OFFSET = 1_000_000_000
 
@@ -128,7 +130,11 @@ export function youVersionIndexToApiBooks(index: YouVersionIndex): ApiBook[] {
 }
 
 export function usfmForBookSlug(slug: string): { number: number; usfm: string } | null {
-  return BOOK_BY_SLUG.get(slug) ?? null
+  const normalized = normalizeText(slug).trim()
+  const canonicalSlug = BOOK_ALIASES[normalized]
+    ?? BOOK_ALIASES[normalized.replace(/-/g, ' ')]
+    ?? normalized
+  return BOOK_BY_SLUG.get(canonicalSlug) ?? null
 }
 
 export function remoteVerseApiId(

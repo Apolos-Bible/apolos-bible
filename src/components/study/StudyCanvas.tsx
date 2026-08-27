@@ -27,6 +27,7 @@ import { useAuthStore } from '@/lib/store/useAuthStore';
 import { useUIStore } from '@/lib/store/useUIStore';
 import { useVerseStore } from '@/lib/store/useVerseStore';
 import { useIsMobile } from '@/lib/useIsMobile';
+import { useHasTouchInput } from '@/lib/useHasTouchInput';
 import {
   getNodesMap,
   getEdgesMap,
@@ -42,6 +43,7 @@ import { findFreeSpot, findFreeSpotForStack, type Rect as PlacementRect } from '
 import { pointsBounds, strokeHit, type StrokeData, type StrokeKind } from '@/lib/study/strokes';
 import { StudyDocContext } from '@/lib/study/StudyDocContext';
 import { hasVerseDrag, readVerseDrag, endVerseDrag } from '@/lib/study/verseDrag';
+import { canvasPanButtons, canvasSelectionOnDrag } from '@/lib/study/canvasInput';
 import { studyNodeTypes } from './nodes';
 import type { FileNodeData } from './nodes/FileNode';
 import { studyEdgeTypes } from './edges';
@@ -233,6 +235,7 @@ function StudyCanvasInner({
 }: StudyCanvasProps) {
   const activeSession = useStudyStore((s) => s.activeSession);
   const isMobile = useIsMobile();
+  const hasTouchInput = useHasTouchInput();
   const { screenToFlowPosition, zoomIn, zoomOut, fitView } = useReactFlow();
   const isInteractive = useStore((s) => s.nodesDraggable || s.nodesConnectable || s.elementsSelectable);
   const rfStore = useStoreApi();
@@ -1598,14 +1601,12 @@ useEffect(() => {
           defaultEdgeOptions={{ type: 'default', animated: false }}
           proOptions={{ hideAttribution: true }}
           panOnDrag={
-            tool === 'draw' || tool === 'erase'
-              ? (spaceHeld ? [0, 1] : [1])
-              : (tool === 'hand' || isGuest || isMobile ? [0, 1] : [1])
+            canvasPanButtons(tool, spaceHeld, isGuest, isMobile, hasTouchInput)
           }
           nodesDraggable={!isGuest && tool === 'select'}
           nodesConnectable={!isGuest && tool === 'select'}
           elementsSelectable={!isGuest || tool === 'select'}
-          selectionOnDrag={!isMobile && !isGuest && tool === 'select'}
+          selectionOnDrag={canvasSelectionOnDrag(tool, isGuest, isMobile, hasTouchInput)}
         >
           <Background
             variant={BackgroundVariant.Dots}

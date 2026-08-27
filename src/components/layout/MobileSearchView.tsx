@@ -13,6 +13,7 @@ import type { Book } from '@/lib/store/useVerseStore'
 import { api } from '@/lib/api'
 import { cn } from '@/lib/cn'
 import { noteToPlainText } from '@/lib/richNotes'
+import { bibleTextSearchVersionId } from '@/lib/bibleVersionOptions'
 
 type Scope = 'all' | 'bible' | 'notes' | 'people'
 
@@ -33,6 +34,7 @@ export function MobileSearchView() {
   const closeMobileSearch = useUIStore((s) => s.closeMobileSearch)
   const addToast = useUIStore((s) => s.addToast)
   const versionId = useVerseStore((s) => s.versionId)
+  const versions = useVerseStore((s) => s.versions)
   const openVerse = useVerseStore((s) => s.openVerse)
   const books = useVerseStore((s) => s.books)
   const user = useAuthStore((s) => s.user)
@@ -65,16 +67,20 @@ export function MobileSearchView() {
 
   const needsBible = scope === 'bible' || scope === 'all'
   const needsPeople = scope === 'people' || scope === 'all'
+  const textSearchVersionId = useMemo(
+    () => bibleTextSearchVersionId(versions, versionId),
+    [versions, versionId],
+  )
 
   useEffect(() => {
-    if (!needsBible || query.trim().length < 2) {
+    if (!needsBible || textSearchVersionId === null || query.trim().length < 2) {
       setVerseResults([])
       return
     }
     setVerseSearching(true)
     const id = setTimeout(async () => {
       try {
-        const results = await bibleApi.search(versionId, normalizeText(query))
+        const results = await bibleApi.search(textSearchVersionId, normalizeText(query))
         setVerseResults(results.slice(0, scope === 'all' ? 5 : 30))
       } catch {
         setVerseResults([])
@@ -83,7 +89,7 @@ export function MobileSearchView() {
       }
     }, 300)
     return () => clearTimeout(id)
-  }, [query, versionId, needsBible, scope])
+  }, [query, textSearchVersionId, needsBible, scope])
 
   useEffect(() => {
     if (!needsPeople || query.trim().length < 2) {

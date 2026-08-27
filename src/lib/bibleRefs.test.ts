@@ -13,6 +13,15 @@ describe('resolveReferenceBook', () => {
     expect(resolveReferenceBook(books, 'ruth')?.slug).toBe('rut')
     expect(resolveReferenceBook(books, 'john')?.slug).toBe('juan')
   })
+
+  it('resolves a saved localized slug against canonical YouVersion books', () => {
+    const books = [
+      { name: 'Juan', slug: 'john' },
+      { name: 'Romanos', slug: 'romans' },
+    ]
+    expect(resolveReferenceBook(books, 'juan')?.slug).toBe('john')
+    expect(resolveReferenceBook(books, 'romanos')?.slug).toBe('romans')
+  })
 })
 
 describe('segmentText', () => {

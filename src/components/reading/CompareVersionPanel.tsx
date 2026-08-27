@@ -8,66 +8,15 @@ import { useActiveVerseStore } from '@/lib/store/useVerseStore'
 import { Select } from '@/components/ui/Select'
 import { useVersePointerSelection } from '@/components/verse/useVersePointerSelection'
 import { isYouVersionVersion } from '@/lib/youVersion'
-
-function proportionalScrollTop(source: HTMLElement, target: HTMLElement): number {
-  const sourceRange = Math.max(0, source.scrollHeight - source.clientHeight)
-  const targetRange = Math.max(0, target.scrollHeight - target.clientHeight)
-  if (sourceRange === 0 || targetRange === 0) return 0
-  return (source.scrollTop / sourceRange) * targetRange
-}
-
-function equivalentScrollTop(
-  source: HTMLElement,
-  target: HTMLElement,
-  sourceVerseAttribute: 'data-reader-verse' | 'data-compare-verse',
-  targetVerseAttribute: 'data-reader-verse' | 'data-compare-verse',
-): number {
-  const sourceRange = Math.max(0, source.scrollHeight - source.clientHeight)
-  const targetRange = Math.max(0, target.scrollHeight - target.clientHeight)
-  if (source.scrollTop <= 1) return 0
-  if (sourceRange > 0 && source.scrollTop >= sourceRange - 1) return targetRange
-
-  const sourceRect = source.getBoundingClientRect()
-  const targetRect = target.getBoundingClientRect()
-  const visualAnchor = sourceRect.top + sourceRect.height * 0.35
-  const sourceVerses = Array.from(
-    source.querySelectorAll<HTMLElement>(`[${sourceVerseAttribute}]`),
-  )
-  let sourceVerse: HTMLElement | null = null
-  let sourceVerseRect: DOMRect | null = null
-  let closestDistance = Number.POSITIVE_INFINITY
-  for (const element of sourceVerses) {
-    const rect = element.getBoundingClientRect()
-    if (rect.bottom < sourceRect.top || rect.top > sourceRect.bottom) continue
-    const distance = Math.abs(rect.top - visualAnchor)
-    if (distance >= closestDistance) continue
-    sourceVerse = element
-    sourceVerseRect = rect
-    closestDistance = distance
-  }
-  const verseNumber = sourceVerse?.getAttribute(sourceVerseAttribute)
-  const targetVerse = verseNumber
-    ? target.querySelector<HTMLElement>(
-        `[${targetVerseAttribute}="${verseNumber}"]`,
-      )
-    : null
-
-  if (!sourceVerseRect || !targetVerse) return proportionalScrollTop(source, target)
-
-  const sourceOffset = sourceVerseRect.top - sourceRect.top
-  const targetOffset = targetVerse.getBoundingClientRect().top - targetRect.top
-  return Math.min(
-    targetRange,
-    Math.max(0, target.scrollTop + targetOffset - sourceOffset),
-  )
-}
+import { mapComparisonScrollTop, type VerseScrollAnchor } from '@/lib/compareScroll'
 
 export function CompareVersionPanel() {
   const { t } = useTranslation()
   const panelRef = useRef<HTMLDivElement>(null)
   const scrollRef = useRef<HTMLDivElement>(null)
-  const syncingRef = useRef(false)
   const syncFrameRef = useRef<number | null>(null)
+  const pendingSyncRef = useRef<(() => void) | null>(null)
+  const programmaticTargetRef = useRef<HTMLElement | null>(null)
 
   const versions = useActiveVerseStore((state) => state.versions)
   const currentVersionId = useActiveVerseStore((state) => state.versionId)
@@ -161,41 +110,83 @@ export function CompareVersionPanel() {
     const comparison = scrollRef.current
     if (!reader || !comparison) return
 
-    const sync = (
+    const readAnchors = (
+      element: HTMLElement,
+      attribute: 'data-reader-verse' | 'data-compare-verse',
+    ): VerseScrollAnchor[] => Array.from(element.querySelectorAll<HTMLElement>(`[${attribute}]`))
+      .map((row) => ({ verse: Number(row.getAttribute(attribute)), top: row.offsetTop }))
+      .filter((anchor) => Number.isFinite(anchor.verse))
+
+    let readerAnchors = readAnchors(reader, 'data-reader-verse')
+    let comparisonAnchors = readAnchors(comparison, 'data-compare-verse')
+    const refreshAnchors = () => {
+      readerAnchors = readAnchors(reader, 'data-reader-verse')
+      comparisonAnchors = readAnchors(comparison, 'data-compare-verse')
+    }
+    const resizeObserver = new ResizeObserver(refreshAnchors)
+    resizeObserver.observe(reader)
+    resizeObserver.observe(comparison)
+
+    const scheduleSync = (
       source: HTMLElement,
       target: HTMLElement,
-      sourceVerseAttribute: 'data-reader-verse' | 'data-compare-verse',
-      targetVerseAttribute: 'data-reader-verse' | 'data-compare-verse',
+      sourceAnchors: () => VerseScrollAnchor[],
+      targetAnchors: () => VerseScrollAnchor[],
     ) => {
-      if (syncingRef.current) return
-      syncingRef.current = true
-      target.scrollTop = equivalentScrollTop(
-        source,
-        target,
-        sourceVerseAttribute,
-        targetVerseAttribute,
-      )
-      if (syncFrameRef.current !== null) cancelAnimationFrame(syncFrameRef.current)
+      if (programmaticTargetRef.current === source) {
+        programmaticTargetRef.current = null
+        return
+      }
+      pendingSyncRef.current = () => {
+        programmaticTargetRef.current = target
+        target.scrollTop = mapComparisonScrollTop(
+          source.scrollTop,
+          source.clientHeight,
+          Math.max(0, source.scrollHeight - source.clientHeight),
+          sourceAnchors(),
+          target.clientHeight,
+          Math.max(0, target.scrollHeight - target.clientHeight),
+          targetAnchors(),
+        )
+      }
+      if (syncFrameRef.current !== null) return
       syncFrameRef.current = requestAnimationFrame(() => {
-        syncingRef.current = false
         syncFrameRef.current = null
+        const pending = pendingSyncRef.current
+        pendingSyncRef.current = null
+        pending?.()
       })
     }
     const syncFromReader = () =>
-      sync(reader, comparison, 'data-reader-verse', 'data-compare-verse')
+      scheduleSync(reader, comparison, () => readerAnchors, () => comparisonAnchors)
     const syncFromComparison = () =>
-      sync(comparison, reader, 'data-compare-verse', 'data-reader-verse')
+      scheduleSync(comparison, reader, () => comparisonAnchors, () => readerAnchors)
+    const takeControl = (event: Event) => {
+      if (event.currentTarget === programmaticTargetRef.current) programmaticTargetRef.current = null
+    }
 
     reader.addEventListener('scroll', syncFromReader, { passive: true })
     comparison.addEventListener('scroll', syncFromComparison, { passive: true })
+    for (const element of [reader, comparison]) {
+      element.addEventListener('pointerdown', takeControl, { passive: true })
+      element.addEventListener('touchstart', takeControl, { passive: true })
+      element.addEventListener('wheel', takeControl, { passive: true })
+    }
     syncFromReader()
 
     return () => {
       reader.removeEventListener('scroll', syncFromReader)
       comparison.removeEventListener('scroll', syncFromComparison)
+      resizeObserver.disconnect()
+      for (const element of [reader, comparison]) {
+        element.removeEventListener('pointerdown', takeControl)
+        element.removeEventListener('touchstart', takeControl)
+        element.removeEventListener('wheel', takeControl)
+      }
       if (syncFrameRef.current !== null) cancelAnimationFrame(syncFrameRef.current)
       syncFrameRef.current = null
-      syncingRef.current = false
+      pendingSyncRef.current = null
+      programmaticTargetRef.current = null
     }
   }, [findReaderScroller, open, result?.data])
 
@@ -263,7 +254,7 @@ export function CompareVersionPanel() {
         ref={scrollRef}
         onPointerDown={pointerSelection.onPointerDown}
         onClick={pointerSelection.onBackgroundClick}
-        className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 pb-12 pt-5"
+        className="min-h-0 flex-1 touch-pan-y overflow-y-auto overscroll-contain px-4 pb-12 pt-5"
       >
         {result.loading && (
           <p className="text-xs text-text-muted animate-pulse">{t('common.loading')}</p>
