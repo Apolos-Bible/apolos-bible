@@ -1,6 +1,6 @@
 {
   "name": "apolos",
-  "version": "1.6.1",
+  "version": "1.7.1",
   "private": true,
   "scripts": {
     "dev": "vite",
