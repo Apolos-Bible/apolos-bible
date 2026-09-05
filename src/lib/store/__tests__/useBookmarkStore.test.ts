@@ -17,6 +17,7 @@ const mockApi = api as unknown as { get: ReturnType<typeof vi.fn>; post: ReturnT
 const mockBookmark: BookmarkedVerse = {
   id: 1,
   verse_id: 100,
+  canonical_verse_ids: [100, 200],
   note: null,
   created_at: '2024-01-01T00:00:00Z',
   verse: {
@@ -56,6 +57,7 @@ describe('useBookmarkStore', () => {
     const state = useBookmarkStore.getState()
     expect(state.bookmarks).toHaveLength(1)
     expect(state.bookmarkedIds.has(100)).toBe(true)
+    expect(state.bookmarkedIds.has(200)).toBe(true)
     expect(state.loading).toBe(false)
   })
 
@@ -71,6 +73,7 @@ describe('useBookmarkStore', () => {
     await useBookmarkStore.getState().toggle(100)
     const state = useBookmarkStore.getState()
     expect(state.bookmarkedIds.has(100)).toBe(true)
+    expect(state.bookmarkedIds.has(200)).toBe(true)
     expect(state.bookmarks).toHaveLength(1)
     expect(mockApi.post).toHaveBeenCalledWith('/api/verses/100/bookmark', {})
   })
@@ -78,12 +81,13 @@ describe('useBookmarkStore', () => {
   it('toggle removes a bookmark via API', async () => {
     useBookmarkStore.setState({
       bookmarks: [mockBookmark],
-      bookmarkedIds: new Set([100]),
+      bookmarkedIds: new Set([100, 200]),
     })
     mockApi.delete.mockResolvedValueOnce(undefined)
     await useBookmarkStore.getState().toggle(100)
     const state = useBookmarkStore.getState()
     expect(state.bookmarkedIds.has(100)).toBe(false)
+    expect(state.bookmarkedIds.has(200)).toBe(false)
     expect(state.bookmarks).toHaveLength(0)
     expect(mockApi.delete).toHaveBeenCalledWith('/api/verses/100/bookmark')
   })

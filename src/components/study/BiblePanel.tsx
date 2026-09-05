@@ -403,7 +403,7 @@ export function BiblePanel({ open, onClose, isGuest = false }: BiblePanelProps) 
           onKeyDown={handleSearchKeyDown}
           placeholder={t('study.bible.searchPlaceholder')}
           aria-label={t('study.bible.searchPlaceholder')}
-          className="w-full pl-8 pr-7 py-1.5 bg-bg-primary border border-border rounded-md text-xs text-text-primary outline-none focus:border-accent/50 placeholder:text-text-muted"
+          className="w-full pl-8 pr-7 py-1.5 bg-bg-primary border border-border rounded-md text-xs text-text-primary outline-none focus-visible:border-accent/50 placeholder:text-text-muted"
         />
         {query && (
           <button

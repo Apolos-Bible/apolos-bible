@@ -181,7 +181,9 @@ export function WorkspaceDesktopShell() {
           }}
           className="group relative z-20 w-1 shrink-0 cursor-col-resize bg-border-subtle outline-none hover:bg-accent/40 focus-visible:bg-accent"
         >
-          <span className="absolute inset-y-0 -left-1 -right-1" aria-hidden />
+          <span className="absolute inset-y-0 -left-2 -right-2 flex items-center justify-center" aria-hidden>
+            <span className="h-12 w-1.5 rounded-full bg-text-muted/75 shadow-sm transition-colors group-hover:bg-accent group-focus-visible:bg-accent" />
+          </span>
         </div>
       )}
 
@@ -312,11 +314,16 @@ function WorkspaceSplitHandle({
     >
       <span
         className={cn(
-          'absolute',
-          horizontal ? 'inset-y-0 -left-1 -right-1' : '-bottom-1 -top-1 inset-x-0',
+          'absolute flex items-center justify-center',
+          horizontal ? 'inset-y-0 -left-2 -right-2' : '-bottom-2 -top-2 inset-x-0',
         )}
         aria-hidden
-      />
+      >
+        <span className={cn(
+          'rounded-full bg-text-muted/75 shadow-sm transition-colors group-hover:bg-accent group-focus-visible:bg-accent',
+          horizontal ? 'h-12 w-1.5' : 'h-1.5 w-12',
+        )} />
+      </span>
     </div>
   )
 }
