@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Eye, StickyNote } from 'lucide-react'
 import { cn } from '@/lib/cn'
@@ -21,7 +21,7 @@ interface GuidedPromptProps {
   onBlur: () => void
   onReveal: () => void
   onPin?: (payload: { question: string; answer: string }) => void
-  autoFocus?: boolean
+  canContinue: boolean
 }
 
 export function GuidedPrompt({
@@ -34,11 +34,10 @@ export function GuidedPrompt({
   onBlur,
   onReveal,
   onPin,
-  autoFocus,
+  canContinue,
 }: GuidedPromptProps) {
   const { t } = useTranslation()
   const [secondsLeft, setSecondsLeft] = useState(answer && !revealed ? REFLECTION_MS / 1000 : 0)
-  const textareaRef = useRef<HTMLTextAreaElement>(null)
 
   useEffect(() => {
     if (!answer || revealed) return
@@ -53,20 +52,6 @@ export function GuidedPrompt({
     // Restart the pause whenever this prompt becomes a different question.
   }, [question, answer, revealed])
 
-  useEffect(() => {
-    if (!autoFocus) return
-
-    // Revealing the next question must not steal the cursor from an answer
-    // that is still being edited (for example after a synced remote reveal).
-    const active = document.activeElement
-    const isWriting = active instanceof HTMLInputElement
-      || active instanceof HTMLTextAreaElement
-      || active instanceof HTMLSelectElement
-      || (active instanceof HTMLElement && active.isContentEditable)
-
-    if (!isWriting) textareaRef.current?.focus()
-  }, [autoFocus])
-
   const written = myAnswer.trim().length > 0
   const canReveal = written || secondsLeft <= 0
 
@@ -78,7 +63,6 @@ export function GuidedPrompt({
       </p>
 
       <textarea
-        ref={textareaRef}
         value={myAnswer}
         onChange={(e) => onChange(e.target.value)}
         onBlur={onBlur}
@@ -103,6 +87,15 @@ export function GuidedPrompt({
           >
             <Eye className="w-3.5 h-3.5" />
             {canReveal ? t('guided.reveal') : t('guided.revealWait', { count: secondsLeft })}
+          </button>
+        )}
+        {!answer && canContinue && (
+          <button
+            type="button"
+            onClick={onReveal}
+            className="inline-flex items-center gap-1.5 rounded-md px-2 py-1 text-2xs font-medium text-accent transition-colors hover:bg-accent/10"
+          >
+            {t('guided.next')}
           </button>
         )}
         {onPin && written && (

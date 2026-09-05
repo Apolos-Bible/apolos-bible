@@ -411,7 +411,9 @@ function EmbeddedBibleWorkspace({
             }}
             className="workspace-bible-context-separator group relative z-20 w-1 shrink-0 cursor-col-resize bg-border-subtle outline-none hover:bg-accent/50 focus-visible:bg-accent"
           >
-            <span className="absolute inset-y-0 -left-1 -right-1" aria-hidden />
+            <span className="absolute inset-y-0 -left-2 -right-2 flex items-center justify-center" aria-hidden>
+              <span className="h-12 w-1.5 rounded-full bg-text-muted/75 shadow-sm transition-colors group-hover:bg-accent group-focus-visible:bg-accent" />
+            </span>
           </div>
           <aside
             className="workspace-bible-context-panel h-full min-w-[260px] shrink-0 overflow-hidden"

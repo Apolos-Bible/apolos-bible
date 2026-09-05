@@ -52,9 +52,24 @@ export function MobileSearchView() {
   const [verseSearching, setVerseSearching] = useState(false)
   const [allNotes, setAllNotes] = useState<UserNote[]>([])
   const inputRef = useRef<HTMLInputElement>(null)
+  const keyboardNavigation = useRef(false)
 
   useEffect(() => {
-    if (mobileSearchOpen) {
+    const markKeyboardNavigation = () => { keyboardNavigation.current = true }
+    const markPointerNavigation = () => { keyboardNavigation.current = false }
+    window.addEventListener('keydown', markKeyboardNavigation)
+    window.addEventListener('pointerdown', markPointerNavigation)
+    return () => {
+      window.removeEventListener('keydown', markKeyboardNavigation)
+      window.removeEventListener('pointerdown', markPointerNavigation)
+    }
+  }, [])
+
+  useEffect(() => {
+    // Opening search with a pointer should leave the field visually neutral.
+    // Keyboard users still land directly in the field and receive the normal
+    // focus indication needed to continue typing.
+    if (mobileSearchOpen && keyboardNavigation.current) {
       const id = setTimeout(() => inputRef.current?.focus(), 200)
       return () => clearTimeout(id)
     }
@@ -232,7 +247,7 @@ export function MobileSearchView() {
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             placeholder={t('search.placeholder')}
-            className="w-full h-11 rounded-md bg-bg-tertiary border border-border-subtle pl-9 pr-3 text-[15px] text-text-primary placeholder:text-text-muted focus:outline-none focus:border-accent transition-colors"
+            className="w-full h-11 rounded-md bg-bg-tertiary border border-border-subtle pl-9 pr-3 text-[15px] text-text-primary placeholder:text-text-muted outline-none focus-visible:border-accent transition-colors"
           />
         </div>
       </header>

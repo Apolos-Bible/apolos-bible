@@ -10,7 +10,7 @@ import { GuidedPrompt } from './GuidedPrompt'
 
 const noop = () => {}
 
-function prompt(index: number, autoFocus = false) {
+function prompt(index: number, _unused = false) {
   return (
     <GuidedPrompt
       key={index}
@@ -22,7 +22,7 @@ function prompt(index: number, autoFocus = false) {
       onChange={noop}
       onBlur={noop}
       onReveal={noop}
-      autoFocus={autoFocus}
+      canContinue={false}
     />
   )
 }
@@ -55,9 +55,9 @@ describe('GuidedPrompt focus', () => {
     expect(document.activeElement).toBe(currentAnswer)
   })
 
-  it('still focuses a newly revealed question when no field is being edited', () => {
+  it('does not focus a newly revealed question automatically', () => {
     act(() => root.render(<>{prompt(0)}{prompt(1, true)}</>))
 
-    expect(document.activeElement).toBe(container.querySelectorAll('textarea')[1])
+    expect(document.activeElement).not.toBe(container.querySelectorAll('textarea')[1])
   })
 })

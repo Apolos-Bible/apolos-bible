@@ -158,7 +158,7 @@ export function Select<T extends SelectValue>({
         onKeyDown={onKeyDown}
         className={cn(
           'flex h-10 w-full items-center gap-3 rounded-xl border border-border-subtle bg-bg-secondary px-3.5 text-left text-sm text-text-primary outline-none transition-colors',
-          'hover:bg-bg-tertiary focus:border-accent/60 focus:ring-2 focus:ring-accent/10 disabled:cursor-not-allowed disabled:opacity-50',
+          'hover:bg-bg-tertiary focus-visible:border-accent/60 focus-visible:ring-2 focus-visible:ring-accent/10 disabled:cursor-not-allowed disabled:opacity-50',
           buttonClassName,
         )}
       >
@@ -192,7 +192,7 @@ export function Select<T extends SelectValue>({
               }}
               placeholder={searchPlaceholder}
               aria-label={`${ariaLabel} search`}
-              className="mb-1.5 h-9 w-full rounded-xl border border-border-subtle bg-bg-primary px-3 text-sm text-text-primary outline-none placeholder:text-text-muted focus:border-accent/60"
+              className="mb-1.5 h-9 w-full rounded-xl border border-border-subtle bg-bg-primary px-3 text-sm text-text-primary outline-none placeholder:text-text-muted focus-visible:border-accent/60"
             />
           )}
           {filteredOptions.map((option, index) => {

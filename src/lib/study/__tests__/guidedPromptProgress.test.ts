@@ -22,22 +22,22 @@ describe('visibleGuidedPromptCount', () => {
     expect(visibleGuidedPromptCount(progressivePrompts, (index) => revealed.has(index))).toBe(2)
   })
 
-  it('shows personal questions together because they have no held-back answer', () => {
+  it('shows personal questions one at a time', () => {
     const personalPrompts = [
       { question: '¿Cómo estás?', answer: null },
       { question: '¿Qué quieres cambiar?', answer: null },
     ]
 
-    expect(visibleGuidedPromptCount(personalPrompts, () => false)).toBe(2)
+    expect(visibleGuidedPromptCount(personalPrompts, () => false)).toBe(1)
   })
 
-  it('does not let a personal prompt block a later progressive question', () => {
+  it('keeps a personal prompt as the first step before later questions', () => {
     const mixedPrompts = [
       { question: 'Personal', answer: null },
       { question: 'Sobre el texto', answer: 'Respuesta' },
       { question: 'Otra del texto', answer: 'Otra respuesta' },
     ]
 
-    expect(visibleGuidedPromptCount(mixedPrompts, () => false)).toBe(2)
+    expect(visibleGuidedPromptCount(mixedPrompts, () => false)).toBe(1)
   })
 })

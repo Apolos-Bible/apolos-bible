@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { ArrowRight, BookOpen, CalendarDays, CheckCircle2, ChevronRight, Flame, MessageCircle, Sparkles, Target, Users } from 'lucide-react'
 import { AppPageLayout } from '@/components/layout/AppPageLayout'
 import { IntentOnboarding } from '@/components/onboarding/IntentOnboarding'
+import { Dialog } from '@/components/ui/Dialog'
 import { productApi, type HomePayload } from '@/lib/productApi'
 import { commentaryApi, commentaryExcerpt } from '@/lib/commentaryApi'
 import { useAuthStore } from '@/lib/store/useAuthStore'
@@ -96,7 +97,14 @@ export function HomeRoute() {
           [BookOpen, 'Leer', () => openReading()], [CheckCircle2, 'Planes', () => navigate(paths.marketplace())], [MessageCircle, 'Conversaciones', () => navigate('/chat/0')], [Users, 'Mi perfil', () => navigate(paths.profile())],
         ].map(([Icon, label, action]) => { const ActionIcon = Icon as typeof BookOpen; return <button key={label as string} onClick={action as () => void} className="flex items-center gap-2 rounded-lg border border-border-subtle bg-bg-secondary p-3 text-sm text-text-secondary hover:bg-bg-tertiary"><ActionIcon className="h-4 w-4 text-accent" />{label as string}</button> })}</section>
       </>}
-      {showGoal && <div className="fixed inset-0 z-[65] flex items-center justify-center bg-bg-primary/80 p-4" onMouseDown={(event) => { if (event.target === event.currentTarget) setShowGoal(false) }}><section role="dialog" aria-modal="true" aria-label="Configurar meta diaria" className="w-full max-w-md rounded-xl border border-border-subtle bg-bg-secondary p-5"><h2 className="text-lg font-semibold text-text-primary">Meta diaria</h2><p className="mt-1 text-xs text-text-muted">Elige un objetivo sostenible. El progreso se actualiza al avanzar por capítulos distintos.</p><label className="mt-5 block text-xs text-text-muted">Capítulos al día<input type="number" min={1} max={20} value={goalTarget} onChange={(event) => setGoalTarget(Number(event.target.value))} className="mt-1 block w-full rounded-md border border-border-subtle bg-bg-primary p-2 text-sm text-text-primary" /></label><div className="mt-5 flex justify-end gap-2"><button onClick={() => setShowGoal(false)} className="px-3 py-2 text-sm text-text-muted">Cancelar</button><button onClick={() => void saveGoal()} className="rounded-md bg-accent px-3 py-2 text-sm font-semibold text-bg-primary">Guardar</button></div></section></div>}
+      <Dialog open={showGoal} onClose={() => setShowGoal(false)} label="Configurar meta diaria" initialFocus="input" overlayClassName="z-[65] bg-bg-primary/80">
+        <section className="w-full max-w-md rounded-xl border border-border-subtle bg-bg-secondary p-5">
+          <h2 className="text-lg font-semibold text-text-primary">Meta diaria</h2>
+          <p className="mt-1 text-xs text-text-muted">Elige un objetivo sostenible. El progreso se actualiza al avanzar por capítulos distintos.</p>
+          <label className="mt-5 block text-xs text-text-muted">Capítulos al día<input type="number" min={1} max={20} value={goalTarget} onChange={(event) => setGoalTarget(Number(event.target.value))} className="mt-1 block w-full rounded-md border border-border-subtle bg-bg-primary p-2 text-sm text-text-primary" /></label>
+          <div className="mt-5 flex justify-end gap-2"><button onClick={() => setShowGoal(false)} className="px-3 py-2 text-sm text-text-muted">Cancelar</button><button onClick={() => void saveGoal()} className="rounded-md bg-accent px-3 py-2 text-sm font-semibold text-bg-primary">Guardar</button></div>
+        </section>
+      </Dialog>
     </main>
   </AppPageLayout>
 }

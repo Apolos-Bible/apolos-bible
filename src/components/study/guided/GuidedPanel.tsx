@@ -220,10 +220,8 @@ export function GuidedPanel({ slug, sessionId, doc, synced, open, onClose, isGue
     void insertPassage(step, { auto: true })
   }, [open, step, progress?.session_id, isGuest, synced, sessionId, slug, insertPassage])
 
-  // Questions with a held-back answer come one at a time. Typing is not a
-  // completion signal: the next question appears only after the person
-  // deliberately reveals the current answer. Purely personal questions (the
-  // opening ones, the application) are all shown so nobody is forced to write.
+  // Questions come one at a time. Typing is not a completion signal: the next
+  // question appears only after the person deliberately continues.
   const visiblePrompts = useMemo(() => {
     if (!step) return 0
     return visibleGuidedPromptCount(
@@ -413,7 +411,7 @@ export function GuidedPanel({ slug, sessionId, doc, synced, open, onClose, isGue
                     onBlur={() => void flushAnswer(step.id, index)}
                     onReveal={() => void reveal(step.id, index)}
                     onPin={isGuest ? undefined : pinToCanvas}
-                    autoFocus={index === visiblePrompts - 1 && index > 0}
+                    canContinue={index < step.prompts.length - 1}
                   />
                 )
               })}

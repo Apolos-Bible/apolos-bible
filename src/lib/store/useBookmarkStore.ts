@@ -4,6 +4,8 @@ import { api } from '@/lib/api'
 export interface BookmarkedVerse {
   id: number
   verse_id: number
+  /** IDs for this same passage in every installed Bible version. */
+  canonical_verse_ids: number[]
   note: string | null
   created_at: string
   verse: {
@@ -18,7 +20,7 @@ export interface BookmarkedVerse {
 
 interface BookmarkState {
   bookmarks: BookmarkedVerse[]
-  bookmarkedIds: Set<number>   // set of verse_id for fast lookup
+  bookmarkedIds: Set<number>   // all version-specific IDs for fast lookup
   loading: boolean
   load: () => Promise<void>
   toggle: (verseApiId: number) => Promise<void>
@@ -36,7 +38,7 @@ export const useBookmarkStore = create<BookmarkState>((set, get) => ({
       const bookmarks = await api.get<BookmarkedVerse[]>('/api/user/bookmarks')
       set({
         bookmarks,
-        bookmarkedIds: new Set(bookmarks.map(b => b.verse_id)),
+        bookmarkedIds: new Set(bookmarks.flatMap(b => b.canonical_verse_ids ?? [b.verse_id])),
         loading: false,
       })
     } catch {
@@ -50,17 +52,20 @@ export const useBookmarkStore = create<BookmarkState>((set, get) => ({
       await api.delete(`/api/verses/${verseApiId}/bookmark`)
       set(s => {
         const next = new Set(s.bookmarkedIds)
-        next.delete(verseApiId)
+        const bookmark = s.bookmarks.find((entry) =>
+          (entry.canonical_verse_ids ?? [entry.verse_id]).includes(verseApiId),
+        )
+        for (const id of bookmark?.canonical_verse_ids ?? [verseApiId]) next.delete(id)
         return {
           bookmarkedIds: next,
-          bookmarks: s.bookmarks.filter(b => b.verse_id !== verseApiId),
+          bookmarks: s.bookmarks.filter((entry) => entry.id !== bookmark?.id),
         }
       })
     } else {
       const bookmark = await api.post<BookmarkedVerse>(`/api/verses/${verseApiId}/bookmark`, {})
       set(s => {
         const next = new Set(s.bookmarkedIds)
-        next.add(verseApiId)
+        for (const id of bookmark.canonical_verse_ids ?? [bookmark.verse_id]) next.add(id)
         return { bookmarkedIds: next, bookmarks: [...s.bookmarks, bookmark] }
       })
     }
