@@ -250,7 +250,11 @@ export function SettingsRoute() {
   // for keyboard/screen-reader continuity.
   useLayoutEffect(() => {
     wrapperRef.current?.closest('main')?.scrollTo({ top: 0 })
-    document.getElementById(activeNav)?.focus({ preventScroll: true })
+    // A global dialog can open while this lazy route is still mounting.
+    // Keep typing in that dialog instead of stealing its keyboard focus.
+    if (!document.querySelector('[role="dialog"][aria-modal="true"]') && !document.activeElement?.closest('#app-assistant')) {
+      document.getElementById(activeNav)?.focus({ preventScroll: true })
+    }
   }, [activeNav])
 
   // Number keys switch sections (advertised by the rail's kbd hints).

@@ -16,6 +16,7 @@ import { WorkspaceSidePanel } from './WorkspaceSidePanel'
 import { WorkspaceTabs } from './WorkspaceTabs'
 import { useWorkspacePane } from './WorkspacePaneContext'
 import { DesktopSidebar } from './DesktopSidebar'
+import { AssistantToggle } from '@/components/help/AssistantToggle'
 
 interface AppPageLayoutProps {
   /** Title shown in the mobile top bar. */
@@ -119,6 +120,7 @@ export function AppPageLayout({ title, mobileActions, children }: AppPageLayoutP
           <Search className="h-[18px] w-[18px]" strokeWidth={1.75} />
         </button>
         {mobileActions}
+        <AssistantToggle />
       </header>
 
       {/* Desktop sidebar */}

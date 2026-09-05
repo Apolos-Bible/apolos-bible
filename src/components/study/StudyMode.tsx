@@ -220,7 +220,7 @@ function StudyModeSurface() {
   }, [tool, spaceHeld])
 
   return (
-    <div className="safe-area-fixed fixed inset-0 z-50 flex flex-col bg-bg-primary">
+    <div className="relative flex h-full min-h-0 flex-col bg-bg-primary">
       <StudyTopBar users={users} isGuest={isGuest} canEdit={canEdit} canManage={canManage} doc={doc} />
       {isGuest && (
         <div className="min-h-9 shrink-0 border-b border-accent/20 bg-accent/10 px-3 py-1.5 flex items-center justify-center gap-2">

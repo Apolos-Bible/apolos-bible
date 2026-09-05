@@ -23,6 +23,7 @@ function conversationTitle(conversation: Conversation, selfId: number | undefine
 }
 
 export function FloatingChatDock({ rightPanelOpen }: FloatingChatDockProps) {
+  const assistantOpen = useUIStore(s => s.assistantOpen)
   const { t } = useTranslation()
   const conversations = useChatStore((s) => s.conversations)
   const floatingIds = useChatStore((s) => s.floatingIds)
@@ -85,6 +86,7 @@ export function FloatingChatDock({ rightPanelOpen }: FloatingChatDockProps) {
       className={cn(
         'mobile-floating-stack fixed bottom-3 right-3 z-40 flex max-w-[calc(100vw-1.5rem)] items-end gap-2 transition-[right] duration-300 ease-in-out md:bottom-4 md:right-4',
         rightPanelOpen && 'md:right-[436px]',
+        assistantOpen && 'max-md:hidden md:!right-[296px] lg:!right-[376px] xl:!right-[416px]',
       )}
     >
       <div className="flex min-w-0 items-end gap-3 pointer-events-none">
