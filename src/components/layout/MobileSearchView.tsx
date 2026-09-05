@@ -55,6 +55,10 @@ export function MobileSearchView() {
   const inputRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
+    // Search is a focused interaction regardless of how it was opened. Keep
+    // the field ready for typing on touch and keyboard alike; this also avoids
+    // leaving mobile users with a visible search field that does not receive
+    // their next keystroke.
     if (mobileSearchOpen) {
       const id = setTimeout(() => inputRef.current?.focus(), 200)
       return () => clearTimeout(id)

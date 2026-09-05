@@ -42,6 +42,8 @@ function applyAccentColor(color: string) {
 }
 
 type UIStore = {
+  assistantOpen: boolean
+  setAssistantOpen: (open: boolean) => void
   commandPaletteOpen: boolean
   shortcutsPanelOpen: boolean
   settingsOpen: boolean
@@ -138,6 +140,8 @@ let _toastSeq = 0
 
 export const useUIStore = create<UIStore>((set) => ({
   commandPaletteOpen: false,
+  assistantOpen: false,
+  setAssistantOpen: (open) => set({ assistantOpen: open }),
   shortcutsPanelOpen: false,
   settingsOpen: false,
   authModalOpen: false,

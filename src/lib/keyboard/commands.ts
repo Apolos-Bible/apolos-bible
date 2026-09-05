@@ -47,6 +47,10 @@ export interface CommandSpec {
 export const COMMAND_GROUP_ORDER: CommandGroup[] = ['navigation', 'verse', 'panels', 'study', 'app']
 
 export const COMMANDS: CommandSpec[] = [
+  {
+    id: 'app.assistant', keys: ['mod+shift+j'], scope: 'app', group: 'app',
+    descriptionKey: 'assistant.open', allowInInput: true,
+  },
   // ── App (always active) ──────────────────────────────────────────────────
   {
     id: 'app.commandPalette',

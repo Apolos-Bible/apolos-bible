@@ -2,6 +2,7 @@ import { useTranslation } from 'react-i18next'
 import { useActiveVerseStore } from '@/lib/store/useVerseStore'
 import { useUIStore } from '@/lib/store/useUIStore'
 import { cn } from '@/lib/cn'
+import { AssistantToggle } from '@/components/help/AssistantToggle'
 
 export function MobileTopBar() {
   const { t } = useTranslation()
@@ -71,6 +72,7 @@ export function MobileTopBar() {
           <path d="m10.25 10.25 3 3" strokeLinecap="round" />
         </svg>
       </button>
+      <AssistantToggle />
     </header>
   )
 }

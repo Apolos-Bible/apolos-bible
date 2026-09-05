@@ -17,6 +17,7 @@ import {
   Search,
   Settings,
   Star,
+  Sparkles,
   Store,
   UsersRound,
   type LucideIcon,
@@ -37,6 +38,7 @@ import { useContextMenuStore } from '@/lib/store/useContextMenuStore'
 import { createWorkspaceTab, useWorkspaceStore } from '@/lib/store/useWorkspaceStore'
 
 interface NavItemProps {
+  ariaLabel?: string
   icon: LucideIcon
   label: string
   active?: boolean
@@ -47,7 +49,7 @@ interface NavItemProps {
   compact?: boolean
 }
 
-function NavItem({ icon: Icon, label, active = false, badge, onClick, onOpenNew, dataTour, compact = false }: NavItemProps) {
+function NavItem({ icon: Icon, label, ariaLabel, active = false, badge, onClick, onOpenNew, dataTour, compact = false }: NavItemProps) {
   const { t } = useTranslation()
   const openMenu = useContextMenuStore((state) => state.openMenu)
 
@@ -83,7 +85,7 @@ function NavItem({ icon: Icon, label, active = false, badge, onClick, onOpenNew,
       }}
       data-tour={dataTour}
       aria-pressed={active}
-      aria-label={label}
+      aria-label={ariaLabel ?? label}
       title={compact ? label : undefined}
       className={cn(
         'relative flex w-full items-center text-sm',
@@ -143,6 +145,7 @@ export function Sidebar() {
   const selectedBook = useActiveVerseStore(s => s.selectedBook)
   const selectedChapter = useActiveVerseStore(s => s.selectedChapter)
   const compact = useUIStore(s => s.desktopSidebarCollapsed)
+  const assistantOpen = useUIStore(s => s.assistantOpen)
   const toggleDesktopSidebar = useUIStore(s => s.toggleDesktopSidebar)
 
   const openRoute = (path: string, title: string, newWindow = false) => {
@@ -257,6 +260,7 @@ export function Sidebar() {
 
       <div className={cn('min-h-0 flex-1 overflow-y-auto px-2 pb-2', compact && 'px-1')}>
         <SectionLabel compact={compact}>{t('nav.personal')}</SectionLabel>
+        <NavItem compact={compact} icon={Sparkles} label="Apolos" ariaLabel={t('assistant.open')} active={assistantOpen} onClick={() => { closeMobileSidebar(); useUIStore.getState().setAssistantOpen(!assistantOpen) }} />
         <NavItem compact={compact} icon={House} label="Inicio" active={pathname.startsWith('/inicio')} onClick={() => user ? openRoute(paths.home(), 'Inicio') : openAuthModal()} onOpenNew={() => user ? openRoute(paths.home(), 'Inicio', true) : openAuthModal()} />
         <NavItem
           dataTour="bible"

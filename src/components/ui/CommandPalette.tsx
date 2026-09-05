@@ -132,6 +132,11 @@ export function CommandPalette() {
           </div>
 
           <Command.List className="max-h-80 overflow-y-auto py-1">
+            {normalizeText(t('assistant.open')).includes(normalizeText(query)) && <Command.Item
+              value="__app_assistant"
+              onSelect={() => { closeCommandPalette(); useUIStore.getState().setAssistantOpen(true) }}
+              className="px-4 py-2 cursor-pointer text-sm text-text-secondary aria-selected:bg-bg-tertiary aria-selected:text-text-primary"
+            >{t('assistant.open')}</Command.Item>}
             <Command.Empty className="text-sm text-text-muted text-center py-6">
               {t('commandPalette.noResults')}
             </Command.Empty>

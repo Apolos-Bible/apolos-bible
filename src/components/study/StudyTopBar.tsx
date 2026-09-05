@@ -1,4 +1,5 @@
 import { useState, useCallback } from 'react'
+import { AssistantToggle } from '@/components/help/AssistantToggle'
 import { useTranslation } from 'react-i18next'
 import { useNavigate } from 'react-router-dom'
 import { ChevronLeft, UserPlus, MoreHorizontal, Share2, Link, Eye, Download } from 'lucide-react'
@@ -85,6 +86,7 @@ export function StudyTopBar({ users, isGuest, canEdit, canManage, doc }: { users
 
   return (
     <div className="flex h-14 shrink-0 items-center gap-1 border-b border-border px-2 md:h-12 md:gap-3 md:px-4">
+      <AssistantToggle />
       <button
         onClick={handleExit}
         className="flex h-11 w-11 shrink-0 items-center justify-center gap-1.5 rounded-md text-sm text-text-secondary transition-colors hover:bg-bg-tertiary hover:text-text-primary md:h-auto md:w-auto md:justify-start md:hover:bg-transparent"

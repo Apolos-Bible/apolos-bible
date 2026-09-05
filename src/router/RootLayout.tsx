@@ -29,6 +29,7 @@ import { findWorkspaceGroup, useWorkspaceStore } from '@/lib/store/useWorkspaceS
 import { RouteIndexing } from '@/components/seo/RouteIndexing'
 import { ImpersonationBanner } from '@/components/support/ImpersonationBanner'
 import type { ApiError } from '@/lib/api'
+import { AppAssistant } from '@/components/help/AppAssistant'
 
 const VISITED_STORAGE_KEY = 'verbum_has_visited'
 let hasLoggedStartupSettings = false
@@ -47,6 +48,7 @@ function RootLayoutSurface() {
   const navigate = useNavigate()
   const location = useLocation()
   const isMobile = useIsMobile()
+  const assistantOpen = useUIStore(s => s.assistantOpen)
   const openCommandPalette = useUIStore(s => s.openCommandPalette)
   const authModalOpen      = useUIStore(s => s.authModalOpen)
   const keepScreenAwake    = useUIStore(s => s.keepScreenAwake)
@@ -228,9 +230,14 @@ function RootLayoutSurface() {
           : 'h-full min-h-0 overflow-hidden'}
       >
         <RegionNav />
-        {!isMobile && isWorkspaceRoute(location.pathname)
-          ? <WorkspaceDesktopShell />
-          : <Outlet />}
+        <div className="app-viewport flex min-w-0 overflow-hidden">
+          <div data-app-content className={isMobile && assistantOpen ? 'hidden' : 'h-full min-w-0 flex-1 overflow-hidden'}>
+          {!isMobile && isWorkspaceRoute(location.pathname)
+            ? <WorkspaceDesktopShell />
+            : <Outlet />}
+          </div>
+          <AppAssistant />
+        </div>
       </div>
       <CommandPalette />
       <Toast />
